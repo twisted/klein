@@ -4,6 +4,10 @@ from twisted.internet import defer
 from werkzeug import routing
 
 class KleinResource(object, Resource):
+    """
+    A ``Resource`` that can do URL routing.
+    """
+
     class __metaclass__(type):
         def __init__(self, name, bases, attrs):
             inherited_rules = []

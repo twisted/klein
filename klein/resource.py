@@ -5,7 +5,7 @@ from twisted.web import server
 from twisted.internet import defer
 from werkzeug import routing
 
-__all__ = ("KleinResource,")
+__all__ = ("KleinResource",)
 
 class _KleinMetaclass(type):
     """

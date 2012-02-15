@@ -6,12 +6,13 @@ def expose(url, *a, **kw):
     essentially Werkzeug routes; see http://werkzeug.pocoo.org/docs/routing/
     for the details.
 
-    >>> @expose("/")
-    ... def index(self):
-    ...  pass
-    >>> @expose("/pages/<int:page_id>")
-    ... def pages(self, page_id):
-    ...  pass
+    >>> class SimpleResource(KleinResource):
+    ...  @expose("/")
+    ...  def index(self, request):
+    ...   pass
+    ...  @expose("/pages/<int:page_id>")
+    ...  def pages(self, request, page_id):
+    ...   pass
     """
 
     def deco(f):

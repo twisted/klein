@@ -1,4 +1,6 @@
 from twisted.web.resource import Resource
+from twisted.web.iweb import IRenderable
+from twisted.web.template import flattenString
 from twisted.web import server
 from twisted.internet import defer
 from werkzeug import routing
@@ -60,6 +62,9 @@ class KleinResource(object, Resource):
         meth = self.endpoints[endpoint]
         d = defer.maybeDeferred(meth, self, request, **kwargs)
         def process(r):
+            if IRenderable.providedBy(r):
+                return flattenString(request, r).addCallback(process)
+
             if r is not None:
                 request.write(r)
                 request.finish()

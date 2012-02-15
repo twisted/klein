@@ -1,1 +1,3 @@
 *.pyc
+_trial_temp
+build

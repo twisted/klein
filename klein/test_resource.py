@@ -67,6 +67,10 @@ class SimpleKlein(KleinResource):
     def index(self, request):
         return 'ok'
 
+    @expose("/trivial")
+    def trivial(self, request):
+        return "trivial"
+
     @expose("/deferred")
     def deferred(self, request):
         return self.deferred
@@ -74,6 +78,13 @@ class SimpleKlein(KleinResource):
     @expose("/element/<string:name>")
     def element(self, request, name):
         return SimpleElement(name)
+
+
+class ChildOfKlein(SimpleKlein):
+
+    @expose("/")
+    def index(self, request):
+        return "child"
 
 
 class KleinResourceTests(unittest.TestCase):
@@ -88,6 +99,32 @@ class KleinResourceTests(unittest.TestCase):
             request.write.assert_called_with('ok')
 
         d.addCallback(_cb)
+
+        return d
+
+    def test_inheritedRouting(self):
+        kr = ChildOfKlein()
+
+        request = requestMock("/trivial")
+
+        d = _render(kr, request)
+
+        @d.addCallback
+        def _cb(result):
+            request.write.assert_called_with('trivial')
+
+        return d
+
+    def test_inheritedOverride(self):
+        kr = ChildOfKlein()
+
+        request = requestMock("/")
+
+        d = _render(kr, request)
+
+        @d.addCallback
+        def _cb(result):
+            request.write.assert_called_with('child')
 
         return d
 

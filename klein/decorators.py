@@ -13,6 +13,11 @@ def expose(url, *a, **kw):
     ...  @expose("/pages/<int:page_id>")
     ...  def pages(self, request, page_id):
     ...   pass
+
+    Exposed methods will be called with at least two parameters. ``self`` is
+    the explicit self. ``request`` is a ``twisted.web.request.Request``. The
+    request will have two attributes: ``mapper``, the Werkzeug mapper used for
+    the request, and ``url_for``, a callable which can build URLs for routes.
     """
 
     def deco(f):

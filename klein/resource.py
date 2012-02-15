@@ -40,6 +40,7 @@ class KleinResource(object, Resource):
     isLeaf = True
 
     def render(self, request):
+        # Stuff we need to know for the mapper.
         server_name = request.getRequestHostname()
         server_port = request.getHost().port
         if (bool(request.isSecure()), server_port) not in [
@@ -53,13 +54,20 @@ class KleinResource(object, Resource):
             path_info = '/' + '/'.join(request.postpath)
         url_scheme = 'https' if request.isSecure() else 'http'
 
+        # Bind our mapper.
         mapper = self.map.bind(server_name, script_name, path_info=path_info,
             default_method=request.method, url_scheme=url_scheme)
+        # Make the mapper available to the view.
         request.mapper = mapper
+        # And also url_for().
         request.url_for = mapper.build
         endpoint, kwargs = mapper.match()
 
         meth = self.endpoints[endpoint]
+
+        # Standard Twisted Web stuff. Defer the method action, giving us
+        # something renderable or printable. Return NOT_DONE_YET and set up
+        # the incremental renderer.
         d = defer.maybeDeferred(meth, self, request, **kwargs)
         def process(r):
             if IRenderable.providedBy(r):

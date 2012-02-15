@@ -5,37 +5,49 @@ from twisted.web import server
 from twisted.internet import defer
 from werkzeug import routing
 
+__all__ = ("KleinResource,")
+
+class _KleinMetaclass(type):
+    """
+    A metaclass which discovers exposed routes and adds them to a routing
+    table for the class.
+    """
+
+    def __init__(self, name, bases, attrs):
+        inherited_rules = []
+        inherited_endpoints = {}
+
+        # Crawl through the bases, respecting order of inheritance.
+        for base in reversed(bases):
+            p = getattr(base, '__klein_params__', None)
+            if p is None:
+                continue
+
+            mapper, endpoints = p
+            inherited_rules.extend(
+                rule.empty() for rule in mapper.iter_rules())
+            inherited_endpoints.update(endpoints)
+
+        routes = self.map = routing.Map(inherited_rules)
+        endpoints = self.endpoints = inherited_endpoints
+        self.__klein_params__ = routes, endpoints
+        for value in attrs.itervalues():
+            akw = getattr(value, '__klein_exposed__', None)
+            if akw is None:
+                continue
+
+            url, a, kw = akw
+            rule = routing.Rule(url, *a, **kw)
+            endpoints[kw['endpoint']] = value
+            routes.add(rule)
+
+
 class KleinResource(object, Resource):
     """
     A ``Resource`` that can do URL routing.
     """
 
-    class __metaclass__(type):
-        def __init__(self, name, bases, attrs):
-            inherited_rules = []
-            inherited_endpoints = {}
-            for base in reversed(bases):
-                p = getattr(base, '__klein_params__', None)
-                if p is None:
-                    continue
-
-                mapper, endpoints = p
-                inherited_rules.extend(
-                    rule.empty() for rule in mapper.iter_rules())
-                inherited_endpoints.update(endpoints)
-
-            routes = self.map = routing.Map(inherited_rules)
-            endpoints = self.endpoints = inherited_endpoints
-            self.__klein_params__ = routes, endpoints
-            for value in attrs.itervalues():
-                akw = getattr(value, '__klein_exposed__', None)
-                if akw is None:
-                    continue
-
-                url, a, kw = akw
-                rule = routing.Rule(url, *a, **kw)
-                endpoints[kw['endpoint']] = value
-                routes.add(rule)
+    __metaclass__ = _KleinMetaclass
 
     isLeaf = True
 

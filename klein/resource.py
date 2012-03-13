@@ -1,57 +1,24 @@
-from twisted.web.resource import Resource
+from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.iweb import IRenderable
 from twisted.web.template import flattenString
 from twisted.web import server
 from twisted.internet import defer
 
-from werkzeug import routing
 from werkzeug.exceptions import HTTPException
 
-__all__ = ("KleinResource",)
+__all__ = ["KleinResource"]
 
-class _KleinMetaclass(type):
-    """
-    A metaclass which discovers exposed routes and adds them to a routing
-    table for the class.
-    """
-
-    def __init__(self, name, bases, attrs):
-        inherited_rules = []
-        inherited_endpoints = {}
-
-        # Crawl through the bases, respecting order of inheritance.
-        for base in reversed(bases):
-            p = getattr(base, '__klein_params__', None)
-            if p is None:
-                continue
-
-            mapper, endpoints = p
-            inherited_rules.extend(
-                rule.empty() for rule in mapper.iter_rules())
-            inherited_endpoints.update(endpoints)
-
-        routes = self.map = routing.Map(inherited_rules)
-        endpoints = self.endpoints = inherited_endpoints
-        self.__klein_params__ = routes, endpoints
-        for value in attrs.itervalues():
-            akw = getattr(value, '__klein_exposed__', None)
-            if akw is None:
-                continue
-
-            url, a, kw = akw
-            rule = routing.Rule(url, *a, **kw)
-            endpoints[kw['endpoint']] = value
-            routes.add(rule)
-
-
-class KleinResource(object, Resource):
+class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
     """
-
-    __metaclass__ = _KleinMetaclass
-
     isLeaf = True
+
+
+    def __init__(self, app):
+        Resource.__init__(self)
+        self._app = app
+
 
     def render(self, request):
         # Stuff we need to know for the mapper.
@@ -69,7 +36,7 @@ class KleinResource(object, Resource):
         url_scheme = 'https' if request.isSecure() else 'http'
 
         # Bind our mapper.
-        mapper = self.map.bind(server_name, script_name, path_info=path_info,
+        mapper = self._app.url_map.bind(server_name, script_name, path_info=path_info,
             default_method=request.method, url_scheme=url_scheme)
         # Make the mapper available to the view.
         request.mapper = mapper
@@ -80,25 +47,37 @@ class KleinResource(object, Resource):
         # percolate up, which we can catch and render directly in order to
         # save ourselves some legwork.
         try:
-            endpoint, kwargs = mapper.match()
+            (rule, kwargs) = mapper.match(return_rule=True)
+            endpoint = rule.endpoint
         except HTTPException as he:
             request.setResponseCode(he.code)
             return he.get_body({})
 
-        meth = self.endpoints[endpoint]
+        handler = self._app.endpoints[endpoint]
 
         # Standard Twisted Web stuff. Defer the method action, giving us
         # something renderable or printable. Return NOT_DONE_YET and set up
         # the incremental renderer.
-        d = defer.maybeDeferred(meth, self, request, **kwargs)
+        d = defer.maybeDeferred(handler, request, **kwargs)
         def process(r):
+            if IResource.providedBy(r):
+                while (request.postpath and
+                       request.postpath != request._klein_postpath_):
+                    request.prepath.append(request.postpath.pop(0))
+
+                return request.render(getChildForRequest(r, request))
+
             if IRenderable.providedBy(r):
                 return flattenString(request, r).addCallback(process)
 
+            if isinstance(r, unicode):
+                r = r.encode('utf-8')
+
             if r is not None:
                 request.write(r)
-                request.finish()
-            return r
+
+            request.finish()
+
         d.addCallback(process)
         d.addErrback(request.processingFailed)
         return server.NOT_DONE_YET

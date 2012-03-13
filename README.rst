@@ -15,19 +15,14 @@ Example
 
 ::
 
-    from twisted.web import server
-    from twisted.application import service, internet
-    from klein.resource import KleinResource
-    from klein.decorators import expose
+    from klein import run, route
 
-    class ExampleResource(KleinResource):
-        @expose('/')
-        def home(self, request):
-            return 'wooooo'
+    @route('/')
+    def home(request):
+        return 'wooooo'
 
-        @expose('/<int:id>')
-        def id(self, request, id):
-            return 'id is %d' % (id,)
+    @route('/<int:id>')
+    def id(self, request, id):
+        return 'id is %d' % (id,)
 
-    application = service.Application('Example')
-    internet.TCPServer(8081, server.Site(ExampleResource())).setServiceParent(application)
+    run("localhost", 8080)

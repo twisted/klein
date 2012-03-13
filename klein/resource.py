@@ -3,7 +3,9 @@ from twisted.web.iweb import IRenderable
 from twisted.web.template import flattenString
 from twisted.web import server
 from twisted.internet import defer
+
 from werkzeug import routing
+from werkzeug.exceptions import HTTPException
 
 __all__ = ("KleinResource",)
 
@@ -73,7 +75,15 @@ class KleinResource(object, Resource):
         request.mapper = mapper
         # And also url_for().
         request.url_for = mapper.build
-        endpoint, kwargs = mapper.match()
+
+        # Actually doing the match right here. This can cause an exception to
+        # percolate up, which we can catch and render directly in order to
+        # save ourselves some legwork.
+        try:
+            endpoint, kwargs = mapper.match()
+        except HTTPException as he:
+            request.setResponseCode(he.code)
+            return he.get_body({})
 
         meth = self.endpoints[endpoint]
 

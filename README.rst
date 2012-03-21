@@ -1,16 +1,19 @@
 Klein
 =====
 
-Klein is a small experiment to see whether it is possible to reasonably add
-Werkzeug's WSGI enhancements on top of Twisted's web services. Like all Python
-experiments for SCIENCE!, it was concocted on Freenode's #python and #twisted
-and just sounded too cool to not try out.
+.. image:: https://secure.travis-ci.org/dreid/klein.png?branch=master
+
+Klein is a micro-framework for developing production ready web services with
+python.  It is 'micro' in that it has an incredibly small API similar to bottle
+and flask.  It is not 'micro' in that it depends on things outside the standard
+library.  This is primarily because it is built on widely used and well tested
+components like werkzeug and Twisted.
 
 A Klein bottle is an example of a non-orientable surface, and a glass Klein
 bottle looks like a twisted bottle or twisted flask. This, of course, made it
 too good of a pun to pass up.
 
-Example
+Examples
 -------
 
 Here are some basic klein handler functions that return some strings.
@@ -21,11 +24,7 @@ Here are some basic klein handler functions that return some strings.
 
     @route('/')
     def home(request):
-        return 'wooooo'
-
-    @route('/<int:id>')
-    def id(self, request, id):
-        return 'id is %d' % (id,)
+        return 'Hello, world!'
 
     run("localhost", 8080)
 

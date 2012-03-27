@@ -13,7 +13,8 @@ from twisted.internet import reactor
 
 from klein.resource import KleinResource
 
-__all__ = ['Klein', 'run', 'route']
+__all__ = ['Klein', 'run', 'route', 'resource']
+
 
 class Klein(object):
     """
@@ -46,6 +47,16 @@ class Klein(object):
         return self._endpoints
 
 
+    def resource(self):
+        """
+        Return an L{IResource} which suitably wraps this app.
+
+        @returns: An L{IResource}
+        """
+
+        return KleinResource(self)
+
+
     def route(self, url, *args, **kwargs):
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
@@ -53,6 +64,7 @@ class Klein(object):
         one argument an L{twisted.web.server.Request} and any keyword arguments
         taken from the C{url} pattern.
 
+        ::
             @app.route("/")
             def index(request):
                 return "Hello"
@@ -108,7 +120,7 @@ class Klein(object):
             logFile = sys.stdout
 
         log.startLogging(logFile)
-        reactor.listenTCP(port, Site(KleinResource(self)), interface=host)
+        reactor.listenTCP(port, Site(self.resource()), interface=host)
         reactor.run()
 
 
@@ -116,3 +128,4 @@ _globalKleinApp = Klein()
 
 route = _globalKleinApp.route
 run = _globalKleinApp.run
+resource = _globalKleinApp.resource

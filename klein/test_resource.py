@@ -10,6 +10,7 @@ from twisted.web.template import Element, XMLString, renderer
 
 from mock import Mock
 
+
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False):
     postpath = path.split('/')
 
@@ -40,6 +41,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False)
     request.processingFailed.side_effect = processingFailed
 
     return request
+
 
 def _render(resource, request):
     result = resource.render(request)
@@ -78,6 +80,7 @@ class LeafResource(Resource):
 
 class ChildResource(Resource):
     isLeaf = True
+
     def __init__(self, name):
         self._name = name
 

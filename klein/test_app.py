@@ -6,6 +6,7 @@ from mock import Mock, patch
 
 from klein import Klein
 
+
 class KleinTestCase(unittest.TestCase):
     def test_route(self):
         """
@@ -118,3 +119,15 @@ class KleinTestCase(unittest.TestCase):
         mock_site.assert_called_with(mock_kr.return_value)
         mock_kr.assert_called_with(app)
         mock_log.startLogging.assert_called_with(logFile)
+
+
+    @patch('klein.app.KleinResource')
+    def test_resource(self, mock_kr):
+        """
+        L{Klien.resource} returns a L{KleinResource}.
+        """
+        app = Klein()
+        resource = app.resource()
+
+        mock_kr.assert_called_with(app)
+        self.assertEqual(mock_kr.return_value, resource)

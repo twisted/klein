@@ -8,6 +8,7 @@ from werkzeug.exceptions import HTTPException
 
 __all__ = ["KleinResource"]
 
+
 class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
@@ -59,6 +60,7 @@ class KleinResource(Resource):
         # something renderable or printable. Return NOT_DONE_YET and set up
         # the incremental renderer.
         d = defer.maybeDeferred(handler, request, **kwargs)
+
         def process(r):
             if IResource.providedBy(r):
                 while (request.postpath and

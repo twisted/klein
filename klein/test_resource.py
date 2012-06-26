@@ -1,3 +1,5 @@
+from StringIO import StringIO
+
 from twisted.trial import unittest
 
 from klein import Klein
@@ -5,40 +7,37 @@ from klein.resource import KleinResource
 
 from twisted.internet.defer import succeed, Deferred
 from twisted.web import server
+from twisted.web.static import File
 from twisted.web.resource import Resource
 from twisted.web.template import Element, XMLString, renderer
-
+from twisted.web.test.test_web import DummyChannel
+from twisted.web.http_headers import Headers
 from mock import Mock
 
 
-def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False):
-    postpath = path.split('/')
+def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
+                body=None, headers=None):
+    if not headers:
+        headers = {}
 
-    request = Mock()
-    request.getRequestHostname.return_value = host
-    request.getHost.return_value.port = port
-    request.postpath = postpath
+    if not body:
+        body = ''
+
+    request = server.Request(DummyChannel(), False)
+    request.gotLength(len(body))
+    request.content = StringIO()
+    request.content.write(body)
+    request.requestHeaders = Headers(headers)
+    request.setHost(host, port, isSecure)
+    request.uri = path
     request.prepath = []
+    request.postpath = path.split('/')
     request.method = method
-    request.isSecure.return_value = isSecure
-    request.notifyFinish.return_value = Deferred()
-    request.finished = False
-    request.__klein_branch_segments__ = []
+    request.clientproto = 'HTTP/1.1'
 
-    def render(resource):
-        return _render(resource, request)
-
-    def finish():
-        request.notifyFinish.return_value.callback(None)
-        request.finished = True
-
-    def processingFailed(failure):
-        request.failed = failure
-        request.notifyFinish.return_value.errback(failure)
-
-    request.finish.side_effect = finish
-    request.render.side_effect = render
-    request.processingFailed.side_effect = processingFailed
+    request.setResponseCode = Mock(wraps=request.setResponseCode)
+    request.finish = Mock(wraps=request.finish)
+    request.write = Mock(wraps=request.write)
 
     return request
 
@@ -227,8 +226,6 @@ class KleinResourceTests(unittest.TestCase):
 
         return d
 
-#    test_childResourceRendering.skip = "Resource rendering not supported."
-
 
     def test_childrenResourceRendering(self):
         app = self.app
@@ -246,8 +243,6 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
 
         return d
-
-#    test_childrenResourceRendering.skip = "Resource rendering not supported."
 
 
     def test_notFound(self):
@@ -294,9 +289,27 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(request.write.called, False)
-            request.finish.assert_called_with()
+            request.write.assert_called_once_with('')
+            request.finish.assert_called_once_with()
 
         d.addCallback(_cb)
         return d
 
+
+    def test_renderStaticRoot(self):
+        app = self.app
+
+        request = requestMock("/static/")
+
+        @app.route("/static/")
+        def static(request):
+            return File('.')
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            print request.responseHeaders
+            print request.write.mock_calls
+
+        d.addCallback(_cb)
+        return d

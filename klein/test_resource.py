@@ -102,6 +102,9 @@ class ChildrenResource(Resource):
         return "I have children!"
 
     def getChild(self, path, request):
+        if path == '':
+            return self
+
         return ChildResource(path)
 
 
@@ -162,6 +165,36 @@ class KleinResourceTests(unittest.TestCase):
             return 'zeus'
 
         request = requestMock('/zeus')
+        request2 = requestMock('/')
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_with('zeus')
+            return _render(self.kr, request2)
+
+        d.addCallback(_cb)
+
+        def _cb2(result):
+            request2.write.assert_called_with('ok')
+
+        d.addCallback(_cb2)
+
+        return d
+
+
+    def test_branchWithExplicitChildBranch(self):
+        app = self.app
+
+        @app.route("/")
+        def slash(request):
+            return 'ok'
+
+        @app.route("/zeus/")
+        def wooo(request):
+            return 'zeus'
+
+        request = requestMock('/zeus/foo')
         request2 = requestMock('/')
 
         d = _render(self.kr, request)
@@ -365,6 +398,26 @@ class KleinResourceTests(unittest.TestCase):
                 open(
                     os.path.join(
                         os.path.dirname(__file__), "__init__.py")).read())
+            request.finish.assert_called_once_with()
+
+        d.addCallback(_cb)
+        return d
+
+    def test_staticDirlist(self):
+        app = self.app
+
+        request = requestMock("/")
+
+        @app.route("/")
+        def root(request):
+            return File(os.path.dirname(__file__))
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.write.call_count, 1)
+            [call] = request.write.mock_calls
+            self.assertIn('Directory listing', call[1][0])
             request.finish.assert_called_once_with()
 
         d.addCallback(_cb)

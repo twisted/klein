@@ -25,7 +25,7 @@ class KleinRequest(object):
     implements(IKleinRequest)
 
     def __init__(self, request):
-        self.branch_segments = []
+        self.branch_segments = ['']
         self.mapper = None
 
     def url_for(self, *args, **kwargs):

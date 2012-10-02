@@ -6,6 +6,8 @@ from twisted.internet import defer
 
 from werkzeug.exceptions import HTTPException
 
+from klein.interfaces import IKleinRequest
+
 __all__ = ["KleinResource"]
 
 
@@ -30,19 +32,25 @@ class KleinResource(Resource):
             server_name = '%s:%d' % (server_name, server_port)
         script_name = ''
         if request.prepath:
-            script_name = '/' + '/'.join(request.prepath)
+            script_name = '/'.join(request.prepath)
+
+            if not script_name.startswith('/'):
+                script_name = '/' + script_name
+
         path_info = ''
         if request.postpath:
-            path_info = '/' + '/'.join(request.postpath)
-        url_scheme = 'https' if request.isSecure() else 'http'
+            path_info = '/'.join(request.postpath)
 
+            if not path_info.startswith('/'):
+                path_info = '/' + path_info
+
+        url_scheme = 'https' if request.isSecure() else 'http'
         # Bind our mapper.
         mapper = self._app.url_map.bind(server_name, script_name, path_info=path_info,
             default_method=request.method, url_scheme=url_scheme)
         # Make the mapper available to the view.
-        request.mapper = mapper
-        # And also url_for().
-        request.url_for = mapper.build
+        kleinRequest = IKleinRequest(request)
+        kleinRequest.mapper = mapper
 
         # Actually doing the match right here. This can cause an exception to
         # percolate up, which we can catch and render directly in order to
@@ -64,7 +72,7 @@ class KleinResource(Resource):
         def process(r):
             if IResource.providedBy(r):
                 while (request.postpath and
-                       request.postpath != request._klein_postpath_):
+                       request.postpath != kleinRequest.branch_segments):
                     request.prepath.append(request.postpath.pop(0))
 
                 return request.render(getChildForRequest(r, request))

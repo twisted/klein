@@ -8,12 +8,31 @@ from functools import wraps
 from werkzeug.routing import Map, Rule
 
 from twisted.python import log
-from twisted.web.server import Site
+from twisted.python.components import registerAdapter
+
+from twisted.web.server import Site, Request
 from twisted.internet import reactor
 
+from zope.interface import implements
+
 from klein.resource import KleinResource
+from klein.interfaces import IKleinRequest
 
 __all__ = ['Klein', 'run', 'route', 'resource']
+
+
+class KleinRequest(object):
+    implements(IKleinRequest)
+
+    def __init__(self, request):
+        self.branch_segments = ['']
+        self.mapper = None
+
+    def url_for(self, *args, **kwargs):
+        return self.mapper.build(*args, **kwargs)
+
+
+registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
 class Klein(object):
@@ -76,14 +95,13 @@ class Klein(object):
         """
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
-
             if url.endswith('/'):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
                 @wraps(f)
                 def branch_f(request, *a, **kw):
-                    request._klein_postpath_ = kw.pop('__rest__', '').split('/')
+                    IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
                     return f(request, *a, **kw)
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f

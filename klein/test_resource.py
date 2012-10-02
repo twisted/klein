@@ -1,3 +1,5 @@
+import os
+
 from StringIO import StringIO
 
 from twisted.trial import unittest
@@ -38,6 +40,14 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.setResponseCode = Mock(wraps=request.setResponseCode)
     request.finish = Mock(wraps=request.finish)
     request.write = Mock(wraps=request.write)
+
+    def registerProducer(producer, streaming):
+        # This is a terrible terrible hack.
+        producer.resumeProducing()
+        producer.resumeProducing()
+
+    request.registerProducer = registerProducer
+    request.unregisterProducer = Mock()
 
     return request
 
@@ -121,6 +131,25 @@ class KleinResourceTests(unittest.TestCase):
         return d
 
 
+    def test_branchRendering(self):
+        app = self.app
+
+        @app.route("/")
+        def slash(request):
+            return 'ok'
+
+        request = requestMock('/foo')
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_once_with('ok')
+
+        d.addCallback(_cb)
+
+        return d
+
+
     def test_branchWithExplicitChildrenRouting(self):
         app = self.app
 
@@ -133,7 +162,7 @@ class KleinResourceTests(unittest.TestCase):
             return 'zeus'
 
         request = requestMock('/zeus')
-        request2 = requestMock('/children')
+        request2 = requestMock('/')
 
         d = _render(self.kr, request)
 
@@ -202,6 +231,7 @@ class KleinResourceTests(unittest.TestCase):
             return LeafResource()
 
         d = _render(self.kr, request)
+
         def _cb(result):
             request.write.assert_called_with("I am a leaf in the wind.")
 
@@ -219,6 +249,7 @@ class KleinResourceTests(unittest.TestCase):
             return ChildrenResource()
 
         d = _render(self.kr, request)
+
         def _cb(result):
             request.write.assert_called_with("I'm a child named betty!")
 
@@ -237,6 +268,7 @@ class KleinResourceTests(unittest.TestCase):
             return ChildrenResource()
 
         d = _render(self.kr, request)
+
         def _cb(result):
             request.write.assert_called_with("I have children!")
 
@@ -296,20 +328,44 @@ class KleinResourceTests(unittest.TestCase):
         return d
 
 
-    def test_renderStaticRoot(self):
+    def test_staticRoot(self):
         app = self.app
+        request = requestMock("/__init__.py")
 
-        request = requestMock("/static/")
-
-        @app.route("/static/")
-        def static(request):
-            return File('.')
+        @app.route("/")
+        def root(request):
+            return File(os.path.dirname(__file__))
 
         d = _render(self.kr, request)
 
         def _cb(result):
-            print request.responseHeaders
-            print request.write.mock_calls
+            request.write.assert_called_once_with(
+                open(
+                    os.path.join(
+                        os.path.dirname(__file__), "__init__.py")).read())
+            request.finish.assert_called_once_with()
+
+        d.addCallback(_cb)
+        return d
+
+
+    def test_explicitStaticBranch(self):
+        app = self.app
+
+        request = requestMock("/static/__init__.py")
+
+        @app.route("/static/")
+        def root(request):
+            return File(os.path.dirname(__file__))
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_once_with(
+                open(
+                    os.path.join(
+                        os.path.dirname(__file__), "__init__.py")).read())
+            request.finish.assert_called_once_with()
 
         d.addCallback(_cb)
         return d

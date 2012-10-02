@@ -95,7 +95,7 @@ class Klein(object):
         """
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
-            if url.endswith('/') and url != '/':
+            if url.endswith('/'):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 

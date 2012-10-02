@@ -58,9 +58,7 @@ class KleinResource(Resource):
         # save ourselves some legwork.
         try:
             (rule, kwargs) = mapper.match(return_rule=True)
-            print rule, kwargs
             endpoint = rule.endpoint
-            print endpoint
         except HTTPException as he:
             request.setResponseCode(he.code)
             return he.get_body({})

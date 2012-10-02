@@ -1,3 +1,7 @@
+import os
+
+from StringIO import StringIO
+
 from twisted.trial import unittest
 
 from klein import Klein
@@ -5,40 +9,45 @@ from klein.resource import KleinResource
 
 from twisted.internet.defer import succeed, Deferred
 from twisted.web import server
+from twisted.web.static import File
 from twisted.web.resource import Resource
 from twisted.web.template import Element, XMLString, renderer
-
+from twisted.web.test.test_web import DummyChannel
+from twisted.web.http_headers import Headers
 from mock import Mock
 
 
-def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False):
-    postpath = path.split('/')
+def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
+                body=None, headers=None):
+    if not headers:
+        headers = {}
 
-    request = Mock()
-    request.getRequestHostname.return_value = host
-    request.getHost.return_value.port = port
-    request.postpath = postpath
+    if not body:
+        body = ''
+
+    request = server.Request(DummyChannel(), False)
+    request.gotLength(len(body))
+    request.content = StringIO()
+    request.content.write(body)
+    request.requestHeaders = Headers(headers)
+    request.setHost(host, port, isSecure)
+    request.uri = path
     request.prepath = []
+    request.postpath = path.split('/')
     request.method = method
-    request.isSecure.return_value = isSecure
-    request.notifyFinish.return_value = Deferred()
-    request.finished = False
-    request.__klein_branch_segments__ = []
+    request.clientproto = 'HTTP/1.1'
 
-    def render(resource):
-        return _render(resource, request)
+    request.setResponseCode = Mock(wraps=request.setResponseCode)
+    request.finish = Mock(wraps=request.finish)
+    request.write = Mock(wraps=request.write)
 
-    def finish():
-        request.notifyFinish.return_value.callback(None)
-        request.finished = True
+    def registerProducer(producer, streaming):
+        # This is a terrible terrible hack.
+        producer.resumeProducing()
+        producer.resumeProducing()
 
-    def processingFailed(failure):
-        request.failed = failure
-        request.notifyFinish.return_value.errback(failure)
-
-    request.finish.side_effect = finish
-    request.render.side_effect = render
-    request.processingFailed.side_effect = processingFailed
+    request.registerProducer = registerProducer
+    request.unregisterProducer = Mock()
 
     return request
 
@@ -93,6 +102,9 @@ class ChildrenResource(Resource):
         return "I have children!"
 
     def getChild(self, path, request):
+        if path == '':
+            return self
+
         return ChildResource(path)
 
 
@@ -122,6 +134,25 @@ class KleinResourceTests(unittest.TestCase):
         return d
 
 
+    def test_branchRendering(self):
+        app = self.app
+
+        @app.route("/")
+        def slash(request):
+            return 'ok'
+
+        request = requestMock('/foo')
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_once_with('ok')
+
+        d.addCallback(_cb)
+
+        return d
+
+
     def test_branchWithExplicitChildrenRouting(self):
         app = self.app
 
@@ -134,7 +165,37 @@ class KleinResourceTests(unittest.TestCase):
             return 'zeus'
 
         request = requestMock('/zeus')
-        request2 = requestMock('/children')
+        request2 = requestMock('/')
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_with('zeus')
+            return _render(self.kr, request2)
+
+        d.addCallback(_cb)
+
+        def _cb2(result):
+            request2.write.assert_called_with('ok')
+
+        d.addCallback(_cb2)
+
+        return d
+
+
+    def test_branchWithExplicitChildBranch(self):
+        app = self.app
+
+        @app.route("/")
+        def slash(request):
+            return 'ok'
+
+        @app.route("/zeus/")
+        def wooo(request):
+            return 'zeus'
+
+        request = requestMock('/zeus/foo')
+        request2 = requestMock('/')
 
         d = _render(self.kr, request)
 
@@ -203,6 +264,7 @@ class KleinResourceTests(unittest.TestCase):
             return LeafResource()
 
         d = _render(self.kr, request)
+
         def _cb(result):
             request.write.assert_called_with("I am a leaf in the wind.")
 
@@ -220,14 +282,13 @@ class KleinResourceTests(unittest.TestCase):
             return ChildrenResource()
 
         d = _render(self.kr, request)
+
         def _cb(result):
             request.write.assert_called_with("I'm a child named betty!")
 
         d.addCallback(_cb)
 
         return d
-
-#    test_childResourceRendering.skip = "Resource rendering not supported."
 
 
     def test_childrenResourceRendering(self):
@@ -240,14 +301,13 @@ class KleinResourceTests(unittest.TestCase):
             return ChildrenResource()
 
         d = _render(self.kr, request)
+
         def _cb(result):
             request.write.assert_called_with("I have children!")
 
         d.addCallback(_cb)
 
         return d
-
-#    test_childrenResourceRendering.skip = "Resource rendering not supported."
 
 
     def test_notFound(self):
@@ -294,9 +354,71 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(request.write.called, False)
-            request.finish.assert_called_with()
+            request.write.assert_called_once_with('')
+            request.finish.assert_called_once_with()
 
         d.addCallback(_cb)
         return d
 
+
+    def test_staticRoot(self):
+        app = self.app
+        request = requestMock("/__init__.py")
+
+        @app.route("/")
+        def root(request):
+            return File(os.path.dirname(__file__))
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_once_with(
+                open(
+                    os.path.join(
+                        os.path.dirname(__file__), "__init__.py")).read())
+            request.finish.assert_called_once_with()
+
+        d.addCallback(_cb)
+        return d
+
+
+    def test_explicitStaticBranch(self):
+        app = self.app
+
+        request = requestMock("/static/__init__.py")
+
+        @app.route("/static/")
+        def root(request):
+            return File(os.path.dirname(__file__))
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_once_with(
+                open(
+                    os.path.join(
+                        os.path.dirname(__file__), "__init__.py")).read())
+            request.finish.assert_called_once_with()
+
+        d.addCallback(_cb)
+        return d
+
+    def test_staticDirlist(self):
+        app = self.app
+
+        request = requestMock("/")
+
+        @app.route("/")
+        def root(request):
+            return File(os.path.dirname(__file__))
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.write.call_count, 1)
+            [call] = request.write.mock_calls
+            self.assertIn('Directory listing', call[1][0])
+            request.finish.assert_called_once_with()
+
+        d.addCallback(_cb)
+        return d

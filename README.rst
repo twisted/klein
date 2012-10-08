@@ -162,6 +162,7 @@ The most specific handler should be defined first.  So the ``POST`` handler
 must be defined before the handler with no ``methods``.
 
 ::
+
     from twisted.internet.defer import succeed
     from klein import run, route
 

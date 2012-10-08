@@ -115,6 +115,41 @@ class KleinResourceTests(unittest.TestCase):
         self.kr = KleinResource(self.app)
 
 
+    def test_simplePost(self):
+        app = self.app
+
+        # The order in which these functions are defined
+        # matters.  If the more generic one is defined first
+        # then it will eat requests that should have been handled
+        # by the more specific handler.
+
+        @app.route("/", methods=["POST"])
+        def handle_post(request):
+            return 'posted'
+
+        @app.route("/")
+        def handle(request):
+            return 'gotted'
+
+        request = requestMock('/', 'POST')
+        request2 = requestMock('/')
+
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_with('posted')
+            return _render(self.kr, request2)
+
+        d.addCallback(_cb)
+
+        def _cb2(result):
+            request2.write.assert_called_with('gotted')
+
+        d.addCallback(_cb2)
+        return d
+
+
     def test_simpleRouting(self):
         app = self.app
 

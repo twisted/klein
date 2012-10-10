@@ -18,7 +18,7 @@ Examples
 
 Here are some basic klein handler functions that return some strings.
 
-::
+.. code-block:: python
 
     from klein import run, route
 
@@ -39,7 +39,7 @@ segments.  So ``http://localhost:8080/static/img.gif`` should return an
 image and ``http://localhost:8080/static/`` should return a directory
 listing.
 
-::
+.. code-block:: python
 
     from twisted.web.static import File
     from klein import run, route
@@ -63,7 +63,7 @@ that implements ``twisted.web.template.IRenderable`` such as
 ``twisted.web.template.Element`` in which case the template will be rendered
 and the result will be sent as the response body.
 
-::
+.. code-block:: python
 
     from twisted.web.template import Element, XMLString, renderer
     from klein import run, route
@@ -98,7 +98,7 @@ handler functions and their result will be used as the response body.
 
 Here is a simple Google proxy.
 
-::
+.. code-block:: python
 
     from twisted.web.client import getPage
     from klein import run, route
@@ -125,7 +125,7 @@ for your application.
 Here is our "Hello, World!" application again in a form that can be launched
 by ``twistd``.
 
-::
+.. code-block:: python
 
     from klein import resource, route
 
@@ -161,7 +161,7 @@ redirect back to ``'/'`` after handling the ``POST``.
 The most specific handler should be defined first.  So the ``POST`` handler
 must be defined before the handler with no ``methods``.
 
-::
+.. code-block:: python
 
     from twisted.internet.defer import succeed
     from klein import run, route

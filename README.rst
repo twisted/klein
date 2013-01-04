@@ -16,7 +16,7 @@ bottle looks like a twisted bottle or twisted flask. This, of course, made it
 too good of a pun to pass up.
 
 Examples
--------
+--------
 
 Here are some basic klein handler functions that return some strings.
 
@@ -95,7 +95,7 @@ Deferreds
 ~~~~~~~~~
 
 And of course, this is twisted.  So there is a wealth of APIs that return a
-``twisted.internet.defer.Deferred``.  ``Deferred``s may also be returned from
+``twisted.internet.defer.Deferred``.  A ``Deferred`` may also be returned from
 handler functions and their result will be used as the response body.
 
 Here is a simple Google proxy.

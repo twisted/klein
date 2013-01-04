@@ -25,5 +25,6 @@ setup(
     url="https://github.com/twisted/klein",
     version="0.1.0",
     maintainer='David Reid',
-    maintainer_email='dreid@dreid.org'
+    maintainer_email='dreid@dreid.org',
+    long_description=open('README.rst').read()
 )

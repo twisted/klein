@@ -9,6 +9,8 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
@@ -24,4 +26,7 @@ setup(
     packages=["klein"],
     url="https://github.com/twisted/klein",
     version="0.1.0",
+    maintainer='David Reid',
+    maintainer_email='dreid@dreid.org',
+    long_description=open('README.rst').read()
 )

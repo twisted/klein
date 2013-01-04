@@ -1,14 +1,18 @@
 env:
-    - TWISTED_VERSION=12.1
-    - TWISTED_VERSION=12.2
-    - TWISTED_VERSION=12.3
+    - TWISTED=Twisted==12.1
+    - TWISTED=Twisted==12.2
+    - TWISTED=Twisted==12.3
+    - TWISTED=svn+svn://svn.twistedmatrix.com/svn/Twisted/trunk
+
 language: python
+
 python:
     - 2.6
     - 2.7
+    - pypy
 
 install:
-    - pip install -q Twisted==$TWISTED_VERSION --use-mirrors
+    - pip install -q $TWISTED --use-mirrors
     - python setup.py -q install
 
 script: trial klein

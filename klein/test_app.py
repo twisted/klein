@@ -92,6 +92,34 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(bar_calls, [(foo, None)])
 
 
+    def test_classicalRouteWithTwoInstances(self):
+        """
+        Multiple instances of a class with a L{Klein} attribute and
+        L{Klein.route}'d methods can be created and their L{Klein}s used
+        independently.
+        """
+        class Foo(object):
+            app = Klein()
+
+            def __init__(self):
+                self.bar_calls = []
+
+            @app.route("/bar")
+            def bar(self, request):
+                self.bar_calls.append((self, request))
+                return "bar"
+
+        foo_1 = Foo()
+        foo_1_app = foo_1.app
+        foo_2 = Foo()
+        foo_2_app = foo_2.app
+
+        foo_1_app.endpoints['bar'](1)
+        foo_2_app.endpoints['bar'](2)
+        self.assertEqual(foo_1.bar_calls, [(foo_1, 1)])
+        self.assertEqual(foo_2.bar_calls, [(foo_2, 2)])
+
+
     @patch('klein.app.KleinResource')
     @patch('klein.app.Site')
     @patch('klein.app.log')

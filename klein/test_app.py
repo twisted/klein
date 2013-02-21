@@ -4,7 +4,25 @@ import sys
 
 from mock import Mock, patch
 
+from twisted.python.components import registerAdapter
+
 from klein import Klein
+from klein.app import KleinRequest
+from klein.interfaces import IKleinRequest
+
+
+class DummyRequest(object):
+    def __init__(self, n):
+        self.n = n
+
+    def __eq__(self, other):
+        return other.n == self.n
+
+    def __repr__(self):
+        return '<DummyRequest({n})>'.format(n=self.n)
+
+
+registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
 
 
 class KleinTestCase(unittest.TestCase):
@@ -22,7 +40,7 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(c.match("/foo"), ("foo", {}))
         self.assertEqual(len(app.endpoints), 1)
 
-        self.assertEqual(app.endpoints["foo"](None), "foo")
+        self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
 
 
     def test_stackedRoute(self):
@@ -41,10 +59,10 @@ class KleinTestCase(unittest.TestCase):
 
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo"), ("foobar", {}))
-        self.assertEqual(app.endpoints["foobar"](None), "foobar")
+        self.assertEqual(app.execute_endpoint("foobar", DummyRequest(1)), "foobar")
 
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEqual(app.endpoints["bar"](None), "foobar")
+        self.assertEqual(app.execute_endpoint("bar", DummyRequest(2)), "foobar")
 
 
     def test_branchRoute(self):
@@ -87,9 +105,9 @@ class KleinTestCase(unittest.TestCase):
         foo = Foo()
         c = foo.app.url_map.bind("bar")
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEquals(foo.app.endpoints["bar"](None), "bar")
+        self.assertEquals(foo.app.execute_endpoint("bar", DummyRequest(1)), "bar")
 
-        self.assertEqual(bar_calls, [(foo, None)])
+        self.assertEqual(bar_calls, [(foo, DummyRequest(1))])
 
 
     def test_classicalRouteWithTwoInstances(self):
@@ -114,10 +132,46 @@ class KleinTestCase(unittest.TestCase):
         foo_2 = Foo()
         foo_2_app = foo_2.app
 
-        foo_1_app.endpoints['bar'](1)
-        foo_2_app.endpoints['bar'](2)
-        self.assertEqual(foo_1.bar_calls, [(foo_1, 1)])
-        self.assertEqual(foo_2.bar_calls, [(foo_2, 2)])
+        dr1 = DummyRequest(1)
+        dr2 = DummyRequest(2)
+
+        foo_1_app.execute_endpoint('bar', dr1)
+        foo_2_app.execute_endpoint('bar', dr2)
+        self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
+        self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
+
+
+    def test_classicalRouteWithBranch(self):
+        """
+        Multiple instances of a class with a L{Klein} attribute and
+        L{Klein.route}'d methods can be created and their L{Klein}s used
+        independently.
+        """
+        class Foo(object):
+            app = Klein()
+
+            def __init__(self):
+                self.bar_calls = []
+
+            @app.route("/bar/")
+            def bar(self, request):
+                self.bar_calls.append((self, request))
+                return "bar"
+
+        foo_1 = Foo()
+        foo_1_app = foo_1.app
+        foo_2 = Foo()
+        foo_2_app = foo_2.app
+
+        dr1 = DummyRequest(1)
+        dr2 = DummyRequest(2)
+
+        foo_1_app.execute_endpoint('bar_branch', dr1)
+        foo_2_app.execute_endpoint('bar_branch', dr2)
+        self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
+        self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
+
+
 
 
     @patch('klein.app.KleinResource')

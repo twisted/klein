@@ -45,6 +45,8 @@ class Klein(object):
     @ivar _endpoints: A C{dict} mapping endpoint names to handler functions.
     """
 
+    _bound_klein_instances = {}
+
     def __init__(self):
         self._url_map = Map()
         self._endpoints = {}
@@ -67,6 +69,15 @@ class Klein(object):
         return self._endpoints
 
 
+    def execute_endpoint(self, endpoint, *args, **kwargs):
+        """
+        Execute the named endpoint with all arguments and possibly a bound
+        instance.
+        """
+        endpoint_f = self._endpoints[endpoint]
+        return endpoint_f(self._instance, *args, **kwargs)
+
+
     def resource(self):
         """
         Return an L{IResource} which suitably wraps this app.
@@ -78,13 +89,22 @@ class Klein(object):
 
 
     def __get__(self, instance, owner):
+        """
+        Get an instance of L{Klein} bound to C{instance}.
+        """
         if instance is None:
             return self
 
-        if self._instance is None:
-            self._instance = instance
+        k = self._bound_klein_instances.get(instance)
 
-        return self
+        if k is None:
+            k = self.__class__()
+            k._url_map = self._url_map
+            k._endpoints = self._endpoints
+            k._instance = instance
+            self._bound_klein_instances[instance] = k
+
+        return k
 
 
     def route(self, url, *args, **kwargs):
@@ -104,12 +124,11 @@ class Klein(object):
 
         @returns: decorated handler function.
         """
-        def call(f, *a, **kw):
-            if self._instance is not None:
-                return f(self._instance, *a, **kw)
+        def call(instance, f, *args, **kwargs):
+            if instance is None:
+                return f(*args, **kwargs)
 
-            return f(*a, **kw)
-
+            return f(instance, *args, **kwargs)
 
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
@@ -118,16 +137,16 @@ class Klein(object):
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
                 @wraps(f)
-                def branch_f(request, *a, **kw):
+                def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
-                    return call(f, request, *a, **kw)
+                    return call(instance, f, request, *a, **kw)
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(Rule(url + '<path:__rest__>', *args, **branchKwargs))
 
             @wraps(f)
-            def _f(request, *a, **kw):
-                return call(f, request, *a, **kw)
+            def _f(instance, request, *a, **kw):
+                return call(instance, f, request, *a, **kw)
 
             self._endpoints[kwargs['endpoint']] = _f
             self._url_map.add(Rule(url, *args, **kwargs))

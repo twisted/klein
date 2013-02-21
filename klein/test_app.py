@@ -21,7 +21,6 @@ class KleinTestCase(unittest.TestCase):
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo"), ("foo", {}))
         self.assertEqual(len(app.endpoints), 1)
-        self.assertIdentical(app.endpoints["foo"], foo)
 
         self.assertEqual(app.endpoints["foo"](None), "foo")
 
@@ -42,12 +41,10 @@ class KleinTestCase(unittest.TestCase):
 
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo"), ("foobar", {}))
-        self.assertIdentical(app.endpoints["foobar"], foobar)
+        self.assertEqual(app.endpoints["foobar"](None), "foobar")
 
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertIdentical(app.endpoints["foobar"], foobar)
-
-        self.assertEqual(app.endpoints["foobar"](None), "foobar")
+        self.assertEqual(app.endpoints["bar"](None), "foobar")
 
 
     def test_branchRoute(self):
@@ -67,11 +64,32 @@ class KleinTestCase(unittest.TestCase):
             c.match("/foo/bar"),
             ("foo_branch", {'__rest__': 'bar'}))
 
-        self.assertIdentical(app.endpoints["foo"], foo)
-        self.assertNotIdentical(app.endpoints["foo_branch"], foo)
+        self.assertEquals(app.endpoints["foo"].__name__, "foo")
         self.assertEquals(
-            app.endpoints["foo"].__name__,
-            app.endpoints["foo"].__name__)
+            app.endpoints["foo_branch"].__name__,
+            "foo")
+
+
+    def test_classicalRoute(self):
+        """
+        L{Klein.route} may be used a method decorator when a L{Klein} instance
+        is defined as a class variable.
+        """
+        bar_calls = []
+        class Foo(object):
+            app = Klein()
+
+            @app.route("/bar")
+            def bar(self, request):
+                bar_calls.append((self, request))
+                return "bar"
+
+        foo = Foo()
+        c = foo.app.url_map.bind("bar")
+        self.assertEqual(c.match("/bar"), ("bar", {}))
+        self.assertEquals(foo.app.endpoints["bar"](None), "bar")
+
+        self.assertEqual(bar_calls, [(foo, None)])
 
 
     @patch('klein.app.KleinResource')

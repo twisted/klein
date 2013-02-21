@@ -48,6 +48,7 @@ class Klein(object):
     def __init__(self):
         self._url_map = Map()
         self._endpoints = {}
+        self._instance = None
 
 
     @property
@@ -76,6 +77,16 @@ class Klein(object):
         return KleinResource(self)
 
 
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        if self._instance is None:
+            self._instance = instance
+
+        return self
+
+
     def route(self, url, *args, **kwargs):
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
@@ -93,6 +104,13 @@ class Klein(object):
 
         @returns: decorated handler function.
         """
+        def call(f, *a, **kw):
+            if self._instance is not None:
+                return f(self._instance, *a, **kw)
+
+            return f(*a, **kw)
+
+
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
             if url.endswith('/'):
@@ -102,12 +120,16 @@ class Klein(object):
                 @wraps(f)
                 def branch_f(request, *a, **kw):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
-                    return f(request, *a, **kw)
+                    return call(f, request, *a, **kw)
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(Rule(url + '<path:__rest__>', *args, **branchKwargs))
 
-            self._endpoints[kwargs['endpoint']] = f
+            @wraps(f)
+            def _f(request, *a, **kw):
+                return call(f, request, *a, **kw)
+
+            self._endpoints[kwargs['endpoint']] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
             return f
 

@@ -14,7 +14,8 @@ from twisted.web.resource import Resource
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 from twisted.web.http_headers import Headers
-from mock import Mock
+
+from mock import Mock, ANY, call
 
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
@@ -37,7 +38,9 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.method = method
     request.clientproto = 'HTTP/1.1'
 
+    request.setHeader = Mock(wraps=request.setHeader)
     request.setResponseCode = Mock(wraps=request.setResponseCode)
+
     request.finish = Mock(wraps=request.finish)
     request.write = Mock(wraps=request.write)
 
@@ -451,9 +454,29 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             self.assertEqual(request.write.call_count, 1)
-            [call] = request.write.mock_calls
-            self.assertIn('Directory listing', call[1][0])
+            [c] = request.write.mock_calls
+            self.assertIn('Directory listing', c[1][0])
             request.finish.assert_called_once_with()
+
+        d.addCallback(_cb)
+        return d
+
+    def test_addSlash(self):
+        app = self.app
+        request = requestMock("/foo")
+
+        @app.route("/foo/")
+        def foo(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.setHeader.call_count, 3)
+            request.setHeader.assert_has_calls(
+                [call('Content-Type', 'text/html; charset=utf-8'),
+                 call('Content-Length', '259'),
+                 call('Location', 'http://localhost:8080/foo/')])
 
         d.addCallback(_cb)
         return d

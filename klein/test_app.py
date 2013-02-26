@@ -53,11 +53,11 @@ class KleinTestCase(unittest.TestCase):
     def test_branchRoute(self):
         """
         L{Klein.route} should create a branch path which consumes all children
-        when the URL has a trailing '/'
+        when the branch keyword argument is True.
         """
         app = Klein()
 
-        @app.route("/foo/")
+        @app.route("/foo/", branch=True)
         def foo(request):
             return "foo"
 
@@ -72,6 +72,23 @@ class KleinTestCase(unittest.TestCase):
         self.assertEquals(
             app.endpoints["foo"].__name__,
             app.endpoints["foo"].__name__)
+
+
+    def test_branchDoesntRequireTrailingSlash(self):
+        """
+        L{Klein.route} should create a branch path which consumes all children,
+        when the branch keyword argument is True and there is no trailing /
+        on the path.
+        """
+        app = Klein()
+
+        @app.route("/foo", branch=True)
+        def foo(request):
+            return "foo"
+
+        c = app.url_map.bind("foo")
+        self.assertEqual(c.match("/foo/bar"),
+                         ("foo_branch", {"__rest__": "bar"}))
 
 
     @patch('klein.app.KleinResource')

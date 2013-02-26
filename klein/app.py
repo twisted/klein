@@ -91,6 +91,12 @@ class Klein(object):
         @param url: A werkzeug URL pattern given to C{werkzeug.routing.Rule}.
         @type url: str
 
+        @param branch: A bool indiciated if a branch endpoint should
+            be added that allows all child path segments that don't
+            match some other route to be consumed.  Default C{False}.
+        @type branch: bool
+
+
         @returns: decorated handler function.
         """
         def deco(f):

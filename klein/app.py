@@ -78,10 +78,13 @@ class Klein(object):
 
     def route(self, url, *args, **kwargs):
         """
-        Add a new handler for C{url} passing C{args} and C{kwargs} directly to
-        C{werkzeug.routing.Rule}.  The handler function will be passed at least
-        one argument an L{twisted.web.server.Request} and any keyword arguments
-        taken from the C{url} pattern.
+        Add a new handler for C{url} passing C{args} and most C{kwargs} directly
+        to C{werkzeug.routing.Rule}.  The handler function will be passed at
+        least one argument an L{twisted.web.server.Request} and any keyword
+        arguments taken from the C{url} pattern.
+
+        If the keyword argument C{'branch'} is C{True}, then branching will
+        happen.
 
         ::
             @app.route("/")

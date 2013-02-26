@@ -15,7 +15,7 @@ from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 from twisted.web.http_headers import Headers
 
-from mock import Mock, ANY, call
+from mock import Mock, call
 
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
@@ -477,6 +477,42 @@ class KleinResourceTests(unittest.TestCase):
                 [call('Content-Type', 'text/html; charset=utf-8'),
                  call('Content-Length', '259'),
                  call('Location', 'http://localhost:8080/foo/')])
+
+        d.addCallback(_cb)
+        return d
+
+    def test_methodNotAllowed(self):
+        app = self.app
+        request = requestMock("/foo", method='DELETE')
+
+        @app.route("/foo", methods=['GET'])
+        def foo(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 405)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_methodNotAllowedWithRootCollection(self):
+        app = self.app
+        request = requestMock("/foo/bar", method='DELETE')
+
+        @app.route("/foo/bar", methods=['GET'])
+        def foobar(request):
+            return "foo/bar"
+
+        @app.route("/foo/", methods=['DELETE'])
+        def foo(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 405)
 
         d.addCallback(_cb)
         return d

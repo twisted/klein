@@ -46,7 +46,7 @@ listing.
     from twisted.web.static import File
     from klein import run, route
 
-    @route('/static/')
+    @route('/static/', branch=True)
     def static(request):
         return File("./static")
 

@@ -57,7 +57,7 @@ class KleinTestCase(unittest.TestCase):
         """
         app = Klein()
 
-        @app.route("/foo/")
+        @app.route("/foo/", branch=True)
         def foo(request):
             return "foo"
 

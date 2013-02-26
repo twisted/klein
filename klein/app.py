@@ -95,7 +95,8 @@ class Klein(object):
         """
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
-            if url.endswith('/'):
+            if kwargs.pop('branch', False):
+
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
@@ -105,7 +106,7 @@ class Klein(object):
                     return f(request, *a, **kw)
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
-                self._url_map.add(Rule(url + '<path:__rest__>', *args, **branchKwargs))
+                self._url_map.add(Rule(url.rstrip('/') + '/' + '<path:__rest__>', *args, **branchKwargs))
 
             self._endpoints[kwargs['endpoint']] = f
             self._url_map.add(Rule(url, *args, **kwargs))

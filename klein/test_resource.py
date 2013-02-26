@@ -175,7 +175,7 @@ class KleinResourceTests(unittest.TestCase):
     def test_branchRendering(self):
         app = self.app
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def slash(request):
             return 'ok'
 
@@ -224,11 +224,11 @@ class KleinResourceTests(unittest.TestCase):
     def test_branchWithExplicitChildBranch(self):
         app = self.app
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def slash(request):
             return 'ok'
 
-        @app.route("/zeus/")
+        @app.route("/zeus/", branch=True)
         def wooo(request):
             return 'zeus'
 
@@ -315,7 +315,7 @@ class KleinResourceTests(unittest.TestCase):
         app = self.app
         request = requestMock("/resource/children/betty")
 
-        @app.route("/resource/children/")
+        @app.route("/resource/children/", branch=True)
         def children(request):
             return ChildrenResource()
 
@@ -334,7 +334,7 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock("/resource/children/")
 
-        @app.route("/resource/children/")
+        @app.route("/resource/children/", branch=True)
         def children(request):
             return ChildrenResource()
 
@@ -403,7 +403,7 @@ class KleinResourceTests(unittest.TestCase):
         app = self.app
         request = requestMock("/__init__.py")
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
@@ -425,7 +425,7 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock("/static/__init__.py")
 
-        @app.route("/static/")
+        @app.route("/static/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
@@ -446,7 +446,7 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock("/")
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 

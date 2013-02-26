@@ -516,3 +516,20 @@ class KleinResourceTests(unittest.TestCase):
 
         d.addCallback(_cb)
         return d
+
+    def test_noImplicitBranch(self):
+        app = self.app
+        request = requestMock("/foo")
+
+        @app.route("/")
+        def root(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 404)
+
+        d.addCallback(_cb)
+        return d
+

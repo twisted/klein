@@ -67,12 +67,13 @@ class KleinResource(Resource):
 
             return he.get_body({})
 
-        handler = self._app.endpoints[endpoint]
-
         # Standard Twisted Web stuff. Defer the method action, giving us
         # something renderable or printable. Return NOT_DONE_YET and set up
         # the incremental renderer.
-        d = defer.maybeDeferred(handler, request, **kwargs)
+        d = defer.maybeDeferred(self._app.execute_endpoint,
+                                endpoint,
+                                request,
+                                **kwargs)
 
         def process(r):
             if IResource.providedBy(r):

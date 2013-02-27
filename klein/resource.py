@@ -60,6 +60,11 @@ class KleinResource(Resource):
             endpoint = rule.endpoint
         except HTTPException as he:
             request.setResponseCode(he.code)
+            resp = he.get_response({})
+
+            for header, value in resp.headers:
+                request.setHeader(header, value)
+
             return he.get_body({})
 
         # Standard Twisted Web stuff. Defer the method action, giving us

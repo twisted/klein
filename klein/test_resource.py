@@ -14,7 +14,8 @@ from twisted.web.resource import Resource
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 from twisted.web.http_headers import Headers
-from mock import Mock
+
+from mock import Mock, call
 
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
@@ -37,7 +38,9 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.method = method
     request.clientproto = 'HTTP/1.1'
 
+    request.setHeader = Mock(wraps=request.setHeader)
     request.setResponseCode = Mock(wraps=request.setResponseCode)
+
     request.finish = Mock(wraps=request.finish)
     request.write = Mock(wraps=request.write)
 
@@ -172,7 +175,7 @@ class KleinResourceTests(unittest.TestCase):
     def test_branchRendering(self):
         app = self.app
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def slash(request):
             return 'ok'
 
@@ -221,11 +224,11 @@ class KleinResourceTests(unittest.TestCase):
     def test_branchWithExplicitChildBranch(self):
         app = self.app
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def slash(request):
             return 'ok'
 
-        @app.route("/zeus/")
+        @app.route("/zeus/", branch=True)
         def wooo(request):
             return 'zeus'
 
@@ -312,7 +315,7 @@ class KleinResourceTests(unittest.TestCase):
         app = self.app
         request = requestMock("/resource/children/betty")
 
-        @app.route("/resource/children/")
+        @app.route("/resource/children/", branch=True)
         def children(request):
             return ChildrenResource()
 
@@ -331,7 +334,7 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock("/resource/children/")
 
-        @app.route("/resource/children/")
+        @app.route("/resource/children/", branch=True)
         def children(request):
             return ChildrenResource()
 
@@ -400,7 +403,7 @@ class KleinResourceTests(unittest.TestCase):
         app = self.app
         request = requestMock("/__init__.py")
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
@@ -422,7 +425,7 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock("/static/__init__.py")
 
-        @app.route("/static/")
+        @app.route("/static/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
@@ -443,7 +446,7 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock("/")
 
-        @app.route("/")
+        @app.route("/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
@@ -451,9 +454,82 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             self.assertEqual(request.write.call_count, 1)
-            [call] = request.write.mock_calls
-            self.assertIn('Directory listing', call[1][0])
+            [c] = request.write.mock_calls
+            self.assertIn('Directory listing', c[1][0])
             request.finish.assert_called_once_with()
 
         d.addCallback(_cb)
         return d
+
+    def test_addSlash(self):
+        app = self.app
+        request = requestMock("/foo")
+
+        @app.route("/foo/")
+        def foo(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.setHeader.call_count, 3)
+            request.setHeader.assert_has_calls(
+                [call('Content-Type', 'text/html; charset=utf-8'),
+                 call('Content-Length', '259'),
+                 call('Location', 'http://localhost:8080/foo/')])
+
+        d.addCallback(_cb)
+        return d
+
+    def test_methodNotAllowed(self):
+        app = self.app
+        request = requestMock("/foo", method='DELETE')
+
+        @app.route("/foo", methods=['GET'])
+        def foo(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 405)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_methodNotAllowedWithRootCollection(self):
+        app = self.app
+        request = requestMock("/foo/bar", method='DELETE')
+
+        @app.route("/foo/bar", methods=['GET'])
+        def foobar(request):
+            return "foo/bar"
+
+        @app.route("/foo/", methods=['DELETE'])
+        def foo(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 405)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_noImplicitBranch(self):
+        app = self.app
+        request = requestMock("/foo")
+
+        @app.route("/")
+        def root(request):
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 404)
+
+        d.addCallback(_cb)
+        return d
+

@@ -123,6 +123,12 @@ class Klein(object):
         @param url: A werkzeug URL pattern given to C{werkzeug.routing.Rule}.
         @type url: str
 
+        @param branch: A bool indiciated if a branch endpoint should
+            be added that allows all child path segments that don't
+            match some other route to be consumed.  Default C{False}.
+        @type branch: bool
+
+
         @returns: decorated handler function.
         """
         def call(instance, f, *args, **kwargs):
@@ -133,7 +139,8 @@ class Klein(object):
 
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
-            if url.endswith('/'):
+            if kwargs.pop('branch', False):
+
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
@@ -143,7 +150,7 @@ class Klein(object):
                     return call(instance, f, request, *a, **kw)
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
-                self._url_map.add(Rule(url + '<path:__rest__>', *args, **branchKwargs))
+                self._url_map.add(Rule(url.rstrip('/') + '/' + '<path:__rest__>', *args, **branchKwargs))
 
             @wraps(f)
             def _f(instance, request, *a, **kw):

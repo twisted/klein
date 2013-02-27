@@ -35,7 +35,7 @@ Static files
 ~~~~~~~~~~~~
 
 Helpfully you can also return a ``twisted.web.resource.IResource`` such as
-``static.File``.  If the URL passed to ``route`` ends in a ``/`` then the
+``static.File``.  If the ``branch=True`` is passed to ``route`` the
 returned ``IResource`` will also be allowed to handle all children path
 segments.  So ``http://localhost:8080/static/img.gif`` should return an
 image and ``http://localhost:8080/static/`` should return a directory
@@ -46,7 +46,7 @@ listing.
     from twisted.web.static import File
     from klein import run, route
 
-    @route('/static/')
+    @route('/static/', branch=True)
     def static(request):
         return File("./static")
 

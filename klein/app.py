@@ -2,6 +2,7 @@
 Applications are great.  Lets have more of them.
 """
 import sys
+import weakref
 
 from functools import wraps
 
@@ -45,7 +46,7 @@ class Klein(object):
     @ivar _endpoints: A C{dict} mapping endpoint names to handler functions.
     """
 
-    _bound_klein_instances = {}
+    _bound_klein_instances = weakref.WeakKeyDictionary()
 
     def __init__(self):
         self._url_map = Map()

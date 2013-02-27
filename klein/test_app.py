@@ -153,7 +153,7 @@ class KleinTestCase(unittest.TestCase):
             def __init__(self):
                 self.bar_calls = []
 
-            @app.route("/bar/")
+            @app.route("/bar/", branch=True)
             def bar(self, request):
                 self.bar_calls.append((self, request))
                 return "bar"

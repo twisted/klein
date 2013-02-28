@@ -7,7 +7,7 @@ from twisted.trial import unittest
 from klein import Klein
 from klein.resource import KleinResource
 
-from twisted.internet.defer import succeed, Deferred
+from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -27,6 +27,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
         body = ''
 
     request = server.Request(DummyChannel(), False)
+    request.site = Mock(server.Site)
     request.gotLength(len(body))
     request.content = StringIO()
     request.content.write(body)
@@ -51,6 +52,8 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
 
     request.registerProducer = registerProducer
     request.unregisterProducer = Mock()
+
+    request.processingFailed = Mock(wraps=request.processingFailed)
 
     return request
 
@@ -533,3 +536,78 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+    def test_handlerRaises(self):
+        app = self.app
+        request = requestMock("/")
+
+        failures = []
+
+        class RouteFailureTest(Exception):
+            pass
+
+        @app.route("/")
+        def root(request):
+            def _capture_failure(f):
+                failures.append(f)
+                return f
+
+            return fail(RouteFailureTest("die")).addErrback(_capture_failure)
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 500)
+            request.processingFailed.assert_called_once_with(failures[0])
+            self.flushLoggedErrors(RouteFailureTest)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_requestFinishes(self):
+        app = self.app
+        request = requestMock("/")
+
+        @app.route("/")
+        def root(request):
+            return 'foo'
+
+        request.finish()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.write.mock_calls, [call(''), call('foo')])
+            [failure] = self.flushLoggedErrors(RuntimeError)
+
+            self.assertEqual(
+                str(failure.value),
+                ("Request.write called on a request after Request.finish was "
+                 "called."))
+
+        d.addCallback(_cb)
+        return d
+
+    def test_routeHandlesRequestFinished(self):
+        app = self.app
+        request = requestMock("/")
+
+        cancelled = []
+
+        @app.route("/")
+        def root(request):
+            _d = Deferred()
+            _d.addErrback(cancelled.append)
+            request.notifyFinish().addCallback(lambda _: _d.cancel())
+            return _d
+
+        d = _render(self.kr, request)
+
+        request.finish()
+
+        def _cb(result):
+            cancelled[0].trap(CancelledError)
+            request.write.assert_called_once_with('')
+            self.assertEqual(request.processingFailed.call_count, 0)
+
+        d.addCallback(_cb)
+        return d

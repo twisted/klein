@@ -92,8 +92,19 @@ class KleinResource(Resource):
             if r is not None:
                 request.write(r)
 
-            request.finish()
+            if not request.finished:
+                request.finish()
 
         d.addCallback(process)
-        d.addErrback(request.processingFailed)
+
+        def processing_failed(failure):
+            # The failure processor writes to the request.  If the
+            # request is already finished we should suppress failure
+            # processing.
+            if request.finished:
+                return failure
+
+            request.processingFailed(failure)
+
+        d.addErrback(processing_failed)
         return server.NOT_DONE_YET

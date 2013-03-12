@@ -17,6 +17,8 @@ from twisted.web.http_headers import Headers
 
 from mock import Mock, call
 
+Deferred.debug = True
+
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
                 body=None, headers=None):
@@ -567,20 +569,21 @@ class KleinResourceTests(unittest.TestCase):
         app = self.app
         request = requestMock("/")
 
+        exception = []
+
         @app.route("/")
         def root(request):
-            return 'foo'
-
-        request.finish()
+            request.finish()
+            exception.append(
+                self.assertRaises(RuntimeError, request.write, 'foo'))
 
         d = _render(self.kr, request)
 
         def _cb(result):
             self.assertEqual(request.write.mock_calls, [call(''), call('foo')])
-            [failure] = self.flushLoggedErrors(RuntimeError)
 
             self.assertEqual(
-                str(failure.value),
+                str(exception[0]),
                 ("Request.write called on a request after Request.finish was "
                  "called."))
 

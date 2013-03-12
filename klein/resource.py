@@ -100,11 +100,11 @@ class KleinResource(Resource):
         def processing_failed(failure):
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
-            # processing.
-            if request.finished:
-                return failure
-
-            request.processingFailed(failure)
+            # processing.  We don't return failure here because there
+            # is no way to surface this failure to the user if the
+            # request is finished.
+            if not request.finished:
+                request.processingFailed(failure)
 
         d.addErrback(processing_failed)
         return server.NOT_DONE_YET

@@ -17,8 +17,6 @@ from twisted.web.http_headers import Headers
 
 from mock import Mock, call
 
-Deferred.debug = True
-
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
                 body=None, headers=None):

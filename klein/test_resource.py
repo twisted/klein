@@ -563,7 +563,7 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
-    def test_requestFinishes(self):
+    def test_requestWriteAfterFinish(self):
         app = self.app
         request = requestMock("/")
 
@@ -584,6 +584,34 @@ class KleinResourceTests(unittest.TestCase):
                 ("Request.write called on a request after Request.finish was "
                  "called."))
 
+        d.addCallback(_cb)
+        return d
+
+    def test_requestFinishAfterConnectionLost(self):
+        app = self.app
+        request = requestMock("/")
+
+        finished = Deferred()
+
+        @app.route("/")
+        def root(request):
+            request.notifyFinish().addCallback(
+                lambda _: finished.callback('foo'))
+            return finished
+
+        d = _render(self.kr, request)
+
+        request.connectionLost(Exception())
+
+        def _cb(result):
+            [failure] = self.flushLoggedErrors(RuntimeError)
+
+            self.assertEqual(
+                str(failure.value),
+                ("Request.finish called on a request after its connection was "
+                 "lost; use Request.notifyFinish to keep track of this."))
+
+        d.addErrback(lambda _: finished)
         d.addCallback(_cb)
         return d
 

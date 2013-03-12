@@ -595,15 +595,12 @@ class KleinResourceTests(unittest.TestCase):
 
         @app.route("/")
         def root(request):
-            request.notifyFinish().addCallback(
-                lambda _: finished.callback('foo'))
+            request.notifyFinish().addBoth(lambda _: finished.callback('foo'))
             return finished
 
         d = _render(self.kr, request)
 
-        request.connectionLost(Exception())
-
-        def _cb(result):
+        def _eb(result):
             [failure] = self.flushLoggedErrors(RuntimeError)
 
             self.assertEqual(
@@ -612,7 +609,10 @@ class KleinResourceTests(unittest.TestCase):
                  "lost; use Request.notifyFinish to keep track of this."))
 
         d.addErrback(lambda _: finished)
-        d.addCallback(_cb)
+        d.addErrback(_eb)
+
+        request.connectionLost(Exception())
+
         return d
 
     def test_routeHandlesRequestFinished(self):

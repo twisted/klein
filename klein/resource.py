@@ -2,7 +2,11 @@ from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.iweb import IRenderable
 from twisted.web.template import flattenString
 from twisted.web import server
+
+from twisted.python import log
+
 from twisted.internet import defer
+
 
 from werkzeug.exceptions import HTTPException
 
@@ -105,6 +109,9 @@ class KleinResource(Resource):
             # request is finished.
             if not request.finished:
                 request.processingFailed(failure)
+                return
+
+            log.err(failure, _why="Unhandled Error Processing Request.")
 
         d.addErrback(processing_failed)
         return server.NOT_DONE_YET

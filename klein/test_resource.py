@@ -292,6 +292,36 @@ class KleinResourceTests(unittest.TestCase):
         return d
 
 
+    def test_URLPath(self):
+        app = self.app
+
+        @app.route("/hey")
+        def slash(request):
+            return str(request.URLPath())
+
+        @app.route("/egg/chicken")
+        def wooo(request):
+            return str(request.URLPath())
+
+        request = requestMock('/egg/chicken')
+        request2 = requestMock('/hey')
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_with('http://localhost:8080/egg/chicken')
+            return _render(self.kr, request2)
+
+        d.addCallback(_cb)
+
+        def _cb2(result):
+            request2.write.assert_called_with('http://localhost:8080/hey')
+
+        d.addCallback(_cb2)
+
+        return d
+
+
     def test_leafResourceRendering(self):
         app = self.app
 

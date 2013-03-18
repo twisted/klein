@@ -614,3 +614,42 @@ class KleinResourceTests(unittest.TestCase):
 
         d.addCallback(_cb)
         return d
+
+    def test_url_for(self):
+        app = self.app
+        request = requestMock('/foo/1')
+
+        relative_url = [None]
+
+        @app.route("/foo/<int:bar>")
+        def foo(request, bar):
+            krequest = IKleinRequest(request)
+            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1})
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(relative_url[0], '/foo/2')
+
+        d.addCallback(_cb)
+        return d
+
+    def test_external_url_for(self):
+        app = self.app
+        request = requestMock('/foo/1')
+
+        relative_url = [None]
+
+        @app.route("/foo/<int:bar>")
+        def foo(request, bar):
+            krequest = IKleinRequest(request)
+            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1}, force_external=True)
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(relative_url[0], 'http://localhost:8080/foo/2')
+
+        d.addCallback(_cb)
+        return d
+

@@ -137,10 +137,13 @@ class Klein(object):
 
             return f(instance, *args, **kwargs)
 
+        segment_count = url.count('/')
+        if url.endswith('/'):
+            segment_count -= 1
+
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
             if kwargs.pop('branch', False):
-
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
@@ -149,12 +152,16 @@ class Klein(object):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
                     return call(instance, f, request, *a, **kw)
 
+                branch_f.segment_count = segment_count
+
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(Rule(url.rstrip('/') + '/' + '<path:__rest__>', *args, **branchKwargs))
 
             @wraps(f)
             def _f(instance, request, *a, **kw):
                 return call(instance, f, request, *a, **kw)
+
+            _f.segment_count = segment_count
 
             self._endpoints[kwargs['endpoint']] = _f
             self._url_map.add(Rule(url, *args, **kwargs))

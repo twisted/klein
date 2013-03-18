@@ -6,6 +6,7 @@ from twisted.trial import unittest
 
 from klein import Klein
 from klein.resource import KleinResource
+from klein.interfaces import IKleinRequest
 
 from twisted.internet.defer import succeed, Deferred
 from twisted.web import server
@@ -34,7 +35,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.setHost(host, port, isSecure)
     request.uri = path
     request.prepath = []
-    request.postpath = path.split('/')
+    request.postpath = path.split('/')[1:]
     request.method = method
     request.clientproto = 'HTTP/1.1'
 
@@ -295,29 +296,20 @@ class KleinResourceTests(unittest.TestCase):
     def test_URLPath(self):
         app = self.app
 
-        @app.route("/hey")
-        def slash(request):
-            return str(request.URLPath())
+        request_url = [None]
 
         @app.route("/egg/chicken")
         def wooo(request):
-            return str(request.URLPath())
+            request_url[0] = request.URLPath()
 
         request = requestMock('/egg/chicken')
-        request2 = requestMock('/hey')
 
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.write.assert_called_with('http://localhost:8080/egg/chicken')
-            return _render(self.kr, request2)
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/egg/chicken')
 
         d.addCallback(_cb)
-
-        def _cb2(result):
-            request2.write.assert_called_with('http://localhost:8080/hey')
-
-        d.addCallback(_cb2)
 
         return d
 
@@ -563,3 +555,23 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+    def test_strictSlashes(self):
+        app = self.app
+        request = requestMock("/foo/bar")
+
+        request_url = [None]
+
+        @app.route("/foo/bar/", strict_slashes=False)
+        def root(request):
+            request_url[0] = request.URLPath()
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), "http://localhost:8080/foo/bar")
+            request.write.assert_called_with('foo')
+            self.assertEqual(request.code, 200)
+
+        d.addCallback(_cb)
+        return d

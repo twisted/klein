@@ -71,6 +71,11 @@ class KleinResource(Resource):
 
             return he.get_body({})
 
+        # Try pretty hard to fix up prepath and postpath.
+        segment_count = self._app.endpoints[endpoint].segment_count
+        request.prepath.extend(request.postpath[:segment_count])
+        request.postpath = request.postpath[segment_count:]
+
         # Standard Twisted Web stuff. Defer the method action, giving us
         # something renderable or printable. Return NOT_DONE_YET and set up
         # the incremental renderer.
@@ -81,10 +86,6 @@ class KleinResource(Resource):
 
         def process(r):
             if IResource.providedBy(r):
-                while (request.postpath and
-                       request.postpath != kleinRequest.branch_segments):
-                    request.prepath.append(request.postpath.pop(0))
-
                 return request.render(getChildForRequest(r, request))
 
             if IRenderable.providedBy(r):

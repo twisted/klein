@@ -6,6 +6,7 @@ from twisted.trial import unittest
 
 from klein import Klein
 from klein.resource import KleinResource
+from klein.interfaces import IKleinRequest
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.web import server
@@ -35,7 +36,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.setHost(host, port, isSecure)
     request.uri = path
     request.prepath = []
-    request.postpath = path.split('/')
+    request.postpath = path.split('/')[1:]
     request.method = method
     request.clientproto = 'HTTP/1.1'
 
@@ -139,7 +140,6 @@ class KleinResourceTests(unittest.TestCase):
 
         request = requestMock('/', 'POST')
         request2 = requestMock('/')
-
 
         d = _render(self.kr, request)
 
@@ -532,6 +532,88 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             self.assertEqual(request.code, 404)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_strictSlashes(self):
+        app = self.app
+        request = requestMock("/foo/bar")
+
+        request_url = [None]
+
+        @app.route("/foo/bar/", strict_slashes=False)
+        def root(request):
+            request_url[0] = request.URLPath()
+            return "foo"
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), "http://localhost:8080/foo/bar")
+            request.write.assert_called_with('foo')
+            self.assertEqual(request.code, 200)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_URLPath(self):
+        app = self.app
+        request = requestMock('/egg/chicken')
+
+        request_url = [None]
+
+        @app.route("/egg/chicken")
+        def wooo(request):
+            request_url[0] = request.URLPath()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/egg/chicken')
+
+        d.addCallback(_cb)
+        return d
+
+    def test_URLPath_root(self):
+        app = self.app
+        request = requestMock('/')
+
+        request_url = [None]
+
+        @app.route("/")
+        def root(request):
+            request_url[0] = request.URLPath()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/')
+
+        d.addCallback(_cb)
+        return d
+
+    def test_URLPath_traversedResource(self):
+        app = self.app
+        request = requestMock('/resource/foo')
+
+        request_url = [None]
+
+        class URLPathResource(Resource):
+            def render(self, request):
+                request_url[0] = request.URLPath()
+
+            def getChild(self, request, segment):
+                return self
+
+        @app.route("/resource/", branch=True)
+        def root(request):
+            return URLPathResource()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/resource/foo')
 
         d.addCallback(_cb)
         return d

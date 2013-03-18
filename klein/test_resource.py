@@ -7,7 +7,7 @@ from twisted.trial import unittest
 from klein import Klein
 from klein.resource import KleinResource
 
-from twisted.internet.defer import succeed, Deferred
+from twisted.internet.defer import succeed, Deferred, gatherResults
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -295,6 +295,11 @@ class KleinResourceTests(unittest.TestCase):
     def test_URLPath(self):
         app = self.app
 
+        class URLPathResource(Resource):
+
+            def render(self, request):
+                return str(request.URLPath())
+
         @app.route("/hey")
         def slash(request):
             return str(request.URLPath())
@@ -303,23 +308,29 @@ class KleinResourceTests(unittest.TestCase):
         def wooo(request):
             return str(request.URLPath())
 
-        request = requestMock('/egg/chicken')
-        request2 = requestMock('/hey')
+        @app.route("/a/b")
+        def ab(request):
+            root = URLPathResource()
+            root.putChild('c', URLPathResource())
+            return root
 
-        d = _render(self.kr, request)
+        def check(result, request, expected):
+            request.write.assert_called_with('http://localhost:8080' + expected)
+            return result
 
-        def _cb(result):
-            request.write.assert_called_with('http://localhost:8080/egg/chicken')
-            return _render(self.kr, request2)
+        def test(url):
+            request = requestMock(url)
+            return _render(self.kr, request).addCallback(check, request, url)
 
-        d.addCallback(_cb)
+        def extractErr(err):
+            return err.value.subFailure
 
-        def _cb2(result):
-            request2.write.assert_called_with('http://localhost:8080/hey')
-
-        d.addCallback(_cb2)
-
-        return d
+        dlist = []
+        dlist.append(test('/hey'))
+        dlist.append(test('/egg/chicken'))
+        dlist.append(test('/a/b'))
+        dlist.append(test('/a/b/c'))
+        return gatherResults(dlist, consumeErrors=True).addErrback(extractErr)
 
 
     def test_leafResourceRendering(self):

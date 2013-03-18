@@ -138,7 +138,6 @@ class KleinResourceTests(unittest.TestCase):
         request = requestMock('/', 'POST')
         request2 = requestMock('/')
 
-
         d = _render(self.kr, request)
 
         def _cb(result):
@@ -287,27 +286,6 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             request.write.assert_called_with("<h1>foo</h1>")
-
-        d.addCallback(_cb)
-
-        return d
-
-
-    def test_URLPath(self):
-        app = self.app
-
-        request_url = [None]
-
-        @app.route("/egg/chicken")
-        def wooo(request):
-            request_url[0] = request.URLPath()
-
-        request = requestMock('/egg/chicken')
-
-        d = _render(self.kr, request)
-
-        def _cb(result):
-            self.assertEqual(str(request_url[0]), 'http://localhost:8080/egg/chicken')
 
         d.addCallback(_cb)
 
@@ -572,6 +550,67 @@ class KleinResourceTests(unittest.TestCase):
             self.assertEqual(str(request_url[0]), "http://localhost:8080/foo/bar")
             request.write.assert_called_with('foo')
             self.assertEqual(request.code, 200)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_URLPath(self):
+        app = self.app
+        request = requestMock('/egg/chicken')
+
+        request_url = [None]
+
+        @app.route("/egg/chicken")
+        def wooo(request):
+            request_url[0] = request.URLPath()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/egg/chicken')
+
+        d.addCallback(_cb)
+        return d
+
+    def test_URLPath_root(self):
+        app = self.app
+        request = requestMock('/')
+
+        request_url = [None]
+
+        @app.route("/")
+        def root(request):
+            request_url[0] = request.URLPath()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/')
+
+        d.addCallback(_cb)
+        return d
+
+    def test_URLPath_traversedResource(self):
+        app = self.app
+        request = requestMock('/resource/foo')
+
+        request_url = [None]
+
+        class URLPathResource(Resource):
+            def render(self, request):
+                request_url[0] = request.URLPath()
+
+            def getChild(self, request, segment):
+                return self
+
+        @app.route("/resource/", branch=True)
+        def root(request):
+            return URLPathResource()
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(str(request_url[0]), 'http://localhost:8080/resource/foo')
 
         d.addCallback(_cb)
         return d

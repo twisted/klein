@@ -6,9 +6,9 @@ from twisted.trial import unittest
 
 from klein import Klein
 from klein.resource import KleinResource
-from klein.interfaces import IKleinRequest
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
+from twisted.internet.error import ConnectionLost
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -61,6 +61,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
 
 def _render(resource, request):
     result = resource.render(request)
+
     if isinstance(result, str):
         request.write(result)
         request.finish()
@@ -566,6 +567,7 @@ class KleinResourceTests(unittest.TestCase):
         @app.route("/egg/chicken")
         def wooo(request):
             request_url[0] = request.URLPath()
+            return 'foo'
 
         d = _render(self.kr, request)
 
@@ -692,7 +694,7 @@ class KleinResourceTests(unittest.TestCase):
         d.addErrback(lambda _: finished)
         d.addErrback(_eb)
 
-        request.connectionLost(Exception())
+        request.connectionLost(ConnectionLost())
 
         return d
 
@@ -719,4 +721,66 @@ class KleinResourceTests(unittest.TestCase):
             self.assertEqual(request.processingFailed.call_count, 0)
 
         d.addCallback(_cb)
+        return d
+
+    def test_cancelledDeferred(self):
+        app = self.app
+        request = requestMock("/")
+
+        inner_d = Deferred()
+
+        @app.route("/")
+        def root(request):
+            return inner_d
+
+        d = _render(self.kr, request)
+
+        inner_d.cancel()
+
+        def _cb(result):
+            self.assertIdentical(result, None)
+            self.flushLoggedErrors(CancelledError)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_cancelledIsEatenOnConnectionLost(self):
+        app = self.app
+        request = requestMock("/")
+
+        @app.route("/")
+        def root(request):
+            _d = Deferred()
+            request.notifyFinish().addErrback(lambda _: _d.cancel())
+            return _d
+
+        d = _render(self.kr, request)
+
+        request.connectionLost(ConnectionLost())
+
+        def _cb(result):
+            self.assertEqual(request.processingFailed.call_count, 0)
+
+        d.addErrback(lambda f: f.trap(ConnectionLost))
+        d.addCallback(_cb)
+        return d
+
+    def test_cancelsOnConnectionLost(self):
+        app = self.app
+        request = requestMock("/")
+
+        handler_d = Deferred()
+
+        @app.route("/")
+        def root(request):
+            return handler_d
+
+        d = _render(self.kr, request)
+        request.connectionLost(ConnectionLost())
+
+        handler_d.addErrback(lambda f: f.trap(CancelledError))
+
+        d.addErrback(lambda f: f.trap(ConnectionLost))
+        d.addCallback(lambda _: handler_d)
+
         return d

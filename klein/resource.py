@@ -76,6 +76,14 @@ class KleinResource(Resource):
         request.prepath.extend(request.postpath[:segment_count])
         request.postpath = request.postpath[segment_count:]
 
+        # Make sure we'll notice when the connection goes away unambiguously.
+        request_finished = [False]
+
+        def _finish(result):
+            request_finished[0] = True
+
+        request.notifyFinish().addBoth(_finish)
+
         # Standard Twisted Web stuff. Defer the method action, giving us
         # something renderable or printable. Return NOT_DONE_YET and set up
         # the incremental renderer.
@@ -83,6 +91,8 @@ class KleinResource(Resource):
                                 endpoint,
                                 request,
                                 **kwargs)
+
+        request.notifyFinish().addErrback(lambda _: d.cancel())
 
         def process(r):
             if IResource.providedBy(r):
@@ -97,7 +107,7 @@ class KleinResource(Resource):
             if r is not None:
                 request.write(r)
 
-            if not request.finished:
+            if not request_finished[0]:
                 request.finish()
 
         d.addCallback(process)
@@ -108,11 +118,12 @@ class KleinResource(Resource):
             # processing.  We don't return failure here because there
             # is no way to surface this failure to the user if the
             # request is finished.
-            if not request.finished:
+            if not request_finished[0]:
                 request.processingFailed(failure)
                 return
 
-            log.err(failure, _why="Unhandled Error Processing Request.")
+            if not failure.check(defer.CancelledError):
+                log.err(failure, _why="Unhandled Error Processing Request.")
 
         d.addErrback(processing_failed)
         return server.NOT_DONE_YET

@@ -8,7 +8,17 @@ from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
 
-__all__ = ["KleinResource"]
+__all__ = ["KleinResource", "ensure_utf8_bytes"]
+
+
+def ensure_utf8_bytes(v):
+    """
+    Coerces a value which is either a C{unicode} or C{str} to a C{str}.
+    If ``v`` is a C{unicode} object it is encoded as utf-8.
+    """
+    if isinstance(v, unicode):
+        v = v.encode("utf-8")
+    return v
 
 
 class KleinResource(Resource):
@@ -63,9 +73,9 @@ class KleinResource(Resource):
             resp = he.get_response({})
 
             for header, value in resp.headers:
-                request.setHeader(header, value)
+                request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
 
-            return he.get_body({})
+            return ensure_utf8_bytes(he.get_body({}))
 
         # Try pretty hard to fix up prepath and postpath.
         segment_count = self._app.endpoints[endpoint].segment_count

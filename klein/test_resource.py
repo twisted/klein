@@ -5,7 +5,7 @@ from StringIO import StringIO
 from twisted.trial import unittest
 
 from klein import Klein
-from klein.resource import KleinResource
+from klein.resource import KleinResource, ensure_utf8_bytes
 from klein.interfaces import IKleinRequest
 
 from twisted.internet.defer import succeed, Deferred
@@ -653,3 +653,8 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+
+    def test_ensure_utf8_bytes(self):
+        self.assertEqual(ensure_utf8_bytes(u"abc"), "abc")
+        self.assertEqual(ensure_utf8_bytes(u"\u2202"), "\xe2\x88\x82")
+        self.assertEqual(ensure_utf8_bytes("\xe2\x88\x82"), "\xe2\x88\x82")

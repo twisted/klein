@@ -2,7 +2,11 @@ from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.iweb import IRenderable
 from twisted.web.template import flattenString
 from twisted.web import server
+
+from twisted.python import log
+
 from twisted.internet import defer
+
 
 from werkzeug.exceptions import HTTPException
 
@@ -82,6 +86,14 @@ class KleinResource(Resource):
         request.prepath.extend(request.postpath[:segment_count])
         request.postpath = request.postpath[segment_count:]
 
+        # Make sure we'll notice when the connection goes away unambiguously.
+        request_finished = [False]
+
+        def _finish(result):
+            request_finished[0] = True
+
+        request.notifyFinish().addBoth(_finish)
+
         # Standard Twisted Web stuff. Defer the method action, giving us
         # something renderable or printable. Return NOT_DONE_YET and set up
         # the incremental renderer.
@@ -89,6 +101,8 @@ class KleinResource(Resource):
                                 endpoint,
                                 request,
                                 **kwargs)
+
+        request.notifyFinish().addErrback(lambda _: d.cancel())
 
         def process(r):
             if IResource.providedBy(r):
@@ -103,8 +117,23 @@ class KleinResource(Resource):
             if r is not None:
                 request.write(r)
 
-            request.finish()
+            if not request_finished[0]:
+                request.finish()
 
         d.addCallback(process)
-        d.addErrback(request.processingFailed)
+
+        def processing_failed(failure):
+            # The failure processor writes to the request.  If the
+            # request is already finished we should suppress failure
+            # processing.  We don't return failure here because there
+            # is no way to surface this failure to the user if the
+            # request is finished.
+            if not request_finished[0]:
+                request.processingFailed(failure)
+                return
+
+            if not failure.check(defer.CancelledError):
+                log.err(failure, _why="Unhandled Error Processing Request.")
+
+        d.addErrback(processing_failed)
         return server.NOT_DONE_YET

@@ -784,7 +784,6 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
-<<<<<<< HEAD
     def test_cancelledIsEatenOnConnectionLost(self):
         app = self.app
         request = requestMock("/")
@@ -825,10 +824,8 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(lambda _: handler_d)
 
         return d
-=======
 
     def test_ensure_utf8_bytes(self):
         self.assertEqual(ensure_utf8_bytes(u"abc"), "abc")
         self.assertEqual(ensure_utf8_bytes(u"\u2202"), "\xe2\x88\x82")
         self.assertEqual(ensure_utf8_bytes("\xe2\x88\x82"), "\xe2\x88\x82")
->>>>>>> master

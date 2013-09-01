@@ -1,6 +1,12 @@
 NEWS
 ====
 
+0.2.1 - 2013-07-23
+------------------
+ * [BUG] Klein has been updated to support the latest werkzeug release: [`#21 <https://github.com/twisted/klein/pull/21>`_]
+ * [BUG] request.URLPath inside a handler points to the correct path. [`#15 <https://github.com/twisted/klein/pull/15>`_]
+ * [ENHANCEMENT] IKleinRequest(request).url_for is supported: [`#16 <IKleinRequest(request).url_for>`_]
+
 0.2.0 - 2013-02-27
 ------------------
  * [BUG] Remove support for implicit branch routes. [`#12 <https://github.com/twisted/klein/pull/12>`_]

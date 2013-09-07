@@ -5,10 +5,12 @@ from StringIO import StringIO
 from twisted.trial import unittest
 
 from klein import Klein
-from klein.resource import KleinResource, ensure_utf8_bytes
-from klein.interfaces import IKleinRequest
 
-from twisted.internet.defer import succeed, Deferred
+from klein.interfaces import IKleinRequest
+from klein.resource import KleinResource, ensure_utf8_bytes
+
+from twisted.internet.defer import succeed, Deferred, fail, CancelledError
+from twisted.internet.error import ConnectionLost
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -28,6 +30,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
         body = ''
 
     request = server.Request(DummyChannel(), False)
+    request.site = Mock(server.Site)
     request.gotLength(len(body))
     request.content = StringIO()
     request.content.write(body)
@@ -53,11 +56,14 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.registerProducer = registerProducer
     request.unregisterProducer = Mock()
 
+    request.processingFailed = Mock(wraps=request.processingFailed)
+
     return request
 
 
 def _render(resource, request):
     result = resource.render(request)
+
     if isinstance(result, str):
         request.write(result)
         request.finish()
@@ -563,6 +569,7 @@ class KleinResourceTests(unittest.TestCase):
         @app.route("/egg/chicken")
         def wooo(request):
             request_url[0] = request.URLPath()
+            return 'foo'
 
         d = _render(self.kr, request)
 
@@ -615,6 +622,109 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+    def test_handlerRaises(self):
+        app = self.app
+        request = requestMock("/")
+
+        failures = []
+
+        class RouteFailureTest(Exception):
+            pass
+
+        @app.route("/")
+        def root(request):
+            def _capture_failure(f):
+                failures.append(f)
+                return f
+
+            return fail(RouteFailureTest("die")).addErrback(_capture_failure)
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 500)
+            request.processingFailed.assert_called_once_with(failures[0])
+            self.flushLoggedErrors(RouteFailureTest)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_requestWriteAfterFinish(self):
+        app = self.app
+        request = requestMock("/")
+
+        @app.route("/")
+        def root(request):
+            request.finish()
+            return 'foo'
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.write.mock_calls, [call(''), call('foo')])
+            [failure] = self.flushLoggedErrors(RuntimeError)
+
+            self.assertEqual(
+                str(failure.value),
+                ("Request.write called on a request after Request.finish was "
+                 "called."))
+
+        d.addCallback(_cb)
+        return d
+
+    def test_requestFinishAfterConnectionLost(self):
+        app = self.app
+        request = requestMock("/")
+
+        finished = Deferred()
+
+        @app.route("/")
+        def root(request):
+            request.notifyFinish().addBoth(lambda _: finished.callback('foo'))
+            return finished
+
+        d = _render(self.kr, request)
+
+        def _eb(result):
+            [failure] = self.flushLoggedErrors(RuntimeError)
+
+            self.assertEqual(
+                str(failure.value),
+                ("Request.finish called on a request after its connection was "
+                 "lost; use Request.notifyFinish to keep track of this."))
+
+        d.addErrback(lambda _: finished)
+        d.addErrback(_eb)
+
+        request.connectionLost(ConnectionLost())
+
+        return d
+
+    def test_routeHandlesRequestFinished(self):
+        app = self.app
+        request = requestMock("/")
+
+        cancelled = []
+
+        @app.route("/")
+        def root(request):
+            _d = Deferred()
+            _d.addErrback(cancelled.append)
+            request.notifyFinish().addCallback(lambda _: _d.cancel())
+            return _d
+
+        d = _render(self.kr, request)
+
+        request.finish()
+
+        def _cb(result):
+            cancelled[0].trap(CancelledError)
+            request.write.assert_called_once_with('')
+            self.assertEqual(request.processingFailed.call_count, 0)
+
+        d.addCallback(_cb)
+        return d
+
     def test_url_for(self):
         app = self.app
         request = requestMock('/foo/1')
@@ -630,6 +740,27 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             self.assertEqual(relative_url[0], '/foo/2')
+
+        d.addCallback(_cb)
+        return d
+
+    def test_cancelledDeferred(self):
+        app = self.app
+        request = requestMock("/")
+
+        inner_d = Deferred()
+
+        @app.route("/")
+        def root(request):
+            return inner_d
+
+        d = _render(self.kr, request)
+
+        inner_d.cancel()
+
+        def _cb(result):
+            self.assertIdentical(result, None)
+            self.flushLoggedErrors(CancelledError)
 
         d.addCallback(_cb)
         return d
@@ -653,6 +784,46 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+    def test_cancelledIsEatenOnConnectionLost(self):
+        app = self.app
+        request = requestMock("/")
+
+        @app.route("/")
+        def root(request):
+            _d = Deferred()
+            request.notifyFinish().addErrback(lambda _: _d.cancel())
+            return _d
+
+        d = _render(self.kr, request)
+
+        request.connectionLost(ConnectionLost())
+
+        def _cb(result):
+            self.assertEqual(request.processingFailed.call_count, 0)
+
+        d.addErrback(lambda f: f.trap(ConnectionLost))
+        d.addCallback(_cb)
+        return d
+
+    def test_cancelsOnConnectionLost(self):
+        app = self.app
+        request = requestMock("/")
+
+        handler_d = Deferred()
+
+        @app.route("/")
+        def root(request):
+            return handler_d
+
+        d = _render(self.kr, request)
+        request.connectionLost(ConnectionLost())
+
+        handler_d.addErrback(lambda f: f.trap(CancelledError))
+
+        d.addErrback(lambda f: f.trap(ConnectionLost))
+        d.addCallback(lambda _: handler_d)
+
+        return d
 
     def test_ensure_utf8_bytes(self):
         self.assertEqual(ensure_utf8_bytes(u"abc"), "abc")

@@ -34,6 +34,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.gotLength(len(body))
     request.content = StringIO()
     request.content.write(body)
+    request.content.seek(0)
     request.requestHeaders = Headers(headers)
     request.setHost(host, port, isSecure)
     request.uri = path

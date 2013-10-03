@@ -650,6 +650,34 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+    def test_genericErrorHandler(self):
+        app = self.app
+        request = requestMock("/")
+
+        failures = []
+
+        class RouteFailureTest(Exception):
+            pass
+
+        @app.route("/")
+        def root(request):
+            raise RouteFailureTest("not implemented")
+
+        @app.handle_errors
+        def handle_errors(request, failure):
+            failures.append(failure)
+            request.setResponseCode(501)
+            return
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.code, 501)
+            assert not request.processingFailed.called
+
+        d.addCallback(_cb)
+        return d
+
     def test_requestWriteAfterFinish(self):
         app = self.app
         request = requestMock("/")

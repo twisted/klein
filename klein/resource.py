@@ -104,13 +104,7 @@ class KleinResource(Resource):
 
         request.notifyFinish().addErrback(lambda _: d.cancel())
 
-        def process(r):
-            if IResource.providedBy(r):
-                return request.render(getChildForRequest(r, request))
-
-            if IRenderable.providedBy(r):
-                return flattenString(request, r).addCallback(process)
-
+        def write_response(r):
             if isinstance(r, unicode):
                 r = r.encode('utf-8')
 
@@ -120,20 +114,46 @@ class KleinResource(Resource):
             if not request_finished[0]:
                 request.finish()
 
+        def process(r):
+            if IResource.providedBy(r):
+                return request.render(getChildForRequest(r, request))
+
+            if IRenderable.providedBy(r):
+                return flattenString(request, r).addCallback(process)
+
+            return r
+
         d.addCallback(process)
 
-        def processing_failed(failure):
+        def processing_failed(failure, error_handlers):
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
             # processing.  We don't return failure here because there
             # is no way to surface this failure to the user if the
             # request is finished.
-            if not request_finished[0]:
+            if request_finished[0]:
+                if not failure.check(defer.CancelledError):
+                    log.err(failure, _why="Unhandled Error Processing Request.")
+                return
+
+            if len(error_handlers) == 0:
                 request.processingFailed(failure)
                 return
 
-            if not failure.check(defer.CancelledError):
-                log.err(failure, _why="Unhandled Error Processing Request.")
+            error_handler = error_handlers[0]
 
-        d.addErrback(processing_failed)
+            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
+            if failure.check(*error_handler[0]):
+                d = defer.maybeDeferred(self._app.execute_error_handler,
+                                        error_handler[1],
+                                        request,
+                                        failure)
+
+                return d.addErrback(processing_failed, error_handlers[1:])
+
+            return processing_failed(failure, error_handlers[1:])
+
+
+        d.addErrback(processing_failed, self._app._error_handlers)
+        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
         return server.NOT_DONE_YET

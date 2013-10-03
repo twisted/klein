@@ -678,6 +678,49 @@ class KleinResourceTests(unittest.TestCase):
         d.addCallback(_cb)
         return d
 
+    def test_typeSpecificErrorHandlers(self):
+        app = self.app
+        request = requestMock("/")
+        type_error_handled = False
+        generic_error_handled = False
+
+        failures = []
+
+        class TypeFilterTestError(Exception):
+            pass
+
+        @app.route("/")
+        def root(request):
+            return fail(TypeFilterTestError("not implemented"))
+
+        @app.handle_errors(TypeError)
+        def handle_type_error(request, failure):
+            type_error_handled = True
+            return
+
+        @app.handle_errors(TypeFilterTestError)
+        def handle_type_filter_test_error(request, failure):
+            failures.append(failure)
+            request.setResponseCode(501)
+            return
+
+        @app.handle_errors
+        def handle_generic_error(request, failure):
+            generic_error_handled = True
+            return
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.processingFailed.called, False)
+            self.assertEqual(type_error_handled, False)
+            self.assertEqual(generic_error_handled, False)
+            self.assertEqual(len(failures), 1)
+            self.assertEqual(request.code, 501)
+
+        d.addCallback(_cb)
+        return d
+
     def test_requestWriteAfterFinish(self):
         app = self.app
         request = requestMock("/")

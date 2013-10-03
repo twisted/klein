@@ -87,6 +87,13 @@ class Klein(object):
         return endpoint_f(self._instance, *args, **kwargs)
 
 
+    def execute_error_handler(self, handler, request, failure):
+        """
+        Execute the passed error handler, possibly with a bound instance.
+        """
+        return handler(self._instance, request, failure)
+
+
     def resource(self):
         """
         Return an L{IResource} which suitably wraps this app.

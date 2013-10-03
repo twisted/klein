@@ -22,6 +22,13 @@ from klein.interfaces import IKleinRequest
 __all__ = ['Klein', 'run', 'route', 'resource']
 
 
+def _call(instance, f, *args, **kwargs):
+    if instance is None:
+        return f(*args, **kwargs)
+
+    return f(instance, *args, **kwargs)
+
+
 class KleinRequest(object):
     implements(IKleinRequest)
 
@@ -51,6 +58,7 @@ class Klein(object):
     def __init__(self):
         self._url_map = Map()
         self._endpoints = {}
+        self._error_handlers = []
         self._instance = None
 
 
@@ -102,6 +110,7 @@ class Klein(object):
             k = self.__class__()
             k._url_map = self._url_map
             k._endpoints = self._endpoints
+            k._error_handlers = self._error_handlers
             k._instance = instance
             self._bound_klein_instances[instance] = k
 
@@ -131,12 +140,6 @@ class Klein(object):
 
         @returns: decorated handler function.
         """
-        def call(instance, f, *args, **kwargs):
-            if instance is None:
-                return f(*args, **kwargs)
-
-            return f(instance, *args, **kwargs)
-
         segment_count = url.count('/')
         if url.endswith('/'):
             segment_count -= 1
@@ -150,7 +153,7 @@ class Klein(object):
                 @wraps(f)
                 def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
-                    return call(instance, f, request, *a, **kw)
+                    return _call(instance, f, request, *a, **kw)
 
                 branch_f.segment_count = segment_count
 
@@ -159,13 +162,67 @@ class Klein(object):
 
             @wraps(f)
             def _f(instance, request, *a, **kw):
-                return call(instance, f, request, *a, **kw)
+                return _call(instance, f, request, *a, **kw)
 
             _f.segment_count = segment_count
 
             self._endpoints[kwargs['endpoint']] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
             return f
+
+        return deco
+
+
+    def handle_errors(self, f_or_exception, *additional_exceptions):
+        """
+        Register an error handler. This decorator supports two syntaxes. The
+        simpler of these can be used to register a handler for all C{Exception}
+        types::
+
+            @app.handle_errors
+            def error_handler(request, failure):
+                request.setResponseCode(500)
+                return 'Uh oh'
+
+        Alternately, a handler can be registered for one or more specific
+        C{Exception} tyes::
+
+            @aapp.handle_errors(EncodingError, ValidationError):
+            def error_handler(request, failure)
+                request.setResponseCode(400)
+                return failure.getTraceback()
+
+        The handler will be passed a L{twisted.web.server.Request} as well as a
+        L{twisted.python.failure.Failure} instance. Error handlers may return a
+        deferred, a failure or a response body.
+
+        If more than one error handler is registered, the handlers will be
+        executed in order until a handler is encountered which completes
+        successfully.
+
+        @param f_or_exception: An error handler function, or an C{Exception}
+            subclass to scope the decorated handler to.
+        @type f_or_exception: C{function} or C{Exception}
+
+        @param additional_exceptions Additional C{Exception} subclasses to
+            scope the decorated function to.
+        @type additional_exceptions C{list} of C{Exception}s
+
+        @returns: decorated error handler function.
+        """
+        # Try to detect calls using the "simple" @app.handle_error syntax by
+        # introspecting the first argument - if it isn't a type which
+        # subclasses Exception we assume the simple syntax was used.
+        if not isinstance(f_or_exception, type) or not issubclass(f_or_exception, Exception):
+            return self.handle_errors(Exception)(f_or_exception)
+
+        def deco(f):
+            @wraps(f)
+            def _f(instance, request, failure):
+                return _call(instance, f, request, failure)
+
+            self._error_handlers.append(([f_or_exception] + list(additional_exceptions), _f))
+            return _f
 
         return deco
 

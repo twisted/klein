@@ -204,8 +204,10 @@ class Klein(object):
         deferred, a failure or a response body.
 
         If more than one error handler is registered, the handlers will be
-        executed in order until a handler is encountered which completes
-        successfully.
+        executed in the order in which they are defined, until a handler is
+        encountered which completes successfully. If no handler completes
+        successfully, L{twisted.web.server.Request}'s processingFailed() method
+        will be called.
 
         @param f_or_exception: An error handler function, or an C{Exception}
             subclass to scope the decorated handler to.

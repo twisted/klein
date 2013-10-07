@@ -209,6 +209,17 @@ class Klein(object):
         successfully, L{twisted.web.server.Request}'s processingFailed() method
         will be called.
 
+        In addition to handling errors that occur within a route handler, error
+        handlers also handle any C{werkzeug.exceptions.HTTPException} which is
+        raised during routing. In particular, C{werkzeug.exceptions.NotFound}
+        will be raised if no matching route is found, so to return a custom 404
+        users can do the following::
+
+            @app.handle_errors(NotFound)
+            def error_handler(request, failure):
+                request.setResponseCode(404)
+                return 'Not found'
+
         @param f_or_exception: An error handler function, or an C{Exception}
             subclass to scope the decorated handler to.
         @type f_or_exception: C{function} or C{Exception}

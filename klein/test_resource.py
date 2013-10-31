@@ -18,6 +18,8 @@ from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 from twisted.web.http_headers import Headers
 
+from werkzeug.exceptions import NotFound
+
 from mock import Mock, call
 
 
@@ -717,6 +719,36 @@ class KleinResourceTests(unittest.TestCase):
             self.assertEqual(generic_error_handled, False)
             self.assertEqual(len(failures), 1)
             self.assertEqual(request.code, 501)
+
+        d.addCallback(_cb)
+        return d
+
+    def test_notFoundException(self):
+        app = self.app
+        request = requestMock("/foo")
+        generic_error_handled = False
+
+        @app.route("/")
+        def root(request):
+            pass
+
+        @app.handle_errors(NotFound)
+        def handle_not_found(request, failure):
+            request.setResponseCode(404)
+            return 'Custom Not Found'
+
+        @app.handle_errors
+        def handle_generic_error(request, failure):
+            generic_error_handled = True
+            return
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            self.assertEqual(request.processingFailed.called, False)
+            self.assertEqual(generic_error_handled, False)
+            self.assertEqual(request.code, 404)
+            request.write.assert_called_once_with('Custom Not Found')
 
         d.addCallback(_cb)
         return d

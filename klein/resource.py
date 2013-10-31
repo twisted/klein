@@ -66,43 +66,40 @@ class KleinResource(Resource):
         kleinRequest = IKleinRequest(request)
         kleinRequest.mapper = mapper
 
-        # Actually doing the match right here. This can cause an exception to
-        # percolate up, which we can catch and render directly in order to
-        # save ourselves some legwork.
-        try:
-            (rule, kwargs) = mapper.match(return_rule=True)
-            endpoint = rule.endpoint
-        except HTTPException as he:
-            request.setResponseCode(he.code)
-            resp = he.get_response({})
-
-            for header, value in resp.headers:
-                request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
-
-            return ensure_utf8_bytes(he.get_body({}))
-
-        # Try pretty hard to fix up prepath and postpath.
-        segment_count = self._app.endpoints[endpoint].segment_count
-        request.prepath.extend(request.postpath[:segment_count])
-        request.postpath = request.postpath[segment_count:]
-
         # Make sure we'll notice when the connection goes away unambiguously.
         request_finished = [False]
 
         def _finish(result):
             request_finished[0] = True
 
-        request.notifyFinish().addBoth(_finish)
+        def _execute():
+            # Actually doing the match right here. This can cause an exception
+            # to percolate up. If that happens it will be handled below in
+            # processing_failed, either by a user-registered error handler or
+            # one of our defaults.
+            (rule, kwargs) = mapper.match(return_rule=True)
+            endpoint = rule.endpoint
 
-        # Standard Twisted Web stuff. Defer the method action, giving us
-        # something renderable or printable. Return NOT_DONE_YET and set up
-        # the incremental renderer.
-        d = defer.maybeDeferred(self._app.execute_endpoint,
-                                endpoint,
-                                request,
-                                **kwargs)
+            # Try pretty hard to fix up prepath and postpath.
+            segment_count = self._app.endpoints[endpoint].segment_count
+            request.prepath.extend(request.postpath[:segment_count])
+            request.postpath = request.postpath[segment_count:]
 
-        request.notifyFinish().addErrback(lambda _: d.cancel())
+            request.notifyFinish().addBoth(_finish)
+
+            # Standard Twisted Web stuff. Defer the method action, giving us
+            # something renderable or printable. Return NOT_DONE_YET and set up
+            # the incremental renderer.
+            d = defer.maybeDeferred(self._app.execute_endpoint,
+                                    endpoint,
+                                    request,
+                                    **kwargs)
+
+            request.notifyFinish().addErrback(lambda _: d.cancel())
+
+            return d
+
+        d = defer.maybeDeferred(_execute)
 
         def write_response(r):
             if isinstance(r, unicode):
@@ -136,9 +133,20 @@ class KleinResource(Resource):
                     log.err(failure, _why="Unhandled Error Processing Request.")
                 return
 
+            # If there are no more registered handlers, apply some defaults
             if len(error_handlers) == 0:
-                request.processingFailed(failure)
-                return
+                if failure.check(HTTPException):
+                    he = failure.value
+                    request.setResponseCode(he.code)
+                    resp = he.get_response({})
+
+                    for header, value in resp.headers:
+                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
+
+                    return ensure_utf8_bytes(he.get_body({}))
+                else:
+                    request.processingFailed(failure)
+                    return
 
             error_handler = error_handlers[0]
 

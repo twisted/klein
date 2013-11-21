@@ -1,6 +1,10 @@
 NEWS
 ====
 
+0.2.2 - 2013-11-21
+-------------------
+ * [ENHANCEMENT] Klein.handle_errors now allows the definition of custom error handling behavior. [`#26 <https://github.com/twisted/klein/pull/26>`_]
+
 0.2.1 - 2013-07-23
 ------------------
  * [BUG] Klein has been updated to support the latest werkzeug release: [`#21 <https://github.com/twisted/klein/pull/21>`_]

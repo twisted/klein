@@ -25,6 +25,12 @@ def ensure_utf8_bytes(v):
     return v
 
 
+class StandInRenderable(object):
+    """
+    A standin for a Renderable.
+    """
+
+
 class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
@@ -100,32 +106,27 @@ class KleinResource(Resource):
             return d
 
         def write_response(r):
-            if isinstance(r, unicode):
-                r = r.encode('utf-8')
+            if not isinstance(r, StandInRenderable):
 
-            if r is not None:
-                request.write(r)
+                if isinstance(r, unicode):
+                    r = r.encode('utf-8')
 
+                if r is not None:
+                    request.write(r)
+
+                if not request_finished[0]:
+                    request.finish()
 
         def process(r):
-            d = None
-
             if IResource.providedBy(r):
-                d = request.render(getChildForRequest(r, request))
+                request.render(getChildForRequest(r, request))
+                return StandInRenderable()
+
+
             if IRenderable.providedBy(r):
-                d = flattenString(request, r).addCallback(process)
+                return flattenString(request, r).addCallback(process)
 
-            if d:
-                # If it is an IResource or IRenderable, render it
-                d.addCallback(write_response).addErrback(log.err,
-                    _why="Unhandled Error writing response")
-                return d
-            else:
-                # Otherwise, just write the response directly, then close the
-                # connection.
-                write_response(r)
-                request.finish()
-
+            return r
 
         def processing_failed(failure, error_handlers):
             # The failure processor writes to the request.  If the
@@ -168,4 +169,6 @@ class KleinResource(Resource):
 
         d = defer.maybeDeferred(_execute)
         d.addCallback(process)
+        d.addErrback(processing_failed, self._app._error_handlers)
+        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
         return server.NOT_DONE_YET

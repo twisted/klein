@@ -107,7 +107,6 @@ class KleinResource(Resource):
 
         def write_response(r):
             if not isinstance(r, StandInRenderable):
-
                 if isinstance(r, unicode):
                     r = r.encode('utf-8')
 
@@ -121,7 +120,6 @@ class KleinResource(Resource):
             if IResource.providedBy(r):
                 request.render(getChildForRequest(r, request))
                 return StandInRenderable()
-
 
             if IRenderable.providedBy(r):
                 return flattenString(request, r).addCallback(process)
@@ -170,5 +168,6 @@ class KleinResource(Resource):
         d = defer.maybeDeferred(_execute)
         d.addCallback(process)
         d.addErrback(processing_failed, self._app._error_handlers)
-        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
+        d.addCallback(write_response).addErrback(log.err,
+            _why="Unhandled Error writing response")
         return server.NOT_DONE_YET

@@ -99,8 +99,6 @@ class KleinResource(Resource):
 
             return d
 
-        d = defer.maybeDeferred(_execute)
-
         def write_response(r):
             if isinstance(r, unicode):
                 r = r.encode('utf-8')
@@ -108,19 +106,26 @@ class KleinResource(Resource):
             if r is not None:
                 request.write(r)
 
-            if request_finished[0]:
-                request.finish()
 
         def process(r):
+            d = None
+
             if IResource.providedBy(r):
-                return request.render(getChildForRequest(r, request))
-
+                d = request.render(getChildForRequest(r, request))
             if IRenderable.providedBy(r):
-                return flattenString(request, r).addCallback(process)
+                d = flattenString(request, r).addCallback(process)
 
-            return r
+            if d:
+                # If it is an IResource or IRenderable, render it
+                d.addCallback(write_response).addErrback(log.err,
+                    _why="Unhandled Error writing response")
+                return d
+            else:
+                # Otherwise, just write the response directly, then close the
+                # connection.
+                write_response(r)
+                request.finish()
 
-        d.addCallback(process)
 
         def processing_failed(failure, error_handlers):
             # The failure processor writes to the request.  If the
@@ -161,7 +166,6 @@ class KleinResource(Resource):
 
             return processing_failed(failure, error_handlers[1:])
 
-
-        d.addErrback(processing_failed, self._app._error_handlers)
-        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
+        d = defer.maybeDeferred(_execute)
+        d.addCallback(process)
         return server.NOT_DONE_YET

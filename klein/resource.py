@@ -108,7 +108,7 @@ class KleinResource(Resource):
             if r is not None:
                 request.write(r)
 
-            if not request_finished[0]:
+            if request_finished[0]:
                 request.finish()
 
         def process(r):

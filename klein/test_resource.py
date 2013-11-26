@@ -4,6 +4,8 @@ from StringIO import StringIO
 
 from twisted.trial import unittest
 
+from zope.interface import implements
+
 from klein import Klein
 
 from klein.interfaces import IKleinRequest
@@ -11,6 +13,7 @@ from klein.resource import KleinResource, ensure_utf8_bytes
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
+from twisted.internet import interfaces
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -120,6 +123,37 @@ class ChildrenResource(Resource):
 
         return ChildResource(path)
 
+
+class ProducingResource(Resource):
+
+    def __init__(self, path):
+        self.path = path
+
+    def render_GET(self, request):
+
+        producer = MockProducer(request)
+        producer.start()
+        return server.NOT_DONE_YET
+
+
+class MockProducer(object):
+
+    implements(interfaces.IPullProducer)
+
+    def __init__(self, request):
+        self.request = request
+        self.count = 0
+
+    def start(self):
+        self.request.registerProducer(self, False)
+
+    def resumeProducing(self):
+        self.count += 1
+        if self.count == 1:
+            self.request.write("test")
+        else:
+            self.request.unregisterProducer()
+            self.request.finish()
 
 
 class KleinResourceTests(unittest.TestCase):
@@ -351,6 +385,25 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             request.write.assert_called_with("I have children!")
+
+        d.addCallback(_cb)
+
+        return d
+
+
+    def test_producerResourceRendering(self):
+        app = self.app
+
+        request = requestMock("/resource")
+
+        @app.route("/resource", branch=True)
+        def producer(request):
+            return ProducingResource(request)
+
+        d = _render(self.kr, request)
+
+        def _cb(result):
+            request.write.assert_called_with("test")
 
         d.addCallback(_cb)
 

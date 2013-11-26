@@ -165,6 +165,7 @@ class KleinResource(Resource):
 
             return processing_failed(failure, error_handlers[1:])
 
+
         d = defer.maybeDeferred(_execute)
         d.addCallback(process)
         d.addErrback(processing_failed, self._app._error_handlers)

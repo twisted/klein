@@ -54,13 +54,16 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.finish = Mock(wraps=request.finish)
     request.write = Mock(wraps=request.write)
 
-    def produce():
-        while request.producer:
+    def produce(streaming):
+        if streaming:
             request.producer.resumeProducing()
+        else:
+            while request.producer:
+                request.producer.resumeProducing()
 
     def registerProducer(producer, streaming):
         request.producer = producer
-        reactor.callLater(0.25, produce)
+        reactor.callLater(0.0, produce, streaming)
 
     def unregisterProducer():
         request.producer = None

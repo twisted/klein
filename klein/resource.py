@@ -169,7 +169,7 @@ class KleinResource(Resource):
 
             return processing_failed(failure, error_handlers[1:])
 
+
         d.addErrback(processing_failed, self._app._error_handlers)
-        d.addCallback(write_response).addErrback(log.err,
-            _why="Unhandled Error writing response")
+        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
         return server.NOT_DONE_YET

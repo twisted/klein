@@ -105,6 +105,8 @@ class KleinResource(Resource):
 
             return d
 
+        d = defer.maybeDeferred(_execute)
+
         def write_response(r):
             if not isinstance(r, StandInResource):
                 if isinstance(r, unicode):
@@ -125,6 +127,8 @@ class KleinResource(Resource):
                 return flattenString(request, r).addCallback(process)
 
             return r
+
+        d.addCallback(process)
 
         def processing_failed(failure, error_handlers):
             # The failure processor writes to the request.  If the
@@ -165,9 +169,6 @@ class KleinResource(Resource):
 
             return processing_failed(failure, error_handlers[1:])
 
-
-        d = defer.maybeDeferred(_execute)
-        d.addCallback(process)
         d.addErrback(processing_failed, self._app._error_handlers)
         d.addCallback(write_response).addErrback(log.err,
             _why="Unhandled Error writing response")

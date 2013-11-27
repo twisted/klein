@@ -414,7 +414,6 @@ class KleinResourceTests(unittest.TestCase):
             request.write.assert_called_with("testtest")
             self.assertEqual(request.producer, None)
 
-
         d.addCallback(_cb)
 
         return d

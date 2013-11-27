@@ -4,8 +4,6 @@ from StringIO import StringIO
 
 from twisted.trial import unittest
 
-from zope.interface import implements
-
 from klein import Klein
 
 from klein.interfaces import IKleinRequest

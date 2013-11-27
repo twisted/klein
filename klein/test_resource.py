@@ -147,15 +147,17 @@ class MockProducer(object):
     def __init__(self, request):
         self.request = request
         self.count = 0
+        self.output = ""
 
     def start(self):
         self.request.registerProducer(self, False)
 
     def resumeProducing(self):
         self.count += 1
-        if self.count == 1:
-            self.request.write("test")
+        if self.count < 3:
+            self.output += "test"
         else:
+            self.request.write(self.output)
             self.request.unregisterProducer()
             self.request.finish()
 
@@ -407,7 +409,9 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.write.assert_called_with("test")
+            request.write.assert_called_with("testtest")
+            self.assertEqual(request.producer, None)
+
 
         d.addCallback(_cb)
 

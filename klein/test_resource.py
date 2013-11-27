@@ -13,7 +13,6 @@ from klein.resource import KleinResource, ensure_utf8_bytes
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
-from twisted.internet import interfaces, reactor
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -27,12 +26,15 @@ from mock import Mock, call
 
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
-                body=None, headers=None):
+                body=None, headers=None, reactor=None):
     if not headers:
         headers = {}
 
     if not body:
         body = ''
+
+    if not reactor:
+        from twisted.internet import reactor
 
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)
@@ -143,8 +145,6 @@ class ProducingResource(Resource):
 
 
 class MockProducer(object):
-
-    implements(interfaces.IPullProducer)
 
     def __init__(self, request):
         self.request = request

@@ -13,7 +13,7 @@ from klein.resource import KleinResource, ensure_utf8_bytes
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
-from twisted.internet import interfaces
+from twisted.internet import interfaces, reactor
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
@@ -54,11 +54,13 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.finish = Mock(wraps=request.finish)
     request.write = Mock(wraps=request.write)
 
-    def registerProducer(producer, streaming):
-        # This is a terrible terrible hack.
-        request.producer = producer
+    def produce():
         while request.producer:
             request.producer.resumeProducing()
+
+    def registerProducer(producer, streaming):
+        request.producer = producer
+        reactor.callLater(0.25, produce)
 
     def unregisterProducer():
         request.producer = None

@@ -56,11 +56,15 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
 
     def registerProducer(producer, streaming):
         # This is a terrible terrible hack.
-        producer.resumeProducing()
-        producer.resumeProducing()
+        request.producer = producer
+        while request.producer:
+            request.producer.resumeProducing()
+
+    def unregisterProducer():
+        request.producer = None
 
     request.registerProducer = registerProducer
-    request.unregisterProducer = Mock()
+    request.unregisterProducer = unregisterProducer
 
     request.processingFailed = Mock(wraps=request.processingFailed)
 

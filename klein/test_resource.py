@@ -12,7 +12,7 @@ from klein.resource import KleinResource, ensure_utf8_bytes
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
 from twisted.internet.task import Clock
-from twisted.web import server, http
+from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource
 from twisted.web.template import Element, XMLString, renderer
@@ -91,7 +91,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     def assertWritten(data):
         responseData = request._written.getvalue()
         if not responseData == data:
-            raise Exception("Same data was not written!\ngot: %s \nexpected: %s" % (responseData, data))
+            raise AssertionError("Same data was not written!\ngot: %s \nexpected: %s" % (responseData, data))
         else:
             return True
 
@@ -99,13 +99,13 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
         if request.assertWritten(data) and request._writeCalled == 1:
             return True
         else:
-            raise Exception("request.write was called %s times, expected 1" % (request._writeCalled,))
+            raise AssertionError("request.write was called %s times, expected 1" % (request._writeCalled,))
 
     def assertFinishedOnce():
         if request._finishCalled == 1:
             return True
         else:
-            raise Exception("request.finish was called %s times, expected 1" % (request._finishCalled,))
+            raise AssertionError("request.finish was called %s times, expected 1" % (request._finishCalled,))
 
     request.finish = finish
     request.write = write

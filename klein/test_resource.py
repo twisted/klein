@@ -61,8 +61,9 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
 
     def registerProducer(producer, streaming):
         request.producer = producer
-        request.producer.resumeProducing()
-        if not streaming:
+        if streaming:
+            request.producer.resumeProducing()
+        else:
             request.testClock.callLater(0.0, produce)
             request.testClock.advance(0)
 

@@ -92,7 +92,8 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     def assertWritten(data):
         responseData = request._written.getvalue()
         if not responseData == data:
-            raise AssertionError("Same data was not written!\ngot: %s \nexpected: %s" % (responseData, data))
+            raise AssertionError("Same data was not written!\ngot: %s"
+                "\nexpected: %s" % (responseData, data))
         else:
             return True
 
@@ -100,13 +101,15 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
         if request.assertWritten(data) and request._writeCalled == 1:
             return True
         else:
-            raise AssertionError("request.write was called %s times, expected 1" % (request._writeCalled,))
+            raise AssertionError("request.write was called %s times, "
+                "expected 1" % (request._writeCalled,))
 
     def assertFinishedOnce():
         if request._finishCalled == 1:
             return True
         else:
-            raise AssertionError("request.finish was called %s times, expected 1" % (request._finishCalled,))
+            raise AssertionError("request.finish was called %s times, "
+                "expected 1" % (request._finishCalled,))
 
     request.finish = finish
     request.write = write

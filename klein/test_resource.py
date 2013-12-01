@@ -200,7 +200,6 @@ class MockProducer(object):
     def __init__(self, request):
         self.request = request
         self.count = 0
-        self.output = ""
 
     def start(self):
         self.request.registerProducer(self, False)
@@ -208,9 +207,8 @@ class MockProducer(object):
     def resumeProducing(self):
         self.count += 1
         if self.count < 3:
-            self.output += "test"
+            self.request.write("test")
         else:
-            self.request.write(self.output)
             self.request.unregisterProducer()
             self.request.finish()
 

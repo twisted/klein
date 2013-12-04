@@ -52,8 +52,8 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.testClock = Clock()
     request._written = StringIO()
 
-    request._finishCalled = 0
-    request._writeCalled = 0
+    request.finishCount = 0
+    request.writeCount = 0
 
     def produce():
         while request.producer:
@@ -71,7 +71,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
         request.producer = None
 
     def finish():
-        request._finishCalled += 1
+        request.finishCount += 1
 
         if not request.startedWriting:
             request.write('')
@@ -81,7 +81,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
             request._cleanup()
 
     def write(data):
-        request._writeCalled += 1
+        request.writeCount += 1
         request.startedWriting = True
 
         if not request.finished:
@@ -90,33 +90,12 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
             raise RuntimeError('Request.write called on a request after '
                 'Request.finish was called.')
 
-    def assertWritten(data):
-        responseData = request._written.getvalue()
-        if not responseData == data:
-            raise AssertionError("Same data was not written!\ngot: %s"
-                "\nexpected: %s" % (responseData, data))
-        else:
-            return True
-
-    def assertWrittenOnceWith(data):
-        if request.assertWritten(data) and request._writeCalled == 1:
-            return True
-        else:
-            raise AssertionError("request.write was called %s times, "
-                "expected 1" % (request._writeCalled,))
-
-    def assertFinishedOnce():
-        if request._finishCalled == 1:
-            return True
-        else:
-            raise AssertionError("request.finish was called %s times, "
-                "expected 1" % (request._finishCalled,))
+    def getWrittenData():
+        return request._written.getvalue()
 
     request.finish = finish
     request.write = write
-    request.assertWritten = assertWritten
-    request.assertWrittenOnceWith = assertWrittenOnceWith
-    request.assertFinishedOnce = assertFinishedOnce
+    request.getWrittenData = getWrittenData
 
     request.registerProducer = registerProducer
     request.unregisterProducer = unregisterProducer
@@ -206,7 +185,7 @@ class MockProducer(object):
 
     def resumeProducing(self):
         self.count += 1
-        if self.count < 3:
+        if self.count <= 3:
             self.request.write("test")
         else:
             self.request.unregisterProducer()
@@ -241,13 +220,13 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten('posted')
+            self.assertEqual(request.getWrittenData(), 'posted')
             return _render(self.kr, request2)
 
         d.addCallback(_cb)
 
         def _cb2(result):
-            request2.assertWritten('gotted')
+            self.assertEqual(request2.getWrittenData(), 'gotted')
 
         d.addCallback(_cb2)
         return d
@@ -265,7 +244,7 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten('ok')
+            self.assertEqual(request.getWrittenData(), 'ok')
 
         d.addCallback(_cb)
 
@@ -284,7 +263,7 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten('ok')
+            self.assertEqual(request.getWrittenData(), 'ok')
 
         d.addCallback(_cb)
 
@@ -308,13 +287,13 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten('zeus')
+            self.assertEqual(request.getWrittenData(), 'zeus')
             return _render(self.kr, request2)
 
         d.addCallback(_cb)
 
         def _cb2(result):
-            request2.assertWritten('ok')
+            self.assertEqual(request2.getWrittenData(), 'ok')
 
         d.addCallback(_cb2)
 
@@ -338,13 +317,13 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten('zeus')
+            self.assertEqual(request.getWrittenData(), 'zeus')
             return _render(self.kr, request2)
 
         d.addCallback(_cb)
 
         def _cb2(result):
-            request2.assertWritten('ok')
+            self.assertEqual(request2.getWrittenData(), 'ok')
 
         d.addCallback(_cb2)
 
@@ -365,7 +344,7 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten('ok')
+            self.assertEqual(request.getWrittenData(), 'ok')
 
         d.addCallback(_cb)
         deferredResponse.callback('ok')
@@ -385,7 +364,7 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten("<h1>foo</h1>")
+            self.assertEqual(request.getWrittenData(), "<h1>foo</h1>")
 
         d.addCallback(_cb)
 
@@ -404,7 +383,8 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten("I am a leaf in the wind.")
+            self.assertEqual(request.getWrittenData(),
+                "I am a leaf in the wind.")
 
         d.addCallback(_cb)
 
@@ -422,7 +402,8 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten("I'm a child named betty!")
+            self.assertEqual(request.getWrittenData(),
+                "I'm a child named betty!")
 
         d.addCallback(_cb)
 
@@ -441,7 +422,7 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten("I have children!")
+            self.assertEqual(request.getWrittenData(), "I have children!")
 
         d.addCallback(_cb)
 
@@ -460,7 +441,9 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten("testtest")
+            self.assertEqual(request.getWrittenData(), "testtesttest")
+            self.assertEqual(request.writeCount, 3)
+            self.assertEqual(request.finishCount, 1)
             self.assertEqual(request.producer, None)
 
         d.addCallback(_cb)
@@ -475,8 +458,7 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             request.setResponseCode.assert_called_with(404)
-            self.assertIn("404 Not Found",
-                request._written.getvalue())
+            self.assertIn("404 Not Found", request.getWrittenData())
 
         d.addCallback(_cb)
         return d
@@ -494,7 +476,7 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWritten("\xE2\x98\x83")
+            self.assertEqual(request.getWrittenData(), "\xE2\x98\x83")
 
         d.addCallback(_cb)
         return d
@@ -512,8 +494,9 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWrittenOnceWith('')
-            request.assertFinishedOnce()
+            self.assertEqual(request.getWrittenData(), '')
+            self.assertEqual(request.finishCount, 1)
+            self.assertEqual(request.writeCount, 1)
 
         d.addCallback(_cb)
         return d
@@ -530,11 +513,11 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWrittenOnceWith(
+            self.assertEqual(request.getWrittenData(), 
                 open(
                     os.path.join(
                         os.path.dirname(__file__), "__init__.py")).read())
-            request.assertFinishedOnce()
+            self.assertEqual(request.finishCount, 1)
 
         d.addCallback(_cb)
         return d
@@ -552,11 +535,12 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            request.assertWrittenOnceWith(
+            self.assertEqual(request.getWrittenData(), 
                 open(
                     os.path.join(
                         os.path.dirname(__file__), "__init__.py")).read())
-            request.assertFinishedOnce()
+            self.assertEqual(request.writeCount, 1)
+            self.assertEqual(request.finishCount, 1)
 
         d.addCallback(_cb)
         return d
@@ -573,9 +557,9 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(request._writeCalled, 1)
-            self.assertIn('Directory listing', request._written.getvalue())
-            request.assertFinishedOnce()
+            self.assertIn('Directory listing', request.getWrittenData())
+            self.assertEqual(request.writeCount, 1)
+            self.assertEqual(request.finishCount, 1)
 
         d.addCallback(_cb)
         return d
@@ -666,8 +650,9 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(str(request_url[0]), "http://localhost:8080/foo/bar")
-            request.assertWritten('foo')
+            self.assertEqual(str(request_url[0]),
+                "http://localhost:8080/foo/bar")
+            self.assertEqual(request.getWrittenData(), 'foo')
             self.assertEqual(request.code, 200)
 
         d.addCallback(_cb)
@@ -687,7 +672,8 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(str(request_url[0]), 'http://localhost:8080/egg/chicken')
+            self.assertEqual(str(request_url[0]),
+                'http://localhost:8080/egg/chicken')
 
         d.addCallback(_cb)
         return d
@@ -730,7 +716,8 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(str(request_url[0]), 'http://localhost:8080/resource/foo')
+            self.assertEqual(str(request_url[0]),
+                'http://localhost:8080/resource/foo')
 
         d.addCallback(_cb)
         return d
@@ -861,7 +848,8 @@ class KleinResourceTests(unittest.TestCase):
             self.assertEqual(request.processingFailed.called, False)
             self.assertEqual(generic_error_handled, False)
             self.assertEqual(request.code, 404)
-            request.assertWrittenOnceWith('Custom Not Found')
+            self.assertEqual(request.getWrittenData(), 'Custom Not Found')
+            self.assertEqual(request.writeCount, 1)
 
         d.addCallback(_cb)
         return d
@@ -878,8 +866,8 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request)
 
         def _cb(result):
-            self.assertEqual(request._writeCalled, 2)
-            request.assertWritten('')
+            self.assertEqual(request.writeCount, 2)
+            self.assertEqual(request.getWrittenData(), '')
             [failure] = self.flushLoggedErrors(RuntimeError)
 
             self.assertEqual(
@@ -937,7 +925,8 @@ class KleinResourceTests(unittest.TestCase):
 
         def _cb(result):
             cancelled[0].trap(CancelledError)
-            request.assertWrittenOnceWith('')
+            self.assertEqual(request.getWrittenData(), '')
+            self.assertEqual(request.writeCount, 1)
             self.assertEqual(request.processingFailed.call_count, 0)
 
         d.addCallback(_cb)
@@ -992,7 +981,8 @@ class KleinResourceTests(unittest.TestCase):
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
             krequest = IKleinRequest(request)
-            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1}, force_external=True)
+            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1},
+                force_external=True)
 
         d = _render(self.kr, request)
 

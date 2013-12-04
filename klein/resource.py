@@ -25,7 +25,7 @@ def ensure_utf8_bytes(v):
     return v
 
 
-class StandInResource(object):
+class _StandInResource(object):
     """
     A standin for a Resource.
     """
@@ -108,7 +108,7 @@ class KleinResource(Resource):
         d = defer.maybeDeferred(_execute)
 
         def write_response(r):
-            if not isinstance(r, StandInResource):
+            if not isinstance(r, _StandInResource):
                 if isinstance(r, unicode):
                     r = r.encode('utf-8')
 
@@ -121,7 +121,7 @@ class KleinResource(Resource):
         def process(r):
             if IResource.providedBy(r):
                 request.render(getChildForRequest(r, request))
-                return StandInResource()
+                return _StandInResource()
 
             if IRenderable.providedBy(r):
                 return flattenString(request, r).addCallback(process)

@@ -25,12 +25,15 @@ from mock import Mock, call
 
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
-                body=None, headers=None):
+                body=None, headers=None, reactor=None):
     if not headers:
         headers = {}
 
     if not body:
         body = ''
+
+    if not reactor:
+        from twisted.internet import reactor
 
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)
@@ -49,9 +52,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.setHeader = Mock(wraps=request.setHeader)
     request.setResponseCode = Mock(wraps=request.setResponseCode)
 
-    request.testClock = Clock()
     request._written = StringIO()
-
     request.finishCount = 0
     request.writeCount = 0
 
@@ -64,8 +65,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
         if streaming:
             request.producer.resumeProducing()
         else:
-            request.testClock.callLater(0.0, produce)
-            request.testClock.advance(0)
+            reactor.callLater(0.0, produce)
 
     def unregisterProducer():
         request.producer = None
@@ -163,19 +163,16 @@ class ChildrenResource(Resource):
 
 
 class ProducingResource(Resource):
-
     def __init__(self, path):
         self.path = path
 
     def render_GET(self, request):
-
         producer = MockProducer(request)
         producer.start()
         return server.NOT_DONE_YET
 
 
 class MockProducer(object):
-
     def __init__(self, request):
         self.request = request
         self.count = 0

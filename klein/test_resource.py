@@ -25,15 +25,12 @@ from mock import Mock, call
 
 
 def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
-                body=None, headers=None, reactor=None):
+                body=None, headers=None):
     if not headers:
         headers = {}
 
     if not body:
         body = ''
-
-    if not reactor:
-        from twisted.internet import reactor
 
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)
@@ -56,16 +53,11 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     request.finishCount = 0
     request.writeCount = 0
 
-    def produce():
-        while request.producer:
-            request.producer.resumeProducing()
-
     def registerProducer(producer, streaming):
         request.producer = producer
-        if streaming:
-            request.producer.resumeProducing()
-        else:
-            reactor.callLater(0.0, produce)
+        for x in xrange(1,3):
+            if request.producer:
+                request.producer.resumeProducing()
 
     def unregisterProducer():
         request.producer = None
@@ -105,7 +97,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
     return request
 
 
-def _render(resource, request):
+def _render(resource, request, notifyFinish=True):
     result = resource.render(request)
 
     if isinstance(result, str):
@@ -113,7 +105,7 @@ def _render(resource, request):
         request.finish()
         return succeed(None)
     elif result is server.NOT_DONE_YET:
-        if request.finished:
+        if request.finished or not notifyFinish:
             return succeed(None)
         else:
             return request.notifyFinish()
@@ -182,7 +174,7 @@ class MockProducer(object):
 
     def resumeProducing(self):
         self.count += 1
-        if self.count <= 3:
+        if self.count <= 4:
             self.request.write("test")
         else:
             self.request.unregisterProducer()
@@ -435,11 +427,15 @@ class KleinResourceTests(unittest.TestCase):
         def producer(request):
             return ProducingResource(request)
 
-        d = _render(self.kr, request)
+        d = _render(self.kr, request, notifyFinish=False)
 
         def _cb(result):
-            self.assertEqual(request.getWrittenData(), "testtesttest")
-            self.assertEqual(request.writeCount, 3)
+
+            while request.producer:
+                request.producer.resumeProducing()
+
+            self.assertEqual(request.getWrittenData(), "testtesttesttest")
+            self.assertEqual(request.writeCount, 4)
             self.assertEqual(request.finishCount, 1)
             self.assertEqual(request.producer, None)
 

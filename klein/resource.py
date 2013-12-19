@@ -28,6 +28,9 @@ def ensure_utf8_bytes(v):
 class _StandInResource(object):
     """
     A standin for a Resource.
+
+    This is a sentinel value for L{KleinResource}, to say that we are rendering
+    a L{Resource}, which may close the connection itself later.
     """
 
 

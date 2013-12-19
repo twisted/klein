@@ -430,7 +430,6 @@ class KleinResourceTests(unittest.TestCase):
         d = _render(self.kr, request, notifyFinish=False)
 
         def _cb(result):
-
             while request.producer:
                 request.producer.resumeProducing()
 

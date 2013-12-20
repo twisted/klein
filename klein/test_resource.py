@@ -55,7 +55,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
 
     def registerProducer(producer, streaming):
         request.producer = producer
-        for x in xrange(1,3):
+        for x in range(1,3):
             if request.producer:
                 request.producer.resumeProducing()
 
@@ -419,6 +419,13 @@ class KleinResourceTests(unittest.TestCase):
 
 
     def test_producerResourceRendering(self):
+        """
+        Test that Klein will correctly handle producing L{Resource}s.
+
+        Producing Resources close the connection by themselves, sometimes after
+        Klein has 'finished'. This test lets Klein finish its handling of the
+        request before doing more producing.
+        """
         app = self.app
 
         request = requestMock("/resource")

@@ -13,6 +13,7 @@ python:
 
 install:
     - pip install -q $TWISTED
+    - pip install -q mock
     - python setup.py -q install
 
 script: trial klein

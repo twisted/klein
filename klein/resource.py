@@ -111,7 +111,7 @@ class KleinResource(Resource):
         d = defer.maybeDeferred(_execute)
 
         def write_response(r):
-            if not r is _StandInResource:
+            if r is not _StandInResource:
                 if isinstance(r, unicode):
                     r = r.encode('utf-8')
 

@@ -697,6 +697,7 @@ class KleinResourceTests(unittest.TestCase):
 
         @app.handle_errors(TypeError)
         def handle_type_error(request, failure):
+            global type_error_handled
             type_error_handled = True
             return
 
@@ -708,6 +709,7 @@ class KleinResourceTests(unittest.TestCase):
 
         @app.handle_errors
         def handle_generic_error(request, failure):
+            global generic_error_handled
             generic_error_handled = True
             return
 
@@ -739,6 +741,7 @@ class KleinResourceTests(unittest.TestCase):
 
         @app.handle_errors
         def handle_generic_error(request, failure):
+            global generic_error_handled
             generic_error_handled = True
             return
 

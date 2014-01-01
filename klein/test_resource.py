@@ -11,7 +11,6 @@ from klein.resource import KleinResource, ensure_utf8_bytes
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
-from twisted.internet.task import Clock
 from twisted.web import server
 from twisted.web.static import File
 from twisted.web.resource import Resource

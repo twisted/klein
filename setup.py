@@ -17,8 +17,7 @@ setup(
     description="werkzeug + twisted.web",
     install_requires=[
         "Twisted>=12.1",
-        "werkzeug",
-        "mock"
+        "werkzeug"
     ],
     keywords="twisted flask werkzeug web",
     license="MIT",

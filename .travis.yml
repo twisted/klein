@@ -18,7 +18,9 @@ install:
     - pip install -q $TWISTED pyflakes
     - python setup.py -q install
 
-script: trial klein && pyflakes klein
+script:
+    - trial klein
+    - pyflakes klein
 
 notifications:
   email: false

@@ -12,7 +12,7 @@ python:
     - pypy
 
 install:
-    - pip install -q $TWISTED mock
+    - pip install -q $TWISTED
     - python setup.py -q install
 
 script: trial klein

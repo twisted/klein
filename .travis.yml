@@ -18,7 +18,7 @@ env:
     - TOX_ENV=pypy-tw131
 
 install:
-    - pip install -q tox
+    - pip install -q tox requests==2.1.0
 
 script: tox -e $TOX_ENV
 

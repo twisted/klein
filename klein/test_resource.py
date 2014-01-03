@@ -407,14 +407,9 @@ class KleinResourceTests(unittest.TestCase):
         def children(request):
             return ChildrenResource()
 
-        d = _render(self.kr, request)
+        _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), "I have children!")
-
-        d.addCallback(_cb)
-
-        return d
+        self.assertEqual(request.getWrittenData(), "I have children!")
 
 
     def test_producerResourceRendering(self):
@@ -433,20 +428,15 @@ class KleinResourceTests(unittest.TestCase):
         def producer(request):
             return ProducingResource(request)
 
-        d = _render(self.kr, request, notifyFinish=False)
+        _render(self.kr, request, notifyFinish=False)
 
-        def _cb(result):
-            while request.producer:
-                request.producer.resumeProducing()
+        while request.producer:
+            request.producer.resumeProducing()
 
-            self.assertEqual(request.getWrittenData(), "testtesttesttest")
-            self.assertEqual(request.writeCount, 4)
-            self.assertEqual(request.finishCount, 1)
-            self.assertEqual(request.producer, None)
-
-        d.addCallback(_cb)
-
-        return d
+        self.assertEqual(request.getWrittenData(), "testtesttesttest")
+        self.assertEqual(request.writeCount, 4)
+        self.assertEqual(request.finishCount, 1)
+        self.assertEqual(request.producer, None)
 
 
     def test_notFound(self):

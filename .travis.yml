@@ -34,4 +34,4 @@ install:
 script: tox -e $TOX_ENV
 
 notifications:
-  email: false
+    email: false

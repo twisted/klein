@@ -1,26 +1,14 @@
-env:
-    - TWISTED=Twisted==12.1
-    - TWISTED=Twisted==12.2
-    - TWISTED=Twisted==12.3
-    - TWISTED=Twisted==13.0
-    - TWISTED=Twisted==13.1
-    - TWISTED=Twisted==13.2
-    - TWISTED=svn+svn://svn.twistedmatrix.com/svn/Twisted/trunk
-
 language: python
 
 python:
-    - 2.6
     - 2.7
-    - pypy
 
-install:
-    - pip install -q $TWISTED pyflakes
-    - python setup.py -q install
+env:
+    - TOX_ENV=py26-tw132
+    - TOX_ENV=py27-tw132
+    - TOX_ENV=pypy-tw132
 
-script:
-    - trial klein
-    - pyflakes klein
+script: tox -e $TOX_ENV
 
 notifications:
   email: false

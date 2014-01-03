@@ -1,7 +1,5 @@
 language: python
-
-python:
-    - 2.7
+python: 2.7
 
 env:
     - TOX_ENV=py26
@@ -19,7 +17,16 @@ env:
     - TOX_ENV=py26-tw130
     - TOX_ENV=py27-tw130
     - TOX_ENV=pypy-tw130
-
+    - TOX_ENV=py26-tw123
+    - TOX_ENV=py27-tw123
+    - TOX_ENV=pypy-tw123
+    - TOX_ENV=py26-tw122
+    - TOX_ENV=py27-tw122
+    - TOX_ENV=pypy-tw122
+    - TOX_ENV=py26-tw121
+    - TOX_ENV=py27-tw121
+    - TOX_ENV=pypy-tw121
+    - TOX_ENV=pyflakes
 
 install:
     - ./.travis/install.sh
@@ -28,4 +35,3 @@ script: tox -e $TOX_ENV
 
 notifications:
   email: false
-

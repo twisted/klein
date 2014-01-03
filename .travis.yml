@@ -8,6 +8,9 @@ env:
     - TOX_ENV=py27-tw132
     - TOX_ENV=pypy-tw132
 
+install:
+    - pip install -q tox
+
 script: tox -e $TOX_ENV
 
 notifications:

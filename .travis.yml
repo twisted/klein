@@ -16,6 +16,10 @@ env:
     - TOX_ENV=py26-tw131
     - TOX_ENV=py27-tw131
     - TOX_ENV=pypy-tw131
+    - TOX_ENV=py26-tw130
+    - TOX_ENV=py27-tw130
+    - TOX_ENV=pypy-tw130
+
 
 install:
     - ./.travis/install.sh

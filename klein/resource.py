@@ -25,6 +25,15 @@ def ensure_utf8_bytes(v):
     return v
 
 
+class _StandInResource(object):
+    """
+    A standin for a Resource.
+
+    This is a sentinel value for L{KleinResource}, to say that we are rendering
+    a L{Resource}, which may close the connection itself later.
+    """
+
+
 class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
@@ -102,18 +111,20 @@ class KleinResource(Resource):
         d = defer.maybeDeferred(_execute)
 
         def write_response(r):
-            if isinstance(r, unicode):
-                r = r.encode('utf-8')
+            if r is not _StandInResource:
+                if isinstance(r, unicode):
+                    r = r.encode('utf-8')
 
-            if r is not None:
-                request.write(r)
+                if r is not None:
+                    request.write(r)
 
-            if not request_finished[0]:
-                request.finish()
+                if not request_finished[0]:
+                    request.finish()
 
         def process(r):
             if IResource.providedBy(r):
-                return request.render(getChildForRequest(r, request))
+                request.render(getChildForRequest(r, request))
+                return _StandInResource
 
             if IRenderable.providedBy(r):
                 return flattenString(request, r).addCallback(process)

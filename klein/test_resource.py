@@ -2,12 +2,12 @@ import os
 
 from StringIO import StringIO
 
-from twisted.trial import unittest
-
 from klein import Klein
 
 from klein.interfaces import IKleinRequest
 from klein.resource import KleinResource, ensure_utf8_bytes
+
+from klein.test_util import TestCase
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
@@ -180,7 +180,7 @@ class MockProducer(object):
             self.request.finish()
 
 
-class KleinResourceTests(unittest.TestCase):
+class KleinResourceTests(TestCase):
     def setUp(self):
         self.app = Klein()
         self.kr = KleinResource(self.app)
@@ -407,8 +407,9 @@ class KleinResourceTests(unittest.TestCase):
         def children(request):
             return ChildrenResource()
 
-        _render(self.kr, request)
+        d = _render(self.kr, request)
 
+        self.assertEqual(self.successResultOf(d), None)
         self.assertEqual(request.getWrittenData(), "I have children!")
 
 
@@ -428,11 +429,12 @@ class KleinResourceTests(unittest.TestCase):
         def producer(request):
             return ProducingResource(request)
 
-        _render(self.kr, request, notifyFinish=False)
+        d = _render(self.kr, request, notifyFinish=False)
 
         while request.producer:
             request.producer.resumeProducing()
 
+        self.assertEqual(self.successResultOf(d), None)
         self.assertEqual(request.getWrittenData(), "testtesttesttest")
         self.assertEqual(request.writeCount, 4)
         self.assertEqual(request.finishCount, 1)

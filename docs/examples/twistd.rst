@@ -1,6 +1,6 @@
-========================
-Example - Using `twistd`
-========================
+==========================
+Example - Using ``twistd``
+==========================
 
 Another very important integration point with Twisted is the ``twistd``
 application runner.  It provides rich logging support, daemonization, reactor

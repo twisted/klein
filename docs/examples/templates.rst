@@ -1,11 +1,8 @@
-=====================================
-Example - Using Twisted.Web Templates
-=====================================
+======================================
+Example -- Using Twisted.Web Templates
+======================================
 
-You can also make easy use of ``twisted.web.templates`` by returning anything
-that implements ``twisted.web.template.IRenderable`` such as
-``twisted.web.template.Element`` in which case the template will be rendered
-and the result will be sent as the response body.
+You can also make easy use of ``twisted.web.templates`` by returning anything that implements ``twisted.web.template.IRenderable`` such as ``twisted.web.template.Element`` in which case the template will be rendered and the result will be sent as the response body.
 
 .. code-block:: python
 

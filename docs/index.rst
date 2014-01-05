@@ -43,5 +43,4 @@ These are documents about contributing to Klein.
 
 .. toctree::
 
-    contributingcode
-    contributingdocs
+    contributing

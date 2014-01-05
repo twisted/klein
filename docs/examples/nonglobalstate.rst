@@ -1,14 +1,11 @@
-================================
-Example - Using Non-Global State
-================================
+=================================
+Example -- Using Non-Global State
+=================================
 
-For obvious reasons it may be desirable for your application to have some
-non-global state that is used by the your route handlers.
+For obvious reasons it may be desirable for your application to have some non-global state that is used by the your route handlers.
 
-Below we have created a simple ``ItemStore`` class that has an instance of
-``Klein`` as a class variable ``app``.  We can now use ``@app.route`` to
-decorate the methods of the class.
-
+Below we have created a simple ``ItemStore`` class that has an instance of ``Klein`` as a class variable ``app``.
+We can now use ``@app.route`` to decorate the methods of the class.
 
 .. code-block:: python
 

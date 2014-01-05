@@ -34,4 +34,4 @@ Documentation
     ~~~~~~~~
 - Use gender-neutral pronouns, if you have to at all.
 - Put each sentence on a different line, if you can -- this makes diffs much easier to read.
-    You will need to add an indent to make it continue the list.
+  You will need to add an indent to make it continue the list.

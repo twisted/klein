@@ -33,4 +33,5 @@ Documentation
     Header 4
     ~~~~~~~~
 - Use gender-neutral pronouns, if you have to at all.
-- Put each sentence on a different line, if you can -- this makes diffs much easier to read. You won't be able to in, for example, lists, but that's fine.
+- Put each sentence on a different line, if you can -- this makes diffs much easier to read.
+    You will need to add an indent to make it continue the list.

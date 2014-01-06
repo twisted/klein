@@ -3,3 +3,5 @@ _trial_temp
 build
 htmlcov
 .coverage
+*.egg-info
+.tox/

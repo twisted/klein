@@ -1,27 +1,37 @@
-env:
-    - TWISTED=Twisted==12.1
-    - TWISTED=Twisted==12.2
-    - TWISTED=Twisted==12.3
-    - TWISTED=Twisted==13.0
-    - TWISTED=Twisted==13.1
-    - TWISTED=Twisted==13.2
-    - TWISTED=svn+svn://svn.twistedmatrix.com/svn/Twisted/trunk
-
 language: python
+python: 2.7
 
-python:
-    - 2.6
-    - 2.7
-    - pypy
+env:
+    - TOX_ENV=py26
+    - TOX_ENV=py27
+    - TOX_ENV=pypy
+    - TOX_ENV=py26-twtrunk
+    - TOX_ENV=py27-twtrunk
+    - TOX_ENV=pypy-twtrunk
+    - TOX_ENV=py26-tw132
+    - TOX_ENV=py27-tw132
+    - TOX_ENV=pypy-tw132
+    - TOX_ENV=py26-tw131
+    - TOX_ENV=py27-tw131
+    - TOX_ENV=pypy-tw131
+    - TOX_ENV=py26-tw130
+    - TOX_ENV=py27-tw130
+    - TOX_ENV=pypy-tw130
+    - TOX_ENV=py26-tw123
+    - TOX_ENV=py27-tw123
+    - TOX_ENV=pypy-tw123
+    - TOX_ENV=py26-tw122
+    - TOX_ENV=py27-tw122
+    - TOX_ENV=pypy-tw122
+    - TOX_ENV=py26-tw121
+    - TOX_ENV=py27-tw121
+    - TOX_ENV=pypy-tw121
+    - TOX_ENV=pyflakes
 
 install:
-    - pip install -q $TWISTED pyflakes
-    - python setup.py -q install
+    - ./.travis/install.sh
 
-script:
-    - trial klein
-    - pyflakes klein
+script: tox -e $TOX_ENV
 
 notifications:
-  email: false
-
+    email: false

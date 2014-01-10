@@ -410,7 +410,9 @@ class KleinResourceTests(TestCase):
 
         d = _render(self.kr, request, notifyFinish=False)
 
-        self.assertEqual(request.getWrittenData(), "a")
+        self.assertNotEqual(request.getWrittenData(), "abcd", "The full "
+                            "response should not have been written at this "
+                            "point.")
 
         while request.producer:
             request.producer.resumeProducing()

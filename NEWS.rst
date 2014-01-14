@@ -1,6 +1,12 @@
 NEWS
 ====
 
+0.2.3 - 2014-01-14
+-------------------
+ * [BUG] Klein now correctly handles producing resources [`#30 <https://github.com/twisted/klein/pull/30>`_]
+ * [ENHANCEMENT] Klein now supports using tox for local testing [`#36 <https://github.com/twisted/klein/pull/36>`_]
+ * [ENHANCEMENT] Klein has improved tests and an expanded range of test platforms [`#33 <https://github.com/twisted/klein/pull/33>`_, `#35 <https://github.com/twisted/klein/pull/35>`_, `#37 <https://github.com/twisted/klein/pull/37>`_]
+
 0.2.2 - 2013-11-21
 -------------------
  * [ENHANCEMENT] Klein.handle_errors now allows the definition of custom error handling behavior. [`#26 <https://github.com/twisted/klein/pull/26>`_]

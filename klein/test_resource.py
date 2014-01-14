@@ -2,12 +2,12 @@ import os
 
 from StringIO import StringIO
 
-from twisted.trial import unittest
-
 from klein import Klein
 
 from klein.interfaces import IKleinRequest
 from klein.resource import KleinResource, ensure_utf8_bytes
+
+from klein.test_util import TestCase
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
@@ -154,36 +154,54 @@ class ChildrenResource(Resource):
 
 
 class ProducingResource(Resource):
-    def __init__(self, path):
+    def __init__(self, path, strings):
         self.path = path
+        self.strings = strings
 
     def render_GET(self, request):
-        producer = MockProducer(request)
+        producer = MockProducer(request, self.strings)
         producer.start()
         return server.NOT_DONE_YET
 
 
 class MockProducer(object):
-    def __init__(self, request):
+    def __init__(self, request, strings):
         self.request = request
-        self.count = 0
+        self.strings = strings
 
     def start(self):
         self.request.registerProducer(self, False)
 
     def resumeProducing(self):
-        self.count += 1
-        if self.count <= 4:
-            self.request.write("test")
+        if self.strings:
+            self.request.write(self.strings.pop(0))
         else:
             self.request.unregisterProducer()
             self.request.finish()
 
 
-class KleinResourceTests(unittest.TestCase):
+class KleinResourceTests(TestCase):
     def setUp(self):
         self.app = Klein()
         self.kr = KleinResource(self.app)
+
+
+    def assertFired(self, deferred, result=None):
+        """
+        Assert that the given deferred has fired with the given result.
+        """
+        self.assertEqual(self.successResultOf(deferred), result)
+
+
+    def assertNotFired(self, deferred):
+        """
+        Assert that the given deferred has not fired with a result.
+        """
+        _pawn = object()
+        result = getattr(deferred, 'result', _pawn)
+        if result != _pawn:
+            self.fail("Expected deferred not to have fired, "
+                      "but it has: %r" % (deferred,))
 
 
     def test_simplePost(self):
@@ -206,18 +224,12 @@ class KleinResourceTests(unittest.TestCase):
         request2 = requestMock('/')
 
         d = _render(self.kr, request)
-
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 'posted')
-            return _render(self.kr, request2)
-
-        d.addCallback(_cb)
-
-        def _cb2(result):
-            self.assertEqual(request2.getWrittenData(), 'gotted')
-
-        d.addCallback(_cb2)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 'posted')
+        
+        d2 = _render(self.kr, request2)
+        self.assertFired(d2)
+        self.assertEqual(request2.getWrittenData(), 'gotted')
 
 
     def test_simpleRouting(self):
@@ -231,12 +243,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 'ok')
-
-        d.addCallback(_cb)
-
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 'ok')
 
 
     def test_branchRendering(self):
@@ -250,12 +258,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 'ok')
-
-        d.addCallback(_cb)
-
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 'ok')
 
 
     def test_branchWithExplicitChildrenRouting(self):
@@ -274,18 +278,13 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 'zeus')
-            return _render(self.kr, request2)
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 'zeus')
+        
+        d2 = _render(self.kr, request2)
 
-        d.addCallback(_cb)
-
-        def _cb2(result):
-            self.assertEqual(request2.getWrittenData(), 'ok')
-
-        d.addCallback(_cb2)
-
-        return d
+        self.assertFired(d2)
+        self.assertEqual(request2.getWrittenData(), 'ok')
 
 
     def test_branchWithExplicitChildBranch(self):
@@ -304,18 +303,13 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 'zeus')
-            return _render(self.kr, request2)
-
-        d.addCallback(_cb)
-
-        def _cb2(result):
-            self.assertEqual(request2.getWrittenData(), 'ok')
-
-        d.addCallback(_cb2)
-
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 'zeus')
+        
+        d2 = _render(self.kr, request2)
+        
+        self.assertFired(d2)
+        self.assertEqual(request2.getWrittenData(), 'ok')
 
 
     def test_deferredRendering(self):
@@ -331,13 +325,12 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 'ok')
+        self.assertNotFired(d)
 
-        d.addCallback(_cb)
         deferredResponse.callback('ok')
-
-        return d
+        
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 'ok')
 
 
     def test_elementRendering(self):
@@ -351,12 +344,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), "<h1>foo</h1>")
-
-        d.addCallback(_cb)
-
-        return d
+        self.assertFired(d)        
+        self.assertEqual(request.getWrittenData(), "<h1>foo</h1>")
 
 
     def test_leafResourceRendering(self):
@@ -370,14 +359,9 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(),
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(),
                 "I am a leaf in the wind.")
-
-        d.addCallback(_cb)
-
-        return d
-
 
     def test_childResourceRendering(self):
         app = self.app
@@ -389,14 +373,9 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(),
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(),
                 "I'm a child named betty!")
-
-        d.addCallback(_cb)
-
-        return d
-
 
     def test_childrenResourceRendering(self):
         app = self.app
@@ -409,12 +388,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), "I have children!")
-
-        d.addCallback(_cb)
-
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), "I have children!")
 
 
     def test_producerResourceRendering(self):
@@ -431,22 +406,22 @@ class KleinResourceTests(unittest.TestCase):
 
         @app.route("/resource", branch=True)
         def producer(request):
-            return ProducingResource(request)
+            return ProducingResource(request, ["a", "b", "c", "d"])
 
         d = _render(self.kr, request, notifyFinish=False)
 
-        def _cb(result):
-            while request.producer:
-                request.producer.resumeProducing()
+        self.assertNotEqual(request.getWrittenData(), "abcd", "The full "
+                            "response should not have been written at this "
+                            "point.")
 
-            self.assertEqual(request.getWrittenData(), "testtesttesttest")
-            self.assertEqual(request.writeCount, 4)
-            self.assertEqual(request.finishCount, 1)
-            self.assertEqual(request.producer, None)
+        while request.producer:
+            request.producer.resumeProducing()
 
-        d.addCallback(_cb)
-
-        return d
+        self.assertEqual(self.successResultOf(d), None)
+        self.assertEqual(request.getWrittenData(), "abcd")
+        self.assertEqual(request.writeCount, 4)
+        self.assertEqual(request.finishCount, 1)
+        self.assertEqual(request.producer, None)
 
 
     def test_notFound(self):
@@ -454,12 +429,9 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            request.setResponseCode.assert_called_with(404)
-            self.assertIn("404 Not Found", request.getWrittenData())
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        request.setResponseCode.assert_called_with(404)
+        self.assertIn("404 Not Found", request.getWrittenData())
 
 
     def test_renderUnicode(self):
@@ -473,11 +445,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), "\xE2\x98\x83")
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), "\xE2\x98\x83")
 
 
     def test_renderNone(self):
@@ -491,13 +460,10 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), '')
-            self.assertEqual(request.finishCount, 1)
-            self.assertEqual(request.writeCount, 1)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), '')
+        self.assertEqual(request.finishCount, 1)
+        self.assertEqual(request.writeCount, 1)
 
 
     def test_staticRoot(self):
@@ -510,15 +476,12 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 
-                open(
-                    os.path.join(
-                        os.path.dirname(__file__), "__init__.py")).read())
-            self.assertEqual(request.finishCount, 1)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 
+            open(
+                os.path.join(
+                    os.path.dirname(__file__), "__init__.py")).read())
+        self.assertEqual(request.finishCount, 1)
 
 
     def test_explicitStaticBranch(self):
@@ -532,16 +495,13 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.getWrittenData(), 
-                open(
-                    os.path.join(
-                        os.path.dirname(__file__), "__init__.py")).read())
-            self.assertEqual(request.writeCount, 1)
-            self.assertEqual(request.finishCount, 1)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), 
+            open(
+                os.path.join(
+                    os.path.dirname(__file__), "__init__.py")).read())
+        self.assertEqual(request.writeCount, 1)
+        self.assertEqual(request.finishCount, 1)
 
     def test_staticDirlist(self):
         app = self.app
@@ -554,13 +514,10 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertIn('Directory listing', request.getWrittenData())
-            self.assertEqual(request.writeCount, 1)
-            self.assertEqual(request.finishCount, 1)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertIn('Directory listing', request.getWrittenData())
+        self.assertEqual(request.writeCount, 1)
+        self.assertEqual(request.finishCount, 1)
 
     def test_addSlash(self):
         app = self.app
@@ -572,15 +529,12 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.setHeader.call_count, 3)
-            request.setHeader.assert_has_calls(
-                [call('Content-Type', 'text/html; charset=utf-8'),
-                 call('Content-Length', '259'),
-                 call('Location', 'http://localhost:8080/foo/')])
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.setHeader.call_count, 3)
+        request.setHeader.assert_has_calls(
+            [call('Content-Type', 'text/html; charset=utf-8'),
+             call('Content-Length', '259'),
+             call('Location', 'http://localhost:8080/foo/')])
 
     def test_methodNotAllowed(self):
         app = self.app
@@ -592,11 +546,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.code, 405)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.code, 405)
 
     def test_methodNotAllowedWithRootCollection(self):
         app = self.app
@@ -612,11 +563,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.code, 405)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.code, 405)
 
     def test_noImplicitBranch(self):
         app = self.app
@@ -628,11 +576,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.code, 404)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.code, 404)
 
     def test_strictSlashes(self):
         app = self.app
@@ -647,14 +592,11 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(str(request_url[0]),
-                "http://localhost:8080/foo/bar")
-            self.assertEqual(request.getWrittenData(), 'foo')
-            self.assertEqual(request.code, 200)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(str(request_url[0]),
+            "http://localhost:8080/foo/bar")
+        self.assertEqual(request.getWrittenData(), 'foo')
+        self.assertEqual(request.code, 200)
 
     def test_URLPath(self):
         app = self.app
@@ -669,12 +611,9 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(str(request_url[0]),
-                'http://localhost:8080/egg/chicken')
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(str(request_url[0]),
+            'http://localhost:8080/egg/chicken')
 
     def test_URLPath_root(self):
         app = self.app
@@ -688,11 +627,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(str(request_url[0]), 'http://localhost:8080/')
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(str(request_url[0]), 'http://localhost:8080/')
 
     def test_URLPath_traversedResource(self):
         app = self.app
@@ -713,12 +649,9 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(str(request_url[0]),
-                'http://localhost:8080/resource/foo')
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(str(request_url[0]),
+            'http://localhost:8080/resource/foo')
 
     def test_handlerRaises(self):
         app = self.app
@@ -739,13 +672,10 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.code, 500)
-            request.processingFailed.assert_called_once_with(failures[0])
-            self.flushLoggedErrors(RouteFailureTest)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.code, 500)
+        request.processingFailed.assert_called_once_with(failures[0])
+        self.flushLoggedErrors(RouteFailureTest)
 
     def test_genericErrorHandler(self):
         app = self.app
@@ -768,12 +698,9 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.code, 501)
-            assert not request.processingFailed.called
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.code, 501)
+        assert not request.processingFailed.called
 
     def test_typeSpecificErrorHandlers(self):
         app = self.app
@@ -810,15 +737,12 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.processingFailed.called, False)
-            self.assertEqual(type_error_handled, False)
-            self.assertEqual(generic_error_handled, False)
-            self.assertEqual(len(failures), 1)
-            self.assertEqual(request.code, 501)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.processingFailed.called, False)
+        self.assertEqual(type_error_handled, False)
+        self.assertEqual(generic_error_handled, False)
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(request.code, 501)
 
     def test_notFoundException(self):
         app = self.app
@@ -842,15 +766,12 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.processingFailed.called, False)
-            self.assertEqual(generic_error_handled, False)
-            self.assertEqual(request.code, 404)
-            self.assertEqual(request.getWrittenData(), 'Custom Not Found')
-            self.assertEqual(request.writeCount, 1)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(request.processingFailed.called, False)
+        self.assertEqual(generic_error_handled, False)
+        self.assertEqual(request.code, 404)
+        self.assertEqual(request.getWrittenData(), 'Custom Not Found')
+        self.assertEqual(request.writeCount, 1)
 
     def test_requestWriteAfterFinish(self):
         app = self.app
@@ -863,18 +784,15 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(request.writeCount, 2)
-            self.assertEqual(request.getWrittenData(), '')
-            [failure] = self.flushLoggedErrors(RuntimeError)
+        self.assertFired(d)
+        self.assertEqual(request.writeCount, 2)
+        self.assertEqual(request.getWrittenData(), '')
+        [failure] = self.flushLoggedErrors(RuntimeError)
 
-            self.assertEqual(
-                str(failure.value),
-                ("Request.write called on a request after Request.finish was "
-                 "called."))
-
-        d.addCallback(_cb)
-        return d
+        self.assertEqual(
+            str(failure.value),
+            ("Request.write called on a request after Request.finish was "
+             "called."))
 
     def test_requestFinishAfterConnectionLost(self):
         app = self.app
@@ -900,9 +818,12 @@ class KleinResourceTests(unittest.TestCase):
         d.addErrback(lambda _: finished)
         d.addErrback(_eb)
 
+        self.assertNotFired(d)
+
         request.connectionLost(ConnectionLost())
 
-        return d
+        self.assertFired(d)
+
 
     def test_routeHandlesRequestFinished(self):
         app = self.app
@@ -921,14 +842,12 @@ class KleinResourceTests(unittest.TestCase):
 
         request.finish()
 
-        def _cb(result):
-            cancelled[0].trap(CancelledError)
-            self.assertEqual(request.getWrittenData(), '')
-            self.assertEqual(request.writeCount, 1)
-            self.assertEqual(request.processingFailed.call_count, 0)
+        self.assertFired(d)
 
-        d.addCallback(_cb)
-        return d
+        cancelled[0].trap(CancelledError)
+        self.assertEqual(request.getWrittenData(), '')
+        self.assertEqual(request.writeCount, 1)
+        self.assertEqual(request.processingFailed.call_count, 0)
 
     def test_url_for(self):
         app = self.app
@@ -943,11 +862,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(relative_url[0], '/foo/2')
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(relative_url[0], '/foo/2')
 
     def test_cancelledDeferred(self):
         app = self.app
@@ -963,12 +879,8 @@ class KleinResourceTests(unittest.TestCase):
 
         inner_d.cancel()
 
-        def _cb(result):
-            self.assertIdentical(result, None)
-            self.flushLoggedErrors(CancelledError)
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.flushLoggedErrors(CancelledError)
 
     def test_external_url_for(self):
         app = self.app
@@ -984,11 +896,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
-        def _cb(result):
-            self.assertEqual(relative_url[0], 'http://localhost:8080/foo/2')
-
-        d.addCallback(_cb)
-        return d
+        self.assertFired(d)
+        self.assertEqual(relative_url[0], 'http://localhost:8080/foo/2')
 
     def test_cancelledIsEatenOnConnectionLost(self):
         app = self.app
@@ -1002,6 +911,8 @@ class KleinResourceTests(unittest.TestCase):
 
         d = _render(self.kr, request)
 
+        self.assertNotFired(d)
+
         request.connectionLost(ConnectionLost())
 
         def _cb(result):
@@ -1009,7 +920,7 @@ class KleinResourceTests(unittest.TestCase):
 
         d.addErrback(lambda f: f.trap(ConnectionLost))
         d.addCallback(_cb)
-        return d
+        self.assertFired(d)
 
     def test_cancelsOnConnectionLost(self):
         app = self.app
@@ -1022,14 +933,16 @@ class KleinResourceTests(unittest.TestCase):
             return handler_d
 
         d = _render(self.kr, request)
+
+        self.assertNotFired(d)
+
         request.connectionLost(ConnectionLost())
 
         handler_d.addErrback(lambda f: f.trap(CancelledError))
 
         d.addErrback(lambda f: f.trap(ConnectionLost))
         d.addCallback(lambda _: handler_d)
-
-        return d
+        self.assertFired(d)
 
     def test_ensure_utf8_bytes(self):
         self.assertEqual(ensure_utf8_bytes(u"abc"), "abc")

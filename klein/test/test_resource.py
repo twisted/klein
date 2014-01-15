@@ -2,29 +2,25 @@ import os
 
 from StringIO import StringIO
 
-from klein import Klein
-
-from klein.interfaces import IKleinRequest
-from klein.resource import KleinResource, ensure_utf8_bytes
-
-from klein.test_util import TestCase
-
+from mock import Mock, call
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
 from twisted.web import server
-from twisted.web.static import File
+from twisted.web.http_headers import Headers
 from twisted.web.resource import Resource
+from twisted.web.static import File
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
-from twisted.web.http_headers import Headers
-
 from werkzeug.exceptions import NotFound
 
-from mock import Mock, call
+from klein import Klein
+from klein.interfaces import IKleinRequest
+from klein.resource import KleinResource, ensure_utf8_bytes
+from klein.test.util import TestCase
 
 
-def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
-                body=None, headers=None):
+def requestMock(path, method="GET", host="localhost", port=8080,
+                isSecure=False, body=None, headers=None):
     if not headers:
         headers = {}
 
@@ -79,7 +75,7 @@ def requestMock(path, method="GET", host="localhost", port=8080, isSecure=False,
             request._written.write(data)
         else:
             raise RuntimeError('Request.write called on a request after '
-                'Request.finish was called.')
+                               'Request.finish was called.')
 
     def getWrittenData():
         return request._written.getvalue()

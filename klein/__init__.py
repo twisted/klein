@@ -8,12 +8,12 @@ __license__ = "MIT"
 __copyright__ = "Copyright 2014 {0}".format(__author__)
 
 __all__ = [
-    Klein,
-    __author__,
-    __copyright__,
-    __license__,
-    __version__,
-    resource,
-    route,
-    run,
+    'Klein',
+    '__author__',
+    '__copyright__',
+    '__license__',
+    '__version__',
+    'resource',
+    'route',
+    'run',
 ]

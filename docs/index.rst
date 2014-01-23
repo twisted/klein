@@ -16,7 +16,7 @@ Introduction to Klein
 This is an introduction to Klein, going through from creating a simple web site to something supporting AJAX and more.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     introduction/1-gettingstarted
     introduction/2-twistdtap

@@ -19,6 +19,7 @@ This is an introduction to Klein, going through from creating a simple web site 
     :maxdepth: 2
 
     introduction/1-gettingstarted
+    introduction/2-twistdtap
 
 
 Klein Examples

@@ -182,24 +182,29 @@ class KleinResourceEqualityTests(TestCase, EqualityTestsMixin):
     """
     Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
     """
-    oneKlein = Klein()
-    @oneKlein.route("/foo")
-    def foo(self):
-        pass
+    class _One(object):
+        oneKlein = Klein()
+        @oneKlein.route("/foo")
+        def foo(self):
+            pass
+    _one = _One()
 
 
-    anotherKlein = Klein()
-    @anotherKlein.route("/bar")
-    def bar(self):
-        pass
+    class _Another(object):
+        anotherKlein = Klein()
+        @anotherKlein.route("/bar")
+        def bar(self):
+            pass
+    _another = _Another()
 
 
     def anInstance(self):
-        return self.oneKlein
+        return self._one.oneKlein
 
 
     def anotherInstance(self):
-        return self.anotherKlein
+        return self._another.anotherKlein
+
 
 
 class KleinResourceTests(TestCase):

@@ -2,7 +2,8 @@ import os
 
 from StringIO import StringIO
 
-from mock import Mock, call
+from mock import Mock
+
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
 from twisted.web import server
@@ -16,7 +17,7 @@ from werkzeug.exceptions import NotFound
 from klein import Klein
 from klein.interfaces import IKleinRequest
 from klein.resource import KleinResource, ensure_utf8_bytes
-from klein.test.util import TestCase
+from klein.test.util import TestCase, EqualityTestsMixin
 
 
 def requestMock(path, method="GET", host="localhost", port=8080,
@@ -176,6 +177,31 @@ class MockProducer(object):
             self.request.finish()
 
 
+
+class KleinResourceEqualityTests(TestCase, EqualityTestsMixin):
+    """
+    Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
+    """
+    oneKlein = Klein()
+    @oneKlein.route("/foo")
+    def foo(self):
+        pass
+
+
+    anotherKlein = Klein()
+    @anotherKlein.route("/bar")
+    def bar(self):
+        pass
+
+
+    def anInstance(self):
+        return self.oneKlein
+
+
+    def anotherInstance(self):
+        return self.anotherKlein
+
+
 class KleinResourceTests(TestCase):
     def setUp(self):
         self.app = Klein()
@@ -222,7 +248,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'posted')
-        
+
         d2 = _render(self.kr, request2)
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), 'gotted')
@@ -276,7 +302,7 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'zeus')
-        
+
         d2 = _render(self.kr, request2)
 
         self.assertFired(d2)
@@ -301,9 +327,9 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'zeus')
-        
+
         d2 = _render(self.kr, request2)
-        
+
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), 'ok')
 
@@ -324,7 +350,7 @@ class KleinResourceTests(TestCase):
         self.assertNotFired(d)
 
         deferredResponse.callback('ok')
-        
+
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'ok')
 
@@ -340,7 +366,7 @@ class KleinResourceTests(TestCase):
 
         d = _render(self.kr, request)
 
-        self.assertFired(d)        
+        self.assertFired(d)
         self.assertEqual(request.getWrittenData(), "<h1>foo</h1>")
 
 
@@ -473,7 +499,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 
+        self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
                     os.path.dirname(__file__), "__init__.py")).read())
@@ -492,7 +518,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 
+        self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
                     os.path.dirname(__file__), "__init__.py")).read())

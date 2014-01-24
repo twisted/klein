@@ -9,6 +9,7 @@ from twisted.python.components import registerAdapter
 from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
+from klein.test_util import EqualityTestsMixin
 
 
 class DummyRequest(object):
@@ -23,6 +24,23 @@ class DummyRequest(object):
 
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
+
+
+class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
+    """
+    Tests for L{Klein}'s implementation of C{==} and C{!=}.
+    """
+    # Differs from the result of anInstance by virtual of the `__get__`
+    # descriptor assigning and instance.
+    _another = Klein()
+
+    def anInstance(self):
+        return Klein()
+
+
+    def anotherInstance(self):
+        return self._another
+
 
 
 class KleinTestCase(unittest.TestCase):

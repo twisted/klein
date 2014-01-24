@@ -46,6 +46,19 @@ class KleinResource(Resource):
         self._app = app
 
 
+    def __eq__(self, other):
+        if isinstance(other, KleinResource):
+            return vars(self) == vars(other)
+        return NotImplemented
+
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return result
+        return not result
+
+
     def render(self, request):
         # Stuff we need to know for the mapper.
         server_name = request.getRequestHostname()

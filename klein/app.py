@@ -62,6 +62,19 @@ class Klein(object):
         self._instance = None
 
 
+    def __eq__(self, other):
+        if isinstance(other, Klein):
+            return vars(self) == vars(other)
+        return NotImplemented
+
+
+    def __ne__(self, other):
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return result
+        return not result
+
+
     @property
     def url_map(self):
         """

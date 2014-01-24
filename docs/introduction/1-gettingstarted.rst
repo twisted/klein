@@ -16,7 +16,7 @@ The purpose of this introduction is to show you how to install, use and deploy K
 This Introduction
 =================
 
-All of the major code snippets can be found inside `Klein's GitHub repository <https://github.com/twisted/klein/tree/master/klein/docs/codeexamples>`_.
+All of the major code snippets can be found inside `Klein's GitHub repository <https://github.com/twisted/klein>`_, under ``docs/codeexamples``.
 Everything should be as self-contained as possible, but it may not be runnable.
 
 
@@ -56,6 +56,6 @@ Adding more routes into your Klein app is easy - just add more decorated functio
 
 .. literalinclude:: /codeexamples/intro1/moreRoutes.py
 
-But remember - order matters! This becomes very important when you are using variable substituted paths.
+But remember - order matters! This becomes very important when you are using variable paths! (More on them soon.)
 
 .. literalinclude:: /codeexamples/intro1/orderMatters.py

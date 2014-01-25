@@ -49,13 +49,38 @@ There is a better way to do it, however, by creating a Klein object, and then ca
 This also lets you have different Klein routers, each having different routes, if your application requires that in the future.
 
 
-More Routes
-===========
+Adding Routes
+=============
 
 Adding more routes into your Klein app is easy - just add more decorated functions.
 
 .. literalinclude:: /codeexamples/intro1/moreRoutes.py
 
-But remember - order matters! This becomes very important when you are using variable paths! (More on them soon.)
+
+Variable Routes
+===============
+
+You can also make `variable routes`.
+
+.. literalinclude:: /codeexamples/intro1/variableRoutes.py
+
+If you then visit ``http://localhost:8080/user/bob``, you should get ``Hi bob!`` in return.
+
+You can also define what type it should match.
+The three available ones are ``string`` (default), ``int`` and ``float``.
+
+.. literalinclude:: /codeexamples/intro1/variableRoutesTypes.py
+
+If you visit ``http://localhost:8080/somestring``, it will be routed by ``pg_string``, ``http://localhost:8080/1.0`` will be routed by ``pg_float`` and ``http://localhost:8080/1`` will be routed by ``pg_int``.
+
+
+Route Order Matters
+===================
+
+But remember - order matters!
+This becomes very important when you are using variable paths.
+You can have a general, variable path, and then have hard coded paths over the top of it, such as in the following example.
 
 .. literalinclude:: /codeexamples/intro1/orderMatters.py
+
+As you can see, the specific route for bob will overwrite the variable routing in ``pg_user``.

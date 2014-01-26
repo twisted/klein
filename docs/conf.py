@@ -37,10 +37,12 @@ latex_elements = {}
 latex_documents = [
   ('index', 'Klein.tex', u'Klein Documentation',
    u'Twisted Matrix Labs', 'manual'),
-]man_pages = [
+]
+man_pages = [
     ('index', 'klein', u'Klein Documentation',
      [u'Twisted Matrix Labs'], 1)
-]texinfo_documents = [
+]
+texinfo_documents = [
   ('index', 'Klein', u'Klein Documentation',
    u'Twisted Matrix Labs', 'Klein', 'One line description of project.',
    'Miscellaneous'),

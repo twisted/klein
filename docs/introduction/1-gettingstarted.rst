@@ -77,21 +77,21 @@ If you run this example and visit ``http://localhost:8080/somestring``, it will 
 Route Order Matters
 ===================
 
-But remember - order matters!
+But remember: order matters!
 This becomes very important when you are using variable paths.
 You can have a general, variable path, and then have hard coded paths over the top of it, such as in the following example.
 
 .. literalinclude:: /codeexamples/intro1/orderMatters.py
 
-As you can see, the later, more specific route for bob will overwrite the variable routing in ``pg_user``.
-Any other username will be routed in ``pg_user`` as normal.
+As you can see, the later applying route for bob will overwrite the variable routing in ``pg_user``.
+Any other username will be routed to ``pg_user`` as normal.
 
 
 Static Files
 ============
 
-Serving static files is really easy.
-You simply need to set the ``branch`` keyword argument on the route to ``True``, and return a ``twisted.web.static.File`` with the path you want to serve.
+Serving static files is easy.
+You need to set the ``branch`` keyword argument on the route to ``True``, and return a ``twisted.web.static.File`` with the path you want to serve.
 
 .. literalinclude:: /codeexamples/intro1/staticFiles.py
 
@@ -111,7 +111,7 @@ This example here uses ``treq`` (think Requests, but using Twisted) to implement
 Return Anything
 ===============
 
-Klein tries to do the right thing with what you return -- you can return Deferreds or a straight result, which can be regular text, a Resource or a Renderable.
+Klein tries to do the right thing with what you return -- you can return Deferreds or a straight result, which can be regular text, a Resource, or a Renderable.
 Just remember not to give Klein any ``unicode``, you have to encode it first.
 
 

@@ -2,16 +2,16 @@
 Contributing to Klein
 =====================
 
-Klein is an open source project, with contributions of all kinds coming from the community.
+Klein is an open source project that welcomes contributions of all kinds coming from the community.
 
 These include:
 
-- code patches
-- `documentation <http://klein.readthedocs.org/>`_ improvements
-- `bug reports <https://github.com/twisted/klein/issues>`_
-- reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_
+- code patches,
+- `documentation <http://klein.readthedocs.org/>`_ improvements,
+- `bug reports <https://github.com/twisted/klein/issues>`_,
+- reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
 
-Here's some suggestions to make the contributing process much smoother:
+Here's some suggestions to make the contributing process much smoother for you:
 
 Code
 ====

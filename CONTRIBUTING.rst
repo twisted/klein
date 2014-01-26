@@ -2,7 +2,16 @@
 Contributing to Klein
 =====================
 
-Here's some suggestions to get a patch into Klein.
+Klein is an open source project, with contributions of all kinds coming from the community.
+
+These include:
+
+- code patches
+- `documentation <http://klein.readthedocs.org/>`_ improvements
+- `bug reports <https://github.com/twisted/klein/issues>`_
+- reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_
+
+Here's some suggestions to make the contributing process much smoother:
 
 Code
 ====
@@ -34,4 +43,13 @@ Documentation
     ~~~~~~~~
 - Use gender-neutral pronouns, if you have to at all.
 - Put each sentence on a different line, if you can -- this makes diffs much easier to read.
-  You will need to add an indent to make it continue the list.
+  You will need to add an indent to make it continue lists.
+
+
+Reviewing
+=========
+
+All code that goes into Klein must be reviewed by at least one other person who is not an author of the patch.
+This can help prevent bugs from slipping through the net, gives another source for improvements, and makes sure that the code meets standard.
+
+Reviewers should read `Glyph's mailing list post <http://twistedmatrix.com/pipermail/twisted-python/2014-January/027894.html>`_ on reviewing -- code and docs don't have to be *perfect*, only *better*.

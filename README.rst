@@ -6,7 +6,7 @@ Klein, a Web Micro-Framework
     :target: http://travis-ci.org/twisted/klein
     :alt: Build Status
 
-Klein is a micro-framework for developing production ready web services with Python.
+Klein is a micro-framework for developing production-ready web services with Python.
 It is 'micro' in that it has an incredibly small API similar to `Bottle <http://bottlepy.org/docs/dev/index.html>`_ and `Flask <http://flask.pocoo.org/>`_.
 It is not 'micro' in that it depends on things outside the standard library.
 This is primarily because it is built on widely used and well tested components like `Werkzeug <http://werkzeug.pocoo.org/>`_ and `Twisted <http://twistedmatrix.com>`_.

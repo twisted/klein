@@ -1,5 +1,4 @@
 from klein import Klein
-
 app = Klein()
 
 @app.route('/')

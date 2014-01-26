@@ -113,3 +113,17 @@ Since it's all just Twisted underneath, you can return Deferreds, which then ret
 .. literalinclude:: /codeexamples/intro1/googleProxy.py
 
 This example here uses ``treq`` (think Requests, but using Twisted) to implement a Google proxy.
+
+
+Return Anything
+===============
+
+Klein tries to do the right thing with what you return -- you can return Deferreds or a straight result, which can be regular text, a Resource or a Renderable.
+Just remember not to give Klein any ``unicode``, you have to encode it first.
+
+
+Onwards
+=======
+
+That covers most of the general Klein concepts.
+The next article in the Introduction series is about deploying your Klein application using Twisted's tap functionality.

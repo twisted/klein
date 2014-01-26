@@ -12,3 +12,4 @@ things we should talk about here:
 - set up Options and makeService
 - create a twisted tap file
 - start it through twistd
+- use https (FOR SECURITY)

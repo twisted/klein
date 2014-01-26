@@ -6,13 +6,6 @@ Introduction -- Getting Started
 
     **This document is still a work in progress.** Please comment on `the GitHub PR <https://github.com/twisted/klein/pull/38>`_ with any inaccuracies, comments or suggestions.
 
-things we should talk about here:
-
-- show the most basic example (like the readme)
-- add some more routes, demonstrate how order matters
-- return some deferreds (maybe use treq?)
-- serve some basic static files
-
 Klein is a micro-framework for developing production ready web services with Python, built off Werkzeug and Twisted.
 The purpose of this introduction is to show you how to install, use and deploy Klein-based web applications.
 

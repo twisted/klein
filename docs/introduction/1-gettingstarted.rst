@@ -6,8 +6,8 @@ Introduction -- Getting Started
 
     **This document is still a work in progress.** Please comment on `the GitHub PR <https://github.com/twisted/klein/pull/38>`_ with any inaccuracies, comments or suggestions.
 
-Klein is a micro-framework for developing production ready web services with Python, built off Werkzeug and Twisted.
-The purpose of this introduction is to show you how to install, use and deploy Klein-based web applications.
+Klein is a micro-framework for developing production-ready web services with Python, built off Werkzeug and Twisted.
+The purpose of this introduction is to show you how to install, use, and deploy Klein-based web applications.
 
 
 This Introduction
@@ -15,8 +15,8 @@ This Introduction
 
 This introduction is meant as a general introduction to Klein concepts.
 
-All of the major code snippets can be found inside `Klein's GitHub repository <https://github.com/twisted/klein>`_, under ``docs/codeexamples``.
-Everything should be as self-contained as possible, but not everything may be runnable.
+All of the major code snippets can be found inside `Klein's GitHub repository <https://github.com/twisted/klein/tree/master/docs/codeexamples>`_.
+Everything should be as self-contained, but not everything may be runnable (for example, code that shows only a specific function).
 
 
 Installing
@@ -29,7 +29,7 @@ Klein is available on PyPI. Simply run this to install it::
 .. note::
 
     Since Twisted is a Klein dependency, you need to be able to install it.
-    If you haven't installed Twisted before, you may need the Python development headers, contained in the Python development packages for your operating system - for example, ``python-dev`` on Debian.
+    If you haven't installed Twisted before, you may need the Python development headers, contained in the Python development packages for your operating system - for example, ``python-dev`` on Debian, Mint or Ubuntu.
 
 
 Hello World

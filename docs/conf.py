@@ -1,5 +1,8 @@
 import sys, os, re, codecs
 
+# Add the extensions folder...
+sys.path.insert(0, os.path.abspath('./_extensions'))
+
 here = os.path.abspath(os.path.dirname(__file__))
 
 def read(*parts):
@@ -47,3 +50,7 @@ texinfo_documents = [
    u'Twisted Matrix Labs', 'Klein', 'One line description of project.',
    'Miscellaneous'),
 ]
+
+# API links extension, stolen from Twisted's Sphinx setup
+extensions.append('apilinks')
+apilinks_base_url = 'https://twistedmatrix.com/documents/current/api/'

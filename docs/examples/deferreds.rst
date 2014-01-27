@@ -8,4 +8,16 @@ A Deferred may also be returned from handler functions and their result will be 
 
 Here is a simple Google proxy, using `treq <https://github.com/dreid/treq>`_ (think Requests, but using Twisted).
 
-.. literalinclude:: /codeexamples/intro1/googleProxy.py
+.. code-block:: python
+
+    import treq
+    from klein import Klein
+    app = Klein()
+
+    @app.route('/', branch=True)
+    def google(request):
+        d = treq.get('https://www.google.com' + request.uri)
+        d.addCallback(treq.content)
+        return d
+
+    app.run("localhost", 8080)

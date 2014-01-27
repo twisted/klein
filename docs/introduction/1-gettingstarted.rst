@@ -91,7 +91,7 @@ Static Files
 ============
 
 Serving static files is easy.
-You need to set the ``branch`` keyword argument on the route to ``True``, and return a ``twisted.web.static.File`` with the path you want to serve.
+You need to set the ``branch`` keyword argument on the route to ``True``, and return a :api:`twisted.web.static.File <t.w.static.File>` with the path you want to serve.
 
 .. literalinclude:: /codeexamples/intro1/staticFiles.py
 
@@ -101,7 +101,7 @@ If you run this example and then visit ``http://localhost:8080/``, you will get 
 Deferreds
 =========
 
-Since it's all just Twisted underneath, you can return Deferreds, which then return a result.
+Since it's all just Twisted underneath, you can return :api:`twisted.internet.defer.Deferred <Deferreds>`, which then fire with a result.
 
 .. literalinclude:: /codeexamples/intro1/googleProxy.py
 
@@ -111,7 +111,7 @@ This example here uses `treq <https://github.com/dreid/treq>`_ (think Requests, 
 Return Anything
 ===============
 
-Klein tries to do the right thing with what you return -- you can return Deferreds or a straight result, which can be regular text, a Resource, or a Renderable.
+Klein tries to do the right thing with what you return -- you can return Deferreds or a straight result, which can be regular text, a :api:`twisted.web.resource.IResource <Resource>`, or a :api:`twisted.web.iweb.IRenderable <Renderable>`.
 Just remember not to give Klein any ``unicode``, you have to encode it first.
 
 

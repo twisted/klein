@@ -10,18 +10,6 @@ It's built on widely used and well tested components like Werkzeug and Twisted, 
 Klein is developed by a team of contributors, using `GitHub <https://github.com/twisted/klein>`_. We're also commonly in ``#twisted.web`` on `Freenode <http://freenode.net>`_.
 
 
-Introduction to Klein
-=====================
-
-This is an introduction to Klein, going through from creating a simple web site to something supporting AJAX and more.
-
-.. toctree::
-    :maxdepth: 1
-
-    introduction/1-gettingstarted
-    introduction/2-twistdtap
-
-
 Klein Examples
 ==============
 

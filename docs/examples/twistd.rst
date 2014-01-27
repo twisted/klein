@@ -7,9 +7,7 @@ It provides rich logging support, daemonization, reactor selection, profiler int
 
 To provide access to these features (and others like HTTPS) klein provides the ``resource`` function which returns a valid :api:`twisted.web.resource.IResource <IResource>` for your application.
 
-Here is our "Hello, World!" application again in a form that can be launched by ``twistd``.
-
-.. code-block:: python
+Here is our "Hello, World!" application again in a form that can be launched by ``twistd``::
 
     from klein import resource, route
 
@@ -18,8 +16,6 @@ Here is our "Hello, World!" application again in a form that can be launched by 
         return "Hello, world!"
 
 
-To run the above application we can save it as ``helloworld.py`` and use the ``twistd web`` plugin.
-
-::
+To run the above application we can save it as ``helloworld.py`` and use the ``twistd web`` plugin::
 
     twistd -n web --class=helloworld.resource

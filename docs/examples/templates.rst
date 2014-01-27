@@ -3,9 +3,7 @@ Example -- Using Twisted.Web Templates
 ======================================
 
 You can also make easy use of :api:`twisted.web.templates <Twisted's templating system>` by returning anything that implements :api:`twisted.web.template.IRenderable <IRenderable>`.
-For example, returning a :api:`twisted.web.template.Element <t.w.template.Element>` will make it be rendered, with the result sent as the response body.
-
-.. code-block:: python
+For example, returning a :api:`twisted.web.template.Element <t.w.template.Element>` will make it be rendered, with the result sent as the response body::
 
     from twisted.web.template import Element, XMLString, renderer
     from klein import run, route

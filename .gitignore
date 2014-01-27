@@ -5,3 +5,4 @@ htmlcov
 .coverage
 *.egg-info
 .tox/
+docs/_build/

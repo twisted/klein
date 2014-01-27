@@ -2,6 +2,8 @@ language: python
 python: 2.7
 
 env:
+    - TOX_ENV=pyflakes
+    - TOX_ENV=docs
     - TOX_ENV=py26
     - TOX_ENV=py27
     - TOX_ENV=pypy
@@ -26,7 +28,6 @@ env:
     - TOX_ENV=py26-tw121
     - TOX_ENV=py27-tw121
     - TOX_ENV=pypy-tw121
-    - TOX_ENV=pyflakes
 
 install:
     - ./.travis/install.sh

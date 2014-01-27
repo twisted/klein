@@ -2,7 +2,8 @@
 Example -- Using Twisted.Web Templates
 ======================================
 
-You can also make easy use of ``twisted.web.templates`` by returning anything that implements ``twisted.web.template.IRenderable`` such as ``twisted.web.template.Element`` in which case the template will be rendered and the result will be sent as the response body.
+You can also make easy use of :api:`twisted.web.templates <Twisted's templating system>` by returning anything that implements :api:`twisted.web.template.IRenderable <IRenderable>`.
+For example, returning a :api:`twisted.web.template.Element <t.w.template.Element>` will make it be rendered, with the result sent as the response body.
 
 .. code-block:: python
 

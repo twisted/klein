@@ -2,8 +2,7 @@
 Example -- Handling POST
 ========================
 
-The ``route`` decorator supports a ``methods`` keyword which is the list of
-HTTP methods as strings.
+The ``route`` decorator supports a ``methods`` keyword which is the list of HTTP methods as strings.
 For example, ``methods=['POST']`` will cause the handler to be invoked when an ``POST`` request is received.
 If a handler can support multiple methods the current method can be distinguished with ``request.method``.
 

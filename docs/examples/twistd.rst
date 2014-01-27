@@ -2,8 +2,8 @@
 Example -- Using ``twistd``
 ===========================
 
-Another very important integration point with Twisted is the `twistd application runner <https://twistedmatrix.com/documents/current/core/howto/tap.html>`_.
-It provides rich logging support, daemonization, reactor selection, profiler integration, and many more incredibly useful features.
+Another important integration point with Twisted is the `twistd application runner <https://twistedmatrix.com/documents/current/core/howto/tap.html>`_.
+It provides rich logging support, daemonization, reactor selection, profiler integration, and many more useful features.
 
 To provide access to these features (and others like HTTPS) klein provides the ``resource`` function which returns a valid :api:`twisted.web.resource.IResource <IResource>` for your application.
 

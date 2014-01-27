@@ -1,20 +1,9 @@
-import sys, os, re, codecs
+import sys, os, re, codecs, imp
 
 # Add the extensions folder...
 sys.path.insert(0, os.path.abspath('./_extensions'))
 
-here = os.path.abspath(os.path.dirname(__file__))
-
-def read(*parts):
-    return codecs.open(os.path.join(here, *parts), 'r').read()
-
-def find_version(*file_paths):
-    version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
-    if version_match:
-        return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
+_setup = imp.load_source("setup", "../setup.py")
 
 extensions = []
 templates_path = ['_templates']
@@ -22,7 +11,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 project = u'Klein'
 copyright = u'2014, Twisted Matrix Labs'
-version = find_version('..', 'klein', '__init__.py')
+version = _setup.find_version('klein', '__init__.py')
 release = version
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'

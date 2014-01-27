@@ -4,10 +4,10 @@ Example -- Handling POST
 
 The ``route`` decorator supports a ``methods`` keyword which is the list of
 HTTP methods as strings.
-For example ``methods=['POST']`` will cause the handler to be invoked when an ``POST`` request is received.
+For example, ``methods=['POST']`` will cause the handler to be invoked when an ``POST`` request is received.
 If a handler can support multiple methods the current method can be distinguished with ``request.method``.
 
-Here is our ``"Hello, world!"`` example extended to support setting the name we are saying Hello to via a ``POST`` request with a ``name``argument.
+Here is our ``"Hello, world!"`` example extended to support setting the name we are saying Hello to via a ``POST`` request with a ``name`` argument.
 
 This also demonstrates the use of the redirect method of the request to redirect back to ``'/'`` after handling the ``POST``.
 

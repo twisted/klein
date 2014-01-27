@@ -29,7 +29,7 @@ Klein is available on PyPI. Simply run this to install it::
 .. note::
 
     Since Twisted is a Klein dependency, you need to be able to install it.
-    If you haven't installed Twisted before, you may need the Python development headers, contained in the Python development packages for your operating system - for example, ``python-dev`` on Debian, Mint or Ubuntu.
+    If you haven't installed Twisted before, you may need the Python development headers, contained in the Python development packages for your operating system - for example, ``python-dev`` on Debian, Mint, or Ubuntu.
 
 
 Hello World

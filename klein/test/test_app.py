@@ -9,7 +9,8 @@ from twisted.python.components import registerAdapter
 from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
-from klein.test_util import EqualityTestsMixin
+from klein.test.util import EqualityTestsMixin
+
 
 
 class DummyRequest(object):

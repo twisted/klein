@@ -2,7 +2,7 @@ import os
 
 from StringIO import StringIO
 
-from mock import Mock
+from mock import Mock, call
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost

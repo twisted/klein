@@ -194,7 +194,7 @@ class Klein(object):
         Alternately, a handler can be registered for one or more specific
         C{Exception} tyes::
 
-            @aapp.handle_errors(EncodingError, ValidationError):
+            @app.handle_errors(EncodingError, ValidationError):
             def error_handler(request, failure)
                 request.setResponseCode(400)
                 return failure.getTraceback()

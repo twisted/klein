@@ -24,6 +24,7 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/twistd
     examples/handlingpost
     examples/nonglobalstate
+    examples/handlingerrors
 
 
 Contributing

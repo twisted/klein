@@ -152,7 +152,7 @@ class Klein(object):
             segment_count -= 1
 
         def deco(f):
-            kwargs.setdefault('endpoint', f.__name__)
+            kwargs.setdefault('endpoint', '.'.join([f.__module__, f.__name__, str(id(f))]))
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'

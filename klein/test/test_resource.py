@@ -11,6 +11,7 @@ from twisted.web.resource import Resource
 from twisted.web.static import File
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
+from twisted.python.reflect import fullyQualifiedName
 from werkzeug.exceptions import NotFound
 
 from klein import Klein
@@ -854,7 +855,7 @@ class KleinResourceTests(TestCase):
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
             krequest = IKleinRequest(request)
-            relative_url[0] = krequest.url_for('klein.test.test_resource.foo', {'bar': bar + 1})
+            relative_url[0] = krequest.url_for(fullyQualifiedName(foo), {'bar': bar + 1})
 
         d = _render(self.kr, request)
 
@@ -887,7 +888,7 @@ class KleinResourceTests(TestCase):
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
             krequest = IKleinRequest(request)
-            relative_url[0] = krequest.url_for('klein.test.test_resource.foo', {'bar': bar + 1},
+            relative_url[0] = krequest.url_for(fullyQualifiedName(foo), {'bar': bar + 1},
                 force_external=True)
 
         d = _render(self.kr, request)

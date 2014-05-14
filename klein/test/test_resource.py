@@ -222,7 +222,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'posted')
-        
+
         d2 = _render(self.kr, request2)
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), 'gotted')
@@ -276,7 +276,7 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'zeus')
-        
+
         d2 = _render(self.kr, request2)
 
         self.assertFired(d2)
@@ -301,9 +301,9 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'zeus')
-        
+
         d2 = _render(self.kr, request2)
-        
+
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), 'ok')
 
@@ -324,7 +324,7 @@ class KleinResourceTests(TestCase):
         self.assertNotFired(d)
 
         deferredResponse.callback('ok')
-        
+
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), 'ok')
 
@@ -340,7 +340,7 @@ class KleinResourceTests(TestCase):
 
         d = _render(self.kr, request)
 
-        self.assertFired(d)        
+        self.assertFired(d)
         self.assertEqual(request.getWrittenData(), "<h1>foo</h1>")
 
 
@@ -473,7 +473,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 
+        self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
                     os.path.dirname(__file__), "__init__.py")).read())
@@ -492,7 +492,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 
+        self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
                     os.path.dirname(__file__), "__init__.py")).read())
@@ -854,7 +854,7 @@ class KleinResourceTests(TestCase):
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
             krequest = IKleinRequest(request)
-            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1})
+            relative_url[0] = krequest.url_for('klein.test.test_resource.foo', {'bar': bar + 1})
 
         d = _render(self.kr, request)
 
@@ -887,7 +887,7 @@ class KleinResourceTests(TestCase):
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
             krequest = IKleinRequest(request)
-            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1},
+            relative_url[0] = krequest.url_for('klein.test.test_resource.foo', {'bar': bar + 1},
                 force_external=True)
 
         d = _render(self.kr, request)

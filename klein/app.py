@@ -10,6 +10,7 @@ from werkzeug.routing import Map, Rule
 
 from twisted.python import log
 from twisted.python.components import registerAdapter
+from twisted.python.reflect import fullyQualifiedName
 
 from twisted.web.server import Site, Request
 from twisted.internet import reactor
@@ -152,7 +153,7 @@ class Klein(object):
             segment_count -= 1
 
         def deco(f):
-            kwargs.setdefault('endpoint', '.'.join([f.__module__, f.__name__, str(id(f))]))
+            kwargs.setdefault('endpoint', fullyQualifiedName(f))
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'

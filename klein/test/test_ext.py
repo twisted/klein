@@ -22,6 +22,10 @@ class _VirtualModule(object):
 
 	def __exit__(self, exc_type, exc_value, traceback):
 		sys.meta_path.remove(self)
+		name = self.name
+		if name in sys.modules:
+			assert sys.modules[name] is self.mod
+			sys.modules.pop(name)
 
 	# "finder" object methods (meta_path element interface)
 	def find_module(self, name, path=None):
@@ -32,6 +36,7 @@ class _VirtualModule(object):
 	# "loader" object interface
 	def load_module(self, name):
 		assert name == self.name, (name, self.name)
+		sys.modules[name] = self.mod
 		return self.mod
 
 	def iter_modules(self, prefix=""):
@@ -57,12 +62,10 @@ class KleinExtTestCase(unittest.TestCase):
 		"""Test case when an extension is present."""
 
 		name = "test_ext_present"
-		fqn = "klein_{}".format(name)
+		fqn = "klein_{0}".format(name)
 
 		with _VirtualModule(fqn) as mod:
-			self.assertIs(
-				__import__(fqn), mod
-			)
+			self.assertIs(__import__(fqn), mod)
 
 			import klein.ext as ext
 			reload(ext)
@@ -81,7 +84,7 @@ class KleinExtTestCase(unittest.TestCase):
 		
 		a = "ext_1"
 		b = "ext_2"
-		fqn = lambda name: "klein_{}".format(name)
+		fqn = lambda name: "klein_{0}".format(name)
 
 		with _VirtualModule(fqn(a)) as mod_a:
 			with _VirtualModule(fqn(b)) as mod_b:
@@ -90,3 +93,6 @@ class KleinExtTestCase(unittest.TestCase):
 
 				self.assertIn(a, dir(ext))
 				self.assertIn(b, dir(ext))
+
+				self.assertIs(getattr(ext, a), mod_a)
+				self.assertIs(getattr(ext, b), mod_b)

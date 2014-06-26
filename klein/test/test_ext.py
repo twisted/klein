@@ -65,17 +65,17 @@ class KleinExtTestCase(unittest.TestCase):
 		fqn = "klein_{0}".format(name)
 
 		with _VirtualModule(fqn) as mod:
-			self.assertIs(__import__(fqn), mod)
+			self.assertEqual(__import__(fqn), mod)
 
 			import klein.ext as ext
 			reload(ext)
 
 			self.assertIn(name, dir(ext))
-			self.assertIs(getattr(ext, name), mod)
+			self.assertEqual(getattr(ext, name), mod)
 
 			# Test alternative import format
 			from klein.ext import test_ext_present as testExt
-			self.assertIs(testExt, mod)
+			self.assertEqual(testExt, mod)
 
 		self.assertRaises(ImportError, __import__, fqn)
 
@@ -94,5 +94,5 @@ class KleinExtTestCase(unittest.TestCase):
 				self.assertIn(a, dir(ext))
 				self.assertIn(b, dir(ext))
 
-				self.assertIs(getattr(ext, a), mod_a)
-				self.assertIs(getattr(ext, b), mod_b)
+				self.assertEqual(getattr(ext, a), mod_a)
+				self.assertEqual(getattr(ext, b), mod_b)

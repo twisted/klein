@@ -4,7 +4,6 @@ def load_extensions():
 	Returns dictionary of extension modules.
 	Keys of the dictionary are the named under which given modules should be made available in this package.
 	"""
-	import imp
 	import pkgutil
 
 	prefix = "klein_"

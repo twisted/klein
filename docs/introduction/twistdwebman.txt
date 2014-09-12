@@ -1,0 +1,12 @@
+  -n, --notracebacks      Do not display tracebacks in broken web pages.
+                          Displaying tracebacks to users may be security risk!
+  -p, --port=             strports description of the port to start the server
+                          on.
+  -l, --logfile=          Path to web CLF (Combined Log Format) log file.
+      --https=            Port to listen on for Secure HTTP.
+  -c, --certificate=      SSL certificate to use for HTTPS. [default:
+                          server.pem]
+  -k, --privkey=          SSL certificate to use for HTTPS. [default:
+                          server.pem]
+      --class=            Create a Resource subclass with a zero-argument
+                          constructor.

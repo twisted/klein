@@ -2,11 +2,10 @@
 Example -- Handling Errors
 ==========================
 
-It may be desirable to have uniform error-handling code for many routes.  We
-can do this with ``Klein.handle_errors``.
+It may be desirable to have uniform error-handling code for many routes.
+We can do this with ``Klein.handle_errors``.
 
-Below we have created a class that will translate ``NotFound`` exceptions into
-a custom 404 response.
+Below we have created a class that will translate ``NotFound`` exceptions into a custom 404 response.
 
 .. code-block:: python
 
@@ -42,8 +41,13 @@ a custom 404 response.
         store.app.run('localhost', 8080)
 
 
-The following curl commands can be used to test this behaviour::
+The following cURL commands (and output) can be used to test this behaviour::
 
-    curl -v -L http://localhost:8080/droid/R2D2
-    curl -v -L http://localhost:8080/droid/Janeway
-    curl -v -L http://localhost:8080/bounty/things
+    curl -L http://localhost:8080/droid/R2D2
+    Not found, I say
+
+    curl -L http://localhost:8080/droid/Janeway
+    Droid found
+
+    curl -L http://localhost:8080/bounty/things
+    Not found, I say

@@ -530,6 +530,30 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
+
+    def test_explicitStaticBranchSingleFile(self):
+        app = self.app
+
+        request = requestMock("/static/__init__.py")
+
+        @app.route("/static/__init__.py", branch=True)
+        def root(request):
+            path = os.path.join(
+                os.path.dirname(__file__), "__init__.py")
+            file = File(os.path.abspath(path))
+            file.isLeaf = True
+            return file
+
+        d = _render(self.kr, request)
+
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(),
+            open(
+                os.path.join(
+                    os.path.dirname(__file__), "__init__.py")).read())
+        self.assertEqual(request.writeCount, 1)
+        self.assertEqual(request.finishCount, 1)
+
     def test_staticDirlist(self):
         app = self.app
 

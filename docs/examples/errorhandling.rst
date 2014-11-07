@@ -17,8 +17,7 @@ Here is an example showing basic error handling:
     def parse_error(failure):
         error = str(failure.type)
         return dumps(dict(error='.'.join(error[error.find("'"):error.rfind("'")].split('.')[1:]),
-                          error_message=failure.getErrorMessage(),
-                          **dict(stack=failure.getTraceback()) if tier == 'debug' else {}))
+                          error_message=failure.getErrorMessage()))
 
 
     class HTTPError(Exception):
@@ -47,9 +46,20 @@ Here is an example showing basic error handling:
            return dumps(self.stuff[:request.args.get('limit', 2)])  # Show only two records by default
 
         @app.handle_errors(HTTPError)
-        def error_handler(self, request, failure):
+        def http_error_handler(self, request, failure):
             request.setResponseCode(failure.value.status)
             return parse_error(failure)
+
+        @app.handle_errors(AssertionError, KeyError)
+        def key_and_assert_error_handler(self, request, failure):
+            request.setResponseCode(400)
+            return parse_error(failure)
+
+        @app.handle_errors
+        def fallback_error_handler(self, request, failure):
+            request.setResponseCode(500)
+            return dumps({'error': 'ServerError', 'error_message': 'Unhandled exception',
+                          'stack': failure.getTraceback()})
 
 
     if __name__ == '__main__':

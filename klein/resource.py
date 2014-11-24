@@ -81,9 +81,26 @@ class KleinResource(Resource):
                 path_info = '/' + path_info
 
         url_scheme = 'https' if request.isSecure() else 'http'
+        try:
+            server_name = server_name.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # XXX
+        try:
+            script_name = script_name.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # XXX
+        try:
+            path_info = path_info.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # XXX
         # Bind our mapper.
-        mapper = self._app.url_map.bind(server_name, script_name, path_info=path_info,
-            default_method=request.method, url_scheme=url_scheme)
+        mapper = self._app.url_map.bind(
+            server_name,
+            script_name,
+            path_info=path_info,
+            default_method=request.method,
+            url_scheme=url_scheme,
+        )
         # Make the mapper available to the view.
         kleinRequest = IKleinRequest(request)
         kleinRequest.mapper = mapper

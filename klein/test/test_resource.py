@@ -975,3 +975,21 @@ class KleinResourceTests(TestCase):
         self.assertEqual(ensure_utf8_bytes(u"abc"), "abc")
         self.assertEqual(ensure_utf8_bytes(u"\u2202"), "\xe2\x88\x82")
         self.assertEqual(ensure_utf8_bytes("\xe2\x88\x82"), "\xe2\x88\x82")
+
+    def test_decodesPath(self):
+        """
+        If a non-ascii server, path_info, or script_name are passed, they're
+        decoded as UTF-8 before being handed to werkzeug.
+        """
+        request = requestMock("/f\xc3\xb6\xc3\xb6")
+
+        _render(self.kr, request)
+        kreq = IKleinRequest(request)
+        self.assertIsInstance(kreq.mapper.server_name, unicode)
+        self.assertIsInstance(kreq.mapper.path_info, unicode)
+        self.assertIsInstance(kreq.mapper.script_name, unicode)
+
+    def test_failedDecode(self):
+        """
+        XXX
+        """

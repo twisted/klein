@@ -16,7 +16,7 @@ from werkzeug.exceptions import NotFound
 
 from klein import Klein
 from klein.interfaces import IKleinRequest
-from klein.resource import KleinResource, ensure_utf8_bytes
+from klein.resource import KleinResource, ensure_utf8_bytes, URL_PART
 from klein.test.util import TestCase, EqualityTestsMixin
 
 
@@ -978,16 +978,26 @@ class KleinResourceTests(TestCase):
 
     def test_decodesPath(self):
         """
-        If a non-ascii server, path_info, or script_name are passed, they're
-        decoded as UTF-8 before being handed to werkzeug.
+        server, path_info, or script_name are decoded using the app's
+        C{urlDecoder}, before being handed to werkzeug.
         """
         request = requestMock("/f\xc3\xb6\xc3\xb6")
+        calls = []
+
+        def recorder(what, s):
+            calls.append((what, s))
+            return s.decode("utf-8")
+
+        self.kr._app._urlDecoder = recorder
 
         _render(self.kr, request)
-        kreq = IKleinRequest(request)
-        self.assertIsInstance(kreq.mapper.server_name, unicode)
-        self.assertIsInstance(kreq.mapper.path_info, unicode)
-        self.assertIsInstance(kreq.mapper.script_name, unicode)
+
+        self.assertEqual(
+            [(URL_PART.SERVER_NAME, "localhost:8080"),
+             (URL_PART.SCRIPT_NAME, ""),
+             (URL_PART.PATH_INFO, "/f\xc3\xb6\xc3\xb6")],
+            calls
+        )
 
     def test_failedDecode(self):
         """

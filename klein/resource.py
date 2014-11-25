@@ -1,18 +1,27 @@
-from twisted.web.resource import Resource, IResource, getChildForRequest
-from twisted.web.iweb import IRenderable
-from twisted.web.template import flattenString
-from twisted.web import server
-
-from twisted.python import log
-
 from twisted.internet import defer
-
+from twisted.python import log
+from twisted.python.constants import NamedConstant, Names
+from twisted.web import server
+from twisted.web.iweb import IRenderable
+from twisted.web.resource import Resource, IResource, getChildForRequest
+from twisted.web.template import flattenString
 
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
 
-__all__ = ["KleinResource", "ensure_utf8_bytes"]
+
+__all__ = ["KleinResource", "ensure_utf8_bytes", "URL_PART"]
+
+
+class URL_PART(Names):
+    """
+    Constants representing the part of an URL that are decoded using the
+    C{urlDecoder} callable in L{Klein}.
+    """
+    SERVER_NAME = NamedConstant()
+    SCRIPT_NAME = NamedConstant()
+    PATH_INFO = NamedConstant()
 
 
 def ensure_utf8_bytes(v):
@@ -82,17 +91,29 @@ class KleinResource(Resource):
 
         url_scheme = 'https' if request.isSecure() else 'http'
         try:
-            server_name = server_name.decode("utf-8")
+            server_name = self._app._urlDecoder(
+                URL_PART.SERVER_NAME,
+                server_name,
+            )
         except UnicodeDecodeError:
             pass  # XXX
+
         try:
-            script_name = script_name.decode("utf-8")
+            script_name = self._app._urlDecoder(
+                URL_PART.SCRIPT_NAME,
+                script_name,
+            )
         except UnicodeDecodeError:
             pass  # XXX
+
         try:
-            path_info = path_info.decode("utf-8")
+            path_info = self._app._urlDecoder(
+                URL_PART.PATH_INFO,
+                path_info,
+            )
         except UnicodeDecodeError:
             pass  # XXX
+
         # Bind our mapper.
         mapper = self._app.url_map.bind(
             server_name,

@@ -991,5 +991,10 @@ class KleinResourceTests(TestCase):
 
     def test_failedDecode(self):
         """
-        XXX
+        If one of the decodings fails, the error is logged and 400 returned.
         """
+        request = requestMock("/f\xc3\xc3\xb6")
+        _render(self.kr, request)
+        rv = request.getWrittenData()
+        self.assertEqual("Non-UTF-8 encoding in URL.", rv)
+        self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))

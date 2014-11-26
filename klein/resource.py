@@ -81,18 +81,28 @@ class KleinResource(Resource):
                 path_info = '/' + path_info
 
         url_scheme = 'https' if request.isSecure() else 'http'
+
+        utf8Failure = False
         try:
             server_name = server_name.decode("utf-8")
         except UnicodeDecodeError:
-            pass  # XXX
-        try:
-            script_name = script_name.decode("utf-8")
-        except UnicodeDecodeError:
-            pass  # XXX
+            utf8Failure = True
+            log.err(_why="Invalid encoding in SERVER_NAME.")
         try:
             path_info = path_info.decode("utf-8")
         except UnicodeDecodeError:
-            pass  # XXX
+            utf8Failure = True
+            log.err(_why="Invalid encoding in PATH_INFO.")
+        try:
+            script_name = script_name.decode("utf-8")
+        except UnicodeDecodeError:
+            utf8Failure = True
+            log.err(_why="Invalid encoding in SCRIPT_NAME.")
+
+        if utf8Failure:
+            request.setResponseCode(400)
+            return b"Non-UTF-8 encoding in URL."
+
         # Bind our mapper.
         mapper = self._app.url_map.bind(
             server_name,

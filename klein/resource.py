@@ -1,97 +1,18 @@
-from twisted.internet import defer
-from twisted.python import log, failure
-from twisted.python.constants import NamedConstant, Names
-from twisted.web import server
-from twisted.web.iweb import IRenderable
 from twisted.web.resource import Resource, IResource, getChildForRequest
+from twisted.web.iweb import IRenderable
 from twisted.web.template import flattenString
+from twisted.web import server
+
+from twisted.python import log
+
+from twisted.internet import defer
+
 
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
 
-
-__all__ = ["KleinResource", "ensure_utf8_bytes", "URL_PART"]
-
-
-class URL_PART(Names):
-    """
-    Constants representing the part of an URL that are decoded using the
-    C{urlDecoder} callable in L{Klein}.
-    """
-    SERVER_NAME = NamedConstant()
-    SCRIPT_NAME = NamedConstant()
-    PATH_INFO = NamedConstant()
-
-
-class URLDecodeError(object):
-    """
-    A decoding error that is part of L{URLDecodingException}.
-
-    @ivar type: The part type that failed.
-    @type type: L{URL_PART}
-
-    @ivar part: The actual part.
-    @type part: L{bytes}
-
-    @ivar exception: The error that has been raised by the decoder.
-    @type exception: L{Exception}
-    """
-    __slots__ = ["type", "part", "exception"]
-
-    def __repr__(self):
-        return (
-            "<URLDecodeError(type={0.type!r}, part={0.part!r}, "
-            "exception={0.exception!r})>".format(self)
-            .decode("ascii", errors="replace")
-        )
-
-    def __init__(self, type_, part, exception):
-        self.type = type_
-        self.part = part
-        self.exception = exception
-
-
-class URLDecodingException(Exception):
-    """
-    One or more URL parts could not be decoded.
-
-    @ivar errors: All decoding errors that occured.
-    @type errors: L{list} of L{URLDecodeError}.
-    """
-    __slots__ = ["errors"]
-
-    def __repr__(self):
-        return "<URLDecodingException(errors={0!r})>".format(self.errors)
-
-    def __init__(self, errors):
-        self.errors = errors
-
-
-def decodeURLparts(decoder, server_name, path_info, script_name):
-    """
-    Decode C{server_name}, C{path_info}, and  C{script_name} using C{decoder}
-    and return a tuple of them or raise L{URLDecodingException}.
-    """
-    decodeErrors = []
-    urlParts = {
-        URL_PART.SERVER_NAME: server_name,
-        URL_PART.PATH_INFO: path_info,
-        URL_PART.SCRIPT_NAME: script_name,
-    }
-    for type_, urlPart in urlParts.items():
-        try:
-            urlParts[type_] = decoder(type_, urlPart)
-        except Exception as e:
-            decodeErrors.append(URLDecodeError(type_, urlPart, e))
-    if decodeErrors != []:
-        raise URLDecodingException(decodeErrors)
-
-    return (
-        urlParts[URL_PART.SERVER_NAME],
-        urlParts[URL_PART.PATH_INFO],
-        urlParts[URL_PART.SCRIPT_NAME],
-    )
+__all__ = ["KleinResource", "ensure_utf8_bytes"]
 
 
 def ensure_utf8_bytes(v):
@@ -160,72 +81,32 @@ class KleinResource(Resource):
                 path_info = '/' + path_info
 
         url_scheme = 'https' if request.isSecure() else 'http'
-
-
-        # Make sure we'll notice when the connection goes away unambiguously.
-        request_finished = [False]
-
-        def processing_failed(failure, error_handlers):
-            # The failure processor writes to the request.  If the
-            # request is already finished we should suppress failure
-            # processing.  We don't return failure here because there
-            # is no way to surface this failure to the user if the
-            # request is finished.
-            if request_finished[0]:
-                if not failure.check(defer.CancelledError):
-                    log.err(failure, _why="Unhandled Error Processing Request.")
-                return
-
-            # If there are no more registered handlers, apply some defaults
-            if len(error_handlers) == 0:
-                if failure.check(HTTPException):
-                    he = failure.value
-                    request.setResponseCode(he.code)
-                    resp = he.get_response({})
-
-                    for header, value in resp.headers:
-                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
-
-                    return ensure_utf8_bytes(he.get_body({}))
-                else:
-                    request.processingFailed(failure)
-                    return
-
-            error_handler = error_handlers[0]
-
-            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
-            if failure.check(*error_handler[0]):
-                d = defer.maybeDeferred(self._app.execute_error_handler,
-                                        error_handler[1],
-                                        request,
-                                        failure)
-
-                return d.addErrback(processing_failed, error_handlers[1:])
-
-            return processing_failed(failure, error_handlers[1:])
-
         try:
-            server_name, path_info, script_name = decodeURLparts(
-                self._app._urlDecoder, server_name, path_info, script_name,
-            )
-        except URLDecodingException:
-            return defer.maybeDeferred(
-                processing_failed,
-                failure.Failure(),
-                self._app._error_handlers,
-            )  # XXX
-
+            server_name = server_name.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # XXX
+        try:
+            script_name = script_name.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # XXX
+        try:
+            path_info = path_info.decode("utf-8")
+        except UnicodeDecodeError:
+            pass  # XXX
         # Bind our mapper.
         mapper = self._app.url_map.bind(
             server_name,
+            script_name,
             path_info=path_info,
-            script_name=script_name,
             default_method=request.method,
             url_scheme=url_scheme,
         )
         # Make the mapper available to the view.
         kleinRequest = IKleinRequest(request)
         kleinRequest.mapper = mapper
+
+        # Make sure we'll notice when the connection goes away unambiguously.
+        request_finished = [False]
 
         def _finish(result):
             request_finished[0] = True
@@ -281,6 +162,47 @@ class KleinResource(Resource):
             return r
 
         d.addCallback(process)
+
+        def processing_failed(failure, error_handlers):
+            # The failure processor writes to the request.  If the
+            # request is already finished we should suppress failure
+            # processing.  We don't return failure here because there
+            # is no way to surface this failure to the user if the
+            # request is finished.
+            if request_finished[0]:
+                if not failure.check(defer.CancelledError):
+                    log.err(failure, _why="Unhandled Error Processing Request.")
+                return
+
+            # If there are no more registered handlers, apply some defaults
+            if len(error_handlers) == 0:
+                if failure.check(HTTPException):
+                    he = failure.value
+                    request.setResponseCode(he.code)
+                    resp = he.get_response({})
+
+                    for header, value in resp.headers:
+                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
+
+                    return ensure_utf8_bytes(he.get_body({}))
+                else:
+                    request.processingFailed(failure)
+                    return
+
+            error_handler = error_handlers[0]
+
+            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
+            if failure.check(*error_handler[0]):
+                d = defer.maybeDeferred(self._app.execute_error_handler,
+                                        error_handler[1],
+                                        request,
+                                        failure)
+
+                return d.addErrback(processing_failed, error_handlers[1:])
+
+            return processing_failed(failure, error_handlers[1:])
+
+
         d.addErrback(processing_failed, self._app._error_handlers)
         d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
         return server.NOT_DONE_YET

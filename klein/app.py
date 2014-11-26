@@ -1,7 +1,6 @@
 """
 Applications are great.  Lets have more of them.
 """
-
 import sys
 import weakref
 
@@ -15,13 +14,12 @@ from twisted.python.components import registerAdapter
 from twisted.web.server import Site, Request
 from twisted.internet import reactor
 
-from zope.interface import implementer
+from zope.interface import implements
 
 from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
 
-
-__all__ = ['Klein', 'run', 'route', 'resource', 'decodeFromUTF8']
+__all__ = ['Klein', 'run', 'route', 'resource']
 
 
 def _call(instance, f, *args, **kwargs):
@@ -31,8 +29,9 @@ def _call(instance, f, *args, **kwargs):
     return f(instance, *args, **kwargs)
 
 
-@implementer(IKleinRequest)
 class KleinRequest(object):
+    implements(IKleinRequest)
+
     def __init__(self, request):
         self.branch_segments = ['']
         self.mapper = None
@@ -42,13 +41,6 @@ class KleinRequest(object):
 
 
 registerAdapter(KleinRequest, Request, IKleinRequest)
-
-
-def decodeFromUTF8(what, s):
-    """
-    Decode everything from UTF-8 L{bytes} C{s} to L{unicode}.
-    """
-    return s.decode("utf-8")
 
 
 class Klein(object):
@@ -63,18 +55,7 @@ class Klein(object):
 
     _bound_klein_instances = weakref.WeakKeyDictionary()
 
-    def __init__(self, urlDecoder=decodeFromUTF8):
-        """
-        @param urlDecoder: A callable that is used to decode URL parts from
-            L{bytes} to L{unicode} by being called with the type of the part
-            and the byte string.  By default, everything is attempted to be
-            decoded as UTF-8 and a 400 is returned if that fails.
-        @type urlDecoder: C{callable} that takes two arguments: a constant from
-            L{klein.resource.URL_PART} that describes the string and the
-            L{bytes} string that is to be decoded.  The result must be
-            L{unicode}.
-        """
-        self._urlDecoder = urlDecoder
+    def __init__(self):
         self._url_map = Map()
         self._endpoints = {}
         self._error_handlers = []

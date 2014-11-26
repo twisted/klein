@@ -1,11 +1,13 @@
+from twisted.trial import unittest
+
 import sys
 
 from mock import Mock, patch
+
 from twisted.python.components import registerAdapter
-from twisted.trial import unittest
 
 from klein import Klein
-from klein.app import KleinRequest, decodeFromUTF8
+from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
 
@@ -201,6 +203,8 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
 
+
+
     def test_branchDoesntRequireTrailingSlash(self):
         """
         L{Klein.route} should create a branch path which consumes all children,
@@ -268,18 +272,10 @@ class KleinTestCase(unittest.TestCase):
     @patch('klein.app.KleinResource')
     def test_resource(self, mock_kr):
         """
-        L{Klein.resource} returns a L{KleinResource}.
+        L{Klien.resource} returns a L{KleinResource}.
         """
         app = Klein()
         resource = app.resource()
 
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
-
-
-    def test_UTF8decoder(self):
-        """
-        L{decodeFromUTF8} decodes from UTF-8 L{bytes} to L{unicode}.
-        """
-        rv = decodeFromUTF8(None, b"f\xc3\xb6\xc3\xb6")
-        self.assertIsInstance(rv, unicode)

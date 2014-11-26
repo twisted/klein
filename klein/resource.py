@@ -1,5 +1,5 @@
 from twisted.internet import defer
-from twisted.python import log
+from twisted.python import log, failure
 from twisted.python.constants import NamedConstant, Names
 from twisted.web import server
 from twisted.web.iweb import IRenderable
@@ -39,6 +39,13 @@ class URLDecodeError(object):
     """
     __slots__ = ["type", "part", "exception"]
 
+    def __repr__(self):
+        return (
+            "<URLDecodeError(type={0.type!r}, part={0.part!r}, "
+            "exception={0.exception!r})>".format(self)
+            .decode("ascii", errors="replace")
+        )
+
     def __init__(self, type_, part, exception):
         self.type = type_
         self.part = part
@@ -52,7 +59,10 @@ class URLDecodingException(Exception):
     @ivar errors: All decoding errors that occured.
     @type errors: L{list} of L{URLDecodeError}.
     """
-    __slots__ = ["error"]
+    __slots__ = ["errors"]
+
+    def __repr__(self):
+        return "<URLDecodingException(errors={0!r})>".format(self.errors)
 
     def __init__(self, errors):
         self.errors = errors
@@ -72,7 +82,7 @@ def decodeURLparts(decoder, server_name, path_info, script_name):
     for type_, urlPart in urlParts.items():
         try:
             urlParts[type_] = decoder(type_, urlPart)
-        except UnicodeDecodeError as e:
+        except Exception as e:
             decodeErrors.append(URLDecodeError(type_, urlPart, e))
     if decodeErrors != []:
         raise URLDecodingException(decodeErrors)
@@ -151,12 +161,59 @@ class KleinResource(Resource):
 
         url_scheme = 'https' if request.isSecure() else 'http'
 
+
+        # Make sure we'll notice when the connection goes away unambiguously.
+        request_finished = [False]
+
+        def processing_failed(failure, error_handlers):
+            # The failure processor writes to the request.  If the
+            # request is already finished we should suppress failure
+            # processing.  We don't return failure here because there
+            # is no way to surface this failure to the user if the
+            # request is finished.
+            if request_finished[0]:
+                if not failure.check(defer.CancelledError):
+                    log.err(failure, _why="Unhandled Error Processing Request.")
+                return
+
+            # If there are no more registered handlers, apply some defaults
+            if len(error_handlers) == 0:
+                if failure.check(HTTPException):
+                    he = failure.value
+                    request.setResponseCode(he.code)
+                    resp = he.get_response({})
+
+                    for header, value in resp.headers:
+                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
+
+                    return ensure_utf8_bytes(he.get_body({}))
+                else:
+                    request.processingFailed(failure)
+                    return
+
+            error_handler = error_handlers[0]
+
+            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
+            if failure.check(*error_handler[0]):
+                d = defer.maybeDeferred(self._app.execute_error_handler,
+                                        error_handler[1],
+                                        request,
+                                        failure)
+
+                return d.addErrback(processing_failed, error_handlers[1:])
+
+            return processing_failed(failure, error_handlers[1:])
+
         try:
             server_name, path_info, script_name = decodeURLparts(
                 self._app._urlDecoder, server_name, path_info, script_name,
             )
-        except URLDecodingException as e:
-            raise e  # XXX
+        except URLDecodingException:
+            return defer.maybeDeferred(
+                processing_failed,
+                failure.Failure(),
+                self._app._error_handlers,
+            )  # XXX
 
         # Bind our mapper.
         mapper = self._app.url_map.bind(
@@ -169,9 +226,6 @@ class KleinResource(Resource):
         # Make the mapper available to the view.
         kleinRequest = IKleinRequest(request)
         kleinRequest.mapper = mapper
-
-        # Make sure we'll notice when the connection goes away unambiguously.
-        request_finished = [False]
 
         def _finish(result):
             request_finished[0] = True
@@ -227,47 +281,6 @@ class KleinResource(Resource):
             return r
 
         d.addCallback(process)
-
-        def processing_failed(failure, error_handlers):
-            # The failure processor writes to the request.  If the
-            # request is already finished we should suppress failure
-            # processing.  We don't return failure here because there
-            # is no way to surface this failure to the user if the
-            # request is finished.
-            if request_finished[0]:
-                if not failure.check(defer.CancelledError):
-                    log.err(failure, _why="Unhandled Error Processing Request.")
-                return
-
-            # If there are no more registered handlers, apply some defaults
-            if len(error_handlers) == 0:
-                if failure.check(HTTPException):
-                    he = failure.value
-                    request.setResponseCode(he.code)
-                    resp = he.get_response({})
-
-                    for header, value in resp.headers:
-                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
-
-                    return ensure_utf8_bytes(he.get_body({}))
-                else:
-                    request.processingFailed(failure)
-                    return
-
-            error_handler = error_handlers[0]
-
-            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
-            if failure.check(*error_handler[0]):
-                d = defer.maybeDeferred(self._app.execute_error_handler,
-                                        error_handler[1],
-                                        request,
-                                        failure)
-
-                return d.addErrback(processing_failed, error_handlers[1:])
-
-            return processing_failed(failure, error_handlers[1:])
-
-
         d.addErrback(processing_failed, self._app._error_handlers)
         d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
         return server.NOT_DONE_YET

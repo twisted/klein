@@ -24,6 +24,66 @@ class URL_PART(Names):
     PATH_INFO = NamedConstant()
 
 
+class URLDecodeError(object):
+    """
+    A decoding error that is part of L{URLDecodingException}.
+
+    @ivar type: The part type that failed.
+    @type type: L{URL_PART}
+
+    @ivar part: The actual part.
+    @type part: L{bytes}
+
+    @ivar exception: The error that has been raised by the decoder.
+    @type exception: L{Exception}
+    """
+    __slots__ = ["type", "part", "exception"]
+
+    def __init__(self, type_, part, exception):
+        self.type = type_
+        self.part = part
+        self.exception = exception
+
+
+class URLDecodingException(Exception):
+    """
+    One or more URL parts could not be decoded.
+
+    @ivar errors: All decoding errors that occured.
+    @type errors: L{list} of L{URLDecodeError}.
+    """
+    __slots__ = ["error"]
+
+    def __init__(self, errors):
+        self.errors = errors
+
+
+def decodeURLparts(decoder, server_name, path_info, script_name):
+    """
+    Decode C{server_name}, C{path_info}, and  C{script_name} using C{decoder}
+    and return a tuple of them or raise L{URLDecodingException}.
+    """
+    decodeErrors = []
+    urlParts = {
+        URL_PART.SERVER_NAME: server_name,
+        URL_PART.PATH_INFO: path_info,
+        URL_PART.SCRIPT_NAME: script_name,
+    }
+    for type_, urlPart in urlParts.items():
+        try:
+            urlParts[type_] = decoder(type_, urlPart)
+        except UnicodeDecodeError as e:
+            decodeErrors.append(URLDecodeError(type_, urlPart, e))
+    if decodeErrors != []:
+        raise URLDecodingException(decodeErrors)
+
+    return (
+        urlParts[URL_PART.SERVER_NAME],
+        urlParts[URL_PART.PATH_INFO],
+        urlParts[URL_PART.SCRIPT_NAME],
+    )
+
+
 def ensure_utf8_bytes(v):
     """
     Coerces a value which is either a C{unicode} or C{str} to a C{str}.
@@ -90,35 +150,19 @@ class KleinResource(Resource):
                 path_info = '/' + path_info
 
         url_scheme = 'https' if request.isSecure() else 'http'
-        try:
-            server_name = self._app._urlDecoder(
-                URL_PART.SERVER_NAME,
-                server_name,
-            )
-        except UnicodeDecodeError:
-            pass  # XXX
 
         try:
-            script_name = self._app._urlDecoder(
-                URL_PART.SCRIPT_NAME,
-                script_name,
+            server_name, path_info, script_name = decodeURLparts(
+                self._app._urlDecoder, server_name, path_info, script_name,
             )
-        except UnicodeDecodeError:
-            pass  # XXX
-
-        try:
-            path_info = self._app._urlDecoder(
-                URL_PART.PATH_INFO,
-                path_info,
-            )
-        except UnicodeDecodeError:
-            pass  # XXX
+        except URLDecodingException:
+            raise e  # XXX
 
         # Bind our mapper.
         mapper = self._app.url_map.bind(
             server_name,
-            script_name,
             path_info=path_info,
+            script_name=script_name,
             default_method=request.method,
             url_scheme=url_scheme,
         )

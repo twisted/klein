@@ -992,11 +992,13 @@ class KleinResourceTests(TestCase):
 
         _render(self.kr, request)
 
+        # Since decodeURLparts is using a dict, the order of the calls is not
+        # deterministic.
         self.assertEqual(
-            [(URL_PART.SERVER_NAME, "localhost:8080"),
-             (URL_PART.SCRIPT_NAME, ""),
-             (URL_PART.PATH_INFO, "/f\xc3\xb6\xc3\xb6")],
-            calls
+            set([(URL_PART.SERVER_NAME, "localhost:8080"),
+                 (URL_PART.SCRIPT_NAME, ""),
+                 (URL_PART.PATH_INFO, "/f\xc3\xb6\xc3\xb6")]),
+            set(calls)
         )
 
     def test_failedDecode(self):

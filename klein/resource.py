@@ -155,7 +155,7 @@ class KleinResource(Resource):
             server_name, path_info, script_name = decodeURLparts(
                 self._app._urlDecoder, server_name, path_info, script_name,
             )
-        except URLDecodingException:
+        except URLDecodingException as e:
             raise e  # XXX
 
         # Bind our mapper.

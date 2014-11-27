@@ -176,7 +176,7 @@ class KleinResource(Resource):
             # request is finished.
             if request_finished[0]:
                 if not failure.check(defer.CancelledError):
-                    log.err(failure, _why="Unhandled Error Processing Request.")
+                    log.err(failure, "Unhandled Error Processing Request.")
                 return
 
             # If there are no more registered handlers, apply some defaults

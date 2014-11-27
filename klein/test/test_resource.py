@@ -989,12 +989,37 @@ class KleinResourceTests(TestCase):
         self.assertIsInstance(kreq.mapper.path_info, unicode)
         self.assertIsInstance(kreq.mapper.script_name, unicode)
 
-    def test_failedDecode(self):
+    def assertDecodeFailure(self, request):
         """
-        If one of the decodings fails, the error is logged and 400 returned.
+        Make assertions about a request that failed because of invalid
+        encodings in one of the URL parts.
         """
-        request = requestMock("/f\xc3\xc3\xb6")
-        _render(self.kr, request)
         rv = request.getWrittenData()
         self.assertEqual("Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
+
+    def test_failedDecodePathInfo(self):
+        """
+        If decoding of PATH_INFO fails, the error is logged and 400 returned.
+        """
+        request = requestMock("/f\xc3\xc3\xb6")
+        _render(self.kr, request)
+        self.assertDecodeFailure(request)
+
+    def test_failedDecodeServerName(self):
+        """
+        If decoding of SERVER_NAME fails, the error is logged and 400 returned.
+        """
+        request = requestMock("/")
+        request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
+        _render(self.kr, request)
+        self.assertDecodeFailure(request)
+
+    def test_failedDecodeScriptName(self):
+        """
+        If decoding of SCRIPT_NAME fails, the error is logged and 400 returned.
+        """
+        request = requestMock("/")
+        request.prepath = b"f\xc3\xc3\xb6"
+        _render(self.kr, request)
+        self.assertDecodeFailure(request)

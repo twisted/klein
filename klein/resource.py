@@ -1,13 +1,9 @@
-from twisted.web.resource import Resource, IResource, getChildForRequest
-from twisted.web.iweb import IRenderable
-from twisted.web.template import flattenString
-from twisted.web import server
-
-from twisted.python import log
-
 from twisted.internet import defer
-
-
+from twisted.python import log, failure
+from twisted.web import server
+from twisted.web.iweb import IRenderable
+from twisted.web.resource import Resource, IResource, getChildForRequest
+from twisted.web.template import flattenString
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
@@ -82,24 +78,23 @@ class KleinResource(Resource):
 
         url_scheme = 'https' if request.isSecure() else 'http'
 
-        utf8Failure = False
+        utf8Failures = []
         try:
             server_name = server_name.decode("utf-8")
         except UnicodeDecodeError:
-            utf8Failure = True
-            log.err(_why="Invalid encoding in SERVER_NAME.")
+            utf8Failures.append(("SERVER_NAME", failure.Failure()))
         try:
             path_info = path_info.decode("utf-8")
         except UnicodeDecodeError:
-            utf8Failure = True
-            log.err(_why="Invalid encoding in PATH_INFO.")
+            utf8Failures.append(("PATH_INFO", failure.Failure()))
         try:
             script_name = script_name.decode("utf-8")
         except UnicodeDecodeError:
-            utf8Failure = True
-            log.err(_why="Invalid encoding in SCRIPT_NAME.")
+            utf8Failures.append(("SCRIPT_NAME", failure.Failure()))
 
-        if utf8Failure:
+        if utf8Failures:
+            for what, fail in utf8Failures:
+                log.err(fail, "Invalid encoding in {what}.".format(what=what))
             request.setResponseCode(400)
             return b"Non-UTF-8 encoding in URL."
 

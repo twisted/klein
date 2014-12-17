@@ -16,7 +16,12 @@ from werkzeug.exceptions import NotFound
 
 from klein import Klein
 from klein.interfaces import IKleinRequest
-from klein.resource import KleinResource, ensure_utf8_bytes
+from klein.resource import (
+    KleinResource,
+    URLDecodeError,
+    ensure_utf8_bytes,
+    extractURLparts,
+)
 from klein.test.util import TestCase, EqualityTestsMixin
 
 
@@ -978,10 +983,10 @@ class KleinResourceTests(TestCase):
 
     def test_decodesPath(self):
         """
-        If a non-ascii server, path_info, or script_name are passed, they're
-        decoded as UTF-8 before being handed to werkzeug.
+        server_name, path_info, and script_name are decoded as UTF-8 before
+        being handed to werkzeug.
         """
-        request = requestMock("/f\xc3\xb6\xc3\xb6")
+        request = requestMock(b"/f\xc3\xb6\xc3\xb6")
 
         _render(self.kr, request)
         kreq = IKleinRequest(request)
@@ -989,37 +994,90 @@ class KleinResourceTests(TestCase):
         self.assertIsInstance(kreq.mapper.path_info, unicode)
         self.assertIsInstance(kreq.mapper.script_name, unicode)
 
-    def assertDecodeFailure(self, request):
+    def test_failedDecodePathInfo(self):
         """
-        Make assertions about a request that failed because of invalid
-        encodings in one of the URL parts.
+        If decoding of one of the URL parts (in this case PATH_INFO) fails, the
+        error is logged and 400 returned.
         """
+        request = requestMock(b"/f\xc3\xc3\xb6")
+        _render(self.kr, request)
         rv = request.getWrittenData()
         self.assertEqual("Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_failedDecodePathInfo(self):
+    def test_urlDecodeErrorRepr(self):
         """
-        If decoding of PATH_INFO fails, the error is logged and 400 returned.
+        URLDecodeError.__repr__ formats properly.
+        """
+        self.assertEqual(
+            "<URLDecodeError(errors=<type 'exceptions.ValueError'>)>",
+            repr(URLDecodeError(ValueError)),
+        )
+
+
+class ExtractURLpartsTests(TestCase):
+    """
+    Tests for L{klein.resource._extractURLparts}.
+    """
+    def test_types(self):
+        """
+        Returns the correct types.
+        """
+        url_scheme, server_name, server_port, path_info, script_name = \
+            extractURLparts(requestMock(b"/f\xc3\xb6\xc3\xb6"))
+
+        self.assertIsInstance(url_scheme, unicode)
+        self.assertIsInstance(server_name, unicode)
+        self.assertIsInstance(server_port, int)
+        self.assertIsInstance(path_info, unicode)
+        self.assertIsInstance(script_name, unicode)
+
+    def assertDecodingFailure(self, exception, part):
+        """
+        Checks whether C{exception} consists of a single L{UnicodeDecodeError}
+            for C{part}.
+        """
+        self.assertEqual(1, len(exception.errors))
+        actualPart, actualFail = exception.errors[0]
+        self.assertEqual(part, actualPart)
+        self.assertIsInstance(actualFail.value, UnicodeDecodeError)
+
+    def test_failServerName(self):
+        """
+        Raises URLDecodeError if SERVER_NAME can't be decoded.
+        """
+        request = requestMock("/foo")
+        request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
+        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        self.assertDecodingFailure(e, "SERVER_NAME")
+
+    def test_failPathInfo(self):
+        """
+        Raises URLDecodeError if PATH_INFO can't be decoded.
         """
         request = requestMock("/f\xc3\xc3\xb6")
-        _render(self.kr, request)
-        self.assertDecodeFailure(request)
+        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        self.assertDecodingFailure(e, "PATH_INFO")
 
-    def test_failedDecodeServerName(self):
+    def test_failScriptName(self):
         """
-        If decoding of SERVER_NAME fails, the error is logged and 400 returned.
+        Raises URLDecodeError if SCRIPT_NAME can't be decoded.
         """
-        request = requestMock("/")
+        request = requestMock("/foo")
+        request.prepath = ["f\xc3\xc3\xb6"]
+        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        self.assertDecodingFailure(e, "SCRIPT_NAME")
+
+    def test_failAll(self):
+        """
+        If multiple parts fail, they all get appended to the errors list of
+        URLDecodeError.
+        """
+        request = requestMock("/f\xc3\xc3\xb6")
+        request.prepath = ["f\xc3\xc3\xb6"]
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
-        _render(self.kr, request)
-        self.assertDecodeFailure(request)
-
-    def test_failedDecodeScriptName(self):
-        """
-        If decoding of SCRIPT_NAME fails, the error is logged and 400 returned.
-        """
-        request = requestMock("/")
-        request.prepath = b"f\xc3\xc3\xb6"
-        _render(self.kr, request)
-        self.assertDecodeFailure(request)
+        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        self.assertEqual(
+            set(["SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"]),
+            set(part for part, _ in e.errors)
+        )

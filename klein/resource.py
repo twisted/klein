@@ -8,7 +8,10 @@ from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
 
+
+
 __all__ = ["KleinResource", "ensure_utf8_bytes"]
+
 
 
 def ensure_utf8_bytes(v):
@@ -21,6 +24,7 @@ def ensure_utf8_bytes(v):
     return v
 
 
+
 class _StandInResource(object):
     """
     A standin for a Resource.
@@ -30,7 +34,8 @@ class _StandInResource(object):
     """
 
 
-class URLDecodeError(Exception):
+
+class _URLDecodeError(Exception):
     """
     Raised if one or more string parts of the URL could not be decoded.
     """
@@ -48,7 +53,8 @@ class URLDecodeError(Exception):
         return "<URLDecodeError(errors={0!r})>".format(self.errors)
 
 
-def extractURLparts(request):
+
+def _extractURLparts(request):
     """
     Extracts and decodes URI parts from C{request}.
 
@@ -99,9 +105,10 @@ def extractURLparts(request):
         utf8Failures.append(("SCRIPT_NAME", failure.Failure()))
 
     if utf8Failures:
-        raise URLDecodeError(utf8Failures)
+        raise _URLDecodeError(utf8Failures)
 
     return url_scheme, server_name, server_port, path_info, script_name
+
 
 
 class KleinResource(Resource):
@@ -133,8 +140,8 @@ class KleinResource(Resource):
         # Stuff we need to know for the mapper.
         try:
             url_scheme, server_name, server_port, path_info, script_name = \
-                extractURLparts(request)
-        except URLDecodeError as e:
+                _extractURLparts(request)
+        except _URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, "Invalid encoding in {what}.".format(what=what))
             request.setResponseCode(400)

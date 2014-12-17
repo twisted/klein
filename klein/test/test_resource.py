@@ -18,9 +18,9 @@ from klein import Klein
 from klein.interfaces import IKleinRequest
 from klein.resource import (
     KleinResource,
-    URLDecodeError,
+    _URLDecodeError,
+    _extractURLparts,
     ensure_utf8_bytes,
-    extractURLparts,
 )
 from klein.test.util import TestCase, EqualityTestsMixin
 
@@ -1011,8 +1011,9 @@ class KleinResourceTests(TestCase):
         """
         self.assertEqual(
             "<URLDecodeError(errors=<type 'exceptions.ValueError'>)>",
-            repr(URLDecodeError(ValueError)),
+            repr(_URLDecodeError(ValueError)),
         )
+
 
 
 class ExtractURLpartsTests(TestCase):
@@ -1024,7 +1025,7 @@ class ExtractURLpartsTests(TestCase):
         Returns the correct types.
         """
         url_scheme, server_name, server_port, path_info, script_name = \
-            extractURLparts(requestMock(b"/f\xc3\xb6\xc3\xb6"))
+            _extractURLparts(requestMock(b"/f\xc3\xb6\xc3\xb6"))
 
         self.assertIsInstance(url_scheme, unicode)
         self.assertIsInstance(server_name, unicode)
@@ -1032,15 +1033,17 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(path_info, unicode)
         self.assertIsInstance(script_name, unicode)
 
+
     def assertDecodingFailure(self, exception, part):
         """
         Checks whether C{exception} consists of a single L{UnicodeDecodeError}
-            for C{part}.
+        for C{part}.
         """
         self.assertEqual(1, len(exception.errors))
         actualPart, actualFail = exception.errors[0]
         self.assertEqual(part, actualPart)
         self.assertIsInstance(actualFail.value, UnicodeDecodeError)
+
 
     def test_failServerName(self):
         """
@@ -1048,16 +1051,18 @@ class ExtractURLpartsTests(TestCase):
         """
         request = requestMock("/foo")
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
-        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "SERVER_NAME")
+
 
     def test_failPathInfo(self):
         """
         Raises URLDecodeError if PATH_INFO can't be decoded.
         """
         request = requestMock("/f\xc3\xc3\xb6")
-        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "PATH_INFO")
+
 
     def test_failScriptName(self):
         """
@@ -1065,8 +1070,9 @@ class ExtractURLpartsTests(TestCase):
         """
         request = requestMock("/foo")
         request.prepath = ["f\xc3\xc3\xb6"]
-        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "SCRIPT_NAME")
+
 
     def test_failAll(self):
         """
@@ -1076,7 +1082,7 @@ class ExtractURLpartsTests(TestCase):
         request = requestMock("/f\xc3\xc3\xb6")
         request.prepath = ["f\xc3\xc3\xb6"]
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
-        e = self.assertRaises(URLDecodeError, extractURLparts, request)
+        e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertEqual(
             set(["SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"]),
             set(part for part, _ in e.errors)

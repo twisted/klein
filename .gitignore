@@ -6,3 +6,4 @@ htmlcov
 *.egg-info
 .tox/
 docs/_build/
+.DS_Store

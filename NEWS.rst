@@ -1,7 +1,7 @@
 NEWS
 ====
 
-0.2.4 - 2014-12-18
+14.0 - 2014-12-18
 -------------------
  * [BUG] Klein now handles decoding URLs as UTF-8. [`#62 <https://github.com/twisted/klein/pull/62>`_]
 

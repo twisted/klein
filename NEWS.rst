@@ -3,7 +3,7 @@ NEWS
 
 14.0.0 - 2014-12-18
 -------------------
- * [BUG] Klein now handles decoding URLs as UTF-8. [`#62 <https://github.com/twisted/klein/pull/62>`_]
+ * [BUG] Klein now attempts to decode non-ASCII URLs as UTF-8 and serves a 400 if that fails instead of always serving a 500. [`#62 <https://github.com/twisted/klein/pull/62>`_]
 
 0.2.3 - 2014-01-14
 ------------------

@@ -1,7 +1,7 @@
 from klein.app import Klein, run, route, resource
 
 
-__version__ = "0.3.0"
+__version__ = "0.2.4"
 
 __author__  = "The Klein contributors (see AUTHORS)"
 __license__ = "MIT"

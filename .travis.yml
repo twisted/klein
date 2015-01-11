@@ -4,12 +4,15 @@ python: 2.7
 env:
     - TOX_ENV=pyflakes
     - TOX_ENV=docs
-    - TOX_ENV=py26
-    - TOX_ENV=py27
-    - TOX_ENV=pypy
+    - TOX_ENV=py26-twcurrent
+    - TOX_ENV=py27-twcurrent
+    - TOX_ENV=pypy-twcurrent
     - TOX_ENV=py26-twtrunk
     - TOX_ENV=py27-twtrunk
     - TOX_ENV=pypy-twtrunk
+    - TOX_ENV=py26-tw140
+    - TOX_ENV=py27-tw140
+    - TOX_ENV=pypy-tw140
     - TOX_ENV=py26-tw132
     - TOX_ENV=py27-tw132
     - TOX_ENV=pypy-tw132

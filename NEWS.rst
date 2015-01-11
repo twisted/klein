@@ -1,6 +1,10 @@
 NEWS
 ====
 
+15.0.0 - 2015-01-11
+-------------------
+ * [BUG] Klein now includes its test package as part of the distribution. [`#65 <https://github.com/twisted/klein/pull/65>`_]
+
 14.0.0 - 2014-12-18
 -------------------
  * [BUG] Klein now attempts to decode non-ASCII URLs as UTF-8 and serves a 400 if that fails instead of always serving a 500. [`#62 <https://github.com/twisted/klein/pull/62>`_]

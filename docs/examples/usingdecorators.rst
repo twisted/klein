@@ -3,10 +3,11 @@ Example -- Using Decorators
 ===========================
 
 Sometimes you might want to have more flexibility regarding how you create routes and decorate them.
-Below we show how to register routes dynamically as well as applying default and optional decorators to each route.
 
-`defaultMiddleware` shows how to set `Content-Type` header to `application/json` for all responses.
-`authenticate` decorator shows how to authenticate a request by looking at the `Authorization` header and comparing it
+Below we show how to register routes dynamically as well as applying default and optional decorators to each route. 
+
+``defaultMiddleware`` shows how to set ``Content-Type`` header to ``application/json`` for all responses.
+``authenticate`` shows how to authenticate a request by looking at the ``Authorization`` header and comparing it
 with a previous defined key.
 
 .. code-block:: python
@@ -127,7 +128,7 @@ with a previous defined key.
         webApi.run()
 
 
-You can see the expected endpoints responses by executing the following cURL commands:
+You can see the expected endpoints responses by executing the following cURL commands::
 
     curl -L http://localhost:8080/
     {"scope": "public", "message": "Welcome to our public endpoint"}

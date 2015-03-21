@@ -91,10 +91,10 @@ with a previous defined key.
 
             resourceRoute = ''.join([kwargs.get('prefix', ''), route])
 
-            func = self.defaultMiddleware(func)
-
             if restricted:
                 func = self.authenticate(func)
+
+            func = self.defaultMiddleware(func)
 
             self.app.route(resourceRoute, methods=methods)(func)
 

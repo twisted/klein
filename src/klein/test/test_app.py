@@ -2,6 +2,7 @@ from __future__ import absolute_import, division
 
 from twisted.trial import unittest
 
+import copy
 import sys
 
 from mock import Mock, patch
@@ -304,3 +305,26 @@ class KleinTestCase(unittest.TestCase):
 
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
+
+
+    def test_copy(self):
+        app = Klein()
+
+        @app.route("/foo")
+        def foo(request):
+            return "foo"
+
+        app_copy = copy.copy(app)
+
+        @app.route('/bar')
+        def bar(request):
+            return 'bar'
+
+        dr1 = DummyRequest(1)
+        dr2 = DummyRequest(2)
+        dr3 = DummyRequest(3)
+
+        self.assertEquals(app.execute_endpoint('foo', dr1), 'foo')
+        self.assertEquals(app.execute_endpoint('bar', dr2), 'bar')
+        self.assertRaises(KeyError, app_copy.execute_endpoint, 'bar', dr3)
+

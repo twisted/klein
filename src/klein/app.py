@@ -4,6 +4,7 @@ Applications are great.  Lets have more of them.
 
 from __future__ import absolute_import, division
 
+import copy
 import sys
 import weakref
 
@@ -144,6 +145,30 @@ class Klein(object):
 
         return k
 
+    def __copy__(self):
+        """
+        Returns a copy of an instance of L{Klein}
+        """
+        instance = type(self)()
+        url_map = self.url_map
+        rules = [rule.empty() for rule in url_map.iter_rules()]
+
+        instance._url_map = Map(rules=rules,
+                         default_subdomain=url_map.default_subdomain,
+                         charset=url_map.charset,
+                         strict_slashes=url_map.strict_slashes,
+                         redirect_defaults=url_map.redirect_defaults,
+                         converters=url_map.converters.copy(),
+                         sort_parameters=url_map.sort_parameters,
+                         sort_key=url_map.sort_key,
+                         encoding_errors=url_map.encoding_errors,
+                         host_matching=url_map.host_matching
+                        )
+
+        instance._endpoints = copy.copy(self._endpoints)
+        instance._error_handlers = instance._error_handlers[:]
+        instance._instance = self._instance
+        return instance
 
     def route(self, url, *args, **kwargs):
         """

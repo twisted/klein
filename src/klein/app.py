@@ -166,7 +166,7 @@ class Klein(object):
                         )
 
         instance._endpoints = copy.copy(self._endpoints)
-        instance._error_handlers = instance._error_handlers[:]
+        instance._error_handlers = self._error_handlers[:]
         instance._instance = self._instance
         return instance
 

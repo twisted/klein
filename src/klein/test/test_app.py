@@ -306,7 +306,6 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
 
-
     def test_copy(self):
         app = Klein()
 
@@ -328,3 +327,19 @@ class KleinTestCase(unittest.TestCase):
         self.assertEquals(app.execute_endpoint('bar', dr2), 'bar')
         self.assertRaises(KeyError, app_copy.execute_endpoint, 'bar', dr3)
 
+    def test_error_handlers_list_is_copied(self):
+        app = Klein()
+
+        @app.handle_errors(ValueError)
+        def value_error(request, failure):
+            return "this failed"
+
+        app_copy = copy.copy(app)
+
+        self.assertEquals(app._error_handlers, app_copy._error_handlers)
+
+        @app_copy.handle_errors(KeyError)
+        def error_value(request, failure):
+            return "that failed"
+
+        self.assertNotEquals(app._error_handlers, app_copy._error_handlers)

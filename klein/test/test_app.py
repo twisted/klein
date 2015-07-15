@@ -40,6 +40,9 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
         def __ne__(self, other):
             return False
 
+        def __hash__(self):
+            return id(self)
+
     _another = Klein()
 
     def anInstance(self):

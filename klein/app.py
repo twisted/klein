@@ -14,7 +14,7 @@ from twisted.python.components import registerAdapter
 from twisted.web.server import Site, Request
 from twisted.internet import reactor
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
@@ -28,9 +28,8 @@ def _call(instance, f, *args, **kwargs):
 
     return f(instance, *args, **kwargs)
 
-
+@implementer(IKleinRequest)
 class KleinRequest(object):
-    implements(IKleinRequest)
 
     def __init__(self, request):
         self.branch_segments = ['']
@@ -73,6 +72,8 @@ class Klein(object):
         if result is NotImplemented:
             return result
         return not result
+
+
 
 
     @property

@@ -4,6 +4,7 @@ from twisted.web import server
 from twisted.web.iweb import IRenderable
 from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.template import flattenString
+from twisted.python.compat import networkString, unicode, nativeString, _PY3
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
@@ -74,25 +75,27 @@ def _extractURLparts(request):
     if (bool(request.isSecure()), server_port) not in [
             (True, 443), (False, 80)]:
         server_name = '%s:%d' % (server_name, server_port)
-    script_name = ''
+
+    script_name = b''
     if request.prepath:
-        script_name = '/'.join(request.prepath)
+        script_name = b'/'.join(request.prepath)
 
-        if not script_name.startswith('/'):
-            script_name = '/' + script_name
+        if not script_name.startswith(b'/'):
+            script_name = b'/' + script_name
 
-    path_info = ''
+    path_info = b''
     if request.postpath:
-        path_info = '/'.join(request.postpath)
+        path_info = b'/'.join(request.postpath)
 
-        if not path_info.startswith('/'):
-            path_info = '/' + path_info
+        if not path_info.startswith(b'/'):
+            path_info = b'/' + path_info
 
     url_scheme = u'https' if request.isSecure() else u'http'
 
     utf8Failures = []
     try:
-        server_name = server_name.decode("utf-8")
+        if not _PY3:
+            server_name = server_name.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("SERVER_NAME", failure.Failure()))
     try:

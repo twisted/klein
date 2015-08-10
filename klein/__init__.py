@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division
+
 from klein.app import Klein, run, route, resource
 
 

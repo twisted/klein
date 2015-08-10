@@ -9,6 +9,7 @@ env:
     - TOX_ENV=pypy-twcurrent
     - TOX_ENV=py26-twtrunk
     - TOX_ENV=py27-twtrunk
+    - TOX_ENV=py34-twtrunk
     - TOX_ENV=pypy-twtrunk
     - TOX_ENV=py26-tw150
     - TOX_ENV=py27-tw150
@@ -19,21 +20,6 @@ env:
     - TOX_ENV=py26-tw132
     - TOX_ENV=py27-tw132
     - TOX_ENV=pypy-tw132
-    - TOX_ENV=py26-tw131
-    - TOX_ENV=py27-tw131
-    - TOX_ENV=pypy-tw131
-    - TOX_ENV=py26-tw130
-    - TOX_ENV=py27-tw130
-    - TOX_ENV=pypy-tw130
-    - TOX_ENV=py26-tw123
-    - TOX_ENV=py27-tw123
-    - TOX_ENV=pypy-tw123
-    - TOX_ENV=py26-tw122
-    - TOX_ENV=py27-tw122
-    - TOX_ENV=pypy-tw122
-    - TOX_ENV=py26-tw121
-    - TOX_ENV=py27-tw121
-    - TOX_ENV=pypy-tw121
 
 install:
     - ./.travis/install.sh

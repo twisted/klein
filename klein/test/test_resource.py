@@ -132,7 +132,7 @@ class LeafResource(Resource):
     isLeaf = True
 
     def render(self, request):
-        return "I am a leaf in the wind."
+        return b"I am a leaf in the wind."
 
 
 class ChildResource(Resource):
@@ -564,7 +564,6 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.setHeader.call_count, 3)
-        assert False, request.getWrittenData()
         request.setHeader.assert_has_calls(
             [call(b'Content-Type', b'text/html; charset=utf-8'),
              call(b'Content-Length', b'259'),
@@ -627,7 +626,6 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        print(request_url)
         self.assertEqual(str(request_url[0]),
             "http://localhost:8080/foo/bar")
         self.assertEqual(request.getWrittenData(), b'foo')

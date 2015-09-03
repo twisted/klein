@@ -74,6 +74,26 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
 
 
+    def test_submountedRoute(self):
+        """
+        L{Klein.subroute} adds functions as routable endpoints.
+        """
+        app = Klein()
+
+        with app.subroute("/sub") as app:
+            @app.route("/prefixed_uri")
+            def foo_endpoint(request):
+                return "foo"
+
+        c = app.url_map.bind("sub/prefixed_uri")
+        self.assertEqual(
+            c.match("/sub/prefixed_uri"), ("foo_endpoint", {}))
+        self.assertEqual(
+            len(app.endpoints), 1)
+        self.assertEqual(
+            app.execute_endpoint("foo_endpoint", DummyRequest(1)), "foo")
+
+
     def test_stackedRoute(self):
         """
         L{Klein.route} can be stacked to create multiple endpoints of

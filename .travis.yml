@@ -4,6 +4,7 @@ sudo: required
 
 install:
   - pip install tox codecov
+  - ./.travis/install.sh
 
 env:
     - TOX_ENV=pyflakes
@@ -24,9 +25,6 @@ env:
     - TOX_ENV=py26-tw132
     - TOX_ENV=py27-tw132
     - TOX_ENV=pypy-tw132
-
-install:
-    - ./.travis/install.sh
 
 script: tox  -c tox.ini -e $TOX_ENV
 

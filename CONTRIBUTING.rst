@@ -19,7 +19,7 @@ Code
 - Propose all patches through a pull request in the `GitHub repo <https://github.com/twisted/klein>`_.
 - Use `Twisted's code style guide <http://twistedmatrix.com/documents/current/core/development/policy/coding-standard.html>`_ for all code you touch, as long as it doesn't break a public API.
 - Make sure your patch has tests, since untested code is buggy code.
-  Klein uses `Twisted trial <http://twistedmatrix.com/documents/current/api/twisted.trial.html>`_ and `tox <https://testrun.org/tox/latest/index.html>`_ for its tests.
+  Klein uses `Twisted Trial <http://twistedmatrix.com/documents/current/api/twisted.trial.html>`_ and `tox <https://testrun.org/tox/latest/index.html>`_ for its tests.
   The command to run the full test suite is ``tox`` with no arguments.
   This will run tests against several versions of Python and Twisted, which can be time-consuming.
   To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py27-tw150`` will run tests with Python 2.7 and Twisted 15.0.

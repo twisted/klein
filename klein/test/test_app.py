@@ -83,7 +83,7 @@ class KleinTestCase(unittest.TestCase):
         with app.subroute("/sub") as app:
             @app.route("/prefixed_uri")
             def foo_endpoint(request):
-                return "foo"
+                return b"foo"
 
         c = app.url_map.bind("sub/prefixed_uri")
         self.assertEqual(
@@ -91,7 +91,7 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(
             len(app.endpoints), 1)
         self.assertEqual(
-            app.execute_endpoint("foo_endpoint", DummyRequest(1)), "foo")
+            app.execute_endpoint("foo_endpoint", DummyRequest(1)), b"foo")
 
 
     def test_stackedRoute(self):

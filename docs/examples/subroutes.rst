@@ -17,14 +17,14 @@ Here is an example app that has routes for ``/branch/lair``, ``/branch/crypt``, 
     with app.subroute("/branch") as app:
         @app.route("/lair")
         def lair(request):
-            return "These stairs lead to the lair of beasts."
+            return b"These stairs lead to the lair of beasts."
 
         @app.route("/crypt")
         def crypt(request):
-            return "These stairs lead to an ancient crypt."
+            return b"These stairs lead to an ancient crypt."
 
         @app.route("/swamp")
         def swamp(request):
-            return "A stair to a swampy wasteland."
+            return b"A stair to a swampy wasteland."
 
     app.run("localhost", 8080)

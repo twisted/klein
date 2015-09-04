@@ -31,3 +31,16 @@ This is a sample Klein application that returns 'Hello, world!', running on port
         return 'Hello, world!'
 
     run("localhost", 8080)
+
+
+Contribute
+==========
+
+``klein`` is hosted on `GitHub <http://github.com/twisted/klein>`_ and is an open source project that welcomes contributions of all kinds from the community, including:
+
+- code patches,
+- `documentation <http://klein.readthedocs.org/>`_ improvements,
+- `bug reports <https://github.com/twisted/klein/issues>`_,
+- reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
+
+For more information about contributing, see `the contributor guidelines <https://github.com/twisted/klein/tree/master/CONTRIBUTING.rst>`_.

@@ -10,7 +10,7 @@ templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'Klein'
-copyright = u'2014, Twisted Matrix Labs'
+copyright = u'2015, Twisted Matrix Labs'
 version = release = vcversioner.find_version(root='..').version
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'

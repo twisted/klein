@@ -49,12 +49,16 @@ if __name__ == "__main__":
             "Twisted>=12.1",
             "werkzeug"
         ],
+        setup_requires=['vcversioner'],
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
         packages=["klein", "klein.test"],
         url="https://github.com/twisted/klein",
-        version=find_version('klein', '__init__.py'),
+        vcversioner={
+            'version_module_paths': ['klein/_version.py'],
+        },
+        author="The Klein contributors (see AUTHORS)",
         maintainer='HawkOwl',
         maintainer_email='hawkowl@atleastfornow.net',
     )

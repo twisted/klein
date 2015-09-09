@@ -21,19 +21,3 @@ class SetupTestCase(unittest.TestCase):
         rv = setup.read(path)
         self.assertEqual(contents, rv)
         self.assertIsInstance(rv, unicode)
-
-    def test_findVersion(self):
-        """
-        Finds the version that follows our scheme.
-        """
-        self.patch(setup, 'read', Mock(return_value='''
-from something import something_else
-
-__author__ = "Foo"
-__version__ = "4.2.0"
-__license__ = 'MIT'
-'''))
-        self.assertEqual(
-            u"4.2.0",
-            setup.find_version('paths', 'do', 'not', 'matter')
-        )

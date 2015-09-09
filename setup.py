@@ -3,6 +3,7 @@ import os
 import re
 
 from setuptools import setup
+import vcversioner
 
 
 def read(*parts):
@@ -38,7 +39,6 @@ if __name__ == "__main__":
             'Programming Language :: Python',
             'Programming Language :: Python :: 2.6',
             'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
@@ -51,15 +51,13 @@ if __name__ == "__main__":
             "Twisted>=12.1",
             "werkzeug",
         ],
-        setup_requires=['vcversioner'],
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
         packages=["klein", "klein.test"],
         url="https://github.com/twisted/klein",
-        vcversioner={
-            'version_module_paths': ['klein/_version.py'],
-        },
+        version=vcversioner.find_version(
+            version_module_paths=['klein/_version.py']).version,
         author="The Klein contributors (see AUTHORS)",
         maintainer='HawkOwl',
         maintainer_email='hawkowl@atleastfornow.net',

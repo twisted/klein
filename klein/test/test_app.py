@@ -5,6 +5,7 @@ import sys
 from mock import Mock, patch
 
 from twisted.python.components import registerAdapter
+from twisted.python.reflect import fullyQualifiedName
 
 from klein import Klein
 from klein.app import KleinRequest
@@ -68,10 +69,10 @@ class KleinTestCase(unittest.TestCase):
             return "foo"
 
         c = app.url_map.bind("foo")
-        self.assertEqual(c.match("/foo"), ("foo", {}))
+        self.assertEqual(c.match("/foo"), (fullyQualifiedName(foo), {}))
         self.assertEqual(len(app.endpoints), 1)
 
-        self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
+        self.assertEqual(app.execute_endpoint(fullyQualifiedName(foo), DummyRequest(1)), "foo")
 
 
     def test_submountedRoute(self):
@@ -109,8 +110,8 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(len(app.endpoints), 2)
 
         c = app.url_map.bind("foo")
-        self.assertEqual(c.match("/foo"), ("foobar", {}))
-        self.assertEqual(app.execute_endpoint("foobar", DummyRequest(1)), "foobar")
+        self.assertEqual(c.match("/foo"), (fullyQualifiedName(foobar), {}))
+        self.assertEqual(app.execute_endpoint(fullyQualifiedName(foobar), DummyRequest(1)), "foobar")
 
         self.assertEqual(c.match("/bar"), ("bar", {}))
         self.assertEqual(app.execute_endpoint("bar", DummyRequest(2)), "foobar")
@@ -128,14 +129,14 @@ class KleinTestCase(unittest.TestCase):
             return "foo"
 
         c = app.url_map.bind("foo")
-        self.assertEqual(c.match("/foo/"), ("foo", {}))
+        self.assertEqual(c.match("/foo/"), (fullyQualifiedName(foo), {}))
         self.assertEqual(
             c.match("/foo/bar"),
-            ("foo_branch", {'__rest__': 'bar'}))
+            ("klein.test.test_app.foo_branch", {'__rest__': 'bar'}))
 
-        self.assertEquals(app.endpoints["foo"].__name__, "foo")
+        self.assertEquals(app.endpoints[fullyQualifiedName(foo)].__name__, "foo")
         self.assertEquals(
-            app.endpoints["foo_branch"].__name__,
+            app.endpoints[fullyQualifiedName(foo) + "_branch"].__name__,
             "foo")
 
 
@@ -155,8 +156,14 @@ class KleinTestCase(unittest.TestCase):
 
         foo = Foo()
         c = foo.app.url_map.bind("bar")
-        self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEquals(foo.app.execute_endpoint("bar", DummyRequest(1)), "bar")
+        self.assertEqual(
+            c.match("/bar"),
+            (fullyQualifiedName(Foo.bar).replace("Foo.", ""), {}))
+        self.assertEquals(
+            foo.app.execute_endpoint(
+                fullyQualifiedName(Foo.bar).replace("Foo.", ""),
+                DummyRequest(1)),
+            "bar")
 
         self.assertEqual(bar_calls, [(foo, DummyRequest(1))])
 
@@ -186,8 +193,10 @@ class KleinTestCase(unittest.TestCase):
         dr1 = DummyRequest(1)
         dr2 = DummyRequest(2)
 
-        foo_1_app.execute_endpoint('bar', dr1)
-        foo_2_app.execute_endpoint('bar', dr2)
+        foo_1_app.execute_endpoint(
+            fullyQualifiedName(Foo.bar).replace("Foo.", ""), dr1)
+        foo_2_app.execute_endpoint(
+            fullyQualifiedName(Foo.bar).replace("Foo.", ""), dr2)
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
@@ -217,8 +226,10 @@ class KleinTestCase(unittest.TestCase):
         dr1 = DummyRequest(1)
         dr2 = DummyRequest(2)
 
-        foo_1_app.execute_endpoint('bar_branch', dr1)
-        foo_2_app.execute_endpoint('bar_branch', dr2)
+        foo_1_app.execute_endpoint(
+            fullyQualifiedName(Foo.bar).replace("Foo.", ""), dr1)
+        foo_2_app.execute_endpoint(
+            fullyQualifiedName(Foo.bar).replace("Foo.", ""), dr2)
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
@@ -239,7 +250,7 @@ class KleinTestCase(unittest.TestCase):
 
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo/bar"),
-                         ("foo_branch", {"__rest__": "bar"}))
+                         (fullyQualifiedName(foo) + "_branch", {"__rest__": "bar"}))
 
 
     @patch('klein.app.KleinResource')

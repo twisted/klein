@@ -26,17 +26,20 @@ html_static_path = ['_static']
 htmlhelp_basename = 'Kleindoc'
 latex_elements = {}
 latex_documents = [
-  ('index', 'Klein.tex', u'Klein Documentation',
-   u'Twisted Matrix Labs', 'manual'),
+    ('index', 'Klein.tex', u'Klein Documentation',
+     u'Twisted Matrix Labs', 'manual'),
 ]
 man_pages = [
-    ('index', 'klein', u'Klein Documentation',
-     [u'Twisted Matrix Labs'], 1)
+    ('index', 'klein',
+     u'Klein Documentation',
+     [u'Twisted Matrix Labs'],
+     1),
 ]
 texinfo_documents = [
-  ('index', 'Klein', u'Klein Documentation',
-   u'Twisted Matrix Labs', 'Klein', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'Klein', u'Klein Documentation',
+     u'Twisted Matrix Labs', 'Klein',
+     'twisted + werkzeug',
+     'Miscellaneous'),
 ]
 
 # API links extension, stolen from Twisted's Sphinx setup

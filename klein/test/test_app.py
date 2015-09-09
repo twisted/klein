@@ -76,7 +76,8 @@ class KleinTestCase(unittest.TestCase):
 
     def test_submountedRoute(self):
         """
-        L{Klein.subroute} adds functions as routable endpoints.
+        L{Klein.subroute} adds functions as routable endpoints in the same way
+        that L{Klein.route} does.
         """
         app = Klein()
 

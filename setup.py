@@ -38,16 +38,18 @@ if __name__ == "__main__":
             'Programming Language :: Python',
             'Programming Language :: Python :: 2.6',
             'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3.3',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-            'Topic :: Software Development :: Libraries :: Python Modules'
+            'Topic :: Software Development :: Libraries :: Python Modules',
         ],
+
         description="werkzeug + twisted.web",
         long_description=read('README.rst'),
         install_requires=[
             "Twisted>=12.1",
-            "werkzeug"
+            "werkzeug",
         ],
         setup_requires=['vcversioner'],
         keywords="twisted flask werkzeug web",

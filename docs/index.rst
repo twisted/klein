@@ -49,3 +49,12 @@ If you'd like to help out, here's some material to help you get started!
 .. toctree::
 
     contributing
+
+
+Help
+====
+
+If you have questions about Klein, two of the best places to ask are Stack Overflow and IRC.
+Stack Overflow's `twisted.web tag <http://stackoverflow.com/questions/new/twisted.web?show=all&sort=newest>`_ is a good place to ask specific questions.
+You can also look for help on IRC: the Freenode channel ``#twisted.web`` has many residents with domain knowledge about Twisted.
+For help about routing and the other parts of Klein provided by Werkzeug, you may want to start with `Werkzeug's community resources <http://werkzeug.pocoo.org/community/>`_.

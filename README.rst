@@ -53,3 +53,12 @@ If you have questions about Klein, two of the best places to ask are Stack Overf
 Stack Overflow's `twisted.web tag <http://stackoverflow.com/questions/new/twisted.web?show=all&sort=newest>`_ is a good place to ask specific questions.
 You can also look for help on IRC: the Freenode channel ``#twisted.web`` has many residents with domain knowledge about Twisted.
 For help about routing and the other parts of Klein provided by Werkzeug, you may want to start with `Werkzeug's community resources <http://werkzeug.pocoo.org/community/>`_.
+
+
+Report a bug
+============
+
+Like all software, Klein is imperfect.
+We appreciate it when you `report problems you've had with Klein <https://github.com/twisted/klein/issues/new>`_.
+You can see other problems that people have reported on the `GitHub Issues page <https://github.com/twisted/klein/issues>`_.
+If the problem you're having is the same as one of the existing issues, please add a comment to that issue.

@@ -6,7 +6,7 @@ from twisted.web import server
 from twisted.web.iweb import IRenderable
 from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.template import flattenString
-from twisted.python.compat import networkString, unicode, nativeString, _PY3, intToBytes
+from twisted.python.compat import unicode, intToBytes
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest

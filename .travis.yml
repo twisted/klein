@@ -20,6 +20,10 @@ env:
   - TOX_ENV=pypy-tw140
   - TOX_ENV=pypy-tw150
   - TOX_ENV=pypy-tw154
+  - TOX_ENV=py27-twtrunk
+  - TOX_ENV=pypy-twtrunk
+  - TOX_ENV=py33-twtrunk
+  - TOX_ENV=py34-twtrunk
   - TOX_ENV=pyflakes
   - TOX_ENV=docs
   - TOX_ENV=docs-linkcheck

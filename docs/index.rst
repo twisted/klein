@@ -35,6 +35,7 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/deferreds
     examples/twistd
     examples/handlingpost
+    examples/subroutes
     examples/nonglobalstate
     examples/handlingerrors
 

@@ -7,9 +7,12 @@ from __future__ import absolute_import, division
 import sys
 import weakref
 
+from collections import namedtuple
+from contextlib import contextmanager
+
 from functools import wraps
 
-from werkzeug.routing import Map, Rule
+from werkzeug.routing import Map, Rule, Submount
 
 from twisted.python import log
 from twisted.python.components import registerAdapter
@@ -30,6 +33,7 @@ def _call(instance, f, *args, **kwargs):
         return f(*args, **kwargs)
 
     return f(instance, *args, **kwargs)
+
 
 @implementer(IKleinRequest)
 class KleinRequest(object):
@@ -195,6 +199,48 @@ class Klein(object):
             return f
 
         return deco
+
+
+    @contextmanager
+    def subroute(self, prefix):
+        """
+        Within this block, C{@route} adds rules to a
+        C{werkzeug.routing.Submount}.
+
+        This is implemented by tinkering with the instance's C{_url_map}
+        variable. A context manager allows us to gracefully use the pattern of
+        "change a variable, do some things with the new value, then put it back
+        to how it was before.
+
+        Named "subroute" to try and give callers a better idea of its
+        relationship to C{@route}.
+
+        Usage:
+        ::
+            with app.subroute("/prefix") as app:
+                @app.route("/foo")
+                def foo_handler(request):
+                    return 'I respond to /prefix/foo'
+
+        @type prefix: string
+        @param prefix: The string that will be prepended to the paths of all
+                       routes established during the with-block.
+        @return: Returns None.
+        """
+
+        _map_before_submount = self._url_map
+
+        submount_map = namedtuple(
+            'submount', ['rules', 'add'])(
+                [], lambda r: submount_map.rules.append(r))
+
+        try:
+            self._url_map = submount_map
+            yield self
+            _map_before_submount.add(
+                Submount(prefix, submount_map.rules))
+        finally:
+            self._url_map = _map_before_submount
 
 
     def handle_errors(self, f_or_exception, *additional_exceptions):

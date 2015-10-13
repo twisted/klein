@@ -7,3 +7,5 @@ htmlcov
 .tox/
 docs/_build/
 .DS_Store
+dist/
+*~

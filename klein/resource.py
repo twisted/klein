@@ -1,9 +1,12 @@
+from __future__ import absolute_import, division
+
 from twisted.internet import defer
 from twisted.python import log, failure
 from twisted.web import server
 from twisted.web.iweb import IRenderable
 from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.template import flattenString
+from twisted.python.compat import unicode, intToBytes
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
@@ -73,20 +76,21 @@ def _extractURLparts(request):
     server_port = request.getHost().port
     if (bool(request.isSecure()), server_port) not in [
             (True, 443), (False, 80)]:
-        server_name = '%s:%d' % (server_name, server_port)
-    script_name = ''
+        server_name = server_name + b":" + intToBytes(server_port)
+
+    script_name = b''
     if request.prepath:
-        script_name = '/'.join(request.prepath)
+        script_name = b'/'.join(request.prepath)
 
-        if not script_name.startswith('/'):
-            script_name = '/' + script_name
+        if not script_name.startswith(b'/'):
+            script_name = b'/' + script_name
 
-    path_info = ''
+    path_info = b''
     if request.postpath:
-        path_info = '/'.join(request.postpath)
+        path_info = b'/'.join(request.postpath)
 
-        if not path_info.startswith('/'):
-            path_info = '/' + path_info
+        if not path_info.startswith(b'/'):
+            path_info = b'/' + path_info
 
     url_scheme = u'https' if request.isSecure() else u'http'
 

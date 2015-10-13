@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division
+
 from twisted.trial import unittest
 
 import sys
@@ -39,6 +41,9 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
 
         def __ne__(self, other):
             return False
+
+        def __hash__(self):
+            return id(self)
 
     _another = Klein()
 

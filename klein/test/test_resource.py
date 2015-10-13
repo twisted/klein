@@ -1,6 +1,8 @@
+from __future__ import absolute_import, division
+
 import os
 
-from StringIO import StringIO
+from io import BytesIO
 
 from mock import Mock, call
 
@@ -12,6 +14,7 @@ from twisted.web.resource import Resource
 from twisted.web.static import File
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
+from twisted.python.compat import unicode, _PY3
 from werkzeug.exceptions import NotFound
 
 from klein import Klein
@@ -25,32 +28,32 @@ from klein.resource import (
 from klein.test.util import TestCase, EqualityTestsMixin
 
 
-def requestMock(path, method="GET", host="localhost", port=8080,
+def requestMock(path, method=b"GET", host=b"localhost", port=8080,
                 isSecure=False, body=None, headers=None):
     if not headers:
         headers = {}
 
     if not body:
-        body = ''
+        body = b''
 
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)
     request.gotLength(len(body))
-    request.content = StringIO()
+    request.content = BytesIO()
     request.content.write(body)
     request.content.seek(0)
     request.requestHeaders = Headers(headers)
     request.setHost(host, port, isSecure)
     request.uri = path
     request.prepath = []
-    request.postpath = path.split('/')[1:]
+    request.postpath = path.split(b'/')[1:]
     request.method = method
-    request.clientproto = 'HTTP/1.1'
+    request.clientproto = b'HTTP/1.1'
 
     request.setHeader = Mock(wraps=request.setHeader)
     request.setResponseCode = Mock(wraps=request.setResponseCode)
 
-    request._written = StringIO()
+    request._written = BytesIO()
     request.finishCount = 0
     request.writeCount = 0
 
@@ -67,7 +70,7 @@ def requestMock(path, method="GET", host="localhost", port=8080,
         request.finishCount += 1
 
         if not request.startedWriting:
-            request.write('')
+            request.write(b'')
 
         if not request.finished:
             request.finished = True
@@ -101,7 +104,7 @@ def requestMock(path, method="GET", host="localhost", port=8080,
 def _render(resource, request, notifyFinish=True):
     result = resource.render(request)
 
-    if isinstance(result, str):
+    if isinstance(result, bytes):
         request.write(result)
         request.finish()
         return succeed(None)
@@ -131,7 +134,7 @@ class LeafResource(Resource):
     isLeaf = True
 
     def render(self, request):
-        return "I am a leaf in the wind."
+        return b"I am a leaf in the wind."
 
 
 class ChildResource(Resource):
@@ -141,15 +144,15 @@ class ChildResource(Resource):
         self._name = name
 
     def render(self, request):
-        return "I'm a child named %s!" % (self._name,)
+        return b"I'm a child named " + self._name + b"!"
 
 
 class ChildrenResource(Resource):
     def render(self, request):
-        return "I have children!"
+        return b"I have children!"
 
     def getChild(self, path, request):
-        if path == '':
+        if path == b'':
             return self
 
         return ChildResource(path)
@@ -246,22 +249,22 @@ class KleinResourceTests(TestCase):
 
         @app.route("/", methods=["POST"])
         def handle_post(request):
-            return 'posted'
+            return b'posted'
 
         @app.route("/")
         def handle(request):
-            return 'gotted'
+            return b'gotted'
 
-        request = requestMock('/', 'POST')
-        request2 = requestMock('/')
+        request = requestMock(b'/', b'POST')
+        request2 = requestMock(b'/')
 
         d = _render(self.kr, request)
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 'posted')
+        self.assertEqual(request.getWrittenData(), b'posted')
 
         d2 = _render(self.kr, request2)
         self.assertFired(d2)
-        self.assertEqual(request2.getWrittenData(), 'gotted')
+        self.assertEqual(request2.getWrittenData(), b'gotted')
 
 
     def test_simpleRouting(self):
@@ -269,14 +272,14 @@ class KleinResourceTests(TestCase):
 
         @app.route("/")
         def slash(request):
-            return 'ok'
+            return b'ok'
 
-        request = requestMock('/')
+        request = requestMock(b'/')
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 'ok')
+        self.assertEqual(request.getWrittenData(), b'ok')
 
 
     def test_branchRendering(self):
@@ -284,14 +287,14 @@ class KleinResourceTests(TestCase):
 
         @app.route("/", branch=True)
         def slash(request):
-            return 'ok'
+            return b'ok'
 
-        request = requestMock('/foo')
+        request = requestMock(b'/foo')
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 'ok')
+        self.assertEqual(request.getWrittenData(), b'ok')
 
 
     def test_branchWithExplicitChildrenRouting(self):
@@ -299,24 +302,24 @@ class KleinResourceTests(TestCase):
 
         @app.route("/")
         def slash(request):
-            return 'ok'
+            return b'ok'
 
         @app.route("/zeus")
         def wooo(request):
-            return 'zeus'
+            return b'zeus'
 
-        request = requestMock('/zeus')
-        request2 = requestMock('/')
+        request = requestMock(b'/zeus')
+        request2 = requestMock(b'/')
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 'zeus')
+        self.assertEqual(request.getWrittenData(), b'zeus')
 
         d2 = _render(self.kr, request2)
 
         self.assertFired(d2)
-        self.assertEqual(request2.getWrittenData(), 'ok')
+        self.assertEqual(request2.getWrittenData(), b'ok')
 
 
     def test_branchWithExplicitChildBranch(self):
@@ -324,24 +327,24 @@ class KleinResourceTests(TestCase):
 
         @app.route("/", branch=True)
         def slash(request):
-            return 'ok'
+            return b'ok'
 
         @app.route("/zeus/", branch=True)
         def wooo(request):
-            return 'zeus'
+            return b'zeus'
 
-        request = requestMock('/zeus/foo')
-        request2 = requestMock('/')
+        request = requestMock(b'/zeus/foo')
+        request2 = requestMock(b'/')
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 'zeus')
+        self.assertEqual(request.getWrittenData(), b'zeus')
 
         d2 = _render(self.kr, request2)
 
         self.assertFired(d2)
-        self.assertEqual(request2.getWrittenData(), 'ok')
+        self.assertEqual(request2.getWrittenData(), b'ok')
 
 
     def test_deferredRendering(self):
@@ -353,16 +356,16 @@ class KleinResourceTests(TestCase):
         def deferred(request):
             return deferredResponse
 
-        request = requestMock("/deferred")
+        request = requestMock(b"/deferred")
 
         d = _render(self.kr, request)
 
         self.assertNotFired(d)
 
-        deferredResponse.callback('ok')
+        deferredResponse.callback(b'ok')
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), 'ok')
+        self.assertEqual(request.getWrittenData(), b'ok')
 
 
     def test_elementRendering(self):
@@ -372,18 +375,18 @@ class KleinResourceTests(TestCase):
         def element(request, name):
             return SimpleElement(name)
 
-        request = requestMock("/element/foo")
+        request = requestMock(b"/element/foo")
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), "<h1>foo</h1>")
+        self.assertEqual(request.getWrittenData(), b"<h1>foo</h1>")
 
 
     def test_leafResourceRendering(self):
         app = self.app
 
-        request = requestMock("/resource/leaf")
+        request = requestMock(b"/resource/leaf")
 
         @app.route("/resource/leaf")
         def leaf(request):
@@ -393,11 +396,11 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(),
-                "I am a leaf in the wind.")
+                b"I am a leaf in the wind.")
 
     def test_childResourceRendering(self):
         app = self.app
-        request = requestMock("/resource/children/betty")
+        request = requestMock(b"/resource/children/betty")
 
         @app.route("/resource/children/", branch=True)
         def children(request):
@@ -407,12 +410,12 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(),
-                "I'm a child named betty!")
+                b"I'm a child named betty!")
 
     def test_childrenResourceRendering(self):
         app = self.app
 
-        request = requestMock("/resource/children/")
+        request = requestMock(b"/resource/children/")
 
         @app.route("/resource/children/", branch=True)
         def children(request):
@@ -421,7 +424,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), "I have children!")
+        self.assertEqual(request.getWrittenData(), b"I have children!")
 
 
     def test_producerResourceRendering(self):
@@ -434,15 +437,15 @@ class KleinResourceTests(TestCase):
         """
         app = self.app
 
-        request = requestMock("/resource")
+        request = requestMock(b"/resource")
 
         @app.route("/resource", branch=True)
         def producer(request):
-            return ProducingResource(request, ["a", "b", "c", "d"])
+            return ProducingResource(request, [b"a", b"b", b"c", b"d"])
 
         d = _render(self.kr, request, notifyFinish=False)
 
-        self.assertNotEqual(request.getWrittenData(), "abcd", "The full "
+        self.assertNotEqual(request.getWrittenData(), b"abcd", "The full "
                             "response should not have been written at this "
                             "point.")
 
@@ -450,26 +453,26 @@ class KleinResourceTests(TestCase):
             request.producer.resumeProducing()
 
         self.assertEqual(self.successResultOf(d), None)
-        self.assertEqual(request.getWrittenData(), "abcd")
+        self.assertEqual(request.getWrittenData(), b"abcd")
         self.assertEqual(request.writeCount, 4)
         self.assertEqual(request.finishCount, 1)
         self.assertEqual(request.producer, None)
 
 
     def test_notFound(self):
-        request = requestMock("/fourohofour")
+        request = requestMock(b"/fourohofour")
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         request.setResponseCode.assert_called_with(404)
-        self.assertIn("404 Not Found", request.getWrittenData())
+        self.assertIn(b"404 Not Found", request.getWrittenData())
 
 
     def test_renderUnicode(self):
         app = self.app
 
-        request = requestMock("/snowman")
+        request = requestMock(b"/snowman")
 
         @app.route("/snowman")
         def snowman(request):
@@ -478,13 +481,13 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), "\xE2\x98\x83")
+        self.assertEqual(request.getWrittenData(), b"\xE2\x98\x83")
 
 
     def test_renderNone(self):
         app = self.app
 
-        request = requestMock("/None")
+        request = requestMock(b"/None")
 
         @app.route("/None")
         def none(request):
@@ -493,14 +496,14 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), '')
+        self.assertEqual(request.getWrittenData(), b'')
         self.assertEqual(request.finishCount, 1)
         self.assertEqual(request.writeCount, 1)
 
 
     def test_staticRoot(self):
         app = self.app
-        request = requestMock("/__init__.py")
+        request = requestMock(b"/__init__.py")
 
         @app.route("/", branch=True)
         def root(request):
@@ -512,14 +515,14 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
-                    os.path.dirname(__file__), "__init__.py")).read())
+                    os.path.dirname(__file__), "__init__.py"), 'rb').read())
         self.assertEqual(request.finishCount, 1)
 
 
     def test_explicitStaticBranch(self):
         app = self.app
 
-        request = requestMock("/static/__init__.py")
+        request = requestMock(b"/static/__init__.py")
 
         @app.route("/static/", branch=True)
         def root(request):
@@ -531,14 +534,14 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
-                    os.path.dirname(__file__), "__init__.py")).read())
+                    os.path.dirname(__file__), "__init__.py"), 'rb').read())
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
     def test_staticDirlist(self):
         app = self.app
 
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         @app.route("/", branch=True)
         def root(request):
@@ -547,13 +550,13 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertIn('Directory listing', request.getWrittenData())
+        self.assertIn(b'Directory listing', request.getWrittenData())
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
     def test_addSlash(self):
         app = self.app
-        request = requestMock("/foo")
+        request = requestMock(b"/foo")
 
         @app.route("/foo/")
         def foo(request):
@@ -564,13 +567,13 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
         self.assertEqual(request.setHeader.call_count, 3)
         request.setHeader.assert_has_calls(
-            [call('Content-Type', 'text/html; charset=utf-8'),
-             call('Content-Length', '259'),
-             call('Location', 'http://localhost:8080/foo/')])
+            [call(b'Content-Type', b'text/html; charset=utf-8'),
+             call(b'Content-Length', b'259'),
+             call(b'Location', b'http://localhost:8080/foo/')])
 
     def test_methodNotAllowed(self):
         app = self.app
-        request = requestMock("/foo", method='DELETE')
+        request = requestMock(b"/foo", method=b'DELETE')
 
         @app.route("/foo", methods=['GET'])
         def foo(request):
@@ -583,15 +586,15 @@ class KleinResourceTests(TestCase):
 
     def test_methodNotAllowedWithRootCollection(self):
         app = self.app
-        request = requestMock("/foo/bar", method='DELETE')
+        request = requestMock(b"/foo/bar", method=b'DELETE')
 
         @app.route("/foo/bar", methods=['GET'])
         def foobar(request):
-            return "foo/bar"
+            return b"foo/bar"
 
         @app.route("/foo/", methods=['DELETE'])
         def foo(request):
-            return "foo"
+            return b"foo"
 
         d = _render(self.kr, request)
 
@@ -600,11 +603,11 @@ class KleinResourceTests(TestCase):
 
     def test_noImplicitBranch(self):
         app = self.app
-        request = requestMock("/foo")
+        request = requestMock(b"/foo")
 
         @app.route("/")
         def root(request):
-            return "foo"
+            return b"foo"
 
         d = _render(self.kr, request)
 
@@ -613,33 +616,33 @@ class KleinResourceTests(TestCase):
 
     def test_strictSlashes(self):
         app = self.app
-        request = requestMock("/foo/bar")
+        request = requestMock(b"/foo/bar")
 
         request_url = [None]
 
         @app.route("/foo/bar/", strict_slashes=False)
         def root(request):
             request_url[0] = request.URLPath()
-            return "foo"
+            return b"foo"
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         self.assertEqual(str(request_url[0]),
             "http://localhost:8080/foo/bar")
-        self.assertEqual(request.getWrittenData(), 'foo')
+        self.assertEqual(request.getWrittenData(), b'foo')
         self.assertEqual(request.code, 200)
 
     def test_URLPath(self):
         app = self.app
-        request = requestMock('/egg/chicken')
+        request = requestMock(b'/egg/chicken')
 
         request_url = [None]
 
         @app.route("/egg/chicken")
         def wooo(request):
             request_url[0] = request.URLPath()
-            return 'foo'
+            return b'foo'
 
         d = _render(self.kr, request)
 
@@ -649,7 +652,7 @@ class KleinResourceTests(TestCase):
 
     def test_URLPath_root(self):
         app = self.app
-        request = requestMock('/')
+        request = requestMock(b'/')
 
         request_url = [None]
 
@@ -664,7 +667,7 @@ class KleinResourceTests(TestCase):
 
     def test_URLPath_traversedResource(self):
         app = self.app
-        request = requestMock('/resource/foo')
+        request = requestMock(b'/resource/foo')
 
         request_url = [None]
 
@@ -687,7 +690,7 @@ class KleinResourceTests(TestCase):
 
     def test_handlerRaises(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         failures = []
 
@@ -711,7 +714,7 @@ class KleinResourceTests(TestCase):
 
     def test_genericErrorHandler(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         failures = []
 
@@ -736,7 +739,7 @@ class KleinResourceTests(TestCase):
 
     def test_typeSpecificErrorHandlers(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
         type_error_handled = False
         generic_error_handled = False
 
@@ -778,7 +781,7 @@ class KleinResourceTests(TestCase):
 
     def test_notFoundException(self):
         app = self.app
-        request = requestMock("/foo")
+        request = requestMock(b"/foo")
         generic_error_handled = False
 
         @app.route("/")
@@ -788,7 +791,7 @@ class KleinResourceTests(TestCase):
         @app.handle_errors(NotFound)
         def handle_not_found(request, failure):
             request.setResponseCode(404)
-            return 'Custom Not Found'
+            return b'Custom Not Found'
 
         @app.handle_errors
         def handle_generic_error(request, failure):
@@ -802,23 +805,23 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.processingFailed.called, False)
         self.assertEqual(generic_error_handled, False)
         self.assertEqual(request.code, 404)
-        self.assertEqual(request.getWrittenData(), 'Custom Not Found')
+        self.assertEqual(request.getWrittenData(), b'Custom Not Found')
         self.assertEqual(request.writeCount, 1)
 
     def test_requestWriteAfterFinish(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         @app.route("/")
         def root(request):
             request.finish()
-            return 'foo'
+            return b'foo'
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         self.assertEqual(request.writeCount, 2)
-        self.assertEqual(request.getWrittenData(), '')
+        self.assertEqual(request.getWrittenData(), b'')
         [failure] = self.flushLoggedErrors(RuntimeError)
 
         self.assertEqual(
@@ -828,13 +831,13 @@ class KleinResourceTests(TestCase):
 
     def test_requestFinishAfterConnectionLost(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         finished = Deferred()
 
         @app.route("/")
         def root(request):
-            request.notifyFinish().addBoth(lambda _: finished.callback('foo'))
+            request.notifyFinish().addBoth(lambda _: finished.callback(b'foo'))
             return finished
 
         d = _render(self.kr, request)
@@ -859,7 +862,7 @@ class KleinResourceTests(TestCase):
 
     def test_routeHandlesRequestFinished(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         cancelled = []
 
@@ -877,13 +880,13 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
 
         cancelled[0].trap(CancelledError)
-        self.assertEqual(request.getWrittenData(), '')
+        self.assertEqual(request.getWrittenData(), b'')
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.processingFailed.call_count, 0)
 
     def test_url_for(self):
         app = self.app
-        request = requestMock('/foo/1')
+        request = requestMock(b'/foo/1')
 
         relative_url = [None]
 
@@ -899,7 +902,7 @@ class KleinResourceTests(TestCase):
 
     def test_cancelledDeferred(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         inner_d = Deferred()
 
@@ -916,7 +919,7 @@ class KleinResourceTests(TestCase):
 
     def test_external_url_for(self):
         app = self.app
-        request = requestMock('/foo/1')
+        request = requestMock(b'/foo/1')
 
         relative_url = [None]
 
@@ -933,7 +936,7 @@ class KleinResourceTests(TestCase):
 
     def test_cancelledIsEatenOnConnectionLost(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         @app.route("/")
         def root(request):
@@ -956,7 +959,7 @@ class KleinResourceTests(TestCase):
 
     def test_cancelsOnConnectionLost(self):
         app = self.app
-        request = requestMock("/")
+        request = requestMock(b"/")
 
         handler_d = Deferred()
 
@@ -977,9 +980,9 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
 
     def test_ensure_utf8_bytes(self):
-        self.assertEqual(ensure_utf8_bytes(u"abc"), "abc")
-        self.assertEqual(ensure_utf8_bytes(u"\u2202"), "\xe2\x88\x82")
-        self.assertEqual(ensure_utf8_bytes("\xe2\x88\x82"), "\xe2\x88\x82")
+        self.assertEqual(ensure_utf8_bytes(u"abc"), b"abc")
+        self.assertEqual(ensure_utf8_bytes(u"\u2202"), b"\xe2\x88\x82")
+        self.assertEqual(ensure_utf8_bytes(b"\xe2\x88\x82"), b"\xe2\x88\x82")
 
     def test_decodesPath(self):
         """
@@ -1002,10 +1005,10 @@ class KleinResourceTests(TestCase):
         request = requestMock(b"/f\xc3\xc3\xb6")
         _render(self.kr, request)
         rv = request.getWrittenData()
-        self.assertEqual("Non-UTF-8 encoding in URL.", rv)
+        self.assertEqual(b"Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_urlDecodeErrorRepr(self):
+    def test_urlDecodeErrorReprPy2(self):
         """
         URLDecodeError.__repr__ formats properly.
         """
@@ -1014,7 +1017,19 @@ class KleinResourceTests(TestCase):
             repr(_URLDecodeError(ValueError)),
         )
 
+    def test_urlDecodeErrorReprPy3(self):
+        """
+        URLDecodeError.__repr__ formats properly.
+        """
+        self.assertEqual(
+            "<URLDecodeError(errors=<class 'ValueError'>)>",
+            repr(_URLDecodeError(ValueError)),
+        )
 
+    if _PY3:
+        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"
+    else:
+        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"
 
 class ExtractURLpartsTests(TestCase):
     """
@@ -1049,7 +1064,7 @@ class ExtractURLpartsTests(TestCase):
         """
         Raises URLDecodeError if SERVER_NAME can't be decoded.
         """
-        request = requestMock("/foo")
+        request = requestMock(b"/foo")
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "SERVER_NAME")
@@ -1059,7 +1074,7 @@ class ExtractURLpartsTests(TestCase):
         """
         Raises URLDecodeError if PATH_INFO can't be decoded.
         """
-        request = requestMock("/f\xc3\xc3\xb6")
+        request = requestMock(b"/f\xc3\xc3\xb6")
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "PATH_INFO")
 
@@ -1068,8 +1083,8 @@ class ExtractURLpartsTests(TestCase):
         """
         Raises URLDecodeError if SCRIPT_NAME can't be decoded.
         """
-        request = requestMock("/foo")
-        request.prepath = ["f\xc3\xc3\xb6"]
+        request = requestMock(b"/foo")
+        request.prepath = [b"f\xc3\xc3\xb6"]
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "SCRIPT_NAME")
 
@@ -1079,8 +1094,8 @@ class ExtractURLpartsTests(TestCase):
         If multiple parts fail, they all get appended to the errors list of
         URLDecodeError.
         """
-        request = requestMock("/f\xc3\xc3\xb6")
-        request.prepath = ["f\xc3\xc3\xb6"]
+        request = requestMock(b"/f\xc3\xc3\xb6")
+        request.prepath = [b"f\xc3\xc3\xb6"]
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertEqual(

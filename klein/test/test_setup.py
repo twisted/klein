@@ -1,6 +1,9 @@
+from __future__ import absolute_import, division
+
 import os
 from mock import Mock
 from twisted.trial import unittest
+from twisted.python.compat import unicode
 
 import setup
 
@@ -15,7 +18,7 @@ class SetupTestCase(unittest.TestCase):
         """
         contents = 'foo'
         path = os.path.abspath(self.mktemp())
-        with open(path, 'w') as f:
+        with open(path, 'wt') as f:
             f.write(contents)
 
         rv = setup.read(path)

@@ -2,16 +2,12 @@
 Introduction -- Getting Started
 ===============================
 
-Klein is a micro-framework for developing production-ready web services with Python, built off Werkzeug and Twisted.
-The purpose of this introduction is to show you how to install, use, and deploy Klein-based web applications.
-
-
-This Introduction
-=================
-
+Klein is a micro-framework for developing production-ready web services with Python.
+It does this by building on top of Werkzeug and Twisted to combine their strengths.
 This introduction is meant as a general introduction to Klein concepts.
-
-Everything should be as self-contained, but not everything may be runnable (for example, code that shows only a specific function).
+The purpose of this introduction is to show you how to use install, test, and deploy web applications using Klein.
+The examples in this introduction are all self-contained pieces of code.
+Some of them are also tiny but independently runnable Klein apps.
 
 
 Installing

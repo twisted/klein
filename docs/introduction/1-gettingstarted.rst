@@ -13,33 +13,44 @@ Some of them are also tiny but independently runnable Klein apps.
 Installing
 ==========
 
-Klein is available on PyPI.
-Run this to install it::
+Klein is available on PyPI and can be installed with ``pip``::
 
     pip install klein
 
+This is the canonical way to install Klein.
+
 .. note::
 
-    Since Twisted is a Klein dependency, you need to have the requirements to install that as well.
-    You will need the Python development headers and a working compiler - installing ``python-dev`` and ``build-essential`` on Debian, Mint, or Ubuntu should be all you need.
+   Klein is based on Twisted: ``pip`` will try to install Twisted for you, but you may need to install the non-Python packages that Twisted requires.
+   To install these yourself, you will need the Python development headers and a compiler.
+   On Debian-flavored Linux distributions such as Ubuntu or Mint, you can install them with this command::
+     apt-get install python-dev build-essential
+
+   On other Linux distributions you may need to instead install the appropriate packages via ``pacman`` or ``yum``.
+   Twisted is available in the FreeBSD ports tree as ``devel/py-twisted``.
+   A Windows installer is available from the `TwistedMatrix download page <http://twistedmatrix.com/trac/wiki/Downloads>`_, and OS X users may need to install XCode.
 
 
 Hello World
 ===========
 
-The following example implements a web server that will respond with "Hello, world!" when accessing the root directory.
+This example implements a web server that will respond to requests for ``/`` with "Hello, world!"
 
 .. literalinclude:: codeexamples/helloWorld.py
 
-This imports ``run`` and ``route`` from the Klein package, and uses them directly.
-It then starts a Twisted Web server on port 8080, listening on the loopback address.
+This code defines one URL that the app responds to: ``/``.
+It uses the ``@route`` decorator to tell Klein that the decorated function should be run to handle requests for ``/``.
+After defining ``home()`` as a route, ``run()`` starts a Twisted Web server on port 8080 and listens for requests from localhost.
 
-This works fine for basic applications.
-However, by creating a Klein instance, then calling the ``run`` and ``route`` methods on it, you are able to make your routing not global.
+Because ``route`` and ``run`` were imported by themselves, they are associated with the default, global Klein instance.
+This strategy is fine for very, very small applications.
+However, to exercise more control, you'll need to make your own instance of Klein, as in this next example.
 
 .. literalinclude:: codeexamples/helloWorldClass.py
 
-By not using the global Klein instance, you can have different Klein routers, each having different routes, if your application requires that in the future.
+.. note::
+   Creating your own instance of ``klein.Klein`` like this is the recommended way to use Klein.
+   Being explicit rather than implicit about the association between a route definition and a Klein instance or between a ``run()`` invocation and what it's running, allows more flexible and extensible use patterns.
 
 
 Adding Routes

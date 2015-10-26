@@ -56,42 +56,59 @@ However, to exercise more control, you'll need to make your own instance of Klei
 Adding Routes
 =============
 
-Add more decorated functions to add more routes to your Klein applications.
+Once you have a Klein instance, you can tell it how to handle more URLs by defining more functions decorated with ``@route``.
 
 .. literalinclude:: codeexamples/moreRoutes.py
 
-
-Variable Routes
-===============
-
-You can also make `variable routes`.
-This gives your functions extra arguments which match up with the parts of the routes that you have specified.
-By using this, you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository. 
+You can also use variables in route definitions.
+When the path passed to ``@route`` includes variables, Klein passes keyword arguments with the same names as those variables to your route functions.
+Use angle brackets around parts of the path to indicate that they should be treated as variables.
 
 .. literalinclude:: codeexamples/variableRoutes.py
 
-If you start the server and then visit ``http://localhost:8080/user/bob``, you should get ``Hi bob!`` in return.
+With this example, when you start the server and visit ``http://localhost:8080/user/bob``, the server should return ``Hi bob!``.
 
-You can also define what types it should match.
-The three available types are ``string`` (default), ``int`` and ``float``.
+Variables in route definitions can also have a converter attached to them.
+This lets you express constraints on what kinds of input will match the route.
+Add these constraints by prefixing your variable name with the name of a converter.
+Here is an example that uses the ``string``, ``float``, and ``int`` converters to dispatch a request to different endpoints based on what the the requested path can be converted to.
 
 .. literalinclude:: codeexamples/variableRoutesTypes.py
 
-If you run this example and visit ``http://localhost:8080/somestring``, it will be routed by ``pg_string``, ``http://localhost:8080/1.0`` will be routed by ``pg_float`` and ``http://localhost:8080/1`` will be routed by ``pg_int``.
+In this example,  will be  by ``pg_string``, ``http://localhost:8080/1.0`` will be routed by ``pg_float`` and ``http://localhost:8080/1`` will be routed by ``pg_int``.
 
 
-Route Order Matters
-===================
 
-But remember: order matters!
-This becomes very important when you are using variable paths.
-You can have a general, variable path, and then have hard coded paths over the top of it, such as in the following example.
 
-.. literalinclude:: codeexamples/orderMatters.py
+Using variables in routes lets you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository.
 
-The later applying route for bob will overwrite the variable routing in ``pg_user``.
-Any other username will be routed to ``pg_user`` as normal.
+You can also define what types it should match.
+The three available types are ``string`` (default), ``int`` and ``float``.
+.. more types! werkzeug's been updated :)
 
+.. http://werkzeug.pocoo.org/docs/0.10/routing/#builtin-converters
+
+
+
+.. watch out for this: werkzeug route weighting is complicated
+.. note::
+   Route order matters!
+   This is important when you are using variable paths.
+   You can have a general, variable path, and then have hard coded paths over the top of it, such as in the following example.
+
+   .. literalinclude:: codeexamples/orderMatters.py
+
+   The route for bob will overwrite the variable routing in ``pg_user``.
+   Any other username will be routed to ``pg_user`` as normal.
+   .. TODO: reconcile this with the other thing about route order, in the "handling POST" example
+   .. TODO: add a note about the https://github.com/twisted/klein/issues/41 behavior, mention that issue in the pull request
+    ..
+       # TODO: When reading or adding to the table of URI-to-resource routes,
+       # remember that Werkzeug's implementation requires that the longest or
+       # most-specific URIs be dealt with last. Wait, no, Werkzeug gives routes
+       # weights and it's complicated and ugh. D: cf
+       # https://github.com/mitsuhiko/werkzeug/blob/master/werkzeug/routing.py#L855
+       in summary: AUGH
 
 Static Files
 ============
@@ -121,8 +138,8 @@ You can return a result (which can be regular text, a :api:`twisted.web.resource
 Just remember not to give Klein any ``unicode``, you have to encode it into ``bytes`` first.
 
 
-Onwards
-=======
+Next Steps
+==========
 
 That covers most of the general Klein concepts.
 The next chapter is about deploying your Klein application using Twisted's ``tap`` functionality.

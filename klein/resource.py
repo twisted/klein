@@ -2,11 +2,13 @@ from __future__ import absolute_import, division
 
 from twisted.internet import defer
 from twisted.python import log, failure
+from twisted.python.compat import unicode, intToBytes
 from twisted.web import server
 from twisted.web.iweb import IRenderable
 from twisted.web.resource import Resource, IResource, getChildForRequest
-from twisted.web.template import flattenString
-from twisted.python.compat import unicode, intToBytes
+from twisted.web.server import NOT_DONE_YET
+from twisted.web.template import renderElement
+
 from werkzeug.exceptions import HTTPException
 
 from klein.interfaces import IKleinRequest
@@ -203,19 +205,25 @@ class KleinResource(Resource):
                 if isinstance(r, unicode):
                     r = r.encode('utf-8')
 
-                if r is not None:
+                if (r is not None) and (r != NOT_DONE_YET):
                     request.write(r)
 
                 if not request_finished[0]:
                     request.finish()
 
         def process(r):
+            """
+            Recursively go through r and any child Resources until something
+            returns an IRenderable, then render it and let the result of that
+            bubble back up.
+            """
+
             if IResource.providedBy(r):
                 request.render(getChildForRequest(r, request))
                 return _StandInResource
 
             if IRenderable.providedBy(r):
-                return flattenString(request, r).addCallback(process)
+                return renderElement(request, r)
 
             return r
 

@@ -380,7 +380,8 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), b"<h1>foo</h1>")
+        self.assertEqual(request.getWrittenData(),
+                         b"<!DOCTYPE html>\n<h1>foo</h1>")
 
 
     def test_leafResourceRendering(self):

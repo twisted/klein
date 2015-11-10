@@ -1,4 +1,6 @@
-import sys, os, re, codecs, imp
+import imp
+import sys
+import os
 
 # Add the extensions folder...
 sys.path.insert(0, os.path.abspath('./_extensions'))
@@ -27,17 +29,19 @@ html_static_path = ['_static']
 htmlhelp_basename = 'Kleindoc'
 latex_elements = {}
 latex_documents = [
-  ('index', 'Klein.tex', u'Klein Documentation',
-   u'Twisted Matrix Labs', 'manual'),
+    ('index', 'Klein.tex', u'Klein Documentation',
+     u'Twisted Matrix Labs', 'manual'),
 ]
+
 man_pages = [
     ('index', 'klein', u'Klein Documentation',
-     [u'Twisted Matrix Labs'], 1)
+     [u'Twisted Matrix Labs'], 1),
 ]
+
 texinfo_documents = [
-  ('index', 'Klein', u'Klein Documentation',
-   u'Twisted Matrix Labs', 'Klein', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'Klein', u'Klein Documentation',
+     u'Twisted Matrix Labs', 'Klein', 'A Twisted+Werkzeug web app framework.',
+     'Miscellaneous'),
 ]
 
 # API links extension, stolen from Twisted's Sphinx setup

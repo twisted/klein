@@ -2,43 +2,31 @@
 Example -- Handling Errors
 ==========================
 
-It may be desirable to have uniform error-handling code for many routes.
-We can do this with ``Klein.handle_errors``.
+Most applications ever encounter errors.
+Klein provides an error handling function to let you handle your app's errors in a centralized way.
+Because Klein inherits Twisted's error callbacks, this error handling is built on top of Twisted callbacks.
+You can still use Twisted callbacks directly, but Klein's error handlers let you concisely re-use error handling logic across different parts of your app.
 
-Below we have created a class that will translate ``NotFound`` exceptions into a custom 404 response.
+Klein instances have a ``handle_errors`` method meant for use as a decorator.
+When code in your app's endpoints raises an exception, Klein tries to catch it by calling functions you've decorated with ``@handle_errors``.
+Klein calls your ``@handle_errors`` functions with the ``twisted.web.http.Request`` in progress and with a ``twisted.python.failure.Failure`` that wraps the raised exception.
+This is the same signature as regular Twisted error callbacks.
 
-.. code-block:: python
+Pass one or more classes as arguments to ``@handle_errors`` to make the decorated function handle only exceptions of those classes.
+Like ``try foo: except Bar, Baz``, ``handle_errors`` also handles exceptions that subclass the classes passed as arguments.
 
-    from klein import Klein
-    
-    class NotFound(Exception):
-        pass
-
-
-    class ItemStore(object):
-        app = Klein()
-
-        @app.handle_errors(NotFound)
-        def notfound(self, request, failure):
-            request.setResponseCode(404)
-            return 'Not found, I say'
-
-        @app.route('/droid/<string:name>')
-        def droid(self, request, name):
-            if name in ['R2D2', 'C3P0']:
-                raise NotFound()
-            return 'Droid found'
-
-        @app.route('/bounty/<string:target>')
-        def bounty(self, request, target):
-            if target == 'Han Solo':
-                return '150,000'
-            raise NotFound()
+If you decorate a function with ``@handle_errors`` but do not pass any arguments, it will try to handle *all* errors.
+This can make development more difficult because your handler may handle errors you don't anticipate, and thus obscure stack traces & logging.
+Like a ``try:`` block that ends with a bare ``except:``, ``@handle_errors`` with no arguments is a sign that you should be more specific about your expected failure cases.
+The same holds for ``handle_errors(Exception)``: like ``except Exception:`` it's a code pattern that is very likely to cause bugs.
 
 
-    if __name__ == '__main__':
-        store = ItemStore()
-        store.app.run('localhost', 8080)
+Example App
+===========
+
+This example uses error handling to return a custom 404 response when endpoints raise ``NotFound`` exceptions.
+
+.. literalinclude:: error_handling.py
 
 
 The following cURL commands (and output) can be used to test this behaviour::

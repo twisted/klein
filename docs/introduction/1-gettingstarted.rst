@@ -24,7 +24,7 @@ This is the canonical way to install Klein.
    Klein is based on Twisted: ``pip`` will try to install Twisted for you, but you may need to install the non-Python packages that Twisted requires.
    To install these yourself, you will need the Python development headers and a compiler.
    On Debian-flavored Linux distributions such as Ubuntu or Mint, you can install them with this command::
-     apt-get install python-dev build-essential
+       apt-get install python-dev build-essential
 
    On other Linux distributions you may need to instead install the appropriate packages via ``pacman`` or ``yum``.
    Twisted is available in the FreeBSD ports tree as ``devel/py-twisted``.
@@ -102,13 +102,12 @@ The three available types are ``string`` (default), ``int`` and ``float``.
    Any other username will be routed to ``pg_user`` as normal.
    .. TODO: reconcile this with the other thing about route order, in the "handling POST" example
    .. TODO: add a note about the https://github.com/twisted/klein/issues/41 behavior, mention that issue in the pull request
-    ..
-       # TODO: When reading or adding to the table of URI-to-resource routes,
-       # remember that Werkzeug's implementation requires that the longest or
-       # most-specific URIs be dealt with last. Wait, no, Werkzeug gives routes
-       # weights and it's complicated and ugh. D: cf
-       # https://github.com/mitsuhiko/werkzeug/blob/master/werkzeug/routing.py#L855
-       in summary: AUGH
+   .. TODO: When reading or adding to the table of URI-to-resource routes,
+      remember that Werkzeug's implementation requires that the longest or
+      most-specific URIs be dealt with last. Wait, no, Werkzeug gives routes
+      weights and it's complicated and ugh. D: cf
+      https://github.com/mitsuhiko/werkzeug/blob/master/werkzeug/routing.py#L855
+      in summary: AUGH
 
 Static Files
 ============
@@ -127,7 +126,7 @@ Since it's all just Twisted underneath, you can return :api:`twisted.internet.de
 
 .. literalinclude:: codeexamples/googleProxy.py
 
-This example here uses `treq <https://github.com/dreid/treq>`_ (think Requests, but using Twisted) to implement a Google proxy.
+This example here uses `treq <https://github.com/twisted/treq>`_ (think Requests, but using Twisted) to implement a Google proxy.
 
 
 Return Anything

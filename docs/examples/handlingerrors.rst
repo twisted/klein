@@ -26,10 +26,9 @@ Example App
 
 This example uses error handling to return a custom 404 response when endpoints raise ``NotFound`` exceptions.
 
-.. literalinclude:: error_handling.py
+.. literalinclude:: errorhandling.py
 
-
-The following cURL commands (and output) can be used to test this behaviour::
+You can use curl to see this behavior.::
 
     curl -L http://localhost:8080/droid/R2D2
     Not found, I say

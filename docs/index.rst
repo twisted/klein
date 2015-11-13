@@ -3,7 +3,6 @@
 .. include:: ../README.rst
 
 
-
 Introduction to Klein
 =====================
 

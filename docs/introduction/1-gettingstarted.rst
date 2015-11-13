@@ -85,13 +85,10 @@ Using variables in routes lets you can implement pages that change depending on 
 
 You can also define what types it should match.
 The three available types are ``string`` (default), ``int`` and ``float``.
+
 .. more types! werkzeug's been updated :)
-
-.. http://werkzeug.pocoo.org/docs/0.10/routing/#builtin-converters
-
-
-
-.. watch out for this: werkzeug route weighting is complicated
+   http://werkzeug.pocoo.org/docs/0.10/routing/#builtin-converters
+   watch out for this: werkzeug route weighting is complicated
 
 .. note::
 

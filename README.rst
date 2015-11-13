@@ -46,14 +46,14 @@ For help about routing and the other parts of Klein provided by Werkzeug, you ma
 Contribute
 ==========
 
-``klein`` is hosted on `GitHub <http://github.com/twisted/klein>`_ and is an open source project that welcomes contributions of all kinds from the community, including:
+Klein is hosted on `GitHub <http://github.com/twisted/klein>`_ and is an open source project that welcomes contributions from everybody, including:
 
 - code patches,
 - `documentation <http://klein.readthedocs.org/>`_ improvements,
 - `bug reports <https://github.com/twisted/klein/issues>`_,
 - reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
 
-For more information about contributing, see `the contributor guidelines <https://github.com/twisted/klein/tree/master/CONTRIBUTING.rst>`_.
+For more information about contributing, see the contributor guidelines on `GitHub <https://github.com/twisted/klein/tree/master/CONTRIBUTING.rst>`_ or on :ref:`Read The Docs <contributing>`.
 
 
 Report a bug
@@ -65,8 +65,8 @@ You can see other problems that people have reported on the `GitHub Issues page 
 If the problem you're having is the same as one of the existing issues, please add a comment to that issue.
 
 
-Name
-====
+Why "Klein"?
+============
 
 .. image:: https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Acme_klein_bottle.jpg/176px-Acme_klein_bottle.jpg
    :target: https://en.wikipedia.org/wiki/File:Acme_klein_bottle.jpg

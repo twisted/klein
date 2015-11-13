@@ -11,8 +11,6 @@ It is 'micro' in that it has an incredibly small API similar to `Bottle <http://
 It is not 'micro' in that it depends on things outside the standard library.
 This is primarily because it is built on widely used and well tested components like `Werkzeug <http://werkzeug.pocoo.org/>`_ and `Twisted <http://twistedmatrix.com>`_.
 
-A `Klein bottle <https://en.wikipedia.org/wiki/Klein_bottle>`_ is an example of a non-orientable surface, and a glass Klein bottle looks like a twisted bottle or twisted flask.
-This, of course, made it too good of a pun to pass up.
 
 Klein's documentation can be found at `Read The Docs <http://klein.readthedocs.org>`_.
 
@@ -62,3 +60,14 @@ Like all software, Klein is imperfect.
 We appreciate it when you `report problems you've had with Klein <https://github.com/twisted/klein/issues/new>`_.
 You can see other problems that people have reported on the `GitHub Issues page <https://github.com/twisted/klein/issues>`_.
 If the problem you're having is the same as one of the existing issues, please add a comment to that issue.
+
+
+Name
+====
+
+.. image:: https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Acme_klein_bottle.jpg/176px-Acme_klein_bottle.jpg
+   :target: https://en.wikipedia.org/wiki/File:Acme_klein_bottle.jpg
+   :alt: A glass Klein bottle
+
+A `Klein bottle <https://en.wikipedia.org/wiki/Klein_bottle>`_ is a topological curiousity that looks like a twisted bottle or twisted flask.
+This, of course, made it too good of a pun to pass up.

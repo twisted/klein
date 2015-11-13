@@ -26,7 +26,7 @@ Example App
 
 This example uses error handling to return a custom 404 response when endpoints raise ``NotFound`` exceptions.
 
-.. literalinclude:: errorhandling.py
+.. literalinclude:: handling_errors.py
 
 You can use curl to see this behavior.::
 

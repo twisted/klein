@@ -6,13 +6,15 @@ Klein, a Web Micro-Framework
     :target: http://travis-ci.org/twisted/klein
     :alt: Build Status
 
-Klein is a micro-framework for developing production-ready web services with Python.
-It is 'micro' in that it has an incredibly small API similar to `Bottle <http://bottlepy.org/docs/dev/index.html>`_ and `Flask <http://flask.pocoo.org/>`_.
-It is not 'micro' in that it depends on things outside the standard library.
-This is primarily because it is built on widely used and well tested components like `Werkzeug <http://werkzeug.pocoo.org/>`_ and `Twisted <http://twistedmatrix.com>`_.
+Klein is a microframework for developing production-ready web services with Python.
 
+Klein's "micro" comes from its having a small, learnable API like `Flask <http://flask.pocoo.org/>`_ or `Bottle <http://bottlepy.org/docs/dev/index.html>`_.
+It uses `Twisted <http://twistedmatrix.com>`_ to do asynchronous work and `Werkzeug <http://werkzeug.pocoo.org/>`_ to let you easily create a URL scheme for your users.
+Twisted's asynchronous model is especially good for services where the clients can send requests to the server and use its response to confirm their local view of the world.
+For example, a Twisted app for letting cartographers create and share annotations to maps stored on a server could run much faster than a synchronous app doing the same work.
+Instead of waiting for a full communication cycle with the server to complete before acknowledging user actions, the asynchronous app could acknowledge user actions immediately and defer the task of acting on the server's response until that response actually arrived.
 
-Klein's documentation can be found at `Read The Docs <http://klein.readthedocs.org>`_.
+Klein's full documentation is hosted on `Read The Docs <http://klein.readthedocs.org>`_.
 
 
 Example
@@ -69,6 +71,7 @@ Name
 .. image:: https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Acme_klein_bottle.jpg/176px-Acme_klein_bottle.jpg
    :target: https://en.wikipedia.org/wiki/File:Acme_klein_bottle.jpg
    :alt: A glass Klein bottle
+   :align: right
 
 A `Klein bottle <https://en.wikipedia.org/wiki/Klein_bottle>`_ is a topological curiousity that looks like a twisted bottle or twisted flask.
 This, of course, made it too good of a pun to pass up.

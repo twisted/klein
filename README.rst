@@ -38,7 +38,7 @@ Help
 ====
 
 If you have questions about Klein, two of the best places to ask are Stack Overflow and IRC.
-Stack Overflow's `twisted.web tag <http://stackoverflow.com/questions/new/twisted.web?show=all&sort=newest>`_ is a good place to ask specific questions.
+Stack Overflow's `twisted.web tag <https://stackoverflow.com/questions/tagged/twisted.web?sort=newest&show=all>`_ is a good place to ask specific questions.
 You can also look for help on IRC: the Freenode channel ``#twisted.web`` has many residents with domain knowledge about Twisted.
 For help about routing and the other parts of Klein provided by Werkzeug, you may want to start with `Werkzeug's community resources <http://werkzeug.pocoo.org/community/>`_.
 
@@ -53,7 +53,7 @@ Klein is hosted on `GitHub <http://github.com/twisted/klein>`_ and is an open so
 - `bug reports <https://github.com/twisted/klein/issues>`_,
 - reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
 
-For more information about contributing, see the contributor guidelines on `GitHub <https://github.com/twisted/klein/tree/master/CONTRIBUTING.rst>`_ or on :ref:`Read The Docs <contributing>`.
+For more information about contributing, see our contributor guidelines; they're available `on GitHub <https://github.com/twisted/klein/blob/master/CONTRIBUTING.rst>`_ and :ref:`on Read The Docs <contributing>`.
 
 
 Report a bug

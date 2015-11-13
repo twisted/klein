@@ -37,7 +37,9 @@ Code
 - Use `Twisted's coding standards <http://twistedmatrix.com/documents/current/core/development/policy/coding-standard.html>`_ as a guideline for code changes you make.
   Some parts of Klein (eg. ``klein.resource.ensure_utf8_bytes``) do not adhere to the Twisted style guide, but changing that would break public APIs, which is worse than breaking the style guidelines.
   Similarly, if you change existing code, following the Twisted style guide is good, but is less important than not breaking public APIs.
-- Compatibility across versions is important: here are `Twisted's compatibility guidelines <https://twistedmatrix.com/trac/wiki/CompatibilityPolicy>`_, which Klein shares.
+- Compatibility across versions is very important.
+  Klein, as a Twisted project, shares `Twisted's compatibility guidelines <https://twistedmatrix.com/trac/wiki/CompatibilityPolicy>`_.
+  The goal is to take a parsimonious, Debian-style approach to backwards-incompatible changes.
 - If you're adding a new feature, please add a file with an example and some explanation to the `examples directory <https://github.com/twisted/klein/tree/master/docs/examples>`_, then add your example to ``/docs/index.rst``.
 - Please run ``tox -e pyflakes`` to check for style issues in changed code.
   PyFlakes and similar tools expose many small-but-common errors early enough that it's easy to remedy the problem.

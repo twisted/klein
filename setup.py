@@ -46,7 +46,7 @@ if __name__ == "__main__":
         description="werkzeug + twisted.web",
         long_description=read('README.rst'),
         install_requires=[
-            "Twisted>=12.1",
+            "Twisted>=13.2",
             "werkzeug"
         ],
         keywords="twisted flask werkzeug web",

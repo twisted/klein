@@ -55,6 +55,6 @@ if __name__ == "__main__":
         packages=["klein", "klein.test"],
         url="https://github.com/twisted/klein",
         version=find_version('klein', '__init__.py'),
-        maintainer='HawkOwl',
-        maintainer_email='hawkowl@atleastfornow.net',
+        maintainer='Amber Brown (HawkOwl)',
+        maintainer_email='hawkowl@twistedmatrix.com',
     )

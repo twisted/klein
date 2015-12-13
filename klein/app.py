@@ -320,8 +320,10 @@ class Klein(object):
         thing your klein application does.
 
         @param host: The hostname or IP address to bind the listening socket
-            to.  "0.0.0.0" will allow you to listen on all interfaces, and
-            "127.0.0.1" will allow you to listen on just the loopback interface.
+            to.  Examples:
+              "0.0.0.0"   -> all interfaces (ipv4)
+              "::"        -> all interfaces (ipv4+ipv6)
+              "127.0.0.1" -> just the loopback interface.
         @type host: str
 
         @param port: The TCP port to accept HTTP requests on.

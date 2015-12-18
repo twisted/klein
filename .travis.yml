@@ -52,6 +52,9 @@ matrix:
     - env: TOX_ENV=py27-twtrunk
     - env: TOX_ENV=py33-twtrunk
     - env: TOX_ENV=py34-twtrunk
+  include:
+    - python: 3.5
+      env: TOX_ENV=py35-tw155
 
 branches:
   only:

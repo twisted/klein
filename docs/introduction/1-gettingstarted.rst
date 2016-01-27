@@ -2,89 +2,115 @@
 Introduction -- Getting Started
 ===============================
 
-Klein is a micro-framework for developing production-ready web services with Python, built off Werkzeug and Twisted.
-The purpose of this introduction is to show you how to install, use, and deploy Klein-based web applications.
-
-
-This Introduction
-=================
-
+Klein is a micro-framework for developing production-ready web services with Python.
+It does this by building on top of Werkzeug and Twisted to combine their strengths.
 This introduction is meant as a general introduction to Klein concepts.
-
-Everything should be as self-contained, but not everything may be runnable (for example, code that shows only a specific function).
+The purpose of this introduction is to show you how to use install, test, and deploy web applications using Klein.
+The examples in this introduction are all self-contained pieces of code.
+Some of them are also tiny but independently runnable Klein apps.
 
 
 Installing
 ==========
 
-Klein is available on PyPI.
-Run this to install it::
+Klein is available on PyPI and can be installed with ``pip``::
 
     pip install klein
 
+This is the canonical way to install Klein.
+
 .. note::
 
-    Since Twisted is a Klein dependency, you need to have the requirements to install that as well.
-    You will need the Python development headers and a working compiler - installing ``python-dev`` and ``build-essential`` on Debian, Mint, or Ubuntu should be all you need.
+   Klein is based on Twisted: ``pip`` will try to install Twisted for you, but you may need to install the non-Python packages that Twisted requires.
+   To install these yourself, you will need the Python development headers and a compiler.
+   On Debian-flavored Linux distributions such as Ubuntu or Mint, you can install them with this command::
+
+       apt-get install python-dev build-essential
+
+   On other Linux distributions you may need to instead install the appropriate packages via ``pacman`` or ``yum``.
+   Twisted is available in the FreeBSD ports tree as ``devel/py-twisted``.
+   A Windows installer is available from the `TwistedMatrix download page <http://twistedmatrix.com/trac/wiki/Downloads>`_, and OS X users may need to install XCode.
 
 
 Hello World
 ===========
 
-The following example implements a web server that will respond with "Hello, world!" when accessing the root directory.
+This example implements a web server that will respond to requests for ``/`` with "Hello, world!"
 
 .. literalinclude:: codeexamples/helloWorld.py
 
-This imports ``run`` and ``route`` from the Klein package, and uses them directly.
-It then starts a Twisted Web server on port 8080, listening on the loopback address.
+This code defines one URL that the app responds to: ``/``.
+It uses the ``@route`` decorator to tell Klein that the decorated function should be run to handle requests for ``/``.
+After defining ``home()`` as a route, ``run()`` starts a Twisted Web server on port 8080 and listens for requests from localhost.
 
-This works fine for basic applications.
-However, by creating a Klein instance, then calling the ``run`` and ``route`` methods on it, you are able to make your routing not global.
+Because ``route`` and ``run`` were imported by themselves, they are associated with the default, global Klein instance.
+This strategy is fine for very, very small applications.
+However, to exercise more control, you'll need to make your own instance of Klein, as in this next example.
 
 .. literalinclude:: codeexamples/helloWorldClass.py
 
-By not using the global Klein instance, you can have different Klein routers, each having different routes, if your application requires that in the future.
+.. note::
+   Creating your own instance of ``klein.Klein`` like this is the recommended way to use Klein.
+   Being explicit rather than implicit about the association between a route definition and a Klein instance or between a ``run()`` invocation and what it's running, allows more flexible and extensible use patterns.
 
 
 Adding Routes
 =============
 
-Add more decorated functions to add more routes to your Klein applications.
+Once you have a Klein instance, you can tell it how to handle more URLs by defining more functions decorated with ``@route``.
 
 .. literalinclude:: codeexamples/moreRoutes.py
 
-
-Variable Routes
-===============
-
-You can also make `variable routes`.
-This gives your functions extra arguments which match up with the parts of the routes that you have specified.
-By using this, you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository. 
+You can also use variables in route definitions.
+When the path passed to ``@route`` includes variables, Klein passes keyword arguments with the same names as those variables to your route functions.
+Use angle brackets around parts of the path to indicate that they should be treated as variables.
 
 .. literalinclude:: codeexamples/variableRoutes.py
 
-If you start the server and then visit ``http://localhost:8080/user/bob``, you should get ``Hi bob!`` in return.
+With this example, when you start the server and visit ``http://localhost:8080/user/bob``, the server should return ``Hi bob!``.
+
+Variables in route definitions can also have a converter attached to them.
+This lets you express constraints on what kinds of input will match the route.
+Add these constraints by prefixing your variable name with the name of a converter.
+Here is an example that uses the ``string``, ``float``, and ``int`` converters to dispatch a request to different endpoints based on what the the requested path can be converted to.
+
+.. literalinclude:: codeexamples/variableRoutesTypes.py
+
+In this example,  will be  by ``pg_string``, ``http://localhost:8080/1.0`` will be routed by ``pg_float`` and ``http://localhost:8080/1`` will be routed by ``pg_int``.
+
+
+
+
+Using variables in routes lets you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository.
 
 You can also define what types it should match.
 The three available types are ``string`` (default), ``int`` and ``float``.
 
-.. literalinclude:: codeexamples/variableRoutesTypes.py
+.. more types! werkzeug's been updated :)
+   http://werkzeug.pocoo.org/docs/0.10/routing/#builtin-converters
+   watch out for this: werkzeug route weighting is complicated
 
-If you run this example and visit ``http://localhost:8080/somestring``, it will be routed by ``pg_string``, ``http://localhost:8080/1.0`` will be routed by ``pg_float`` and ``http://localhost:8080/1`` will be routed by ``pg_int``.
+.. note::
 
+   Route order matters!
+   This is important when you are using variable paths.
+   You can have a general, variable path, and then have hard coded paths over the top of it, such as in the following example.
 
-Route Order Matters
-===================
+   .. literalinclude:: codeexamples/orderMatters.py
 
-But remember: order matters!
-This becomes very important when you are using variable paths.
-You can have a general, variable path, and then have hard coded paths over the top of it, such as in the following example.
+   The route for bob will overwrite the variable routing in ``pg_user``.
+   Any other username will be routed to ``pg_user`` as normal.
 
-.. literalinclude:: codeexamples/orderMatters.py
+   .. TODO: reconcile this with the other thing about route order, in the "handling POST" example
 
-The later applying route for bob will overwrite the variable routing in ``pg_user``.
-Any other username will be routed to ``pg_user`` as normal.
+   .. TODO: add a note about the https://github.com/twisted/klein/issues/41 behavior, mention that issue in the pull request
 
+   .. TODO: When reading or adding to the table of URI-to-resource routes,
+      remember that Werkzeug's implementation requires that the longest or
+      most-specific URIs be dealt with last. Wait, no, Werkzeug gives routes
+      weights and it's complicated and ugh. D: cf
+      https://github.com/mitsuhiko/werkzeug/blob/master/werkzeug/routing.py#L855
+      in summary: AUGH
 
 Static Files
 ============
@@ -103,7 +129,7 @@ Since it's all just Twisted underneath, you can return :api:`twisted.internet.de
 
 .. literalinclude:: codeexamples/googleProxy.py
 
-This example here uses `treq <https://github.com/dreid/treq>`_ (think Requests, but using Twisted) to implement a Google proxy.
+This example here uses `treq <https://github.com/twisted/treq>`_ (think Requests, but using Twisted) to implement a Google proxy.
 
 
 Return Anything
@@ -114,8 +140,8 @@ You can return a result (which can be regular text, a :api:`twisted.web.resource
 Just remember not to give Klein any ``unicode``, you have to encode it into ``bytes`` first.
 
 
-Onwards
-=======
+Next Steps
+==========
 
 That covers most of the general Klein concepts.
 The next chapter is about deploying your Klein application using Twisted's ``tap`` functionality.

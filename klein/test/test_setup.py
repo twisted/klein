@@ -10,7 +10,7 @@ import setup
 
 class SetupTestCase(unittest.TestCase):
     """
-    Tests for helper functions whithin setup.py.
+    Tests for the helper functions in setup.py.
     """
     def test_read(self):
         """

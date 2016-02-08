@@ -1,6 +1,10 @@
 from setuptools import setup
 
 if __name__ == "__main__":
+
+    with open('README.rst', 'r') as f:
+        long_description = f.read()
+
     setup(
         classifiers=[
             'Environment :: Web Environment',
@@ -18,7 +22,7 @@ if __name__ == "__main__":
             'Topic :: Software Development :: Libraries :: Python Modules'
         ],
         description="werkzeug + twisted.web",
-        long_description=read('README.rst'),
+        long_description=long_description,
         setup_requires=["incremental"],
         use_incremental=True,
         install_requires=[

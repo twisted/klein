@@ -33,6 +33,7 @@ if __name__ == "__main__":
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
+        package_dir={"": "src"},
         packages=["klein", "klein.test"],
         url="https://github.com/twisted/klein",
         maintainer='Amber Brown (HawkOwl)',

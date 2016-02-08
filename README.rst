@@ -5,8 +5,8 @@ Klein, a Web Micro-Framework
 .. image:: https://travis-ci.org/twisted/klein.png?branch=master
     :target: http://travis-ci.org/twisted/klein
     :alt: Build Status
-.. image:: https://codecov.io/github/codecov/codecov-ruby/coverage.svg?branch=master
-    :target: https://codecov.io/github/codecov/codecov-ruby?branch=master
+.. image:: https://codecov.io/github/twisted/klein/coverage.svg?branch=master
+    :target: https://codecov.io/github/twisted/klein?branch=master
     :alt: Code Coverage
 
 Klein is a micro-framework for developing production-ready web services with Python.

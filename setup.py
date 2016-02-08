@@ -46,6 +46,7 @@ if __name__ == "__main__":
             'Topic :: Software Development :: Libraries :: Python Modules'
         ],
         description="werkzeug + twisted.web",
+        package_dir={"": "src"},
         long_description=read('README.rst'),
         install_requires=[
             "Twisted>=13.2",
@@ -56,7 +57,7 @@ if __name__ == "__main__":
         name="klein",
         packages=["klein", "klein.test"],
         url="https://github.com/twisted/klein",
-        version=find_version('klein', '__init__.py'),
+        version=find_version('src', 'klein', '__init__.py'),
         maintainer='Amber Brown (HawkOwl)',
         maintainer_email='hawkowl@twistedmatrix.com',
     )

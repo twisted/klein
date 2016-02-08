@@ -50,7 +50,7 @@ Code
   These two test shortcuts can be combined to give you a quick feedback cycle, but make sure to check on the full test suite from time to time to make sure changes haven't had unexpected side effects.
 - Show us your code changes through pull requests sent to `Klein's GitHub repo <https://github.com/twisted/klein>`_.
   This is the best way to make your code visible to others and to get feedback about it.
-- Your pull request should have a `"news fragment" <https://github.com/hawkowl/towncrier#news-fragments>`_ in the ``klein/newsfragments/`` directory.
+- Your pull request should have a `"news fragment" <https://github.com/hawkowl/towncrier>`_ in the ``klein/newsfragments/`` directory.
   This is used when generating ``NEWS.rst``.
 - If your pull request is a work in progress, please put ``[WIP]`` in its title.
 - Add yourself to ``AUTHORS``.

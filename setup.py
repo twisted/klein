@@ -27,7 +27,8 @@ if __name__ == "__main__":
         use_incremental=True,
         install_requires=[
             "Twisted>=13.2",
-            "werkzeug"
+            "werkzeug",
+            "incremental",
         ],
         keywords="twisted flask werkzeug web",
         license="MIT",

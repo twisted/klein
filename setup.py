@@ -34,6 +34,7 @@ if __name__ == "__main__":
         license="MIT",
         name="klein",
         packages=["klein", "klein.test"],
+        package_dir={"": "src"},
         url="https://github.com/twisted/klein",
         maintainer='Amber Brown (HawkOwl)',
         maintainer_email='hawkowl@twistedmatrix.com',

@@ -1,34 +1,10 @@
-import codecs
-import os
-import re
-
 from setuptools import setup
 
-
-def read(*parts):
-    """
-    Build an absolute path from *parts* and and return the contents of the
-    resulting file.  Assume UTF-8 encoding.
-    """
-    here = os.path.abspath(os.path.dirname(__file__))
-    with codecs.open(os.path.join(here, *parts), 'r', 'utf-8') as f:
-        return f.read()
-
-
-def find_version(*file_paths):
-    """
-    Build a path from *file_paths* and search for a ``__version__``
-    string inside.
-    """
-    version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
-    if version_match:
-        return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
-
-
 if __name__ == "__main__":
+
+    with open('README.rst', 'r') as f:
+        long_description = f.read()
+
     setup(
         classifiers=[
             'Environment :: Web Environment',
@@ -46,18 +22,19 @@ if __name__ == "__main__":
             'Topic :: Software Development :: Libraries :: Python Modules'
         ],
         description="werkzeug + twisted.web",
-        package_dir={"": "src"},
-        long_description=read('README.rst'),
+        long_description=long_description,
+        setup_requires=["incremental"],
+        use_incremental=True,
         install_requires=[
             "Twisted>=13.2",
-            "werkzeug"
+            "werkzeug",
+            "incremental",
         ],
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
         packages=["klein", "klein.test"],
         url="https://github.com/twisted/klein",
-        version=find_version('src', 'klein', '__init__.py'),
         maintainer='Amber Brown (HawkOwl)',
         maintainer_email='hawkowl@twistedmatrix.com',
     )

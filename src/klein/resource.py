@@ -240,8 +240,8 @@ class KleinResource(Resource):
                     log.err(failure, "Unhandled Error Processing Request.")
                 return
 
-            # If there are no more registered handlers, apply some defaults
-            if len(error_handlers) == 0:
+            def handle_unhandled(failure):
+                # If there are no more registered handlers, apply some defaults
                 if failure.check(HTTPException):
                     he = failure.value
                     request.setResponseCode(he.code)
@@ -255,18 +255,17 @@ class KleinResource(Resource):
                     request.processingFailed(failure)
                     return
 
-            error_handler = error_handlers[0]
+            def try_apply_handler(failure, error_types, handler):
+                if failure.check(*error_types):
+                    return self._app.execute_error_handler(handler, request, failure)
+                return failure
 
-            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
-            if failure.check(*error_handler[0]):
-                d = defer.maybeDeferred(self._app.execute_error_handler,
-                                        error_handler[1],
-                                        request,
-                                        failure)
-
-                return d.addErrback(processing_failed, error_handlers[1:])
-
-            return processing_failed(failure, error_handlers[1:])
+            d = defer.Deferred()
+            for error_types, handler in error_handlers:
+                d.addErrback(try_apply_handler, error_types, handler)
+            d.addErrback(handle_unhandled)
+            d.errback(failure)
+            return d
 
 
         d.addErrback(processing_failed, self._app._error_handlers)

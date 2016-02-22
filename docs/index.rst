@@ -11,6 +11,18 @@ Klein is developed by a team of contributors `on GitHub <https://github.com/twis
 We're also commonly in ``#twisted.web`` on `Freenode <http://freenode.net>`_.
 
 
+Introduction to Klein
+=====================
+
+This is an introduction to Klein, going through from creating a simple web site to something supporting AJAX and more.
+
+.. toctree::
+    :maxdepth: 1
+
+    introduction/1-gettingstarted
+    introduction/2-twistdtap
+
+
 Klein Examples
 ==============
 
@@ -23,7 +35,9 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/deferreds
     examples/twistd
     examples/handlingpost
+    examples/subroutes
     examples/nonglobalstate
+    examples/handlingerrors
 
 
 Contributing

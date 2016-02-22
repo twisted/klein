@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division
+
 from twisted.trial import unittest
 
 import sys
@@ -9,6 +11,8 @@ from twisted.python.components import registerAdapter
 from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
+from klein.test.util import EqualityTestsMixin
+
 
 
 class DummyRequest(object):
@@ -23,6 +27,38 @@ class DummyRequest(object):
 
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
+
+
+class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
+    """
+    Tests for L{Klein}'s implementation of C{==} and C{!=}.
+    """
+    class _One(object):
+        app = Klein()
+
+        def __eq__(self, other):
+            return True
+
+        def __ne__(self, other):
+            return False
+
+        def __hash__(self):
+            return id(self)
+
+    _another = Klein()
+
+    def anInstance(self):
+        # This is actually a new Klein instance every time since Klein.__get__
+        # creates a new Klein instance for every instance it is retrieved from.
+        # The different _One instance, at least, will not cause the Klein
+        # instances to be not-equal to each other since an instance of _One is
+        # equal to everything.
+        return self._One().app
+
+
+    def anotherInstance(self):
+        return self._another
+
 
 
 class KleinTestCase(unittest.TestCase):
@@ -41,6 +77,26 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(len(app.endpoints), 1)
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
+
+
+    def test_submountedRoute(self):
+        """
+        L{Klein.subroute} adds functions as routable endpoints.
+        """
+        app = Klein()
+
+        with app.subroute("/sub") as app:
+            @app.route("/prefixed_uri")
+            def foo_endpoint(request):
+                return b"foo"
+
+        c = app.url_map.bind("sub/prefixed_uri")
+        self.assertEqual(
+            c.match("/sub/prefixed_uri"), ("foo_endpoint", {}))
+        self.assertEqual(
+            len(app.endpoints), 1)
+        self.assertEqual(
+            app.execute_endpoint("foo_endpoint", DummyRequest(1)), b"foo")
 
 
     def test_stackedRoute(self):

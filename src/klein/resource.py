@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division
 
 from twisted.internet import defer
+import twisted.internet.unix.Server
 from twisted.python import log, failure
 from twisted.python.compat import unicode, intToBytes
 from twisted.web import server
@@ -75,7 +76,11 @@ def _extractURLparts(request):
     @rtype: L{tuple} of L{unicode}, L{unicode}, L{int}, L{unicode}, L{unicode}
     """
     server_name = request.getRequestHostname()
-    server_port = request.getHost().port
+    socket = request.channel.transport.getHandle()
+    if isinstance(socket, twisted.internet.unix.Server):
+        server_port = 0
+    else:
+        server_port = request.getHost().port
     if (bool(request.isSecure()), server_port) not in [
             (True, 443), (False, 80)]:
         server_name = server_name + b":" + intToBytes(server_port)

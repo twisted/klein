@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division
 
 from twisted.internet import defer
-import twisted.internet.unix.Server
 from twisted.python import log, failure
 from twisted.python.compat import unicode, intToBytes
 from twisted.web import server

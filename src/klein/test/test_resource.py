@@ -8,6 +8,7 @@ from mock import Mock, call
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
 from twisted.internet.error import ConnectionLost
+from twisted.internet.unix import Server
 from twisted.web import server
 from twisted.web.http_headers import Headers
 from twisted.web.resource import Resource
@@ -1103,3 +1104,19 @@ class ExtractURLpartsTests(TestCase):
             set(["SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"]),
             set(part for part, _ in e.errors)
         )
+
+    def test_afUnixSocket(self):
+        """
+        Test proper handling of AF_UNIX sockets
+        """
+        request = requestMock(b"/f\xc3\xb6\xc3\xb6")
+        server_mock = Mock(Server)
+        server_mock.getRequestHostname = u'/var/run/twisted.socket'
+        request.host = server_mock
+        url_scheme, server_name, server_port, path_info, script_name = _extractURLparts(request)
+
+        self.assertIsInstance(url_scheme, unicode)
+        self.assertIsInstance(server_name, unicode)
+        self.assertIsInstance(server_port, int)
+        self.assertIsInstance(path_info, unicode)
+        self.assertIsInstance(script_name, unicode)

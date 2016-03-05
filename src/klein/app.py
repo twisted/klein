@@ -181,7 +181,7 @@ class Klein(object):
                 @wraps(f)
                 def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
-                    return _call(instance, f, request, *a, **kw)
+                    return self._call(instance, f, request, *a, **kw)
 
                 branch_f.segment_count = segment_count
 
@@ -190,7 +190,7 @@ class Klein(object):
 
             @wraps(f)
             def _f(instance, request, *a, **kw):
-                return _call(instance, f, request, *a, **kw)
+                return self._call(instance, f, request, *a, **kw)
 
             _f.segment_count = segment_count
 
@@ -302,7 +302,7 @@ class Klein(object):
         def deco(f):
             @wraps(f)
             def _f(instance, request, failure):
-                return _call(instance, f, request, failure)
+                return self._call(instance, f, request, failure)
 
             self._error_handlers.append(([f_or_exception] + list(additional_exceptions), _f))
             return _f
@@ -336,6 +336,13 @@ class Klein(object):
         log.startLogging(logFile)
         reactor.listenTCP(port, Site(self.resource()), interface=host)
         reactor.run()
+
+    ### Private methods
+    def _call(self, instance, f, *args, **kwargs):
+        if instance is None:
+            return f(*args, **kwargs)
+
+        return f(instance, *args, **kwargs)
 
 
 _globalKleinApp = Klein()

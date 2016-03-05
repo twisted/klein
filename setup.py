@@ -55,7 +55,7 @@ if __name__ == "__main__":
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
-        packages=["klein", "klein.test"],
+        packages=["klein", "klein.test", "klein.ext"],
         url="https://github.com/twisted/klein",
         version=find_version('src', 'klein', '__init__.py'),
         maintainer='Amber Brown (HawkOwl)',

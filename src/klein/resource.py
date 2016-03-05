@@ -75,9 +75,12 @@ def _extractURLparts(request):
     @rtype: L{tuple} of L{unicode}, L{unicode}, L{int}, L{unicode}, L{unicode}
     """
     server_name = request.getRequestHostname()
-    server_port = request.getHost().port
+    if hasattr(request.getHost(), 'port'):
+        server_port = request.getHost().port
+    else:
+        server_port = 0
     if (bool(request.isSecure()), server_port) not in [
-            (True, 443), (False, 80)]:
+            (True, 443), (False, 80), (False, 0), (True, 0)]:
         server_name = server_name + b":" + intToBytes(server_port)
 
     script_name = b''

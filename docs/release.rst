@@ -1,0 +1,18 @@
+===============
+Releasing Klein
+===============
+
+Klein is released on a time-dependent basis, similar to Twisted.
+
+Each version is numbered with the major portion being the last two digits of the year, and the minor portion being the zero-indexed release number.
+That is, the first release of 2016 would be 16.0, and the second would be 16.1.
+
+
+Doing a Release
+---------------
+
+#. Clear the directory of any other changes using ``git clean -f -x -d  .``
+#. Generate the tarball and wheel using ``python setup.py sdist bdist_wheel``.
+#. Upload the tarball and wheel using ``twine upload dist/klein-*``.
+#. Tag the release using ``git tag -s <release> -m "Tag <release> release"``
+#. Push up the tag using ``git push --tags``.

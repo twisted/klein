@@ -11,8 +11,11 @@ That is, the first release of 2016 would be 16.0, and the second would be 16.1.
 Doing a Release
 ---------------
 
+#. Change the version number and commit it.
 #. Clear the directory of any other changes using ``git clean -f -x -d  .``
-#. Generate the tarball and wheel using ``python setup.py sdist bdist_wheel``.
-#. Upload the tarball and wheel using ``twine upload dist/klein-*``.
 #. Tag the release using ``git tag -s <release> -m "Tag <release> release"``
 #. Push up the tag using ``git push --tags``.
+#. Make a pull request for this changes.
+   Continue when it is merged.
+#. Generate the tarball and wheel using ``python setup.py sdist bdist_wheel``.
+#. Upload the tarball and wheel using ``twine upload dist/klein-*``.

@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division
 
+import os
+
 from twisted.trial import unittest
 
 import sys
@@ -262,7 +264,7 @@ class KleinTestCase(unittest.TestCase):
         app.run("localhost", 8080)
 
         reactor.listenTCP.assert_called_with(
-            8080, mock_site.return_value, interface="localhost")
+            8080, mock_site.return_value, backlog=50, interface="localhost")
 
         reactor.run.assert_called_with()
 
@@ -285,7 +287,7 @@ class KleinTestCase(unittest.TestCase):
         app.run("localhost", 8080, logFile=logFile)
 
         reactor.listenTCP.assert_called_with(
-            8080, mock_site.return_value, interface="localhost")
+            8080, mock_site.return_value, backlog=50, interface="localhost")
 
         reactor.run.assert_called_with()
 
@@ -293,6 +295,47 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
         mock_log.startLogging.assert_called_with(logFile)
 
+
+    @patch('klein.app.KleinResource')
+    @patch('klein.app.log')
+    @patch('klein.app.endpoints.serverFromString')
+    @patch('klein.app.reactor')
+    def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
+        """
+        L{Klein.run} called with ssl protocol and certificate files.
+        """
+        app = Klein()
+        interface = "2001\:0DB8\:f00e\:eb00\:\:1"
+
+        app.run(interface, 8080, proto="tcp6")
+
+        spec = "tcp6:8080:interface={}".format(interface)
+        reactor.run.assert_called_with()
+        mock_sfs.assert_called_with(reactor, spec)
+        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_kr.assert_called_with(app)
+
+    @patch('klein.app.KleinResource')
+    @patch('klein.app.log')
+    @patch('klein.app.endpoints.serverFromString')
+    @patch('klein.app.reactor')
+    def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
+        """
+        L{Klein.run} called with ssl protocol and certificate files.
+        """
+        app = Klein()
+        key = "key.pem"
+        cert = "cert.pem"
+        dh_params = "dhparam.pem"
+        app.run("localhost", 8080, proto="ssl",
+                privateKey=key, certificate=cert,
+                dhParameters=dh_params)
+
+        spec = "ssl:8080:interface=localhost:privateKey={}:certKey={}:dhParameters={}"
+        reactor.run.assert_called_with()
+        mock_sfs.assert_called_with(reactor, spec.format(key, cert, dh_params))
+        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_kr.assert_called_with(app)
 
     @patch('klein.app.KleinResource')
     def test_resource(self, mock_kr):

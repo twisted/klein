@@ -310,8 +310,8 @@ class Klein(object):
         return deco
 
 
-    def run(self, host, port, logFile=None, proto="tcp", privateKey=None,
-            certificate=None, dhParameters=None):
+    def run(self, host=None, port=None, logFile=None,
+            endpoint_description=None):
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -331,31 +331,21 @@ class Klein(object):
         @param logFile: The file object to log to, by default C{sys.stdout}
         @type logFile: file object
 
-        @param proto: protocol string for endpoint, can be either "tcp" or "ssl"
-        @type proto: str
-
-        @param privateKey: filepath to private key for ssl
-        @type privateKey: str
-
-        @param certificate: filepath to certificate for ssl
-        @type certificate: str
-
-        @param dhParameters: filepath to dh parameters for ssl
-        @type dhParameters: str
+        @param endpoint_description: specification of endpoint. Must contain
+            protocol, port and interface. May contain other optional arguments,
+             e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
+        @type endpoint_description: str
         """
         if logFile is None:
             logFile = sys.stdout
 
         log.startLogging(logFile)
-        server_string = "{}:{}:interface={}".format(proto, port, host)
 
-        if privateKey and certificate:
-            server_string += ":privateKey={}:certKey={}".format(privateKey,
-                                                                certificate)
-        if dhParameters:
-            server_string += ":dhParameters={}".format(dhParameters)
+        if not endpoint_description:
+            endpoint_description = "tcp:port={0}:interface={1}".format(port,
+                                                                       host)
 
-        endpoint = endpoints.serverFromString(reactor, server_string)
+        endpoint = endpoints.serverFromString(reactor, endpoint_description)
         endpoint.listen(Site(self.resource()))
         reactor.run()
 

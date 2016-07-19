@@ -307,6 +307,9 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(mock_kr.return_value, resource)
 
     def test_copy(self):
+        """
+        L{Klein.__copy__} returns a new L{Klein} with all the registered endpoints
+        """
         app = Klein()
 
         @app.route("/foo")
@@ -328,6 +331,9 @@ class KleinTestCase(unittest.TestCase):
         self.assertRaises(KeyError, app_copy.execute_endpoint, 'bar', dr3)
 
     def test_error_handlers_list_is_copied(self):
+        """
+        L{Klein.__copy__} returns a new L{Klein} with all the error handlers
+        """
         app = Klein()
 
         @app.handle_errors(ValueError)

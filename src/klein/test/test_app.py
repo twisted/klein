@@ -338,7 +338,7 @@ class KleinTestCase(unittest.TestCase):
 
         @app.handle_errors(ValueError)
         def value_error(request, failure):
-            return "this failed"
+            pass
 
         app_copy = copy.copy(app)
 
@@ -346,6 +346,6 @@ class KleinTestCase(unittest.TestCase):
 
         @app_copy.handle_errors(KeyError)
         def error_value(request, failure):
-            return "that failed"
+            pass
 
         self.assertNotEquals(app._error_handlers, app_copy._error_handlers)

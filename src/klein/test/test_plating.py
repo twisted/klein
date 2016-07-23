@@ -73,7 +73,38 @@ class PlatingTests(TestCase):
         self.successResultOf(d)
 
         written = request.getWrittenData()
-        print("what", repr(written))
         self.assertEquals({"ok": "an-plating-test", "title": "JUST A TITLE"},
                           json.loads(written))
+
+    def test_prime_directive_return(self):
+        """
+        Nothing within these Articles Of Federation shall authorize the United
+        Federation of Planets to alter the return value of a callable by
+        applying a decorator to it...
+        """
+        exact_result = {"ok": "some nonsense value"}
+        @plating.routed(self.app.route("/"),
+                        tags.span(slot("ok")))
+        def plateMe(request):
+            return exact_result
+        self.assertIdentical(plateMe(None), exact_result)
+
+    def test_prime_directive_arguments(self):
+        """
+        ... or shall require the function to modify its signature under these
+        Articles Of Federation.
+        """
+        @plating.routed(self.app.route("/"),
+                        tags.span(slot("ok")))
+        def plateMe(request, one, two, three):
+            return (one, two, three)
+        exact_one = {"one": "and"}
+        exact_two = {"two": "and"}
+        exact_three = {"three": "and"}
+        result_one, result_two, result_three = plateMe(
+            None, exact_one, exact_two, three=exact_three
+        )
+        self.assertIdentical(result_one, exact_one)
+        self.assertIdentical(result_two, exact_two)
+        self.assertIdentical(result_three, exact_three)
 

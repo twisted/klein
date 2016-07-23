@@ -52,4 +52,5 @@ class PlatingTests(TestCase):
         request = requestMock(b"/")
         d = _render(self.kr, request)
         self.successResultOf(d)
-        self.assertIn(b'test-data-present', request.getWrittenData())
+        self.assertIn(b'<span>test-data-present</span>',
+                      request.getWrittenData())

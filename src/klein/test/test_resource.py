@@ -4,6 +4,7 @@ import os
 
 from io import BytesIO
 
+from urlparse import parse_qs
 from mock import Mock, call
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
@@ -37,12 +38,15 @@ def requestMock(path, method=b"GET", host=b"localhost", port=8080,
     if not body:
         body = b''
 
+    path, qpath = (path.split("?", 1) + [""])[:2]
+
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)
     request.gotLength(len(body))
     request.content = BytesIO()
     request.content.write(body)
     request.content.seek(0)
+    request.args = parse_qs(qpath)
     request.requestHeaders = Headers(headers)
     request.setHost(host, port, isSecure)
     request.uri = path

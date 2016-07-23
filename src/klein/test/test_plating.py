@@ -38,7 +38,6 @@ class PlatingTests(TestCase):
         self.app = Klein()
         self.kr = self.app.resource()
 
-
     def test_template(self):
         """
         Rendering a L{Plating.content} decorated route results in stuff.

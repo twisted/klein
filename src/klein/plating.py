@@ -6,7 +6,6 @@ from json import dumps as json_serialize
 from twisted.web.template import TagLoader, Element
 
 
-
 def _should_return_json(request):
     """
     Should the given request result in a JSON entity-body?

@@ -4,7 +4,7 @@ import os
 
 from io import BytesIO
 
-from urlparse import parse_qs
+from six.moves.urllib.parse import parse_qs
 from mock import Mock, call
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError

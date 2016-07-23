@@ -49,6 +49,7 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         long_description=read('README.rst'),
         install_requires=[
+            "six",
             "Twisted>=13.2",
             "werkzeug"
         ],

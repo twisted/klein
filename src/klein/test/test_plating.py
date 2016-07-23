@@ -40,7 +40,8 @@ class PlatingTests(TestCase):
 
     def test_template(self):
         """
-        Rendering a L{Plating.content} decorated route results in stuff.
+        Rendering a L{Plating.routed} decorated route results in templated
+        HTML.
         """
         @plating.routed(self.app.route("/"),
                         tags.span(slot("ok")))

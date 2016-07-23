@@ -4,6 +4,15 @@ from functools import wraps
 
 from twisted.web.template import TagLoader, Element
 
+
+
+def _should_return_json(request):
+    """
+    Should the given request result in a JSON entity-body?
+    """
+    return bool(request.args.get("json"))
+
+
 class Plating(object):
     """
     

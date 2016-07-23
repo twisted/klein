@@ -45,13 +45,13 @@ class Plating(object):
             return method
         return mydecorator
 
-    def _elementify(self, loader, toFillWith):
+    def _elementify(self, loader, to_fill_with):
         """
         
         """
-        slotData = self._defaults.copy()
-        slotData.update(toFillWith)
-        slotData.update(content=Element(loader=loader))
+        slot_data = self._defaults.copy()
+        slot_data.update(to_fill_with)
+        slot_data.update(content=Element(loader=loader))
         [loaded] = self._loader.load()
         loaded = loaded.clone()
-        return Element(loader=TagLoader(loaded.fillSlots(**slotData)))
+        return Element(loader=TagLoader(loaded.fillSlots(**slot_data)))

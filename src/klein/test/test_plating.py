@@ -11,7 +11,7 @@ from klein.test.util import TestCase
 from klein import Klein
 
 plating = Plating(
-    dict(
+    defaults=dict(
         title="JUST A TITLE",
         content="NEVER MIND THE CONTENT",
     ),

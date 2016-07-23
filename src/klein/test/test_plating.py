@@ -42,9 +42,8 @@ class PlatingTests(TestCase):
         """
         Rendering a L{Plating.content} decorated route results in stuff.
         """
-
-        @self.app.route("/")
-        @plating.content(tags.span(slot("ok")))
+        @plating.routed(self.app.route("/"),
+                        tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "test-data-present"}
 

@@ -27,7 +27,6 @@ plating = Plating(
     ),
 )
 
-
 class PlatingTests(TestCase):
     """
     Tests for L{Plating}.
@@ -40,7 +39,7 @@ class PlatingTests(TestCase):
         self.app = Klein()
         self.kr = self.app.resource()
 
-    def test_template(self):
+    def test_template_html(self):
         """
         Rendering a L{Plating.routed} decorated route results in templated
         HTML.
@@ -75,6 +74,30 @@ class PlatingTests(TestCase):
         written = request.getWrittenData()
         self.assertEquals({"ok": "an-plating-test", "title": "JUST A TITLE"},
                           json.loads(written))
+
+    def test_widget_html(self):
+        """
+        
+        """
+        @Plating(tags=tags.ul(tags.li(slot('item'), render="sequence")))
+        def widgt(values):
+            return {"sequence": values}
+        @plating.routed(self.app.route("/"),
+                        tags.span(slot("subplating")))
+        def rsrc(request):
+            return {"subplating": widgt([1, 2, 3, 4])}
+        request = requestMock(b"/")
+        d = _render(self.kr, request)
+        self.successResultOf(d)
+        written = request.getWrittenData()
+        self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
+        self.assertIn(b'<title>JUST A TITLE</title>', written)
+
+    def test_widget_json(self):
+        """
+        
+        """
+        
 
     def test_prime_directive_return(self):
         """

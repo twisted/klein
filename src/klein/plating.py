@@ -20,13 +20,22 @@ class PlatedElement(Element):
     renderers.
     """
 
+    def __init__(self, slot_data, preloaded):
+        """
+        
+        """
+        self.slot_data = slot_data
+        super(PlatedElement, self).__init__(
+            loader=TagLoader(preloaded.fillSlots(**slot_data))
+        )
+
     @renderer
     def sequence(self, request, tag):
         """
         The 'sequence' renderer will render items from the slot data 'sequence'
         into the tag-slot 'item'.
         """
-        for item in tag.slotData['sequence']:
+        for item in self.slot_data["sequence"]:
             yield tag.fillSlots(item=item)
 
 
@@ -74,7 +83,8 @@ class Plating(object):
         slot_data.update(to_fill_with)
         [loaded] = self._loader.load()
         loaded = loaded.clone()
-        return PlatedElement(loader=TagLoader(loaded.fillSlots(**slot_data)))
+        return PlatedElement(slot_data=slot_data,
+                             preloaded=loaded)
 
     def __call__(self, function):
         """

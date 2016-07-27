@@ -5,6 +5,8 @@ from __future__ import (
 
 import json
 
+from six import text_type
+
 from klein.plating import Plating
 from twisted.web.template import tags, slot
 
@@ -81,11 +83,11 @@ class PlatingTests(TestCase):
         """
         @Plating(tags=tags.ul(tags.li(slot('item'), render="sequence")))
         def widgt(values):
-            return {"sequence": values}
+            return {"sequence": map(text_type, values)}
         @plating.routed(self.app.route("/"),
                         tags.span(slot("subplating")))
         def rsrc(request):
-            return {"subplating": widgt([1, 2, 3, 4])}
+            return {"subplating": widgt([1, 2, 3])}
         request = requestMock(b"/")
         d = _render(self.kr, request)
         self.successResultOf(d)

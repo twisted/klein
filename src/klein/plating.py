@@ -1,5 +1,9 @@
 # -*- test-case-name: klein.test.test_plating -*-
 
+"""
+Templating wrapper support for Klein.
+"""
+
 from functools import wraps
 from json import dumps
 
@@ -76,8 +80,11 @@ class PlatedElement(Element):
 
 class Plating(object):
     """
-    
+    A L{Plating} is a container which can be used to generate HTML from data.
+
+    Its name is derived both from tem-I{plating} and I{chrome plating}.
     """
+
     def __init__(self, defaults=None, tags=None):
         """
         

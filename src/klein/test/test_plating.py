@@ -103,7 +103,8 @@ class PlatingTests(TestCase):
 
     def test_render_list(self):
         """
-        
+        The C{:list} renderer suffix will render the slot named by the renderer
+        as a list, filling each slot.
         """
         @plating.routed(self.app.route("/"),
                         tags.ul(tags.li(slot("item"),

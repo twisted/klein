@@ -4,6 +4,7 @@ from functools import wraps
 from json import dumps as json_serialize
 
 from twisted.web.template import TagLoader, Element, renderer
+from six import text_type, integer_types
 
 
 def _should_return_json(request):
@@ -11,6 +12,16 @@ def _should_return_json(request):
     Should the given request result in a JSON entity-body?
     """
     return bool(request.args.get("json"))
+
+
+
+def _extra_types(input):
+    """
+    Renderability for a few additional types.
+    """
+    if isinstance(input, (float,) + integer_types):
+        return text_type(input)
+    return input
 
 
 

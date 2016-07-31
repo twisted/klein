@@ -118,6 +118,12 @@ class PlatingTests(TestCase):
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
         self.assertIn(b'<title>JUST A TITLE</title>', written)
 
+    def test_widget_html(self):
+        """
+        
+        """
+        
+
     def test_widget_json(self):
         """
         

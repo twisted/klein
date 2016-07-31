@@ -12,7 +12,7 @@ from klein.test.test_resource import requestMock, _render
 from klein.test.util import TestCase
 from klein import Klein
 
-plating = Plating(
+page = Plating(
     defaults={
         "title": "JUST A TITLE",
         CONTENT: "NEVER MIND THE CONTENT",
@@ -53,8 +53,8 @@ class PlatingTests(TestCase):
         Rendering a L{Plating.routed} decorated route results in templated
         HTML.
         """
-        @plating.routed(self.app.route("/"),
-                        tags.span(slot("ok")))
+        @page.routed(self.app.route("/"),
+                     tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "test-data-present"}
 
@@ -70,8 +70,8 @@ class PlatingTests(TestCase):
         Rendering a L{Plating.routed} decorated route with a query parameter
         asking for JSON will yield JSON instead.
         """
-        @plating.routed(self.app.route("/"),
-                        tags.span(slot("ok")))
+        @page.routed(self.app.route("/"),
+                     tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "an-plating-test"}
 
@@ -91,11 +91,11 @@ class PlatingTests(TestCase):
         serializable by twisted.web.template, will be converted by plating into
         their decimal representation.
         """
-        @plating.routed(self.app.route("/"),
-                        tags.div(tags.span(slot("anInteger")),
-                                 tags.i(slot("anFloat")),
-                                 tags.b(slot("anLong")),
-                        ))
+        @page.routed(self.app.route("/"),
+                     tags.div(tags.span(slot("anInteger")),
+                              tags.i(slot("anFloat")),
+                              tags.b(slot("anLong")),
+                     ))
         def plateMe(result):
             return {"anInteger": 7,
                     "anFloat": 3.2,
@@ -113,9 +113,9 @@ class PlatingTests(TestCase):
         The C{:list} renderer suffix will render the slot named by the renderer
         as a list, filling each slot.
         """
-        @plating.routed(self.app.route("/"),
-                        tags.ul(tags.li(slot("item"),
-                                        render="subplating:list")))
+        @page.routed(self.app.route("/"),
+                     tags.ul(tags.li(slot("item"),
+                                     render="subplating:list")))
         def rsrc(request):
             return {"subplating": [1, 2, 3]}
         request = requestMock(b"/")
@@ -144,8 +144,8 @@ class PlatingTests(TestCase):
         applying a decorator to it...
         """
         exact_result = {"ok": "some nonsense value"}
-        @plating.routed(self.app.route("/"),
-                        tags.span(slot("ok")))
+        @page.routed(self.app.route("/"),
+                     tags.span(slot("ok")))
         def plateMe(request):
             return exact_result
         self.assertIdentical(plateMe(None), exact_result)
@@ -155,8 +155,8 @@ class PlatingTests(TestCase):
         ... or shall require the function to modify its signature under these
         Articles Of Federation.
         """
-        @plating.routed(self.app.route("/"),
-                        tags.span(slot("ok")))
+        @page.routed(self.app.route("/"),
+                     tags.span(slot("ok")))
         def plateMe(request, one, two, three):
             return (one, two, three)
         exact_one = {"one": "and"}

@@ -77,6 +77,30 @@ class PlatingTests(TestCase):
         self.assertEquals({"ok": "an-plating-test", "title": "JUST A TITLE"},
                           json.loads(written))
 
+    def test_template_numbers(self):
+        """
+        Data returned from a plated method may include numeric types (integers,
+        floats, and possibly longs), which although they are not normally
+        serializable by twisted.web.template, will be converted by plating into
+        their decimal representation.
+        """
+        @plating.routed(self.app.route("/"),
+                        tags.div(tags.span(slot("anInteger")),
+                                 tags.i(slot("anFloat")),
+                                 tags.b(slot("anLong")),
+                        ))
+        def plateMe(result):
+            return {"anInteger": 7,
+                    "anFloat": 3.2,
+                    "anLong": 0x10000000000000001}
+        request = requestMock(b"/")
+        d = _render(self.kr, request)
+        self.successResultOf(d)
+        written = request.getWrittenData()
+        self.assertIn("<span>7</span>", written)
+        self.assertIn("<i>3.2</i>", written)
+        self.assertIn("<b>18446744073709551617</b>", written)
+
     def test_render_list(self):
         """
         

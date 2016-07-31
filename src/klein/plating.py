@@ -70,7 +70,7 @@ class Plating(object):
                     json_data.update(data)
                     return json_serialize(json_data)
                 else:
-                    data.update(content=Element(loader=loader))
+                    data.update(content=loader.load())
                     return self._elementify(data)
             return method
         return mydecorator

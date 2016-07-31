@@ -5,8 +5,6 @@ from __future__ import (
 
 import json
 
-from six import text_type
-
 from klein.plating import Plating, CONTENT
 from twisted.web.template import tags, slot
 

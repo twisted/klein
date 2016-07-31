@@ -7,7 +7,7 @@ import json
 
 from six import text_type
 
-from klein.plating import Plating
+from klein.plating import Plating, CONTENT
 from twisted.web.template import tags, slot
 
 from klein.test.test_resource import requestMock, _render
@@ -15,15 +15,15 @@ from klein.test.util import TestCase
 from klein import Klein
 
 plating = Plating(
-    defaults=dict(
-        title="JUST A TITLE",
-        content="NEVER MIND THE CONTENT",
-    ),
+    defaults={
+        "title": "JUST A TITLE",
+        CONTENT: "NEVER MIND THE CONTENT",
+    },
     tags=tags.html(
         tags.head(tags.title(slot("title"))),
         tags.body(
             tags.h1(slot("title")),
-            tags.div(slot("content"),
+            tags.div(slot(CONTENT),
                      Class="content")
         )
     ),

@@ -107,7 +107,8 @@ class Plating(object):
                 data = method(request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
-                    del json_data[CONTENT]
+                    if CONTENT in json_data:
+                        del json_data[CONTENT]
                     json_data.update(data)
                     request.setHeader('content-type',
                                       'text/json; charset=utf-8')

@@ -28,7 +28,6 @@ def _extra_types(input):
     return input
 
 
-
 class PlatedElement(Element):
     """
     The element type returned by L{Plating}.  This contains several utility
@@ -64,7 +63,6 @@ class PlatedElement(Element):
             return types[type]
         else:
             raise MissingRenderMethod(self, name)
-
 
 
 class Plating(object):

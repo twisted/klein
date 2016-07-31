@@ -35,11 +35,15 @@ class PlatedElement(Element):
 
     def __init__(self, slot_data, preloaded):
         """
-        
+        @param slot_data: A dictionary mapping names to values.
+
+        @param preloaded: The pre-loaded data.
         """
         self.slot_data = slot_data
         super(PlatedElement, self).__init__(
-            loader=TagLoader(preloaded.fillSlots(**slot_data))
+            loader=TagLoader(preloaded.fillSlots(
+                **{k: _extra_types(v) for k, v in slot_data.items()}
+            ))
         )
 
     def lookupRenderMethod(self, name):

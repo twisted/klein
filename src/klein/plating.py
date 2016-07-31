@@ -109,6 +109,8 @@ class Plating(object):
                     json_data = self._defaults.copy()
                     del json_data[CONTENT]
                     json_data.update(data)
+                    request.setHeader('content-type',
+                                      'text/json; charset=utf-8')
                     return json_serialize(json_data)
                 else:
                     data[CONTENT] = loader.load()

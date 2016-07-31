@@ -90,6 +90,10 @@ class PlatingTests(TestCase):
 
         d = _render(self.kr, request)
         self.successResultOf(d)
+        self.assertEqual(
+            request.responseHeaders.getRawHeaders('content-type')[0],
+            'text/json; charset=utf-8'
+        )
 
         written = request.getWrittenData()
         self.assertEquals({"ok": "an-plating-test",

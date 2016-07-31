@@ -27,6 +27,15 @@ plating = Plating(
     ),
 )
 
+widget = Plating(
+    defaults={
+        "a": "NO VALUE FOR A",
+        "b": "NO VALUE FOR B",
+    },
+    tags=tags.div(tags.span(slot("a")),
+                  tags.span(slot("b"))),
+)
+
 class PlatingTests(TestCase):
     """
     Tests for L{Plating}.

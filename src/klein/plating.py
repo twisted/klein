@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_plating -*-
 
 from functools import wraps
-from json import dumps as json_serialize
+from json import dumps
 
 from six import text_type, integer_types
 
@@ -17,6 +17,15 @@ def _should_return_json(request):
     """
     return bool(request.args.get("json"))
 
+
+def json_serialize(item):
+    """
+    A function similar to L{dumps}.
+    """
+    def helper(unknown):
+        if isinstance(unknown, PlatedElement):
+            return unknown.slot_data
+    return dumps(item, default=helper)
 
 
 def _extra_types(input):
@@ -111,7 +120,7 @@ class Plating(object):
         return PlatedElement(slot_data=slot_data,
                              preloaded=loaded)
 
-    def __call__(self, function):
+    def widgeted(self, function):
         """
         
         """
@@ -119,4 +128,6 @@ class Plating(object):
         def wrapper(*a, **k):
             data = function(*a, **k)
             return self._elementify(data)
-        return wrapper
+        wrapper.__name__ += ".widget"
+        function.widget = wrapper
+        return function

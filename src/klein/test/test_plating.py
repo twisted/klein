@@ -14,7 +14,7 @@ from klein import Klein
 
 page = Plating(
     defaults={
-        "title": "JUST A TITLE",
+        "title": "default title unchanged",
         CONTENT: "NEVER MIND THE CONTENT",
     },
     tags=tags.html(
@@ -27,14 +27,22 @@ page = Plating(
     ),
 )
 
-widget = Plating(
+element = Plating(
     defaults={
         "a": "NO VALUE FOR A",
         "b": "NO VALUE FOR B",
     },
-    tags=tags.div(tags.span(slot("a")),
-                  tags.span(slot("b"))),
+    tags=tags.div(tags.span("a: ", slot("a")),
+                  tags.span("b: ", slot("b"))),
 )
+
+@element.widgeted
+def enwidget(a, b):
+    """
+    Provide some values for the L{widget} template.
+    """
+    return {"a": a, "b": b}
+
 
 class PlatingTests(TestCase):
     """
@@ -63,7 +71,7 @@ class PlatingTests(TestCase):
         self.successResultOf(d)
         written = request.getWrittenData()
         self.assertIn(b'<span>test-data-present</span>', written)
-        self.assertIn(b'<title>JUST A TITLE</title>', written)
+        self.assertIn(b'<title>default title unchanged</title>', written)
 
     def test_template_json(self):
         """
@@ -81,7 +89,8 @@ class PlatingTests(TestCase):
         self.successResultOf(d)
 
         written = request.getWrittenData()
-        self.assertEquals({"ok": "an-plating-test", "title": "JUST A TITLE"},
+        self.assertEquals({"ok": "an-plating-test",
+                           "title": "default title unchanged"},
                           json.loads(written))
 
     def test_template_numbers(self):
@@ -123,19 +132,43 @@ class PlatingTests(TestCase):
         self.successResultOf(d)
         written = request.getWrittenData()
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
-        self.assertIn(b'<title>JUST A TITLE</title>', written)
+        self.assertIn(b'<title>default title unchanged</title>', written)
 
     def test_widget_html(self):
         """
-        
+        When L{Plating.widgeted} is applied as a decorator, it gives the
+        decorated function a C{widget} attribute which is a version of the
+        function with a modified return type that turns it into a renderable
+        HTML sub-element that may fill a slot.
         """
-        
+        @page.routed(self.app.route("/"),
+                     tags.div(slot("widget")))
+        def rsrc(request):
+            return {"widget": enwidget.widget(3, 4)}
+        request = requestMock(b"/")
+        d = _render(self.kr, request)
+        self.successResultOf(d)
+        written = request.getWrittenData()
+        self.assertIn(b"<span>a: 3</span>", written)
+        self.assertIn(b"<span>b: 4</span>", written)
 
     def test_widget_json(self):
         """
-        
+        When L{Plating.widgeted} is applied as a decorator, and the result is
+        serialized to JSON, it appears the same as the returned value despite
+        the HTML-friendly wrapping described above.
         """
-        
+        @page.routed(self.app.route("/"),
+                     tags.div(slot("widget")))
+        def rsrc(request):
+            return {"widget": enwidget.widget(3, 4)}
+        request = requestMock(b"/?json=1")
+        d = _render(self.kr, request)
+        self.successResultOf(d)
+        written = request.getWrittenData()
+        self.assertEqual(json.loads(written),
+                         {"widget": {"a": 3, "b": 4},
+                          "title": "default title unchanged"})
 
     def test_prime_directive_return(self):
         """

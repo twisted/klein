@@ -77,17 +77,15 @@ class PlatingTests(TestCase):
         self.assertEquals({"ok": "an-plating-test", "title": "JUST A TITLE"},
                           json.loads(written))
 
-    def test_widget_html(self):
+    def test_render_list(self):
         """
         
         """
-        @Plating(tags=tags.ul(tags.li(slot('item'), render="sequence")))
-        def widgt(values):
-            return {"sequence": map(text_type, values)}
         @plating.routed(self.app.route("/"),
-                        tags.span(slot("subplating")))
+                        tags.ul(tags.li(slot("item"),
+                                        render="subplating:list")))
         def rsrc(request):
-            return {"subplating": widgt([1, 2, 3])}
+            return {"subplating": [1, 2, 3]}
         request = requestMock(b"/")
         d = _render(self.kr, request)
         self.successResultOf(d)

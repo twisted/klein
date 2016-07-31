@@ -3,8 +3,10 @@
 from functools import wraps
 from json import dumps as json_serialize
 
-from twisted.web.template import TagLoader, Element, renderer
 from six import text_type, integer_types
+
+from twisted.web.template import TagLoader, Element
+from twisted.web.error import MissingRenderMethod
 
 
 def _should_return_json(request):
@@ -40,14 +42,22 @@ class PlatedElement(Element):
             loader=TagLoader(preloaded.fillSlots(**slot_data))
         )
 
-    @renderer
-    def sequence(self, request, tag):
+    def lookupRenderMethod(self, name):
         """
-        The 'sequence' renderer will render items from the slot data 'sequence'
-        into the tag-slot 'item'.
+        @return: a renderer.
         """
-        for item in self.slot_data["sequence"]:
-            yield tag.fillSlots(item=item)
+        slot, type = name.split(":")
+
+        def renderList(request, tag):
+            for item in self.slot_data[slot]:
+                yield tag.fillSlots(item=_extra_types(item))
+        types = {
+            "list": renderList,
+        }
+        if type in types:
+            return types[type]
+        else:
+            raise MissingRenderMethod(self, name)
 
 
 

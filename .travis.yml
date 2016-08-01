@@ -7,9 +7,6 @@ python: 2.7
 cache: false
 
 env:
-  - TOX_ENV=py26-tw132
-  - TOX_ENV=py26-tw140
-  - TOX_ENV=py26-tw154
   - TOX_ENV=py27-twcurrent
   - TOX_ENV=py27-tw132
   - TOX_ENV=py27-tw140

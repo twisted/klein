@@ -59,6 +59,17 @@ class PlatingTests(TestCase):
         self.app = Klein()
         self.kr = self.app.resource()
 
+    def get(self, uri):
+        """
+        Issue a virtual GET request to the given path that is expected to
+        succeed synchronously, and return the generated request object and
+        written bytes.
+        """
+        request = requestMock(uri)
+        d = _render(self.kr, request)
+        self.successResultOf(d)
+        return request, request.getWrittenData()
+
     def test_template_html(self):
         """
         Rendering a L{Plating.routed} decorated route results in templated
@@ -68,11 +79,7 @@ class PlatingTests(TestCase):
                      tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "test-data-present"}
-
-        request = requestMock(b"/")
-        d = _render(self.kr, request)
-        self.successResultOf(d)
-        written = request.getWrittenData()
+        request, written = self.get(b"/")
         self.assertIn(b'<span>test-data-present</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
@@ -85,17 +92,11 @@ class PlatingTests(TestCase):
                      tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "an-plating-test"}
-
-        request = requestMock(b"/?json=true")
-
-        d = _render(self.kr, request)
-        self.successResultOf(d)
+        request, written = self.get(b"/?json=true")
         self.assertEqual(
             request.responseHeaders.getRawHeaders(b'content-type')[0],
             b'text/json; charset=utf-8'
         )
-
-        written = request.getWrittenData()
         self.assertEquals({"ok": "an-plating-test",
                            "title": "default title unchanged"},
                           json.loads(written.decode('utf-8')))
@@ -116,10 +117,7 @@ class PlatingTests(TestCase):
             return {"anInteger": 7,
                     "anFloat": 3.2,
                     "anLong": 0x10000000000000001}
-        request = requestMock(b"/")
-        d = _render(self.kr, request)
-        self.successResultOf(d)
-        written = request.getWrittenData()
+        request, written = self.get(b"/")
         self.assertIn(b"<span>7</span>", written)
         self.assertIn(b"<i>3.2</i>", written)
         self.assertIn(b"<b>18446744073709551617</b>", written)
@@ -134,10 +132,7 @@ class PlatingTests(TestCase):
                                      render="subplating:list")))
         def rsrc(request):
             return {"subplating": [1, 2, 3]}
-        request = requestMock(b"/")
-        d = _render(self.kr, request)
-        self.successResultOf(d)
-        written = request.getWrittenData()
+        request, written = self.get(b"/")
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
@@ -152,10 +147,7 @@ class PlatingTests(TestCase):
                      tags.div(slot("widget")))
         def rsrc(request):
             return {"widget": enwidget.widget(3, 4)}
-        request = requestMock(b"/")
-        d = _render(self.kr, request)
-        self.successResultOf(d)
-        written = request.getWrittenData()
+        request, written = self.get(b"/")
         self.assertIn(b"<span>a: 3</span>", written)
         self.assertIn(b"<span>b: 4</span>", written)
 
@@ -169,10 +161,7 @@ class PlatingTests(TestCase):
                      tags.div(slot("widget")))
         def rsrc(request):
             return {"widget": enwidget.widget(3, 4)}
-        request = requestMock(b"/?json=1")
-        d = _render(self.kr, request)
-        self.successResultOf(d)
-        written = request.getWrittenData()
+        request, written = self.get(b"/?json=1")
         self.assertEqual(json.loads(written.decode('utf-8')),
                          {"widget": {"a": 3, "b": 4},
                           "title": "default title unchanged"})

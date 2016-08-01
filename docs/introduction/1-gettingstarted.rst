@@ -113,7 +113,7 @@ way to get just the data from your backend out via a JSON API, often from a
 dynamic JavaScript or `Python <https://brython.info>`_ front-end in the
 browser.
 
-Klein provides for this general pattern with :api:`klein.Plating <Plating>`.
+Klein provides for this general pattern with ``klein.Plating``.
 
 Let's build a little app that gives us some fake (random) information about
 places you can go and foods you can get there. You can download the full

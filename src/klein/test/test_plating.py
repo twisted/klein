@@ -211,7 +211,8 @@ class PlatingTests(TestCase):
         def justJson(request):
             return {"title": "uninteresting", "data": "interesting"}
         request, written = self.get(b"/?json=1")
-        self.assertEqual(json.loads(written), {"data": "interesting"})
+        self.assertEqual(json.loads(written.decode("utf-8")),
+                         {"data": "interesting"})
 
     def test_missing_renderer(self):
         """
@@ -225,7 +226,7 @@ class PlatingTests(TestCase):
                 return {}
             self.get(b"/")
             [fe] = self.flushLoggedErrors(FlattenerError)
-            self.assertIsInstance(fe.value[0], MissingRenderMethod)
+            self.assertIsInstance(fe.value.args[0], MissingRenderMethod)
         test("garbage")
         test("garbage:missing")
 

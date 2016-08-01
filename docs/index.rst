@@ -48,3 +48,4 @@ If you'd like to help out, here's some material to help you get started!
 .. toctree::
 
     contributing
+    release

@@ -198,3 +198,17 @@ class PlatingTests(TestCase):
         self.assertIdentical(result_two, exact_two)
         self.assertIdentical(result_three, exact_three)
 
+    def test_presentation_only_json(self):
+        """
+        Slots marked as "presentation only" will not be reflected in the
+        output.
+        """
+        plating = Plating(tags=tags.span(slot("title")),
+                          presentation_slots={"title"})
+        @plating.routed(self.app.route("/"),
+                        tags.span(slot("data")))
+        def justJson(request):
+            return {"title": "uninteresting", "data": "interesting"}
+        request, written = self.get(b"/?json=1")
+        self.assertEqual(json.loads(written), {"data": "interesting"})
+

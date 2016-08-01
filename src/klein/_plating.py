@@ -84,7 +84,8 @@ class Plating(object):
 
     CONTENT = "klein:plating:content"
 
-    def __init__(self, defaults=None, tags=None):
+    def __init__(self, defaults=None, tags=None,
+                 presentation_slots=frozenset()):
         """
         
         """
@@ -92,6 +93,7 @@ class Plating(object):
             defaults = {}
         self._defaults = defaults
         self._loader = TagLoader(tags)
+        self._presentation_slots = {self.CONTENT} | set(presentation_slots)
 
     def routed(self, routing, content_template):
         """
@@ -106,9 +108,9 @@ class Plating(object):
                 data = method(request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
-                    if self.CONTENT in json_data:
-                        del json_data[self.CONTENT]
                     json_data.update(data)
+                    for ignored in self._presentation_slots:
+                        json_data.pop(ignored, None)
                     request.setHeader(b'content-type',
                                       b'text/json; charset=utf-8')
                     return json_serialize(json_data)

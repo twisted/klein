@@ -223,7 +223,7 @@ class PlatingTests(TestCase):
                             tags.span(tags.span(render=missing)))
             def no(request):
                 return {}
-            self.get("/")
+            self.get(b"/")
             [fe] = self.flushLoggedErrors(FlattenerError)
             self.assertIsInstance(fe.value[0], MissingRenderMethod)
         test("garbage")

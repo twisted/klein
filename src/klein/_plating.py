@@ -12,9 +12,6 @@ from six import text_type, integer_types
 from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 
-CONTENT = "klein:plating:content"
-
-
 def _should_return_json(request):
     """
     Should the given request result in a JSON entity-body?
@@ -85,6 +82,8 @@ class Plating(object):
     Its name is derived both from tem-I{plating} and I{chrome plating}.
     """
 
+    CONTENT = "klein:plating:content"
+
     def __init__(self, defaults=None, tags=None):
         """
         
@@ -107,14 +106,14 @@ class Plating(object):
                 data = method(request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
-                    if CONTENT in json_data:
-                        del json_data[CONTENT]
+                    if self.CONTENT in json_data:
+                        del json_data[self.CONTENT]
                     json_data.update(data)
                     request.setHeader(b'content-type',
                                       b'text/json; charset=utf-8')
                     return json_serialize(json_data)
                 else:
-                    data[CONTENT] = loader.load()
+                    data[self.CONTENT] = loader.load()
                     return self._elementify(data)
             return method
         return mydecorator

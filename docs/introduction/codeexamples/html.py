@@ -1,13 +1,12 @@
-from klein.plating import Plating, CONTENT
 from twisted.web.template import tags, slot
-from klein import Klein
+from klein import Klein, Plating
 app = Klein()
 
 style = Plating(
     tags=tags.html(
         tags.head(tags.title(slot("title"))),
         tags.body(tags.h1(slot("title"), Class="title"),
-                  tags.div(slot(CONTENT)))
+                  tags.div(slot(Plating.CONTENT)))
     )
 )
 

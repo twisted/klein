@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division
 
 from klein.app import Klein, run, route, resource
+from klein._plating import Plating
 
 
 __version__ = "15.3.1"
@@ -11,6 +12,7 @@ __copyright__ = "Copyright 2015 {0}".format(__author__)
 
 __all__ = [
     'Klein',
+    'Plating',
     '__author__',
     '__copyright__',
     '__license__',

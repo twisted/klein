@@ -8,7 +8,7 @@ from __future__ import (
 
 import json
 
-from klein.plating import Plating, CONTENT
+from klein import Plating
 from twisted.web.template import tags, slot
 
 from klein.test.test_resource import requestMock, _render
@@ -18,13 +18,13 @@ from klein import Klein
 page = Plating(
     defaults={
         "title": "default title unchanged",
-        CONTENT: "NEVER MIND THE CONTENT",
+        Plating.CONTENT: "NEVER MIND THE CONTENT",
     },
     tags=tags.html(
         tags.head(tags.title(slot("title"))),
         tags.body(
             tags.h1(slot("title")),
-            tags.div(slot(CONTENT),
+            tags.div(slot(Plating.CONTENT),
                      Class="content")
         )
     ),

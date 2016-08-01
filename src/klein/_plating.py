@@ -61,7 +61,9 @@ class PlatedElement(Element):
         """
         @return: a renderer.
         """
-        slot, type = name.split(":")
+        if ":" not in name:
+            raise MissingRenderMethod(self, name)
+        slot, type = name.split(":", 1)
 
         def renderList(request, tag):
             for item in self.slot_data[slot]:

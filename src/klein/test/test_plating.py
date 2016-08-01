@@ -10,6 +10,7 @@ import json
 
 from klein import Plating
 from twisted.web.template import tags, slot
+from twisted.web.error import FlattenerError, MissingRenderMethod
 
 from klein.test.test_resource import requestMock, _render
 from klein.test.util import TestCase
@@ -211,4 +212,20 @@ class PlatingTests(TestCase):
             return {"title": "uninteresting", "data": "interesting"}
         request, written = self.get(b"/?json=1")
         self.assertEqual(json.loads(written), {"data": "interesting"})
+
+    def test_missing_renderer(self):
+        """
+        Missing renderers will result in an exception during rendering.
+        """
+        def test(missing):
+            plating = Plating(tags=tags.span(slot(Plating.CONTENT)))
+            @plating.routed(self.app.route("/"),
+                            tags.span(tags.span(render=missing)))
+            def no(request):
+                return {}
+            self.get("/")
+            [fe] = self.flushLoggedErrors(FlattenerError)
+            self.assertIsInstance(fe.value[0], MissingRenderMethod)
+        test("garbage")
+        test("garbage:missing")
 

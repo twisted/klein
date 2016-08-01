@@ -229,3 +229,15 @@ class PlatingTests(TestCase):
         test("garbage")
         test("garbage:missing")
 
+    def test_json_serialize_unknown_type(self):
+        """
+        The JSON serializer will raise a L{TypeError} when it can't find an
+        appropriate type.
+        """
+        from klein._plating import json_serialize
+        class reprish(object):
+            def __repr__(self):
+                return '<blub>'
+        te = self.assertRaises(TypeError, json_serialize, {"an": reprish()})
+        self.assertIn("<blub>", str(te))
+

@@ -26,6 +26,9 @@ def json_serialize(item):
     def helper(unknown):
         if isinstance(unknown, PlatedElement):
             return unknown.slot_data
+        else:
+            raise TypeError("{input} not JSON serializable"
+                            .format(input=unknown))
     return dumps(item, default=helper)
 
 

@@ -49,7 +49,6 @@ def one_food(request, food):
             "rating": random.randint(1, 5),
             "carbohydrates": random.randint(0, 100)}
 
-
 @style.routed(
     app.route("/places/<place>"),
     tags.div(style="color: green")(

@@ -113,6 +113,8 @@ class Plating(object):
                                       b'text/json; charset=utf-8')
                     return json_serialize(json_data)
                 else:
+                    request.setHeader(b'content-type',
+                                      b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
                     return self._elementify(data)
             return method

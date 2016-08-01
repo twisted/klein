@@ -177,6 +177,32 @@ be ``foods:list``, we invoke a ``twisted.web.template`` renderer that repeats
 the tag it is the renderer for, inserting each element of that list into the
 special ``"item"`` slot.
 
+You can view each of these pages in a web browser now, and you can see their
+contents; we've built a little website that generates random values for these
+types of data.  But we've *also* built a JSON API.  If you access, for example,
+``http://localhost:8080/places/chicago``, you'll see an HTML view, but if you
+add the query parameter ``json=1``
+(e.g. ``http://localhost:8080/places/chicago?json=1``) you will see a JSON
+result like this:
+
+.. code-block:: json
+
+    {
+        "foods": [
+            "pizza",
+            "cheeseburgers",
+            "hot dogs"
+        ],
+        "latitude": -32.610538480748815,
+        "longitude": -9.38433633489143,
+        "name": "chicago",
+        "title": "Place: chicago"
+    }
+
+Any route decorated by ``@routed`` will similarly give you structured data if
+you ask for it via ``?json=1``, so you can build your JSON API and your HTML
+frontend at the same time.
+
 Deferreds
 =========
 

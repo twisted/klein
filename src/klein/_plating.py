@@ -91,9 +91,7 @@ class Plating(object):
         """
         
         """
-        if defaults is None:
-            defaults = {}
-        self._defaults = defaults
+        self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentation_slots = {self.CONTENT} | set(presentation_slots)
 

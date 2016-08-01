@@ -19,7 +19,7 @@ def _should_return_json(request):
     """
     Should the given request result in a JSON entity-body?
     """
-    return bool(request.args.get("json"))
+    return bool(request.args.get(b"json"))
 
 
 def json_serialize(item):
@@ -110,8 +110,8 @@ class Plating(object):
                     if CONTENT in json_data:
                         del json_data[CONTENT]
                     json_data.update(data)
-                    request.setHeader('content-type',
-                                      'text/json; charset=utf-8')
+                    request.setHeader(b'content-type',
+                                      b'text/json; charset=utf-8')
                     return json_serialize(json_data)
                 else:
                     data[CONTENT] = loader.load()

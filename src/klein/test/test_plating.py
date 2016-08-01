@@ -91,14 +91,14 @@ class PlatingTests(TestCase):
         d = _render(self.kr, request)
         self.successResultOf(d)
         self.assertEqual(
-            request.responseHeaders.getRawHeaders('content-type')[0],
-            'text/json; charset=utf-8'
+            request.responseHeaders.getRawHeaders(b'content-type')[0],
+            b'text/json; charset=utf-8'
         )
 
         written = request.getWrittenData()
         self.assertEquals({"ok": "an-plating-test",
                            "title": "default title unchanged"},
-                          json.loads(written))
+                          json.loads(written.decode('utf-8')))
 
     def test_template_numbers(self):
         """
@@ -120,9 +120,9 @@ class PlatingTests(TestCase):
         d = _render(self.kr, request)
         self.successResultOf(d)
         written = request.getWrittenData()
-        self.assertIn("<span>7</span>", written)
-        self.assertIn("<i>3.2</i>", written)
-        self.assertIn("<b>18446744073709551617</b>", written)
+        self.assertIn(b"<span>7</span>", written)
+        self.assertIn(b"<i>3.2</i>", written)
+        self.assertIn(b"<b>18446744073709551617</b>", written)
 
     def test_render_list(self):
         """
@@ -173,7 +173,7 @@ class PlatingTests(TestCase):
         d = _render(self.kr, request)
         self.successResultOf(d)
         written = request.getWrittenData()
-        self.assertEqual(json.loads(written),
+        self.assertEqual(json.loads(written.decode('utf-8')),
                          {"widget": {"a": 3, "b": 4},
                           "title": "default title unchanged"})
 

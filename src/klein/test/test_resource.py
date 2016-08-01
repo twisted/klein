@@ -38,7 +38,7 @@ def requestMock(path, method=b"GET", host=b"localhost", port=8080,
     if not body:
         body = b''
 
-    path, qpath = (path.split("?", 1) + [""])[:2]
+    path, qpath = (path.split(b"?", 1) + [b""])[:2]
 
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)

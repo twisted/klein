@@ -2,7 +2,9 @@
 import attr
 
 from zope.interface import implementer
-from klein.interfaces import ISessionProcurer, SessionMechanism, NoSuchSession
+from klein.interfaces import (
+    ISessionProcurer, SessionMechanism, NoSuchSession, ISession
+)
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 @implementer(ISessionProcurer)
@@ -29,6 +31,10 @@ class SessionProcurer(object):
         """
         Retrieve a session based on this request.
         """
+        already_procured = ISession(self._request, None)
+        if already_procured is not None:
+            returnValue(already_procured)
+
         if self._request.isSecure():
             if force_insecure:
                 auth_header = self._insecure_auth_header
@@ -42,9 +48,9 @@ class SessionProcurer(object):
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             all_possible_sent_tokens = (
-                sum([self._request.requestHeaders.getRawHeaders(header)
+                sum([self._request.requestHeaders.getRawHeaders(header, [])
                      for header in [self._secure_auth_header,
-                                    self._insecure_auth_header]]) +
+                                    self._insecure_auth_header]], []) +
                 [it for it in [self._request.getCookie(cookie)
                                for cookie in [self._secure_cookie,
                                               self._insecure_cookie]] if it]
@@ -82,4 +88,5 @@ class SessionProcurer(object):
                 domain=self._cookie_domain, path=self._cookie_path,
                 secure=sent_securely, httpOnly=True,
             )
+        self._request.setComponent(ISession, session)
         returnValue(session)

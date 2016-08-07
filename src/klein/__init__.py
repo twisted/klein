@@ -2,6 +2,8 @@ from __future__ import absolute_import, division
 
 from klein.app import Klein, run, route, resource
 from klein._plating import Plating
+from klein._form import Form
+from klein._session import SessionProcurer
 
 from ._version import __version__ as _incremental_version
 
@@ -15,6 +17,8 @@ __copyright__ = "Copyright 2016 {0}".format(__author__)
 __all__ = [
     'Klein',
     'Plating',
+    'Form',
+    'SessionProcurer',
     '__author__',
     '__copyright__',
     '__license__',

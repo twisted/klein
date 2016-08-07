@@ -1,23 +1,80 @@
+from os import urandom
+from binascii import hexlify
+
+import attr
+from attr import Factory
+
 from zope.interface import implementer
 
 from twisted.web.template import tags, slot
+from twisted.python.components import Componentized
+from twisted.internet.defer import succeed, fail
 
 from klein import Klein, Plating, Form, SessionProcurer
-from klein.interfaces import ISessionStore
+from klein.interfaces import ISession, ISessionStore, NoSuchSession
 
 app = Klein()
+
+@implementer(ISession)
+@attr.s
+class MemorySession(object):
+    """
+    
+    """
+    identifier = attr.ib()
+    is_confidential = attr.ib()
+    authenticated_by = attr.ib()
+    data = attr.ib(default=Factory(Componentized))
+
+    def save(self):
+        """
+        
+        """
+        return succeed(None)
 
 @implementer(ISessionStore)
 class MemorySessionStore(object):
     """
     
     """
+    def __init__(self):
+        """
+        
+        """
+        self._storage = {}
 
     def procurer(self, request):
         """
         
         """
         return SessionProcurer(self, request)
+
+    def new_session(self, is_confidential, authenticated_by):
+        """
+        
+        """
+        identifier = hexlify(urandom(32))
+        session = MemorySession(identifier, is_confidential, authenticated_by)
+        self._storage[identifier] = session
+        return succeed(session)
+
+    def load_session(self, identifier, is_confidential, authenticated_by):
+        """
+        
+        """
+        if identifier in self._storage:
+            result = self._storage[identifier]
+            if is_confidential != result.is_confidential:
+                self._storage.pop(identifier)
+                return fail(NoSuchSession())
+            return succeed(result)
+        else:
+            return fail(NoSuchSession())
+
+    def sent_insecurely(self, tokens):
+        """
+        
+        """
 
 
 form = Form(

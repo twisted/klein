@@ -4,8 +4,9 @@ import attr
 from zope.interface import implementer
 
 from twisted.internet.defer import inlineCallbacks, returnValue
-from twisted.web.template import tags, MissingRenderMethod
+from twisted.web.template import tags
 from twisted.web.iweb import IRenderable
+from twisted.web.error import MissingRenderMethod
 
 from klein.interfaces import SessionMechanism
 from klein.app import _call
@@ -72,7 +73,7 @@ class FormRenderer(object):
     
     """
     form = attr.ib()
-    procurer = attr.ib()
+    session = attr.ib()
     action = attr.ib()
     method = attr.ib()
     enctype = attr.ib()
@@ -85,18 +86,31 @@ class FormRenderer(object):
         raise MissingRenderMethod(name)
 
 
-    @inlineCallbacks
     def render(self, request):
         """
         
         """
-        session = yield self.procurer.procure_session()
-        fields = list(self.form.all_fields()) + [
-            Form.hidden(CSRF_PROTECTION,
-                        session.identifier)
-        ]
+        fields = list(self._fields_to_render())
         field_tags = list(field.as_tags() for field in fields)
-        returnValue(field_tags)
+        return tags.form(action=self.action, method=self.method,
+                         enctype=self.enctype)(field_tags)
+
+
+    def _fields_to_render(self):
+        """
+        
+        """
+        any_submit = False
+        for field in self.form.fields.values():
+            yield field
+            if field.form_input_type == "submit":
+                any_submit = True
+        if not any_submit:
+            yield Field(str, form_input_type="submit",
+                        python_argument_name="submit",
+                        form_field_name="submit")
+        yield Form.hidden(CSRF_PROTECTION,
+                          self.session.identifier)
 
 
 
@@ -127,20 +141,20 @@ class Form(object):
         def decorator(function):
             @route
             @inlineCallbacks
-            def decorated(instance, request, *args, **kw):
-                print("handling", request.args)
-                procurer = _call(self.procurer_from_request,
-                                 instance, request)
+            def handler_decorated(instance, request, *args, **kw):
+                procurer = _call(instance, self.procurer_from_request,
+                                 request)
                 session = yield procurer.procure_session()
-                if session.mechanism == SessionMechanism.Cookie:
-                    token = request.args.get(CSRF_PROTECTION)
+                if session.authenticated_by == SessionMechanism.Cookie:
+                    token = request.args.get(CSRF_PROTECTION, [None])[0]
                     if token != session.identifier:
-                        raise CrossSiteRequestForgery()
+                        raise CrossSiteRequestForgery(token,
+                                                      session.identifier)
                 for field in self.fields.values():
                     kw[field.python_argument_name] = (
                         field.extract_from_request(request))
-                returnValue(_call(function, instance, request, *args, **kw))
-            decorated.__klein_bound__ = True
+                returnValue(_call(instance, function, request, *args, **kw))
+            handler_decorated.__klein_bound__ = True
             return function
         return decorator
 
@@ -153,30 +167,17 @@ class Form(object):
         def decorator(function):
             @route
             @inlineCallbacks
-            def decorated(instance, request, *args, **kw):
-                procurer = yield self.procurer_from_request(request)
-                form = FormRenderer(self, procurer, action, method, enctype)
+            def renderer_decorated(instance, request, *args, **kw):
+                procurer = self.procurer_from_request(request)
+                session = yield procurer.procure_session()
+                form = FormRenderer(self, session, action, method, enctype)
                 kw[argument] = form
-                result = yield _call(function, request, *args, **kw)
+                result = yield _call(instance, function, request, *args, **kw)
                 returnValue(result)
-            decorated.__klein_bound__ = True
+            renderer_decorated.__klein_bound__ = True
             return function
         return decorator
 
-
-    def all_fields(self):
-        """
-        
-        """
-        any_submit = False
-        for field in self.fields.values():
-            yield field
-            if field.form_input_type == "submit":
-                any_submit = True
-        if not any_submit:
-            yield Field(str, form_input_type="submit",
-                        python_argument_name="submit",
-                        form_field_name="submit")
 
     @staticmethod
     def integer():

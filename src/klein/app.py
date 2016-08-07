@@ -29,7 +29,7 @@ __all__ = ['Klein', 'run', 'route', 'resource']
 
 
 def _call(instance, f, *args, **kwargs):
-    if instance is None:
+    if instance is None and not getattr(f, "__klein_bound__", False):
         return f(*args, **kwargs)
 
     return f(instance, *args, **kwargs)

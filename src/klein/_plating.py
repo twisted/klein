@@ -12,6 +12,8 @@ from six import text_type, integer_types
 from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 
+from klein.app import _call
+
 def _should_return_json(request):
     """
     Should the given request result in a JSON entity-body?
@@ -107,8 +109,8 @@ class Plating(object):
             loader = TagLoader(content_template)
             @routing
             @wraps(method)
-            def mymethod(request, *args, **kw):
-                data = method(request, *args, **kw)
+            def mymethod(instance, request, *args, **kw):
+                data = _call(method, instance, request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
                     json_data.update(data)
@@ -122,6 +124,7 @@ class Plating(object):
                                       b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
                     return self._elementify(data)
+            method.__klein_bound__ = True
             return method
         return mydecorator
 

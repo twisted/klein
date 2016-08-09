@@ -50,8 +50,7 @@ class Field(object):
         
         """
         input_tag = tags.input(type=self.form_input_type,
-                               name=self.form_field_name,
-                               value=self.value)
+                               name=self.form_field_name, value=self.value)
         if self.form_label:
             return tags.label(self.form_label, ": ", input_tag)
         else:
@@ -62,7 +61,9 @@ class Field(object):
         """
         
         """
-        return self.coercer(request.args.get(self.form_field_name)[0])
+        return self.coercer(
+            request.args.get(self.form_field_name)[0]
+        )
 
 
 
@@ -141,6 +142,7 @@ class Form(object):
         """
         def decorate(decoratee):
             print("decoratee", decoratee)
+            an_handler.validation_failure_handler_container[:] = [decoratee]
             return decoratee
         print("handler?", an_handler)
         return decorate
@@ -164,11 +166,25 @@ class Form(object):
                                                       session.identifier)
                 for field in self.fields.values():
                     kw[field.python_argument_name] = (
-                        field.extract_from_request(request))
-                result = yield _call(instance, function, request, *args, **kw)
+                        field.extract_from_request(request, self))
+                if self.validation_failures:
+                    if function.validation_failure_handler_container:
+                        [handler] = (
+                            function.validation_failure_handler_container
+                        )
+                        yield _call(instance, handler, request, self,
+                                    *args, **kw)
+                else:
+                    result = yield _call(instance, function, request,
+                                         *args, **kw)
                 returnValue(result)
             handler_decorated.__klein_bound__ = True
             print("function?", function)
+            # we can't use the function itself as a dictionary key, because
+            # Plating (or another, similar system) might have decorated it to
+            # make the route behave differently.  but Plating preserves
+            # attributes set here across into the real handler.
+            function.validation_failure_handler_container = []
             return function
         return decorator
 

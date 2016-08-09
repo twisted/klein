@@ -32,6 +32,10 @@ class MemorySession(object):
         """
         return succeed(None)
 
+
+# XXX more of this needs to be provided by the framework; we should have
+# built-in backends for a few databases; _especially_ users should not need to
+# do their own session-ID generation unless they really want to
 @implementer(ISessionStore)
 class MemorySessionStore(object):
     """
@@ -94,9 +98,21 @@ style = Plating(tags=tags.html(
                            tags.h1('u did it',
                                    slot("an-form-arg"))))
 def post_handler(request, foo, bar):
+    # I don't want this handler to be called unless all the arguments validate.
+    # should this maybe not be a plated thing, just return an appropriate
+    # redirect for the success case?  form.handler should take care of
+    # initializing the session and setting headers and stuff so that shouldn't
+    # be a problem...
     return {
         "an-form-arg": foo,
     }
+
+@style.routed(post_handler.on_validation_failure,
+              tags.h1('invalid form'),
+              tags.div(slot('the-invalid-form')))
+def validation_failed(request, form):
+    # handle validation failure; but how do I render the form?
+    return {'the-invalid-form': form}
 
 @form.renderer(style.routed(app.route("/my-form", methods=["GET"]),
                             tags.div(slot("an_form"))),

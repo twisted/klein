@@ -83,6 +83,10 @@ class SessionProcurer(object):
         if session_id is None:
             session = yield self._store.new_session(sent_securely, mechanism)
         if session_id != session.identifier:
+            if self._request.startedWriting:
+                raise ValueError("You tried initializing a cookie session too"
+                                 " late in the request pipeline; the headers"
+                                 " were already sent.")
             self._request.addCookie(
                 cookie_name, session.identifier, max_age=self._max_age,
                 domain=self._cookie_domain, path=self._cookie_path,

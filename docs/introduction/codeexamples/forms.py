@@ -94,9 +94,9 @@ style = Plating(tags=tags.html(
     tags.body(tags.div(slot(Plating.CONTENT))))
 )
 
-@form.handler(style.routed(app.route("/my-form", methods=["POST"]),
-                           tags.h1('u did it',
-                                   slot("an-form-arg"))))
+@style.routed(form.handler(app.route("/my-form", methods=["POST"])),
+              tags.h1('u did it: ',
+                      slot("an-form-arg")))
 def post_handler(request, foo, bar):
     # I don't want this handler to be called unless all the arguments validate.
     # should this maybe not be a plated thing, just return an appropriate
@@ -107,17 +107,17 @@ def post_handler(request, foo, bar):
         "an-form-arg": foo,
     }
 
-@style.routed(post_handler.on_validation_failure,
-              tags.h1('invalid form'),
-              tags.div(slot('the-invalid-form')))
+@style.routed(form.on_validation_failure_for(post_handler),
+              [tags.h1('invalid form'),
+               tags.div(slot('the-invalid-form'))])
 def validation_failed(request, form):
     # handle validation failure; but how do I render the form?
     return {'the-invalid-form': form}
 
-@form.renderer(style.routed(app.route("/my-form", methods=["GET"]),
-                            tags.div(slot("an_form"))),
-               action="/my-form?post=yes",
-               argument="the_form")
+@style.routed(form.renderer(app.route("/my-form", methods=["GET"]),
+                            action="/my-form?post=yes",
+                            argument="the_form"),
+              tags.div(slot("an_form")))
 def form_renderer(request, the_form):
     return {"an_form": the_form}
 

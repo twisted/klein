@@ -83,7 +83,7 @@ class MemorySessionStore(object):
 
 form = Form(
     dict(
-        foo=Form.integer(),
+        foo=Form.integer(minimum=3, maximum=10),
         bar=Form.text(),
     ),
     MemorySessionStore().procurer
@@ -95,8 +95,7 @@ style = Plating(tags=tags.html(
 )
 
 @style.routed(form.handler(app.route("/my-form", methods=["POST"])),
-              tags.h1('u did it: ',
-                      slot("an-form-arg")))
+              tags.h1('u did it: ', slot("an-form-arg")))
 def post_handler(request, foo, bar):
     # I don't want this handler to be called unless all the arguments validate.
     # should this maybe not be a plated thing, just return an appropriate

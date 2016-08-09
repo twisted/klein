@@ -106,11 +106,8 @@ class Plating(object):
         """
         
         """
-        @wraps(routing)
         def mydecorator(method):
             loader = TagLoader(content_template)
-            @routing
-            @wraps(method)
             @inlineCallbacks
             def mymethod(instance, request, *args, **kw):
                 data = yield _call(instance, method, request, *args, **kw)
@@ -127,6 +124,9 @@ class Plating(object):
                                       b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
                     returnValue(self._elementify(data))
+            mymethod.__name__ = "plating renderer for " + method.__name__
+            routing(mymethod)
+            method.__dict__.update(mymethod.__dict__)
             mymethod.__klein_bound__ = True
             return method
         return mydecorator

@@ -132,6 +132,18 @@ class Form(object):
             field.maybe_named(name)
         self.fields = fields
         self.procurer_from_request = procurer_from_request
+        self.validation_failure_handlers = {}
+
+
+    def on_validation_failure_for(self, an_handler):
+        """
+        
+        """
+        def decorate(decoratee):
+            print("decoratee", decoratee)
+            return decoratee
+        print("handler?", an_handler)
+        return decorate
 
 
     def handler(self, route):
@@ -153,8 +165,10 @@ class Form(object):
                 for field in self.fields.values():
                     kw[field.python_argument_name] = (
                         field.extract_from_request(request))
-                returnValue(_call(instance, function, request, *args, **kw))
+                result = yield _call(instance, function, request, *args, **kw)
+                returnValue(result)
             handler_decorated.__klein_bound__ = True
+            print("function?", function)
             return function
         return decorator
 

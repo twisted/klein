@@ -65,11 +65,11 @@ class SessionProcurer(object):
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        mechanism = SessionMechanism.Cookie
         session_id = self._request.getHeader(auth_header)
         if session_id is not None:
             mechanism = SessionMechanism.Header
         else:
+            mechanism = SessionMechanism.Cookie
             session_id = self._request.getCookie(cookie_name)
         if session_id is not None:
             try:

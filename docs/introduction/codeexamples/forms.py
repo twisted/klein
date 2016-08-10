@@ -41,6 +41,7 @@ class MemorySessionStore(object):
     """
     
     """
+
     def __init__(self):
         """
         
@@ -94,24 +95,6 @@ style = Plating(tags=tags.html(
     tags.body(tags.div(slot(Plating.CONTENT))))
 )
 
-@style.routed(form.handler(app.route("/my-form", methods=["POST"])),
-              tags.h1('u did it: ', slot("an-form-arg")))
-def post_handler(request, foo, bar):
-    # I don't want this handler to be called unless all the arguments validate.
-    # should this maybe not be a plated thing, just return an appropriate
-    # redirect for the success case?  form.handler should take care of
-    # initializing the session and setting headers and stuff so that shouldn't
-    # be a problem...
-    return {
-        "an-form-arg": foo,
-    }
-
-@style.routed(form.on_validation_failure_for(post_handler),
-              [tags.h1('invalid form'),
-               tags.div(slot('the-invalid-form'))])
-def validation_failed(request, form):
-    # handle validation failure; but how do I render the form?
-    return {'the-invalid-form': form}
 
 @style.routed(form.renderer(app.route("/my-form", methods=["GET"]),
                             action="/my-form?post=yes",
@@ -119,6 +102,18 @@ def validation_failed(request, form):
               tags.div(slot("an_form")))
 def form_renderer(request, the_form):
     return {"an_form": the_form}
+
+@style.routed(form.handler(app.route("/my-form", methods=["POST"])),
+              tags.h1('u did it: ', slot("an-form-arg")))
+def post_handler(request, foo, bar):
+    return {"an-form-arg": foo}
+
+@style.routed(form.on_validation_failure_for(post_handler),
+              [tags.h1('invalid form'),
+               tags.div(slot('the-invalid-form'))])
+def validation_failed(request, form):
+    # handle validation failure; but how do I render the form?
+    return {'the-invalid-form': form}
 
 
 app.run("localhost", 8080)

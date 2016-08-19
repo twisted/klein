@@ -76,19 +76,17 @@ def loginform(request):
         tags.div(Class="col-sm-8")(
             tags.input(type="email", Class="form-control",
                        autofocus="true",
-                       id="anEmail", placeholder="Email")
-        )),
+                       id="anEmail", placeholder="Email"))),
        tags.div(Class="form-group row")
        (tags.label(For="anPassword",
-                        Class="col-sm-3 col-form-label")("Password: "),
+                   Class="col-sm-3 col-form-label")("Password: "),
         tags.div(Class="col-sm-8")(
             tags.input(type="password", Class="form-control",
                        id="anPassword", placeholder=""))),
        tags.div(Class="form-group row")
-       (tags.div(Class="offset-sm-2 col-sm-8")
-        (tags.button(type="submit", Class="btn btn-primary")
-         ("Log In")))
-      ))]
+       (tags.div(Class="offset-sm-3 col-sm-8")
+        (tags.button(type="submit", Class="btn btn-primary col-sm-4")
+         ("Log In")))))]
 )
 def signupform(request):
     """

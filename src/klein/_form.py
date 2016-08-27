@@ -309,6 +309,15 @@ class Form(object):
 
 
     @staticmethod
+    def password():
+        """
+        
+        """
+        return Field(converter=lambda x: unicode(x, "utf-8"),
+                     form_input_type="password")
+
+
+    @staticmethod
     def hidden(name, value):
         """
         

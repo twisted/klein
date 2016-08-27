@@ -434,23 +434,22 @@ signup = Form(
         )),
        tags.div(Class="form-group row")
        (tags.label(For="username",
-                        Class="col-sm-3 col-form-label")("Email: "),
+                        Class="col-sm-3 col-form-label")("Username: "),
         tags.div(Class="col-sm-8")(
             tags.input(type="text", Class="form-control",
                        autofocus="true",
-                       id="email", placeholder="Email")
+                       id="username", placeholder="Username")
         )),
        tags.div(Class="form-group row")
        (tags.label(For="anPassword",
-                        Class="col-sm-3 col-form-label")("Password: "),
+                   Class="col-sm-3 col-form-label")("Password: "),
         tags.div(Class="col-sm-8")(
             tags.input(type="password", Class="form-control",
                        id="anPassword", placeholder=""))),
        tags.div(Class="form-group row")
-       (tags.div(Class="offset-sm-2 col-sm-8")
-        (tags.button(type="submit", Class="btn btn-primary")
-         ("Log In")))
-      ))]
+       (tags.div(Class="offset-sm-3 col-sm-8")
+        (tags.button(type="submit", Class="btn btn-primary col-sm-4")
+         ("Log In")))))]
 )
 def signup_page(request, the_form):
     """

@@ -138,6 +138,20 @@ class FormRenderer(object):
         )
 
 
+    def csrf(self):
+        """
+        
+        """
+        return self._csrf_field().as_tags()
+
+
+    def _csrf_field(self):
+        """
+        
+        """
+        return Form.hidden(CSRF_PROTECTION, self.session.identifier)
+
+
     def _fields_to_render(self):
         """
         
@@ -154,7 +168,7 @@ class FormRenderer(object):
                         value=u"submit",
                         python_argument_name="submit",
                         form_field_name="submit")
-        yield Form.hidden(CSRF_PROTECTION, self.session.identifier)
+        yield self._csrf_field()
 
 
 

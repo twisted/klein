@@ -53,6 +53,26 @@ The following cURL commands (and output) can be used to test this behaviour::
     Not found, I say
 
 
+Catch Werkzeug Exceptions
+=========================
+
+The plethora of `Werkzeug's exceptions <http://werkzeug.pocoo.org/docs/0.11/exceptions/#error-classes>`_ can be used to catch common HTTP errors using the ``handle_errors`` decorator.
+
+.. code-block:: python
+
+    from werkzeug.exceptions import NotFound, MethodNotAllowed
+
+    @app.handle_errors(NotFound)
+    def notfound(request, error):
+        request.setResponseCode(404)
+        return 'Four-O-Four - Page Not Found'
+
+    @app.handle_errors(MethodNotAllowed)
+    def methodnotallowed(request, error):
+        request.setResponseCode(405)
+        return 'Four-0-Five - Method Not Allowed'
+
+
 Example - Catch All Routes
 ==========================
 
@@ -96,4 +116,5 @@ Use cURL to verify that only ``/api`` and ``/api/v1`` return content, all other 
 
 
 This method can also be used on the root route, in which case it will catch every request which doesn't match a route.
+
 

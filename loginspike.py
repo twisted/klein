@@ -14,6 +14,7 @@ from twisted.web.template import tags, slot
 from twisted.internet.defer import (
     execute, inlineCallbacks, returnValue, Deferred
 )
+from twisted.internet.threads import deferToThread
 from twisted.python.components import Componentized
 from twisted.python.compat import unicode
 
@@ -86,15 +87,15 @@ class SQLiteSessionStore(object):
     """
     
     """
-    connection = attr.ib()
+    connectionFactory = attr.ib()
     session_plugins = attr.ib(default=Factory(list))
 
     @classmethod
-    def create_with_schema(cls, connection):
+    def create_with_schema(cls, connectionFactory):
         """
         
         """
-        self = cls(connection)
+        self = cls(connectionFactory)
         @self.sql
         def do(cursor):
             try:
@@ -131,9 +132,9 @@ class SQLiteSessionStore(object):
         
         """
         def async():
-            with self.connection:
-                return execute(lambda: callable(self.connection.cursor()))
-        return async
+            with self.connectionFactory() as connection:
+                return execute(lambda: callable(connection.cursor()))
+        return deferToThread(async)
 
 
     def sent_insecurely(self, tokens):
@@ -252,6 +253,10 @@ class AccountManagerManager(object):
                     email text,
                     scrypt_hash text,
                 );
+                create table account_session (
+                    account_id text,
+                    session_id text
+                );
                 """)
         except SQLError as se:
             print(se)
@@ -263,7 +268,49 @@ class AccountManagerManager(object):
         """
         return AccountSessionBinding(session, session_store)
 
+
+
 from txscrypt import computeKey, checkPassword
+
+@attr.s
+class Account(object):
+    """
+    
+    """
+    store = attr.ib()
+    account_id = attr.ib()
+
+    @inlineCallbacks
+    def add_session(self, session):
+        """
+        
+        """
+        @self.store.sql
+        def createrow(cursor):
+            cursor.execute(
+                """
+                insert into account_session
+                (account_id, session_id) values (?, ?)
+                """, [self.account_id, session.identifier]
+            )
+
+
+    @inlineCallbacks
+    def change_password(self, new_password):
+        """
+        
+        """
+        computedHash = yield computeKey(new_password)
+        @self.store.sql
+        def change(cursor):
+            cursor.execute("""
+            update account set scrypt_hash = ?
+            where account_id = ?
+            """, self.account_id, computedHash)
+        yield change
+
+
+
 
 @implementer(IAccountManager)
 @attr.s
@@ -282,14 +329,18 @@ class AccountSessionBinding(object):
         computedHash = yield computeKey(password)
         @self._store.sql
         def store(cursor):
+            new_account_id = unicode(uuid4())
             cursor.execute("""
             insert into account (
                 account_id, username, email, scrypt_hash
             ) values (
                 ?, ?, ?, ?
             );
-            """, [unicode(uuid4()), username, email, computedHash])
-        yield store
+            """, [new_account_id, username, email, computedHash])
+            return new_account_id
+        account = Account(self._store, (yield store))
+        yield account.add_session(self._session)
+        returnValue(account)
 
 
     @inlineCallbacks
@@ -309,22 +360,10 @@ class AccountSessionBinding(object):
         account_id, scrypt_hash = yield retrieve
         passed = yield checkPassword(scrypt_hash, password)
         if passed:
-            return Account()
+            account = Account(self._store, username)
+            yield account.add_session(self._session)
+            returnValue(account)
 
-
-    @inlineCallbacks
-    def change_password(self, username, new_password):
-        """
-        
-        """
-        computedHash = yield computeKey(new_password)
-        @self._store.sql
-        def change(cursor):
-            cursor.execute("""
-            update account set scrypt_hash = ?
-            where username = ?
-            """, username, computedHash)
-        yield change
 
 
 @implementer(ISession)
@@ -361,6 +400,7 @@ class EventualProcurer(object):
         manager = yield self._eventual_manager()
         procurer = SessionProcurer(manager, self._request)
         returnValue((yield procurer.procure_session(force_insecure)))
+
 
 
 class EventualSessionManager(object):
@@ -402,7 +442,7 @@ class EventualSessionManager(object):
             return SessionProcurer(self._manager, request)
 
 session_manager = EventualSessionManager(
-    SQLiteSessionStore.create_with_schema(connect("sessions.sqlite"))
+    SQLiteSessionStore.create_with_schema(lambda: connect("sessions.sqlite"))
 )
 
 signup = Form(

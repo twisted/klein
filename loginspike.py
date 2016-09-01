@@ -57,11 +57,17 @@ style = Plating(
                                href="/login")),
                     tags.li(Class=["nav-item ", slot("signup_active")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
-                    tags.form(Class="form-inline pull-xs-right")(
+                    tags.li(Class="nav-item pull-xs-right")(
+                        tags.button("Logout", Class="btn")
+                    ),
+                    tags.li(
+                        tags.form(Class="form-inline pull-xs-right")(
                         tags.input(Class="form-control", type="text",
                                    placeholder="Search"),
                         tags.button("Search", Class="btn btn-outline-success",
-                                    type="submit")))),
+                                    type="submit"))
+                    )
+                )),
             tags.div(Class="container")(
                 slot(Plating.CONTENT)
             )

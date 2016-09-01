@@ -12,7 +12,7 @@ from zope.interface import implementer, Interface
 
 from twisted.web.template import tags, slot
 from twisted.internet.defer import (
-    execute, inlineCallbacks, returnValue, Deferred
+    inlineCallbacks, returnValue, Deferred
 )
 from twisted.internet.threads import deferToThread
 from twisted.python.components import Componentized
@@ -112,6 +112,7 @@ class SQLiteSessionStore(object):
                 plugin = plugin_creator(self)
                 plugin.initialize_schema(cursor)
                 self.session_plugins.append((data_interface, plugin))
+            return self
         return do
 
     session_plugin_registry = []
@@ -171,7 +172,7 @@ class SQLiteSessionStore(object):
                 authenticated_by=authenticated_by,
             )
             for data_interface, plugin in self.session_plugins:
-                session.setComponent(
+                session.data.setComponent(
                     data_interface, plugin.data_for_session(self, session,
                                                             False)
                 )
@@ -198,7 +199,7 @@ class SQLiteSessionStore(object):
                 authenticated_by=authenticated_by,
             )
             for data_interface, plugin in self.session_plugins:
-                session.setComponent(
+                session.data.setComponent(
                     data_interface, plugin.data_for_session(self, session,
                                                             True)
                 )
@@ -235,11 +236,11 @@ class AccountManagerManager(object):
     """
     
     """
-    def __init__(self, manager):
+    def __init__(self, store):
         """
         
         """
-        self._manager = manager
+        self._store = store
 
 
     def initialize_schema(self, cursor):
@@ -296,6 +297,7 @@ class Account(object):
                 (account_id, session_id) values (?, ?)
                 """, [self.account_id, session.identifier]
             )
+        return createrow
 
 
     @inlineCallbacks
@@ -392,7 +394,7 @@ class EventualProcurer(object):
     
     """
 
-    _eventual_manager = attr.ib()
+    _eventual_store = attr.ib()
     _request = attr.ib()
 
     @inlineCallbacks
@@ -400,8 +402,8 @@ class EventualProcurer(object):
         """
         
         """
-        manager = yield self._eventual_manager()
-        procurer = SessionProcurer(manager, self._request)
+        store = yield self._eventual_store()
+        procurer = SessionProcurer(store, self._request)
         returnValue((yield procurer.procure_session(force_insecure)))
 
 
@@ -410,27 +412,27 @@ class EventualSessionManager(object):
     """
     
     """
-    def __init__(self, manager_deferred):
+    def __init__(self, store_deferred):
         """
         
         """
-        self._manager_deferred = manager_deferred
-        self._manager = None
-        @manager_deferred.addCallback
-        def set_manager(result):
-            self._manager = result
+        self._store_deferred = store_deferred
+        self._store = None
+        @store_deferred.addCallback
+        def set_store(result):
+            self._store = result
             return result
 
-    def _eventual_manager(self):
+    def _eventual_store(self):
         """
         
         """
-        if self._manager is not None:
-            return self._manager
+        if self._store is not None:
+            return self._store
         else:
             deferred = Deferred()
-            @self._manager_deferred.addCallback
-            def set_manager(result):
+            @self._store_deferred.addCallback
+            def set_store(result):
                 deferred.callback(result)
                 return result
             return deferred
@@ -439,10 +441,12 @@ class EventualSessionManager(object):
         """
         
         """
-        if self._manager is None:
-            return EventualProcurer(self._eventual_manager, request)
+        if self._store is None:
+            print("mngr:none")
+            return EventualProcurer(self._eventual_store, request)
         else:
-            return SessionProcurer(self._manager, request)
+            print("hasmanager:", self._store)
+            return SessionProcurer(self._store, request)
 
 session_manager = EventualSessionManager(
     SQLiteSessionStore.create_with_schema(lambda: connect("sessions.sqlite"))

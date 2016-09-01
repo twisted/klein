@@ -103,15 +103,15 @@ class SQLiteSessionStore(object):
                     """
                     create table session (
                         session_id text primary key,
-                        confidential integer,
+                        confidential integer
                     )
                 """)
             except SQLError as sqle:
-                print(sqle)
+                print("sqle:", sqle)
             for data_interface, plugin_creator in self.session_plugin_registry:
                 plugin = plugin_creator(self)
                 plugin.initialize_schema(cursor)
-                self.session_plugins.append(data_interface, plugin)
+                self.session_plugins.append((data_interface, plugin))
         return do
 
     session_plugin_registry = []
@@ -131,9 +131,10 @@ class SQLiteSessionStore(object):
         """
         
         """
+        print("sql:running", callable)
         def async():
             with self.connectionFactory() as connection:
-                return execute(lambda: callable(connection.cursor()))
+                return callable(connection.cursor())
         return deferToThread(async)
 
 
@@ -184,7 +185,7 @@ class SQLiteSessionStore(object):
             c.execute(
                 """
                 select session_id from session where session_id = ?
-                and confidential = ?;
+                and confidential = ?
                 """, [identifier, int(is_confidential)]
             )
             results = list(c.fetchall())
@@ -251,13 +252,15 @@ class AccountManagerManager(object):
                     account_id text primary key,
                     username text unique,
                     email text,
-                    scrypt_hash text,
-                );
-                create table account_session (
-                    account_id text,
-                    session_id text
-                );
+                    scrypt_hash text
+                )
                 """)
+            cursor.execute("""
+            create table account_session (
+                account_id text,
+                session_id text
+            )
+            """)
         except SQLError as se:
             print(se)
 
@@ -335,7 +338,7 @@ class AccountSessionBinding(object):
                 account_id, username, email, scrypt_hash
             ) values (
                 ?, ?, ?, ?
-            );
+            )
             """, [new_account_id, username, email, computedHash])
             return new_account_id
         account = Account(self._store, (yield store))

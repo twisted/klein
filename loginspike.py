@@ -45,14 +45,17 @@ style = Plating(
         tags.body(
             tags.nav(Class="navbar navbar-light bg-faded")(
                 tags.a("Navbar", Class="navbar-brand",
-                       href="#"),
+                       href="/"),
                 tags.ul(Class="nav navbar-nav")(
-                    tags.li(Class="nav-item active")(
-                        tags.a(Class="nav-link", href="#")(
+                    tags.li(Class=["nav-item ", slot("home_active")])(
+                        tags.a(Class="nav-link",
+                               href="/")(
                             "Home", tags.span(Class="sr-only")("(current)"))),
-                    tags.li(Class="nav-item")(
-                        tags.a("Login", Class="nav-link", href="/login")),
-                    tags.li(Class="nav-item")(
+                    tags.li(Class=["nav-item ", slot("login_active")])(
+                        tags.a("Login",
+                               Class="nav-link",
+                               href="/login")),
+                    tags.li(Class=["nav-item ", slot("signup_active")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
                     tags.form(Class="form-inline pull-xs-right")(
                         tags.input(Class="form-control", type="text",
@@ -63,13 +66,21 @@ style = Plating(
                 slot(Plating.CONTENT)
             )
         )
-    )
+    ),
+    defaults={
+        "home_active": "",
+        "login_active": "",
+        "signup_active": "",
+    }
 )
 
 @style.routed(app.route("/"),
               tags.h1(slot('result')))
 def root(request):
-    return {"result": "hello world"}
+    return {
+        "result": "hello world",
+        "home_active": "active"
+    }
 
 @style.routed(app.route("/login"),
               tags.h1("Log In"))
@@ -77,7 +88,7 @@ def loginform(request):
     """
     
     """
-    return {}
+    return {"login_active": "active"}
 
 from sqlite3 import Error as SQLError, connect
 
@@ -503,7 +514,8 @@ def signup_page(request, the_form):
     
     """
     return {
-        "csrf_here": the_form.csrf()
+        "csrf_here": the_form.csrf(),
+        "signup_active": "active"
     }
 
 
@@ -518,7 +530,9 @@ def do_signup(request, username, email, password):
     """
     mgr = (request.getComponent(ISession).data.getComponent(IAccountManager))
     mgr.create_account(username, email, password)
-    return {}
+    return {
+        "signup_active": "active",
+    }
 
 
 

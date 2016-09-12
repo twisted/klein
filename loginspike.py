@@ -531,7 +531,7 @@ login = Form(
      tags.div(Class="container")
      (tags.form(
          style="margin: auto; width: 400px; margin-top: 100px",
-         action="/signup",
+         action="/login",
          method="POST")
       (slot("csrf_here"),
        tags.div(Class="form-group row")

@@ -198,6 +198,7 @@ class Klein(object):
             self._url_map.add(Rule(url, *args, **kwargs))
             return f
 
+        deco.func_name = ("router for '" + url + "'").encode("utf-8")
         return deco
 
 

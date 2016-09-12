@@ -172,11 +172,12 @@ class FormRenderer(object):
 
 
 
-def default_validation_failure_handler(instance, ):
+def default_validation_failure_handler(instance, request, form_renderer):
     """
     
     """
-    
+    from twisted.web.template import Element, TagLoader
+    return Element(TagLoader(form_renderer))
 
 
 

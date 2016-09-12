@@ -21,81 +21,6 @@ from twisted.python.compat import unicode
 from klein import Klein, Plating, Form, SessionProcurer
 from klein.interfaces import ISession, ISessionStore, NoSuchSession
 
-app = Klein()
-
-def bootstrap(x):
-    return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.3/" + x
-
-style = Plating(
-    tags=tags.html(
-        tags.head(
-            tags.link(rel="stylesheet",
-                      href=bootstrap("css/bootstrap.min.css"),
-                      integrity="sha384-MIwDKRSSImVFAZCVLtU0LMDdON6KVCrZHyVQQ"
-                      "j6e8wIEJkW4tvwqXrbMIya1vriY",
-                      crossorigin="anonymous"),
-            # tags.script(
-            #     src=bootstrap("js/bootstrap.min.js"),
-            #     integrity=("sha384-ux8v3A6CPtOTqOzMKiuo3d/DomGaaClxFYdCu2HPM"
-            #                "BEkf6x2xiDyJ7gkXU0MWwaD"),
-            #     crossorigin="anonymous"
-            # ),
-            tags.title("hooray")
-        ),
-        tags.body(
-            tags.nav(Class="navbar navbar-light bg-faded")(
-                tags.a("Navbar", Class="navbar-brand",
-                       href="/"),
-                tags.ul(Class="nav navbar-nav")(
-                    tags.li(Class=["nav-item ", slot("home_active")])(
-                        tags.a(Class="nav-link",
-                               href="/")(
-                            "Home", tags.span(Class="sr-only")("(current)"))),
-                    tags.li(Class=["nav-item ", slot("login_active")])(
-                        tags.a("Login",
-                               Class="nav-link",
-                               href="/login")),
-                    tags.li(Class=["nav-item ", slot("signup_active")])(
-                        tags.a("Signup", Class="nav-link", href="/signup")),
-                    tags.li(Class="nav-item pull-xs-right")(
-                        tags.button("Logout", Class="btn")
-                    ),
-                    tags.li(
-                        tags.form(Class="form-inline pull-xs-right")(
-                        tags.input(Class="form-control", type="text",
-                                   placeholder="Search"),
-                        tags.button("Search", Class="btn btn-outline-success",
-                                    type="submit"))
-                    )
-                )),
-            tags.div(Class="container")(
-                slot(Plating.CONTENT)
-            )
-        )
-    ),
-    defaults={
-        "home_active": "",
-        "login_active": "",
-        "signup_active": "",
-    }
-)
-
-@style.routed(app.route("/"),
-              tags.h1(slot('result')))
-def root(request):
-    return {
-        "result": "hello world",
-        "home_active": "active"
-    }
-
-@style.routed(app.route("/login"),
-              tags.h1("Log In"))
-def loginform(request):
-    """
-    
-    """
-    return {"login_active": "active"}
-
 from sqlite3 import Error as SQLError, connect
 
 @implementer(ISessionStore)
@@ -190,8 +115,8 @@ class SQLiteSessionStore(object):
             )
             for data_interface, plugin in self.session_plugins:
                 session.data.setComponent(
-                    data_interface, plugin.data_for_session(self, session,
-                                                            False)
+                    data_interface, plugin.data_for_session(self, c,
+                                                            session, False)
                 )
             return session
         return created
@@ -217,17 +142,20 @@ class SQLiteSessionStore(object):
             )
             for data_interface, plugin in self.session_plugins:
                 session.data.setComponent(
-                    data_interface, plugin.data_for_session(self, session,
+                    data_interface, plugin.data_for_session(self, c, session,
                                                             True)
                 )
             return session
         return loaded
 
 
+
 class IAccountManager(Interface):
     """
     
     """
+
+
 
 class ISQLSessionDataPlugin(Interface):
     """
@@ -239,11 +167,13 @@ class ISQLSessionDataPlugin(Interface):
         
         """
 
-    def data_for_session(session_store, session, existing):
-        """
-        
-        """
 
+    def data_for_session(session_store, cursor, session, existing):
+        """
+        Get a data object to put onto the session.  This is run in the database
+        thread, but at construction time, so it is not concurrent with any
+        other access to the session.
+        """
 
 
 
@@ -283,7 +213,7 @@ class AccountManagerManager(object):
             print(se)
 
 
-    def data_for_session(self, session_store, session, existing):
+    def data_for_session(self, session_store, cursor, session, existing):
         """
         
         """
@@ -291,7 +221,16 @@ class AccountManagerManager(object):
 
 
 
+from unicodedata import normalize
 from txscrypt import computeKey, checkPassword
+
+def password_bytes(password_text):
+    """
+    Convert a textual password into some bytes.
+    """
+    return normalize("NFKD", password_text).encode("utf-8")
+
+
 
 @attr.s
 class Account(object):
@@ -301,7 +240,6 @@ class Account(object):
     store = attr.ib()
     account_id = attr.ib()
 
-    @inlineCallbacks
     def add_session(self, session):
         """
         
@@ -322,7 +260,7 @@ class Account(object):
         """
         
         """
-        computedHash = yield computeKey(new_password)
+        computedHash = yield computeKey(password_bytes(new_password))
         @self.store.sql
         def change(cursor):
             cursor.execute("""
@@ -333,12 +271,12 @@ class Account(object):
 
 
 
-
 @implementer(IAccountManager)
 @attr.s
 class AccountSessionBinding(object):
     """
-    
+    (Stateless) binding between an account and a session, so that sessions can
+    attach to, detach from, .
     """
     _session = attr.ib()
     _store = attr.ib()
@@ -346,9 +284,9 @@ class AccountSessionBinding(object):
     @inlineCallbacks
     def create_account(self, username, email, password):
         """
-        
+        Create a new account with the given username, email and password.
         """
-        computedHash = yield computeKey(password)
+        computedHash = yield computeKey(password_bytes(password))
         @self._store.sql
         def store(cursor):
             new_account_id = unicode(uuid4())
@@ -368,7 +306,11 @@ class AccountSessionBinding(object):
     @inlineCallbacks
     def log_in(self, username, password):
         """
-        
+        Associate this session with a given user account, if the password
+        matches.
+
+        @rtype: L{Deferred} firing with L{IAccount} if we succeeded and L{None}
+            if we failed.
         """
         @self._store.sql
         def retrieve(cursor):
@@ -380,11 +322,44 @@ class AccountSessionBinding(object):
                 username
             ))[0]
         account_id, scrypt_hash = yield retrieve
-        passed = yield checkPassword(scrypt_hash, password)
-        if passed:
+        if (yield checkPassword(scrypt_hash, password_bytes(password))):
             account = Account(self._store, username)
             yield account.add_session(self._session)
             returnValue(account)
+
+
+    def authenticated_accounts(self):
+        """
+        Retrieve the accounts currently associated with this session.
+
+        @return: L{Deferred} firing with a L{list} of accounts.
+        """
+        @self._store.sql
+        def retrieve(cursor):
+            return [
+                Account(account_id)
+                for [account_id] in
+                cursor.execute(
+                    """
+                    select account_id from account_session where session_id = ?
+                    """,
+                )
+            ]
+        return retrieve
+
+
+    def log_out(self):
+        """
+        Disassociate this session from any accounts it's logged in to.
+        """
+        @self._store.sql
+        def retrieve(cursor):
+            cursor.execute(
+                """
+                delete from account_session where session_id = ?
+                """, [self._session.session_id]
+            )
+        return retrieve
 
 
 
@@ -465,9 +440,143 @@ class EventualSessionManager(object):
             print("hasmanager:", self._store)
             return SessionProcurer(self._store, request)
 
+# ^^^  framework   ^^^^
+# ---  cut here    ----
+# vvvv application vvvv
+
+app = Klein()
+
+def bootstrap(x):
+    return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.3/" + x
+
+style = Plating(
+    tags=tags.html(
+        tags.head(
+            tags.link(rel="stylesheet",
+                      href=bootstrap("css/bootstrap.min.css"),
+                      integrity="sha384-MIwDKRSSImVFAZCVLtU0LMDdON6KVCrZHyVQQ"
+                      "j6e8wIEJkW4tvwqXrbMIya1vriY",
+                      crossorigin="anonymous"),
+            # tags.script(
+            #     src=bootstrap("js/bootstrap.min.js"),
+            #     integrity=("sha384-ux8v3A6CPtOTqOzMKiuo3d/DomGaaClxFYdCu2HPM"
+            #                "BEkf6x2xiDyJ7gkXU0MWwaD"),
+            #     crossorigin="anonymous"
+            # ),
+            tags.title("hooray")
+        ),
+        tags.body(
+            tags.nav(Class="navbar navbar-light bg-faded")(
+                tags.a("Navbar", Class="navbar-brand",
+                       href="/"),
+                tags.ul(Class="nav navbar-nav")(
+                    tags.li(Class=["nav-item ", slot("home_active")])(
+                        tags.a(Class="nav-link",
+                               href="/")(
+                            "Home", tags.span(Class="sr-only")("(current)"))),
+                    tags.li(Class=["nav-item ", slot("login_active")])(
+                        tags.a("Login",
+                               Class="nav-link",
+                               href="/login")),
+                    tags.li(Class=["nav-item ", slot("signup_active")])(
+                        tags.a("Signup", Class="nav-link", href="/signup")),
+                    tags.li(Class="nav-item pull-xs-right")(
+                        tags.button("Logout", Class="btn")
+                    ),
+                    tags.li(
+                        tags.form(Class="form-inline pull-xs-right")(
+                        tags.input(Class="form-control", type="text",
+                                   placeholder="Search"),
+                        tags.button("Search", Class="btn btn-outline-success",
+                                    type="submit"))
+                    )
+                )),
+            tags.div(Class="container")(
+                slot(Plating.CONTENT)
+            )
+        )
+    ),
+    defaults={
+        "home_active": "",
+        "login_active": "",
+        "signup_active": "",
+    }
+)
+
+@style.routed(app.route("/"),
+              tags.h1(slot('result')))
+def root(request):
+    return {
+        "result": "hello world",
+        "home_active": "active"
+    }
+
+
 session_manager = EventualSessionManager(
     SQLiteSessionStore.create_with_schema(lambda: connect("sessions.sqlite"))
 )
+
+login = Form(
+    dict(
+        username=Form.text(),
+        password=Form.password(),
+    ),
+    session_manager.procurer
+)
+
+@style.routed(
+    login.renderer(app.route("/login", methods=["GET"]), action="/login",
+                   argument="login_form"),
+    [tags.h1("Log In....."),
+     tags.div(Class="container")
+     (tags.form(
+         style="margin: auto; width: 400px; margin-top: 100px",
+         action="/signup",
+         method="POST")
+      (slot("csrf_here"),
+       tags.div(Class="form-group row")
+       (tags.label(For="username",
+                        Class="col-sm-3 col-form-label")("Username: "),
+        tags.div(Class="col-sm-8")(
+            tags.input(type="text", Class="form-control",
+                       autofocus="true",
+                       id="username", placeholder="Username")
+        )),
+       tags.div(Class="form-group row")
+       (tags.label(For="anPassword",
+                   Class="col-sm-3 col-form-label")("Password: "),
+        tags.div(Class="col-sm-8")(
+            tags.input(type="password", Class="form-control",
+                       id="anPassword", placeholder=""))),
+       tags.div(Class="form-group row")
+       (tags.div(Class="offset-sm-3 col-sm-8")
+        (tags.button(type="submit", Class="btn btn-primary col-sm-4")
+         ("Log In")))))]
+)
+def loginform(request, login_form):
+    """
+    
+    """
+    return {
+        "login_active": "active",
+        "csrf_here": login_form.csrf()
+    }
+
+@style.routed(login.handler(app.route("/login", methods=["POST"])),
+              [tags.h1("u log in 2 ", slot("new_account_id"))])
+@inlineCallbacks
+def dologin(request, username, password):
+    """
+    
+    """
+    manager = ISession(request).data.getComponent(IAccountManager)
+    account = yield manager.log_in(username, password)
+    returnValue({
+        "login_active": "active",
+        "new_account_id": account.account_id,
+    })
+
+
 
 signup = Form(
     dict(
@@ -485,12 +594,13 @@ signup = Form(
     [tags.h1("Sign Up"),
      tags.div(Class="container")
      (tags.form(
-         style="margin: auto; width: 400px;"
-         "margin-top: 100px")
+         style="margin: auto; width: 400px; margin-top: 100px",
+         action="/signup",
+         method="POST")
       (slot("csrf_here"),
        tags.div(Class="form-group row")
        (tags.label(For="email",
-                        Class="col-sm-3 col-form-label")("Email: "),
+                   Class="col-sm-3 col-form-label")("Email: "),
         tags.div(Class="col-sm-8")(
             tags.input(type="email", Class="form-control",
                        autofocus="true",
@@ -513,7 +623,7 @@ signup = Form(
        tags.div(Class="form-group row")
        (tags.div(Class="offset-sm-3 col-sm-8")
         (tags.button(type="submit", Class="btn btn-primary col-sm-4")
-         ("Log In")))))]
+         ("Sign Up")))))]
 )
 def signup_page(request, the_form):
     """
@@ -528,17 +638,20 @@ def signup_page(request, the_form):
 
 @style.routed(
     signup.handler(app.route("/signup", methods=["POST"])),
-    [tags.h1("U SIGNED UP YAY")]
+    [tags.h1("U SIGNED UP YAY"),
+     tags.p("Now ", tags.a(href="/login")("log in"), ".")]
 )
+@inlineCallbacks
 def do_signup(request, username, email, password):
     """
     
     """
     mgr = (request.getComponent(ISession).data.getComponent(IAccountManager))
-    mgr.create_account(username, email, password)
-    return {
+    account_object = yield mgr.create_account(username, email, password)
+    returnValue({
         "signup_active": "active",
-    }
+        "account_id": account_object.account_id,
+    })
 
 
 

@@ -220,7 +220,6 @@ class Form(object):
         
         """
         def decorator(function):
-            @route
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
                 procurer = _call(instance, self.procurer_from_request,
@@ -271,6 +270,9 @@ class Form(object):
             # make the route behave differently.  but Plating preserves
             # attributes set here across into the real handler.
             function.validation_failure_handler_container = []
+            handler_decorated.func_name = ("form handler using" +
+                                           function.func_name).encode("utf-8")
+            route(handler_decorated)
             return function
         return decorator
 

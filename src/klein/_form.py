@@ -281,7 +281,6 @@ class Form(object):
         
         """
         def decorator(function):
-            @route
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = self.procurer_from_request(request)
@@ -290,7 +289,13 @@ class Form(object):
                 kw[argument] = form
                 result = yield _call(instance, function, request, *args, **kw)
                 returnValue(result)
+            # XXX If I don't make this func_name unique-per-klein-app-instance,
+            # then every route that renders a form gets mapped to the same
+            # endpoint.
+            renderer_decorated.func_name = ('form renderer for ' +
+                                            function.func_name).encode("utf-8")
             renderer_decorated.__klein_bound__ = True
+            route(renderer_decorated)
             return function
         return decorator
 

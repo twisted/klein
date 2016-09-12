@@ -85,9 +85,9 @@ class Field(object):
 
     def extract_value(self, request):
         """
-        extract a textual value from the request
+        extract some bytes value from the request
         """
-        return request.args.get(self.form_field_name)[0]
+        return (request.args.get(self.form_field_name) or [b""])[0]
 
 
     def validate_value(self, value):

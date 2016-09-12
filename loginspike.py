@@ -319,7 +319,7 @@ class AccountSessionBinding(object):
                 select account_id, scrypt_hash from account
                 where username = ?
                 """,
-                username
+                [username]
             ))[0]
         account_id, scrypt_hash = yield retrieve
         if (yield checkPassword(scrypt_hash, password_bytes(password))):

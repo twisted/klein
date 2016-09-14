@@ -7,6 +7,7 @@ from attr import Factory
 from uuid import uuid4
 from binascii import hexlify
 from os import urandom
+from datetime import datetime
 
 from zope.interface import implementer, Interface
 
@@ -44,10 +45,23 @@ class SQLiteSessionStore(object):
                 cursor.execute(
                     """
                     create table session (
-                        session_id text primary key,
-                        confidential integer
+                        session_id text primary key not null,
+                        confidential integer not null
                     )
-                """)
+                    """
+                )
+                cursor.execute("""
+                    create table session_ip (
+                        session_id text
+                            references session(session_id)
+                            on delete cascade,
+                        ip_address text not null,
+                        address_family text not null,
+                        last_used timestamp not null,
+                        unique(session_id, ip_address, address_family)
+                    )
+                    """
+                )
             except SQLError as sqle:
                 print("sqle:", sqle)
             for data_interface, plugin_creator in self.session_plugin_registry:
@@ -91,7 +105,7 @@ class SQLiteSessionStore(object):
                 c.execute(
                     """
                     delete from session where session_id = ?
-                    and confidential = 1;
+                    and confidential = 1
                     """, [token]
                 )
         return invalidate
@@ -150,6 +164,58 @@ class SQLiteSessionStore(object):
 
 
 
+@implementer(ISessionStore)
+@attr.s
+class IPTrackingStore(object):
+    """
+    
+    """
+    store = attr.ib()
+    request = attr.ib()
+
+    @inlineCallbacks
+    def _touch_session(self, session):
+        """
+        Update a session's IP address.  NB: different txn than the session
+        generation; is it worth smashing these together?
+        """
+        session_id = session.identifier
+        try:
+            ip_address = (self.request.client.host or b"").decode("ascii")
+        except:
+            ip_address = u""
+        print("updating session ip", ip_address)
+        @self.store.sql
+        def touch(cursor):
+            print("here we go")
+            address_family = (u"AF_INET6" if u":" in ip_address
+                              else u"AF_INET")
+            last_used = datetime.utcnow()
+            cursor.execute("""
+                insert or replace into session_ip
+                (session_id, ip_address, address_family, last_used)
+                values
+                (?, ?, ?, ?)
+            """, [session_id, ip_address, address_family, last_used])
+            print("executed")
+        yield touch
+        print("returning", session)
+        returnValue(session)
+
+    def new_session(self, is_confidential, authenticated_by):
+        return (self.store.new_session(is_confidential, authenticated_by)
+                .addCallback(self._touch_session))
+
+    def load_session(self, identifier, is_confidential, authenticated_by):
+        return (self.store.load_session(identifier, is_confidential,
+                                        authenticated_by)
+                .addCallback(self._touch_session))
+
+    def sent_insecurely(self, tokens):
+        return self.store.sent_insecurely(tokens)
+
+
+
 class IAccountManager(Interface):
     """
     
@@ -197,17 +263,20 @@ class AccountManagerManager(object):
         try:
             cursor.execute("""
                 create table account (
-                    account_id text primary key,
-                    username text unique,
-                    email text,
-                    scrypt_hash text
+                    account_id text primary key not null,
+                    username text unique not null,
+                    email text not null,
+                    scrypt_hash text not null
                 )
                 """)
             cursor.execute("""
-            create table account_session (
-                account_id text,
-                session_id text
-            )
+                create table account_session (
+                    account_id text references account(account_id)
+                        on delete cascade,
+                    session_id text references session(session_id)
+                        on delete cascade,
+                    unique(account_id, session_id)
+                )
             """)
         except SQLError as se:
             print(se)
@@ -312,6 +381,7 @@ class AccountSessionBinding(object):
         @rtype: L{Deferred} firing with L{IAccount} if we succeeded and L{None}
             if we failed.
         """
+        print("log in to", repr(username))
         @self._store.sql
         def retrieve(cursor):
             return list(cursor.execute(
@@ -400,7 +470,8 @@ class EventualProcurer(object):
         
         """
         store = yield self._eventual_store()
-        procurer = SessionProcurer(store, self._request)
+        procurer = SessionProcurer(IPTrackingStore(store, self._request),
+                                   self._request)
         returnValue((yield procurer.procure_session(force_insecure)))
 
 
@@ -443,7 +514,8 @@ class EventualSessionManager(object):
             return EventualProcurer(self._eventual_store, request)
         else:
             print("hasmanager:", self._store)
-            return SessionProcurer(self._store, request)
+            return SessionProcurer(IPTrackingStore(self._store, request),
+                                   request)
 
 # ^^^  framework   ^^^^
 # ---  cut here    ----

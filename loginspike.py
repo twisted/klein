@@ -320,8 +320,13 @@ class AccountSessionBinding(object):
                 where username = ?
                 """,
                 [username]
-            ))[0]
-        account_id, scrypt_hash = yield retrieve
+            ))
+        accounts_info = yield retrieve
+        if not accounts_info:
+            # no account, bye
+            returnValue(None)
+        [[account_id, scrypt_hash]] = accounts_info
+        print("login in", account_id, scrypt_hash)
         if (yield checkPassword(scrypt_hash, password_bytes(password))):
             account = Account(self._store, username)
             yield account.add_session(self._session)
@@ -540,14 +545,14 @@ login = Form(
         tags.div(Class="col-sm-8")(
             tags.input(type="text", Class="form-control",
                        autofocus="true",
-                       id="username", placeholder="Username")
+                       name="username", placeholder="Username")
         )),
        tags.div(Class="form-group row")
        (tags.label(For="anPassword",
                    Class="col-sm-3 col-form-label")("Password: "),
         tags.div(Class="col-sm-8")(
             tags.input(type="password", Class="form-control",
-                       id="anPassword", placeholder=""))),
+                       name="password", placeholder=""))),
        tags.div(Class="form-group row")
        (tags.div(Class="offset-sm-3 col-sm-8")
         (tags.button(type="submit", Class="btn btn-primary col-sm-4")
@@ -569,11 +574,16 @@ def dologin(request, username, password):
     """
     
     """
+    print('login???', request.args, username)
     manager = ISession(request).data.getComponent(IAccountManager)
     account = yield manager.log_in(username, password)
+    if account is None:
+        an_id = 'naaaahtthiiiing'
+    else:
+        an_id = account.account_id
     returnValue({
         "login_active": "active",
-        "new_account_id": account.account_id,
+        "new_account_id": an_id,
     })
 
 
@@ -604,7 +614,7 @@ signup = Form(
         tags.div(Class="col-sm-8")(
             tags.input(type="email", Class="form-control",
                        autofocus="true",
-                       id="email", placeholder="Email")
+                       name="email", placeholder="Email")
         )),
        tags.div(Class="form-group row")
        (tags.label(For="username",
@@ -612,14 +622,14 @@ signup = Form(
         tags.div(Class="col-sm-8")(
             tags.input(type="text", Class="form-control",
                        autofocus="true",
-                       id="username", placeholder="Username")
+                       name="username", placeholder="Username")
         )),
        tags.div(Class="form-group row")
        (tags.label(For="anPassword",
                    Class="col-sm-3 col-form-label")("Password: "),
         tags.div(Class="col-sm-8")(
             tags.input(type="password", Class="form-control",
-                       id="anPassword", placeholder=""))),
+                       name="password", placeholder=""))),
        tags.div(Class="form-group row")
        (tags.div(Class="offset-sm-3 col-sm-8")
         (tags.button(type="submit", Class="btn btn-primary col-sm-4")

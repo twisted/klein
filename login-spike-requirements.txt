@@ -2,7 +2,9 @@
 attrs==16.0.0
 incremental==15.3.0
 rethinkdb==2.3.0.post5
+scrypt==0.7.1
 six==1.10.0
 Twisted==16.3.2
+txscrypt==3.0.0
 Werkzeug==0.11.10
 zope.interface==4.2.0

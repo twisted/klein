@@ -146,16 +146,5 @@ class ISession(Interface):
         """
         A L{Componentized} representing application-specific data loaded for
         this session.
-
-        @see: L{ISessionStore.load_session_data}
         """
     )
-
-    def save():
-        """
-        Save any changed values in this session's L{data} attribute.
-
-        @return: a L{Deferred} that fires with C{None} when the data or saved,
-            or fails with a backing-store-specific exception if it can't be.
-        """
-

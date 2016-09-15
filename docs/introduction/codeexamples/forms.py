@@ -26,12 +26,6 @@ class MemorySession(object):
     authenticated_by = attr.ib()
     data = attr.ib(default=Factory(Componentized))
 
-    def save(self):
-        """
-        
-        """
-        return succeed(None)
-
 
 # XXX more of this needs to be provided by the framework; we should have
 # built-in backends for a few databases; _especially_ users should not need to

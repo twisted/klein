@@ -449,11 +449,6 @@ class SQLSession(object):
     authenticated_by = attr.ib()
     data = attr.ib(default=Factory(Componentized))
 
-    def save(self):
-        """
-        
-        """
-
 
 @attr.s
 class EventualProcurer(object):

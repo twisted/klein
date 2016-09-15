@@ -89,10 +89,11 @@ class SQLiteSessionStore(object):
         
         """
         print("sql:running", callable)
+        @deferToThread
         def async():
             with self.connectionFactory() as connection:
                 return callable(connection.cursor())
-        return deferToThread(async)
+        return async
 
 
     def sent_insecurely(self, tokens):
@@ -216,10 +217,41 @@ class IPTrackingStore(object):
 
 
 
-class IAccountManager(Interface):
+class ISimpleAccountBinding(Interface):
     """
-    
+    Data-store agnostic account / session binding manipulation API for "simple"
+    accounts - i.e. those using username, password, and email address as a
+    method to authenticate a user.
+
+    This goes into a user-authentication-capable L{ISession} object's C{data}
+    attribute as a component.
     """
+
+    def log_in(username, password):
+        """
+        Attach the session this is a component of to an account with the given
+        username and password, if the given username and password correctly
+        authenticate a principal.
+        """
+
+    def authenticated_accounts():
+        """
+        Retrieve the accounts currently associated with the session this is a
+        component of.
+
+        @return: L{Deferred} firing with a L{list} of accounts.
+        """
+
+    def log_out():
+        """
+        Disassociate the session this is a component of from any accounts it's
+        logged in to.
+        """
+
+    def create_account(username, email, password):
+        """
+        Create a new account with the given username, email and password.
+        """
 
 
 
@@ -243,9 +275,9 @@ class ISQLSessionDataPlugin(Interface):
 
 
 
-@SQLiteSessionStore.register_session_plugin(IAccountManager)
+@SQLiteSessionStore.register_session_plugin(ISimpleAccountBinding)
 @implementer(ISQLSessionDataPlugin)
-class AccountManagerManager(object):
+class AccountBindingStorePlugin(object):
     """
     
     """
@@ -266,7 +298,7 @@ class AccountManagerManager(object):
                     account_id text primary key not null,
                     username text unique not null,
                     email text not null,
-                    scrypt_hash text not null
+                    password_blob text not null
                 )
                 """)
             cursor.execute("""
@@ -333,14 +365,14 @@ class Account(object):
         @self.store.sql
         def change(cursor):
             cursor.execute("""
-            update account set scrypt_hash = ?
+            update account set password_blob = ?
             where account_id = ?
             """, self.account_id, computedHash)
         yield change
 
 
 
-@implementer(IAccountManager)
+@implementer(ISimpleAccountBinding)
 @attr.s
 class AccountSessionBinding(object):
     """
@@ -361,7 +393,7 @@ class AccountSessionBinding(object):
             new_account_id = unicode(uuid4())
             cursor.execute("""
             insert into account (
-                account_id, username, email, scrypt_hash
+                account_id, username, email, password_blob
             ) values (
                 ?, ?, ?, ?
             )
@@ -386,7 +418,7 @@ class AccountSessionBinding(object):
         def retrieve(cursor):
             return list(cursor.execute(
                 """
-                select account_id, scrypt_hash from account
+                select account_id, password_blob from account
                 where username = ?
                 """,
                 [username]
@@ -395,9 +427,20 @@ class AccountSessionBinding(object):
         if not accounts_info:
             # no account, bye
             returnValue(None)
-        [[account_id, scrypt_hash]] = accounts_info
-        print("login in", account_id, scrypt_hash)
-        if (yield checkPassword(scrypt_hash, password_bytes(password))):
+        [[account_id, password_blob]] = accounts_info
+        print("login in", account_id, password_blob)
+        pw_bytes = password_bytes(password)
+        if (yield checkPassword(password_blob, pw_bytes)):
+            # Password migration!  Does txscrypt have an awesome *new* hash it
+            # wants to give us?  Store it.
+            new_key = yield computeKey(pw_bytes)
+            if new_key != password_blob:
+                @self._store.sql
+                def storenew(cursor):
+                    cursor.execute("""
+                    update account set password_blob = ? where account_id = ?
+                    """, [new_key, account_id])
+
             account = Account(self._store, username)
             yield account.add_session(self._session)
             returnValue(account)
@@ -642,7 +685,7 @@ def dologin(request, username, password):
     
     """
     print('login???', request.args, username)
-    manager = ISession(request).data.getComponent(IAccountManager)
+    manager = ISession(request).data.getComponent(ISimpleAccountBinding)
     account = yield manager.log_in(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
@@ -723,7 +766,7 @@ def do_signup(request, username, email, password):
     """
     
     """
-    mgr = (request.getComponent(ISession).data.getComponent(IAccountManager))
+    mgr = (request.getComponent(ISession).data.getComponent(ISimpleAccountBinding))
     account_object = yield mgr.create_account(username, email, password)
     returnValue({
         "signup_active": "active",

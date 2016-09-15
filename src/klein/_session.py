@@ -92,5 +92,7 @@ class SessionProcurer(object):
                 domain=self._cookie_domain, path=self._cookie_path,
                 secure=sent_securely, httpOnly=True,
             )
-        self._request.setComponent(ISession, session)
+        if not force_insecure:
+            # Do not cache the insecure session on the secure request, thanks.
+            self._request.setComponent(ISession, session)
         returnValue(session)

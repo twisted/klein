@@ -441,7 +441,7 @@ class AccountSessionBinding(object):
                     update account set password_blob = ? where account_id = ?
                     """, [new_key, account_id])
 
-            account = Account(self._store, username)
+            account = Account(self._store, account_id)
             yield account.add_session(self._session)
             returnValue(account)
 

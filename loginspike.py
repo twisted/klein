@@ -595,7 +595,8 @@ style = Plating(
                                href="/login")),
                     tags.li(Class=["nav-item ", slot("signup_active")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
-                    tags.li(Class="nav-item pull-xs-right")(
+                    tags.li(Class="nav-item pull-xs-right",
+                            render="if_logged_in")(
                         tags.button("Logout", Class="btn")
                     ),
                     tags.li(
@@ -618,6 +619,7 @@ style = Plating(
     }
 )
 
+
 @style.routed(app.route("/"),
               tags.h1(slot('result')))
 def root(request):
@@ -630,6 +632,26 @@ def root(request):
 session_manager = EventualSessionManager(
     SQLiteSessionStore.create_with_schema(lambda: connect("sessions.sqlite"))
 )
+
+@style.render
+@inlineCallbacks
+def if_logged_in(request, tag):
+    """
+    
+    """
+    try:
+        session = yield session_manager.procurer(request).procure_session()
+    except ValueError:
+        # XXX too broad an exception, let's have something more specific in the
+        # procurer
+        returnValue(u"")
+    binding = session.data.getComponent(ISimpleAccountBinding)
+    accounts = yield binding.authenticated_accounts()
+    if accounts:
+        returnValue(tag)
+    else:
+        returnValue(u"")
+
 
 login = Form(
     dict(
@@ -775,4 +797,4 @@ def do_signup(request, username, email, password):
 
 
 
-app.run("localhost", 8976)
+app.run("::", 8976)

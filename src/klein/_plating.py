@@ -51,13 +51,14 @@ class PlatedElement(Element):
     renderers.
     """
 
-    def __init__(self, slot_data, preloaded):
+    def __init__(self, slot_data, preloaded, renderers):
         """
         @param slot_data: A dictionary mapping names to values.
 
         @param preloaded: The pre-loaded data.
         """
         self.slot_data = slot_data
+        self._renderers = renderers
         super(PlatedElement, self).__init__(
             loader=TagLoader(preloaded.fillSlots(
                 **{k: _extra_types(v) for k, v in slot_data.items()}
@@ -68,6 +69,9 @@ class PlatedElement(Element):
         """
         @return: a renderer.
         """
+        print("renderers?", self._renderers)
+        if name in self._renderers:
+            return self._renderers[name]
         if ":" not in name:
             raise MissingRenderMethod(self, name)
         slot, type = name.split(":", 1)
@@ -101,6 +105,14 @@ class Plating(object):
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentation_slots = {self.CONTENT} | set(presentation_slots)
+        self._renderers = {}
+
+    def render(self, renderer):
+        """
+        
+        """
+        self._renderers[text_type(renderer.__name__)] = renderer
+        return renderer
 
     def routed(self, routing, content_template):
         """
@@ -140,7 +152,8 @@ class Plating(object):
         [loaded] = self._loader.load()
         loaded = loaded.clone()
         return PlatedElement(slot_data=slot_data,
-                             preloaded=loaded)
+                             preloaded=loaded,
+                             renderers=self._renderers)
 
     def widgeted(self, function):
         """

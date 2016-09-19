@@ -35,7 +35,9 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/deferreds
     examples/twistd
     examples/handlingpost
+    examples/subroutes
     examples/nonglobalstate
+    examples/handlingerrors
 
 
 Contributing
@@ -46,3 +48,4 @@ If you'd like to help out, here's some material to help you get started!
 .. toctree::
 
     contributing
+    release

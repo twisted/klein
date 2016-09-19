@@ -1,20 +1,26 @@
 """
 Applications are great.  Lets have more of them.
 """
+
+from __future__ import absolute_import, division
+
 import sys
 import weakref
 
+from collections import namedtuple
+from contextlib import contextmanager
+
 from functools import wraps
 
-from werkzeug.routing import Map, Rule
+from werkzeug.routing import Map, Rule, Submount
 
 from twisted.python import log
 from twisted.python.components import registerAdapter
 
 from twisted.web.server import Site, Request
-from twisted.internet import reactor
+from twisted.internet import reactor, endpoints
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
@@ -29,8 +35,8 @@ def _call(instance, f, *args, **kwargs):
     return f(instance, *args, **kwargs)
 
 
+@implementer(IKleinRequest)
 class KleinRequest(object):
-    implements(IKleinRequest)
 
     def __init__(self, request):
         self.branch_segments = ['']
@@ -73,6 +79,8 @@ class Klein(object):
         if result is NotImplemented:
             return result
         return not result
+
+
 
 
     @property
@@ -193,6 +201,48 @@ class Klein(object):
         return deco
 
 
+    @contextmanager
+    def subroute(self, prefix):
+        """
+        Within this block, C{@route} adds rules to a
+        C{werkzeug.routing.Submount}.
+
+        This is implemented by tinkering with the instance's C{_url_map}
+        variable. A context manager allows us to gracefully use the pattern of
+        "change a variable, do some things with the new value, then put it back
+        to how it was before.
+
+        Named "subroute" to try and give callers a better idea of its
+        relationship to C{@route}.
+
+        Usage:
+        ::
+            with app.subroute("/prefix") as app:
+                @app.route("/foo")
+                def foo_handler(request):
+                    return 'I respond to /prefix/foo'
+
+        @type prefix: string
+        @param prefix: The string that will be prepended to the paths of all
+                       routes established during the with-block.
+        @return: Returns None.
+        """
+
+        _map_before_submount = self._url_map
+
+        submount_map = namedtuple(
+            'submount', ['rules', 'add'])(
+                [], lambda r: submount_map.rules.append(r))
+
+        try:
+            self._url_map = submount_map
+            yield self
+            _map_before_submount.add(
+                Submount(prefix, submount_map.rules))
+        finally:
+            self._url_map = _map_before_submount
+
+
     def handle_errors(self, f_or_exception, *additional_exceptions):
         """
         Register an error handler. This decorator supports two syntaxes. The
@@ -260,7 +310,8 @@ class Klein(object):
         return deco
 
 
-    def run(self, host, port, logFile=None):
+    def run(self, host=None, port=None, logFile=None,
+            endpoint_description=None):
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -279,12 +330,23 @@ class Klein(object):
 
         @param logFile: The file object to log to, by default C{sys.stdout}
         @type logFile: file object
+
+        @param endpoint_description: specification of endpoint. Must contain
+            protocol, port and interface. May contain other optional arguments,
+             e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
+        @type endpoint_description: str
         """
         if logFile is None:
             logFile = sys.stdout
 
         log.startLogging(logFile)
-        reactor.listenTCP(port, Site(self.resource()), interface=host)
+
+        if not endpoint_description:
+            endpoint_description = "tcp:port={0}:interface={1}".format(port,
+                                                                       host)
+
+        endpoint = endpoints.serverFromString(reactor, endpoint_description)
+        endpoint.listen(Site(self.resource()))
         reactor.run()
 
 

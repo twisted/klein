@@ -3,15 +3,15 @@ import sys, os, re, codecs, imp
 # Add the extensions folder...
 sys.path.insert(0, os.path.abspath('./_extensions'))
 
-_setup = imp.load_source("setup", "../setup.py")
+_version = imp.load_source("setup", "../src/klein/_version.py")
 
 extensions = []
 templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
 project = u'Klein'
-copyright = u'2014, Twisted Matrix Labs'
-version = _setup.find_version('klein', '__init__.py')
+copyright = u'2016, Twisted Matrix Labs'
+version = _version.__version__.base()
 release = version
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'

@@ -455,12 +455,12 @@ class AccountSessionBinding(object):
         @self._store.sql
         def retrieve(cursor):
             return [
-                Account(account_id)
+                Account(self._store, account_id)
                 for [account_id] in
                 cursor.execute(
                     """
                     select account_id from account_session where session_id = ?
-                    """,
+                    """, [self._session.identifier]
                 )
             ]
         return retrieve

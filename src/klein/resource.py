@@ -1,3 +1,5 @@
+# -*- test-case-name: klein.test.test_resource -*-
+
 from __future__ import absolute_import, division
 
 from twisted.internet import defer
@@ -226,7 +228,8 @@ class KleinResource(Resource):
                 return _StandInResource
 
             if IRenderable.providedBy(r):
-                return renderElement(request, r)
+                renderElement(request, r)
+                return _StandInResource
 
             return r
 

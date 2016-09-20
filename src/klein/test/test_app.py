@@ -228,8 +228,6 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
 
-
-
     def test_branchDoesntRequireTrailingSlash(self):
         """
         L{Klein.route} should create a branch path which consumes all children,
@@ -262,7 +260,7 @@ class KleinTestCase(unittest.TestCase):
         app.run("localhost", 8080)
 
         reactor.listenTCP.assert_called_with(
-            8080, mock_site.return_value, interface="localhost")
+            8080, mock_site.return_value, backlog=50, interface="localhost")
 
         reactor.run.assert_called_with()
 
@@ -285,13 +283,52 @@ class KleinTestCase(unittest.TestCase):
         app.run("localhost", 8080, logFile=logFile)
 
         reactor.listenTCP.assert_called_with(
-            8080, mock_site.return_value, interface="localhost")
+            8080, mock_site.return_value, backlog=50, interface="localhost")
 
         reactor.run.assert_called_with()
 
         mock_site.assert_called_with(mock_kr.return_value)
         mock_kr.assert_called_with(app)
         mock_log.startLogging.assert_called_with(logFile)
+
+
+    @patch('klein.app.KleinResource')
+    @patch('klein.app.log')
+    @patch('klein.app.endpoints.serverFromString')
+    @patch('klein.app.reactor')
+    def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
+        """
+        L{Klein.run} called with tcp6 endpoint description.
+        """
+        app = Klein()
+        interface = "2001\:0DB8\:f00e\:eb00\:\:1"
+        spec = "tcp6:8080:interface={0}".format(interface)
+        app.run(endpoint_description=spec)
+        reactor.run.assert_called_with()
+        mock_sfs.assert_called_with(reactor, spec)
+        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_kr.assert_called_with(app)
+
+
+    @patch('klein.app.KleinResource')
+    @patch('klein.app.log')
+    @patch('klein.app.endpoints.serverFromString')
+    @patch('klein.app.reactor')
+    def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
+        """
+        L{Klein.run} called with SSL endpoint specification.
+        """
+        app = Klein()
+        key = "key.pem"
+        cert = "cert.pem"
+        dh_params = "dhparam.pem"
+        spec_template = "ssl:443:privateKey={0}:certKey={1}"
+        spec = spec_template.format(key, cert, dh_params)
+        app.run(endpoint_description=spec)
+        reactor.run.assert_called_with()
+        mock_sfs.assert_called_with(reactor, spec)
+        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_kr.assert_called_with(app)
 
 
     @patch('klein.app.KleinResource')

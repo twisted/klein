@@ -51,3 +51,49 @@ The following cURL commands (and output) can be used to test this behaviour::
 
     curl -L http://localhost:8080/bounty/things
     Not found, I say
+
+
+Example - Catch All Routes
+==========================
+
+A simple way to create a catch-all function, which serves every URL that doesn't match a route, is to use a ``path`` variable in the route.
+
+.. code-block:: python
+
+    from klein import Klein
+
+    class OnlyOneRoute(object):
+        app = Klein()
+
+        @app.route('/api/<path:catchall>')
+        def catchAll(self, request, catchall):
+            request.redirect('/api')
+
+        @app.route('/api')
+        def home(self, request):
+            return 'API Home'
+
+        @app.route('/api/v1')
+        def v1(self, request):
+            return 'Version 1 - Home'
+
+
+    if __name__ == '__main__':
+        oneroute = OnlyOneRoute()
+        oneroute.app.run('localhost', 8080)
+
+
+Use cURL to verify that only ``/api`` and ``/api/v1`` return content, all other requests are redirected::
+
+   curl -L http://localhost:8080/api
+   API Home
+
+   curl -L localhost:8080/api/v1
+   Version 1 - Home
+
+   curl -L localhost:8080/api/another
+   API Home
+
+
+This method can also be used on the root route, in which case it will catch every request which doesn't match a route.
+

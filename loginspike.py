@@ -475,7 +475,7 @@ class AccountSessionBinding(object):
             cursor.execute(
                 """
                 delete from account_session where session_id = ?
-                """, [self._session.session_id]
+                """, [self._session.identifier]
             )
         return retrieve
 
@@ -597,8 +597,12 @@ style = Plating(
                         tags.a("Signup", Class="nav-link", href="/signup")),
                     tags.li(Class="nav-item pull-xs-right",
                             render="if_logged_in")(
-                        tags.button("Logout", Class="btn")
-                    ),
+                                tags.form(render="logout_csrf",
+                                          action="/logout",
+                                          method="POST")(
+                                    tags.button("Logout", Class="btn"),
+                                )
+                            ),
                     tags.li(
                         tags.form(Class="form-inline pull-xs-right")(
                         tags.input(Class="form-control", type="text",
@@ -628,10 +632,28 @@ def root(request):
         "home_active": "active"
     }
 
+def db_connect():
+    c = connect("sessions.sqlite")
+    c.execute("PRAGMA foreign_keys = ON")
+    return c
 
 session_manager = EventualSessionManager(
-    SQLiteSessionStore.create_with_schema(lambda: connect("sessions.sqlite"))
+    SQLiteSessionStore.create_with_schema(db_connect)
 )
+
+logout = Form(dict(), session_manager.procurer)
+
+@logout.handler(app.route("/logout", methods=["POST"]))
+@inlineCallbacks
+def bye(request):
+    """
+    Log out.
+    """
+    from twisted.web.util import Redirect
+    yield ISimpleAccountBinding(ISession(request).data).log_out()
+    returnValue(Redirect(b"/"))
+
+
 
 @style.render
 @inlineCallbacks
@@ -652,6 +674,27 @@ def if_logged_in(request, tag):
     else:
         returnValue(u"")
 
+
+def render_like_route(callable):
+    """
+    
+    """
+    from functools import wraps
+    @wraps(callable)
+    def my_callable(*args, **kw):
+        print(args, kw)
+        instance = None
+        return callable(instance, *args, **kw)
+    return style.render(my_callable)
+
+@logout.renderer(render_like_route, "/logout")
+def logout_csrf(request, tag, form):
+    """
+    
+    """
+    csrft = form.csrf()
+    print("rendering", csrft)
+    return tag(csrft)
 
 login = Form(
     dict(

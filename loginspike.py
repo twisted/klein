@@ -797,4 +797,4 @@ def do_signup(request, username, email, password):
 
 
 
-app.run("::", 8976)
+app.run("localhost", 8976)

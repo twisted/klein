@@ -51,7 +51,7 @@ class PlatedElement(Element):
     renderers.
     """
 
-    def __init__(self, slot_data, preloaded, renderers):
+    def __init__(self, slot_data, preloaded, renderers, bound_instance):
         """
         @param slot_data: A dictionary mapping names to values.
 
@@ -59,6 +59,7 @@ class PlatedElement(Element):
         """
         self.slot_data = slot_data
         self._renderers = renderers
+        self._bound_instance = bound_instance
         super(PlatedElement, self).__init__(
             loader=TagLoader(preloaded.fillSlots(
                 **{k: _extra_types(v) for k, v in slot_data.items()}
@@ -71,7 +72,13 @@ class PlatedElement(Element):
         """
         print("renderers?", self._renderers)
         if name in self._renderers:
-            return self._renderers[name]
+            wrapped = self._renderers[name]
+            @wraps(wrapped)
+            def renderWrapper(request, tag, *args, **kw):
+                return _call(self._bound_instance, wrapped,
+                             request, tag, *args, **kw)
+            renderWrapper.__klein_bound__ = True
+            return renderWrapper
         if ":" not in name:
             raise MissingRenderMethod(self, name)
         slot, type = name.split(":", 1)
@@ -135,7 +142,7 @@ class Plating(object):
                     request.setHeader(b'content-type',
                                       b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
-                    returnValue(self._elementify(data))
+                    returnValue(self._elementify(instance, data))
             mymethod.__name__ = "plating renderer for " + method.__name__
             routing(mymethod)
             method.__dict__.update(mymethod.__dict__)
@@ -143,7 +150,7 @@ class Plating(object):
             return method
         return mydecorator
 
-    def _elementify(self, to_fill_with):
+    def _elementify(self, instance, to_fill_with):
         """
         
         """
@@ -153,16 +160,18 @@ class Plating(object):
         loaded = loaded.clone()
         return PlatedElement(slot_data=slot_data,
                              preloaded=loaded,
-                             renderers=self._renderers)
+                             renderers=self._renderers,
+                             bound_instance=instance)
 
     def widgeted(self, function):
         """
         
         """
         @wraps(function)
-        def wrapper(*a, **k):
-            data = function(*a, **k)
-            return self._elementify(data)
+        def wrapper(instance, *a, **k):
+            data = _call(instance, function, *a, **k)
+            return self._elementify(instance, data)
         wrapper.__name__ += ".widget"
+        wrapper.__klein_bound__ = True
         function.widget = wrapper
         return function

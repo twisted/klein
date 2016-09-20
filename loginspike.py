@@ -675,19 +675,7 @@ def if_logged_in(request, tag):
         returnValue(u"")
 
 
-def render_like_route(callable):
-    """
-    
-    """
-    from functools import wraps
-    @wraps(callable)
-    def my_callable(*args, **kw):
-        print(args, kw)
-        instance = None
-        return callable(instance, *args, **kw)
-    return style.render(my_callable)
-
-@logout.renderer(render_like_route, "/logout")
+@logout.renderer(style.render, "/logout")
 def logout_csrf(request, tag, form):
     """
     

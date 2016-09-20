@@ -819,11 +819,13 @@ def do_signup(request, username, email, password):
     """
     
     """
-    mgr = (request.getComponent(ISession).data.getComponent(ISimpleAccountBinding))
-    account_object = yield mgr.create_account(username, email, password)
     returnValue({
         "signup_active": "active",
-        "account_id": account_object.account_id,
+        "account_id": (yield (
+            request.getComponent(ISession).data
+            .getComponent(ISimpleAccountBinding)
+            .create_account(username, email, password)
+        )).account_id,
     })
 
 

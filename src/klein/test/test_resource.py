@@ -524,13 +524,12 @@ class KleinResourceTests(TestCase):
                     os.path.dirname(__file__), "__init__.py"), 'rb').read())
         self.assertEqual(request.finishCount, 1)
 
-
     def test_explicitStaticBranch(self):
         app = self.app
 
         request = requestMock(b"/static/__init__.py")
 
-        @app.route("/static/", branch=True)
+        @app.route("/static", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
@@ -544,11 +543,10 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
-
     def test_explicitStaticBranchSingleFile(self):
         app = self.app
 
-        request = requestMock("/static/__init__.py")
+        request = requestMock(b"/static/__init__.py")
 
         @app.route("/static/__init__.py", branch=True)
         def root(request):
@@ -564,7 +562,7 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(),
             open(
                 os.path.join(
-                    os.path.dirname(__file__), "__init__.py")).read())
+                    os.path.dirname(__file__), "__init__.py"), "rb").read())
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 

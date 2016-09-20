@@ -13,15 +13,15 @@ So ``http://localhost:8080/static/img.gif`` should return an image and ``http://
 
     @route('/static/', branch=True)
     def static(request):
-        return File("./static")
+        return File('./static')
 
     @route('/')
     def home(request):
-        return '<img src="/static/img.gif">'
+        return '<img src='/static/img.gif'>'
 
-    run("localhost", 8080)
+    run('localhost', 8080)
 
-To setup a route to a single :api:`twisted.web.static.File <t.w.static.File>` you only need to pass ``branch=True`` to the route and set ``isLeaf=True`` on the file resource.
+To setup a route to a single :api:`twisted.web.static.File <t.w.static.File>` pass ``branch=True`` to the route and set ``isLeaf=True`` on the file resource.
 
 .. code-block:: python
 
@@ -31,8 +31,8 @@ To setup a route to a single :api:`twisted.web.static.File <t.w.static.File>` yo
 
     @route('/my-book', branch=True)
     def static(request):
-        file = File("./my-book.pdf")
+        file = File('./my-book.pdf')
         file.isLeaf = True
         return file
 
-    run("localhost", 8080)
+    run('localhost', 8080)

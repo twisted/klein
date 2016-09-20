@@ -226,7 +226,8 @@ class KleinResource(Resource):
                 return _StandInResource
 
             if IRenderable.providedBy(r):
-                return renderElement(request, r)
+                renderElement(request, r)
+                return _StandInResource
 
             return r
 

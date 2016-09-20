@@ -3,6 +3,8 @@ from __future__ import unicode_literals, print_function
 
 import attr
 
+from functools import wraps
+
 from zope.interface import implementer
 
 from twisted.python.compat import unicode
@@ -101,19 +103,49 @@ class Field(object):
 
 @implementer(IRenderable)
 @attr.s
-class FormRenderer(object):
+class RenderableForm(object):
     """
+    An L{IRenderable} representing a renderable form.
+
     @ivar errors: a L{dict} mapping {L{Field}: L{ValidationError}}
 
     @ivar prevalidation: a L{dict} mapping {L{Field}: L{list} of L{unicode}},
         representing the value that each field received as part of the request.
     """
-    form = attr.ib()
-    session = attr.ib()
-    action = attr.ib()
-    method = attr.ib()
-    enctype = attr.ib()
-    encoding = attr.ib(default="utf-8")
+    _form = attr.ib()
+    _session = attr.ib()
+    _action = attr.ib()
+    _method = attr.ib()
+    _enctype = attr.ib()
+    _encoding = attr.ib(default="utf-8")
+
+    def _csrf_field(self):
+        """
+        
+        """
+        return Form.hidden(CSRF_PROTECTION, self._session.identifier)
+
+
+    def _fields_to_render(self):
+        """
+        
+        """
+        any_submit = False
+        for field in self._form.fields.values():
+            yield attr.assoc(field,
+                             value=self._prevalidation.get(field, field.value),
+                             error=self._errors.get(field, None))
+            if field.form_input_type == "submit":
+                any_submit = True
+        if not any_submit:
+            yield Field(str, form_input_type="submit",
+                        value=u"submit",
+                        python_argument_name="submit",
+                        form_field_name="submit")
+        yield self._csrf_field()
+
+    # Public interface below.
+
     prevalidation = attr.ib(default=attr.Factory(dict))
     errors = attr.ib(default=attr.Factory(dict))
 
@@ -127,11 +159,11 @@ class FormRenderer(object):
 
     def render(self, request):
         """
-        
+        Render this form to the given request.
         """
         return (
-            tags.form(action=self.action, method=self.method,
-                      enctype=self.enctype)
+            tags.form(action=self._action, method=self._method,
+                      enctype=self._enctype)
             (
                 field.as_tags() for field in self._fields_to_render()
             )
@@ -140,44 +172,18 @@ class FormRenderer(object):
 
     def csrf(self):
         """
-        
+        Return the CSRF token as a renderable object; this must be dropped into
+        the template within the C{<form>} tag.
         """
         return self._csrf_field().as_tags()
 
 
-    def _csrf_field(self):
-        """
-        
-        """
-        return Form.hidden(CSRF_PROTECTION, self.session.identifier)
-
-
-    def _fields_to_render(self):
-        """
-        
-        """
-        any_submit = False
-        for field in self.form.fields.values():
-            yield attr.assoc(field,
-                             value=self.prevalidation.get(field, field.value),
-                             error=self.errors.get(field, None))
-            if field.form_input_type == "submit":
-                any_submit = True
-        if not any_submit:
-            yield Field(str, form_input_type="submit",
-                        value=u"submit",
-                        python_argument_name="submit",
-                        form_field_name="submit")
-        yield self._csrf_field()
-
-
-
-def default_validation_failure_handler(instance, request, form_renderer):
+def default_validation_failure_handler(instance, request, renderable):
     """
     
     """
     from twisted.web.template import Element, TagLoader
-    return Element(TagLoader(form_renderer))
+    return Element(TagLoader(renderable))
 
 
 
@@ -221,6 +227,7 @@ class Form(object):
         """
         def decorator(function):
             @inlineCallbacks
+            @wraps(function, updated=[])
             def handler_decorated(instance, request, *args, **kw):
                 procurer = _call(instance, self.procurer_from_request,
                                  request)
@@ -243,11 +250,11 @@ class Form(object):
                     else:
                         arguments[field.python_argument_name] = value
                 if validation_errors:
-                    # XXX need a better name than "renderer" probably?
-                    form_renderer = FormRenderer(
+                    renderable = RenderableForm(
                         self, session, b"/".join(request.prepath),
                         request.method,
-                        request.getHeader('content-type').decode('utf-8').split(';')[0],
+                        (request.getHeader('content-type')
+                         .decode('utf-8').split(';')[0]),
                         prevalidation=prevalidation_values,
                         errors=validation_errors,
                     )
@@ -258,7 +265,7 @@ class Form(object):
                     else:
                         handler = default_validation_failure_handler
                     result = yield _call(instance, handler, request,
-                                         form_renderer, *args, **kw)
+                                         renderable, *args, **kw)
                 else:
                     kw.update(arguments)
                     result = yield _call(instance, function, request,
@@ -270,8 +277,6 @@ class Form(object):
             # make the route behave differently.  but Plating preserves
             # attributes set here across into the real handler.
             function.validation_failure_handler_container = []
-            handler_decorated.func_name = ("form handler using" +
-                                           function.func_name).encode("utf-8")
             route(handler_decorated)
             return function
         return decorator
@@ -284,18 +289,16 @@ class Form(object):
         """
         def decorator(function):
             @inlineCallbacks
+            @wraps(function, updated=[])
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = self.procurer_from_request(request)
                 session = yield procurer.procure_session()
-                form = FormRenderer(self, session, action, method, enctype)
+                form = RenderableForm(self, session, action, method, enctype)
                 kw[argument] = form
+                print("calling through", function)
                 result = yield _call(instance, function, request, *args, **kw)
+                print("resulted", result)
                 returnValue(result)
-            # XXX If I don't make this func_name unique-per-klein-app-instance,
-            # then every route that renders a form gets mapped to the same
-            # endpoint.
-            renderer_decorated.func_name = ('form renderer for ' +
-                                            function.func_name).encode("utf-8")
             renderer_decorated.__klein_bound__ = True
             route(renderer_decorated)
             return function

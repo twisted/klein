@@ -1,3 +1,5 @@
+# -*- test-case-name: klein.test.test_resource -*-
+
 from __future__ import absolute_import, division
 
 from twisted.internet import defer

@@ -227,7 +227,7 @@ class IPTrackingStore(object):
     request = attr.ib()
 
     @inlineCallbacks
-    def _touch_session(self, session):
+    def _touch_session(self, session, style):
         """
         Update a session's IP address.  NB: different txn than the session
         generation; is it worth smashing these together?
@@ -253,17 +253,17 @@ class IPTrackingStore(object):
                          dict(last_used=last_used))
             print("executed")
         yield touch
-        print("returning", session)
+        print("returning", session, style)
         returnValue(session)
 
     def new_session(self, is_confidential, authenticated_by):
         return (self.store.new_session(is_confidential, authenticated_by)
-                .addCallback(self._touch_session))
+                .addCallback(self._touch_session, "new"))
 
     def load_session(self, identifier, is_confidential, authenticated_by):
         return (self.store.load_session(identifier, is_confidential,
                                         authenticated_by)
-                .addCallback(self._touch_session))
+                .addCallback(self._touch_session, "load"))
 
     def sent_insecurely(self, tokens):
         return self.store.sent_insecurely(tokens)

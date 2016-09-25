@@ -27,6 +27,7 @@ from twisted.internet.defer import (
 )
 from twisted.python.components import Componentized
 from twisted.python.compat import unicode
+from twisted.python.failure import Failure
 from twisted.logger import Logger
 
 from klein import Klein, Plating, Form, SessionProcurer
@@ -115,12 +116,13 @@ class SQLiteSessionStore(object):
             try:
                 result = yield callable(cxn)
             except:
-                self._log.failure("while executing sql {callable}",
-                                  callable=callable)
                 # XXX rollback() and commit() might both also fail
+                failure = Failure()
                 yield txn.rollback()
+                returnValue(failure)
             else:
                 yield txn.commit()
+                print("giving back", result, "from", callable)
                 returnValue(result)
         finally:
             yield cxn.close()

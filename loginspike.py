@@ -704,11 +704,6 @@ def root(request):
         "home_active": "active"
     }
 
-def db_connect():
-    c = connect("sessions.sqlite")
-    c.execute("PRAGMA foreign_keys = ON")
-    return c
-
 session_manager = EventualSessionManager(
     SQLiteSessionStore.create_with_schema("sqlite:///sessions.sqlite")
 )

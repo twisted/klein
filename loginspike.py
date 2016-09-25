@@ -4,6 +4,16 @@ from __future__ import print_function, unicode_literals, absolute_import
 import attr
 from attr import Factory
 
+from alchimia import TWISTED_STRATEGY
+
+from sqlalchemy import (
+    create_engine, MetaData, Table, Column, Boolean, String,
+    ForeignKey, DateTime, UniqueConstraint, literal, select, exists,
+)
+from sqlalchemy.exc import OperationalError
+
+from sqlalchemy.schema import CreateTable
+
 from uuid import uuid4
 from binascii import hexlify
 from os import urandom
@@ -15,14 +25,16 @@ from twisted.web.template import tags, slot
 from twisted.internet.defer import (
     inlineCallbacks, returnValue, Deferred
 )
-from twisted.internet.threads import deferToThread
 from twisted.python.components import Componentized
 from twisted.python.compat import unicode
+from twisted.logger import Logger
 
 from klein import Klein, Plating, Form, SessionProcurer
 from klein.interfaces import ISession, ISessionStore, NoSuchSession
 
-from sqlite3 import Error as SQLError, connect
+from sqlite3 import connect
+
+metadata = MetaData()
 
 @implementer(ISessionStore)
 @attr.s
@@ -30,45 +42,49 @@ class SQLiteSessionStore(object):
     """
     
     """
-    connectionFactory = attr.ib()
+
+    _session_table = Table(
+        "session", metadata,
+        Column("session_id", String(), primary_key=True, nullable=False),
+        Column("confidential", Boolean(), nullable=False),
+    )
+    _session_ip_table = Table(
+        "session_ip", metadata,
+        Column("session_id", String(),
+               ForeignKey("session.session_id", ondelete="CASCADE"),
+               nullable=False),
+        Column("ip_address", String(), nullable=False),
+        Column("address_family", String(), nullable=False),
+        Column("last_used", DateTime(), nullable=False),
+        UniqueConstraint("session_id", "ip_address", "address_family"),
+    )
+
+    engine = attr.ib()
     session_plugins = attr.ib(default=Factory(list))
 
     @classmethod
-    def create_with_schema(cls, connectionFactory):
+    def create_with_schema(cls, db_url):
         """
         
         """
-        self = cls(connectionFactory)
+        from twisted.internet import reactor
+        self = cls(create_engine(db_url, reactor=reactor,
+                                 strategy=TWISTED_STRATEGY))
         @self.sql
-        def do(cursor):
+        @inlineCallbacks
+        def do(engine):
             try:
-                cursor.execute(
-                    """
-                    create table session (
-                        session_id text primary key not null,
-                        confidential integer not null
-                    )
-                    """
-                )
-                cursor.execute("""
-                    create table session_ip (
-                        session_id text
-                            references session(session_id)
-                            on delete cascade,
-                        ip_address text not null,
-                        address_family text not null,
-                        last_used timestamp not null,
-                        unique(session_id, ip_address, address_family)
-                    )
-                    """
-                )
-            except SQLError as sqle:
-                print("sqle:", sqle)
+                yield engine.execute(CreateTable(self._session_table))
+            except OperationalError as oe:
+                print(oe)
             for data_interface, plugin_creator in self.session_plugin_registry:
                 plugin = plugin_creator(self)
-                plugin.initialize_schema(cursor)
+                try:
+                    yield plugin.initialize_schema(engine)
+                except OperationalError as oe:
+                    print(oe)
                 self.session_plugins.append((data_interface, plugin))
-            return self
+            returnValue(self)
         return do
 
     session_plugin_registry = []
@@ -84,16 +100,26 @@ class SQLiteSessionStore(object):
         return registerer
 
 
+    _log = Logger()
+
+    @inlineCallbacks
     def sql(self, callable):
         """
         
         """
         print("sql:running", callable)
-        @deferToThread
-        def async():
-            with self.connectionFactory() as connection:
-                return callable(connection.cursor())
-        return async
+        cxn = yield self.engine.connect()
+        txn = yield cxn.begin()
+        try:
+            result = yield callable(cxn)
+        except:
+            self._log.failure("while executing sql {callable}",
+                              callable=callable)
+            # XXX rollback() and commit() might both also fail
+            yield txn.rollback()
+        else:
+            yield txn.commit()
+            returnValue(result)
 
 
     def sent_insecurely(self, tokens):
@@ -101,52 +127,58 @@ class SQLiteSessionStore(object):
         
         """
         @self.sql
-        def invalidate(c):
+        @inlineCallbacks
+        def invalidate(engine):
+            s = self._session_table
             for token in tokens:
-                c.execute(
-                    """
-                    delete from session where session_id = ?
-                    and confidential = 1
-                    """, [token]
-                )
+                yield engine.execute(s.delete().where(
+                    (s.c.session_id == token) &
+                    (s.c.confidential == True)
+                ))
         return invalidate
 
 
     def new_session(self, is_confidential, authenticated_by):
         @self.sql
-        def created(c):
+        @inlineCallbacks
+        def created(engine):
             identifier = hexlify(urandom(32))
-            c.execute(
-                """
-                insert into session values (
-                    ?, ?
-                )
-                """, [identifier, is_confidential]
-            )
+            s = self._session_table
+            yield engine.execute(s.insert().values(
+                session_id=identifier,
+                confidential=is_confidential,
+            ))
             session = SQLSession(
                 identifier=identifier,
                 is_confidential=is_confidential,
                 authenticated_by=authenticated_by,
             )
-            for data_interface, plugin in self.session_plugins:
-                session.data.setComponent(
-                    data_interface, plugin.data_for_session(self, c,
-                                                            session, False)
-                )
-            return session
+            yield self._populate(engine, session)
+            returnValue(session)
         return created
+
+
+    @inlineCallbacks
+    def _populate(self, engine, session):
+        """
+        
+        """
+        for data_interface, plugin in self.session_plugins:
+            session.data.setComponent(
+                data_interface, (yield plugin.data_for_session(
+                    self, engine, session, False)
+                )
+            )
 
 
     def load_session(self, identifier, is_confidential, authenticated_by):
         @self.sql
-        def loaded(c):
-            c.execute(
-                """
-                select session_id from session where session_id = ?
-                and confidential = ?
-                """, [identifier, int(is_confidential)]
-            )
-            results = list(c.fetchall())
+        @inlineCallbacks
+        def loaded(engine):
+            s = self._session_table
+            yield engine.execute(s.select((s.c.session_id==identifier) &
+                                          (s.c.confidential==is_confidential)))
+            results = yield engine.fetchall()
             if not results:
                 raise NoSuchSession()
             [[fetched_id]] = results
@@ -155,12 +187,8 @@ class SQLiteSessionStore(object):
                 is_confidential=is_confidential,
                 authenticated_by=authenticated_by,
             )
-            for data_interface, plugin in self.session_plugins:
-                session.data.setComponent(
-                    data_interface, plugin.data_for_session(self, c, session,
-                                                            True)
-                )
-            return session
+            yield self._populate(engine, session)
+            returnValue(session)
         return loaded
 
 
@@ -187,17 +215,28 @@ class IPTrackingStore(object):
             ip_address = u""
         print("updating session ip", ip_address)
         @self.store.sql
-        def touch(cursor):
+        @inlineCallbacks
+        def touch(engine):
             print("here we go")
             address_family = (u"AF_INET6" if u":" in ip_address
                               else u"AF_INET")
             last_used = datetime.utcnow()
-            cursor.execute("""
-                insert or replace into session_ip
-                (session_id, ip_address, address_family, last_used)
-                values
-                (?, ?, ?, ?)
-            """, [session_id, ip_address, address_family, last_used])
+            sip = SQLiteSessionStore._session_ip_table
+            update_cte = (sip.update()
+                          .where((sip.c.session_id == session_id) &
+                                 (sip.c.ip_address == ip_address) &
+                                 (sip.c.address_family == address_family))
+                          .values(last_used=last_used)
+                          .returning(literal(1))
+                          .cte("update_cte"))
+            upsert = sip.insert().from_select(
+                [sip.c.session_id, sip.c.ip_address, sip.c.address_family,
+                 sip.c.last_used],
+                select([literal(session_id), literal(ip_address),
+                        literal(address_family), literal(last_used)])
+                .where(~exists(update_cte.select()))
+            )
+            yield engine.execute(upsert)
             print("executed")
         yield touch
         print("returning", session)
@@ -281,6 +320,25 @@ class AccountBindingStorePlugin(object):
     """
     
     """
+
+    _account_table = Table(
+        "account", metadata,
+        Column("account_id", String(), primary_key=True,
+               nullable=False),
+        Column("username", String(), unique=True, nullable=False),
+        Column("email", String(), nullable=False),
+        Column("password_blob", String(), nullable=False),
+    )
+
+    _account_session_table = Table(
+        "account_session", metadata,
+        Column("account_id", String(),
+               ForeignKey("account.account_id", ondelete="CASCADE")),
+        Column("session_id", String(),
+               ForeignKey("session.session_id", ondelete="CASCADE")),
+        UniqueConstraint("account_id", "session_id"),
+    )
+
     def __init__(self, store):
         """
         
@@ -288,30 +346,13 @@ class AccountBindingStorePlugin(object):
         self._store = store
 
 
-    def initialize_schema(self, cursor):
+    @inlineCallbacks
+    def initialize_schema(self, engine):
         """
         
         """
-        try:
-            cursor.execute("""
-                create table account (
-                    account_id text primary key not null,
-                    username text unique not null,
-                    email text not null,
-                    password_blob text not null
-                )
-                """)
-            cursor.execute("""
-                create table account_session (
-                    account_id text references account(account_id)
-                        on delete cascade,
-                    session_id text references session(session_id)
-                        on delete cascade,
-                    unique(account_id, session_id)
-                )
-            """)
-        except SQLError as se:
-            print(se)
+        yield engine.execute(CreateTable(self._account_table))
+        yield engine.execute(CreateTable(self._account_session_table))
 
 
     def data_for_session(self, session_store, cursor, session, existing):
@@ -346,12 +387,11 @@ class Account(object):
         
         """
         @self.store.sql
-        def createrow(cursor):
-            cursor.execute(
-                """
-                insert into account_session
-                (account_id, session_id) values (?, ?)
-                """, [self.account_id, session.identifier]
+        def createrow(engine):
+            return engine.execute(
+                AccountBindingStorePlugin._account_session_table
+                .insert().values(account_id=self.account_id,
+                                 session_id=session.identifier)
             )
         return createrow
 
@@ -363,12 +403,13 @@ class Account(object):
         """
         computedHash = yield computeKey(password_bytes(new_password))
         @self.store.sql
-        def change(cursor):
-            cursor.execute("""
-            update account set password_blob = ?
-            where account_id = ?
-            """, self.account_id, computedHash)
-        yield change
+        def change(engine):
+            return engine.execute(
+                AccountBindingStorePlugin._account_table.update()
+                .where(account_id=self.account_id)
+                .values(password_blob=computedHash)
+            )
+        returnValue((yield change))
 
 
 
@@ -389,16 +430,17 @@ class AccountSessionBinding(object):
         """
         computedHash = yield computeKey(password_bytes(password))
         @self._store.sql
-        def store(cursor):
+        @inlineCallbacks
+        def store(engine):
             new_account_id = unicode(uuid4())
-            cursor.execute("""
-            insert into account (
-                account_id, username, email, password_blob
-            ) values (
-                ?, ?, ?, ?
+            yield engine.execute(
+                AccountBindingStorePlugin._account_table.insert()
+                .values(account_id=new_account_id,
+                        username=username,
+                        email=email,
+                        password_blob=computedHash)
             )
-            """, [new_account_id, username, email, computedHash])
-            return new_account_id
+            returnValue(new_account_id)
         account = Account(self._store, (yield store))
         yield account.add_session(self._session)
         returnValue(account)
@@ -415,14 +457,14 @@ class AccountSessionBinding(object):
         """
         print("log in to", repr(username))
         @self._store.sql
-        def retrieve(cursor):
-            return list(cursor.execute(
-                """
-                select account_id, password_blob from account
-                where username = ?
-                """,
-                [username]
-            ))
+        @inlineCallbacks
+        def retrieve(engine):
+            yield engine.execute(
+                AccountSessionBinding._account_table.select(
+                    AccountSessionBinding._account_table.username == username
+                )
+            )
+            returnValue((yield engine.fetchall()))
         accounts_info = yield retrieve
         if not accounts_info:
             # no account, bye
@@ -436,10 +478,12 @@ class AccountSessionBinding(object):
             new_key = yield computeKey(pw_bytes)
             if new_key != password_blob:
                 @self._store.sql
-                def storenew(cursor):
-                    cursor.execute("""
-                    update account set password_blob = ? where account_id = ?
-                    """, [new_key, account_id])
+                def storenew(engine):
+                    return engine.execute(
+                        AccountBindingStorePlugin._account_table.update()
+                        .values(password_blob=new_key, account_id=account_id)
+                    )
+                yield storenew
 
             account = Account(self._store, account_id)
             yield account.add_session(self._session)
@@ -453,16 +497,16 @@ class AccountSessionBinding(object):
         @return: L{Deferred} firing with a L{list} of accounts.
         """
         @self._store.sql
-        def retrieve(cursor):
-            return [
-                Account(self._store, account_id)
-                for [account_id] in
-                cursor.execute(
-                    """
-                    select account_id from account_session where session_id = ?
-                    """, [self._session.identifier]
-                )
-            ]
+        @inlineCallbacks
+        def retrieve(engine):
+            ast = AccountBindingStorePlugin._account_session_table
+            returnValue([
+                Account(self._store, it[ast.c.account_id])
+                for it in
+                (yield engine.execute(
+                    ast.select(ast.c.session_id==self._session.identifier)
+                ))
+            ])
         return retrieve
 
 
@@ -471,12 +515,9 @@ class AccountSessionBinding(object):
         Disassociate this session from any accounts it's logged in to.
         """
         @self._store.sql
-        def retrieve(cursor):
-            cursor.execute(
-                """
-                delete from account_session where session_id = ?
-                """, [self._session.identifier]
-            )
+        def retrieve(engine):
+            ast = AccountBindingStorePlugin._account_session_table
+            return engine.execute(ast.delete(self._session.identifier))
         return retrieve
 
 
@@ -638,7 +679,7 @@ def db_connect():
     return c
 
 session_manager = EventualSessionManager(
-    SQLiteSessionStore.create_with_schema(db_connect)
+    SQLiteSessionStore.create_with_schema("sqlite:///sessions.sqlite")
 )
 
 logout = Form(dict(), session_manager.procurer)
@@ -829,5 +870,5 @@ def do_signup(request, username, email, password):
     })
 
 
-
-app.run("localhost", 8976)
+if __name__ == '__main__':
+    app.run("localhost", 8976)

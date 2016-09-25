@@ -8,9 +8,9 @@ from alchimia import TWISTED_STRATEGY
 
 from sqlalchemy import (
     create_engine, MetaData, Table, Column, Boolean, String,
-    ForeignKey, DateTime, UniqueConstraint, literal, select, exists,
+    ForeignKey, DateTime, UniqueConstraint
 )
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, IntegrityError
 
 from sqlalchemy.schema import CreateTable
 
@@ -73,10 +73,11 @@ class SQLiteSessionStore(object):
         @self.sql
         @inlineCallbacks
         def do(engine):
-            try:
-                yield engine.execute(CreateTable(self._session_table))
-            except OperationalError as oe:
-                print(oe)
+            for tbl in [self._session_table, self._session_ip_table]:
+                try:
+                    yield engine.execute(CreateTable(tbl))
+                except OperationalError as oe:
+                    print(oe)
             for data_interface, plugin_creator in self.session_plugin_registry:
                 plugin = plugin_creator(self)
                 try:
@@ -107,20 +108,22 @@ class SQLiteSessionStore(object):
         """
         
         """
-        print("sql:running", callable)
-        cxn = yield self.engine.connect()
-        txn = yield cxn.begin()
         try:
-            result = yield callable(cxn)
-        except:
-            self._log.failure("while executing sql {callable}",
-                              callable=callable)
-            # XXX rollback() and commit() might both also fail
-            yield txn.rollback()
-        else:
-            yield txn.commit()
-            returnValue(result)
-
+            print("sql:running", callable)
+            cxn = yield self.engine.connect()
+            txn = yield cxn.begin()
+            try:
+                result = yield callable(cxn)
+            except:
+                self._log.failure("while executing sql {callable}",
+                                  callable=callable)
+                # XXX rollback() and commit() might both also fail
+                yield txn.rollback()
+            else:
+                yield txn.commit()
+        finally:
+            cxn.close()
+        returnValue(result)
 
     def sent_insecurely(self, tokens):
         """
@@ -176,12 +179,13 @@ class SQLiteSessionStore(object):
         @inlineCallbacks
         def loaded(engine):
             s = self._session_table
-            yield engine.execute(s.select((s.c.session_id==identifier) &
-                                          (s.c.confidential==is_confidential)))
-            results = yield engine.fetchall()
+            result = yield engine.execute(
+                s.select((s.c.session_id==identifier) &
+                         (s.c.confidential==is_confidential)))
+            results = yield result.fetchall()
             if not results:
                 raise NoSuchSession()
-            [[fetched_id]] = results
+            fetched_id = results[0][s.c.session_id]
             session = SQLSession(
                 identifier=fetched_id,
                 is_confidential=is_confidential,
@@ -191,6 +195,26 @@ class SQLiteSessionStore(object):
             returnValue(session)
         return loaded
 
+
+@inlineCallbacks
+def upsert(engine, table, to_query, to_change):
+    """
+    Try inserting, if inserting fails, then update.
+    """
+    try:
+        result = yield engine.execute(
+            table.insert().values(**dict(to_query, **to_change))
+        )
+    except IntegrityError:
+        from operator import and_ as And
+        update = table.update().where(
+            reduce(And, (
+                (getattr(table.c, cname) == cvalue)
+                for (cname, cvalue) in to_query.items()
+            ))
+        ).values(**to_change)
+        result = yield engine.execute(update)
+    returnValue(result)
 
 
 @implementer(ISessionStore)
@@ -222,21 +246,11 @@ class IPTrackingStore(object):
                               else u"AF_INET")
             last_used = datetime.utcnow()
             sip = SQLiteSessionStore._session_ip_table
-            update_cte = (sip.update()
-                          .where((sip.c.session_id == session_id) &
-                                 (sip.c.ip_address == ip_address) &
-                                 (sip.c.address_family == address_family))
-                          .values(last_used=last_used)
-                          .returning(literal(1))
-                          .cte("update_cte"))
-            upsert = sip.insert().from_select(
-                [sip.c.session_id, sip.c.ip_address, sip.c.address_family,
-                 sip.c.last_used],
-                select([literal(session_id), literal(ip_address),
-                        literal(address_family), literal(last_used)])
-                .where(~exists(update_cte.select()))
-            )
-            yield engine.execute(upsert)
+            yield upsert(engine, sip,
+                         dict(session_id=session_id,
+                              ip_address=ip_address,
+                              address_family=address_family),
+                         dict(last_used=last_used))
             print("executed")
         yield touch
         print("returning", session)
@@ -436,8 +450,7 @@ class AccountSessionBinding(object):
             yield engine.execute(
                 AccountBindingStorePlugin._account_table.insert()
                 .values(account_id=new_account_id,
-                        username=username,
-                        email=email,
+                        username=username, email=email,
                         password_blob=computedHash)
             )
             returnValue(new_account_id)
@@ -459,12 +472,12 @@ class AccountSessionBinding(object):
         @self._store.sql
         @inlineCallbacks
         def retrieve(engine):
-            yield engine.execute(
+            result = yield engine.execute(
                 AccountSessionBinding._account_table.select(
                     AccountSessionBinding._account_table.username == username
                 )
             )
-            returnValue((yield engine.fetchall()))
+            returnValue((yield result.fetchall()))
         accounts_info = yield retrieve
         if not accounts_info:
             # no account, bye
@@ -503,9 +516,9 @@ class AccountSessionBinding(object):
             returnValue([
                 Account(self._store, it[ast.c.account_id])
                 for it in
-                (yield engine.execute(
+                (yield (yield engine.execute(
                     ast.select(ast.c.session_id==self._session.identifier)
-                ))
+                )).fetchall())
             ])
         return retrieve
 

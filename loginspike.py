@@ -715,11 +715,9 @@ def if_logged_in(request, tag):
     """
     
     """
-    try:
-        session = yield session_manager.procurer(request).procure_session()
-    except ValueError:
-        # XXX too broad an exception, let's have something more specific in the
-        # procurer
+    session = yield (session_manager.procurer(request)
+                     .procure_session(always_create=False))
+    if session is None:
         returnValue(u"")
     binding = session.data.getComponent(ISimpleAccountBinding)
     accounts = yield binding.authenticated_accounts()

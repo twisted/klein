@@ -33,8 +33,6 @@ from twisted.logger import Logger
 from klein import Klein, Plating, Form, SessionProcurer
 from klein.interfaces import ISession, ISessionStore, NoSuchSession
 
-from sqlite3 import connect
-
 metadata = MetaData()
 
 @implementer(ISessionStore)

@@ -108,6 +108,7 @@ class SQLiteSessionStore(object):
         """
         
         """
+        result = None
         try:
             print("sql:running", callable)
             cxn = yield self.engine.connect()
@@ -121,9 +122,9 @@ class SQLiteSessionStore(object):
                 yield txn.rollback()
             else:
                 yield txn.commit()
+                returnValue(result)
         finally:
-            cxn.close()
-        returnValue(result)
+            yield cxn.close()
 
     def sent_insecurely(self, tokens):
         """
@@ -469,20 +470,21 @@ class AccountSessionBinding(object):
             if we failed.
         """
         print("log in to", repr(username))
+        acc = AccountBindingStorePlugin._account_table
         @self._store.sql
         @inlineCallbacks
         def retrieve(engine):
             result = yield engine.execute(
-                AccountSessionBinding._account_table.select(
-                    AccountSessionBinding._account_table.username == username
-                )
+                acc.select(acc.c.username == username)
             )
             returnValue((yield result.fetchall()))
         accounts_info = yield retrieve
         if not accounts_info:
             # no account, bye
             returnValue(None)
-        [[account_id, password_blob]] = accounts_info
+        [row] = accounts_info
+        password_blob = row[acc.c.password_blob]
+        account_id = row[acc.c.account_id]
         print("login in", account_id, password_blob)
         pw_bytes = password_bytes(password)
         if (yield checkPassword(password_blob, pw_bytes)):
@@ -530,7 +532,9 @@ class AccountSessionBinding(object):
         @self._store.sql
         def retrieve(engine):
             ast = AccountBindingStorePlugin._account_session_table
-            return engine.execute(ast.delete(self._session.identifier))
+            return engine.execute(ast.delete(
+                ast.c.session_id == self._session.identifier
+            ))
         return retrieve
 
 

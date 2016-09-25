@@ -294,7 +294,7 @@ class ISimpleAccountBinding(Interface):
         Retrieve the accounts currently associated with the session this is a
         component of.
 
-        @return: L{Deferred} firing with a L{list} of accounts.
+        @return: L{Deferred} firing with a L{list} of L{Account}.
         """
 
     def log_out():
@@ -397,6 +397,8 @@ class Account(object):
     """
     store = attr.ib()
     account_id = attr.ib()
+    username = attr.ib()
+    email = attr.ib()
 
     def add_session(self, session):
         """
@@ -456,7 +458,7 @@ class AccountSessionBinding(object):
                         password_blob=computedHash)
             )
             returnValue(new_account_id)
-        account = Account(self._store, (yield store))
+        account = Account(self._store, (yield store), username, email)
         yield account.add_session(self._session)
         returnValue(account)
 
@@ -501,7 +503,8 @@ class AccountSessionBinding(object):
                     )
                 yield storenew
 
-            account = Account(self._store, account_id)
+            account = Account(self._store, account_id,
+                              row[acc.c.username], row[acc.c.email])
             yield account.add_session(self._session)
             returnValue(account)
 
@@ -516,12 +519,16 @@ class AccountSessionBinding(object):
         @inlineCallbacks
         def retrieve(engine):
             ast = AccountBindingStorePlugin._account_session_table
+            acc = AccountBindingStorePlugin._account_table
+            result = (yield (yield engine.execute(
+                ast.join(acc, ast.c.account_id == acc.c.account_id)
+                .select(ast.c.session_id == self._session.identifier,
+                        use_labels=True)
+            )).fetchall())
             returnValue([
-                Account(self._store, it[ast.c.account_id])
-                for it in
-                (yield (yield engine.execute(
-                    ast.select(ast.c.session_id==self._session.identifier)
-                )).fetchall())
+                Account(self._store, it[ast.c.account_id], it[acc.c.username],
+                        it[acc.c.email])
+                for it in result
             ])
         return retrieve
 
@@ -654,14 +661,20 @@ style = Plating(
                                href="/login")),
                     tags.li(Class=["nav-item ", slot("signup_active")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
-                    tags.li(Class="nav-item pull-xs-right",
-                            render="if_logged_in")(
-                                tags.form(render="logout_csrf",
-                                          action="/logout",
-                                          method="POST")(
-                                    tags.button("Logout", Class="btn"),
-                                )
-                            ),
+                    tags.transparent(render="if_logged_in")(
+                        tags.li(Class="nav-item pull-xs-right")(
+                            tags.form(render="logout_csrf",
+                                      action="/logout",
+                                      method="POST")(
+                                          tags.button("Logout", Class="btn"),
+                                      )
+                        ),
+                        tags.li(Class="nav-item pull-xs-right",
+                        )(
+                            tags.span(Class="nav-link active",
+                                      render="username")
+                        ),
+                    ),
                     tags.li(
                         tags.form(Class="form-inline pull-xs-right")(
                         tags.input(Class="form-control", type="text",
@@ -740,6 +753,18 @@ def logout_csrf(request, tag, form):
     csrft = form.csrf()
     print("rendering", csrft)
     return tag(csrft)
+
+@style.render
+@inlineCallbacks
+def username(request, tag):
+    """
+    
+    """
+    session = yield session_manager.procurer(request).procure_session()
+    binding = session.data.getComponent(ISimpleAccountBinding)
+    accounts = yield binding.authenticated_accounts()
+    returnValue(tag(accounts[0].username))
+
 
 login = Form(
     dict(

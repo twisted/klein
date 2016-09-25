@@ -27,7 +27,7 @@ class SessionProcurer(object):
 
 
     @inlineCallbacks
-    def procure_session(self, force_insecure=False):
+    def procure_session(self, force_insecure=False, always_create=True):
         """
         Retrieve a session based on this request.
         """
@@ -81,7 +81,11 @@ class SessionProcurer(object):
                     raise
                 session_id = None
         if session_id is None:
-            session = yield self._store.new_session(sent_securely, mechanism)
+            if always_create:
+                session = yield self._store.new_session(sent_securely,
+                                                        mechanism)
+            else:
+                returnValue(None)
         if session_id != session.identifier:
             if self._request.startedWriting:
                 raise ValueError("You tried initializing a cookie session too"

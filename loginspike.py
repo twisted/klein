@@ -443,21 +443,29 @@ class AccountSessionBinding(object):
     def create_account(self, username, email, password):
         """
         Create a new account with the given username, email and password.
+
+        @return: an L{Account} if one could be created, L{None} if one could
+            not be.
         """
         computedHash = yield computeKey(password_bytes(password))
         @self._store.sql
         @inlineCallbacks
         def store(engine):
             new_account_id = unicode(uuid4())
-            yield engine.execute(
-                AccountBindingStorePlugin._account_table.insert()
-                .values(account_id=new_account_id,
-                        username=username, email=email,
-                        password_blob=computedHash)
-            )
-            returnValue(new_account_id)
-        account = Account(self._store, (yield store), username, email)
-        yield account.add_session(self._session)
+            insert = (AccountBindingStorePlugin._account_table.insert()
+                      .values(account_id=new_account_id,
+                              username=username, email=email,
+                              password_blob=computedHash))
+            try:
+                yield engine.execute(insert)
+            except IntegrityError:
+                returnValue(None)
+            else:
+                returnValue(new_account_id)
+        account_id = (yield store)
+        if account_id is None:
+            returnValue(None)
+        account = Account(self._store, account_id, username, email)
         returnValue(account)
 
 
@@ -495,9 +503,10 @@ class AccountSessionBinding(object):
             if new_key != password_blob:
                 @self._store.sql
                 def storenew(engine):
+                    a = AccountBindingStorePlugin._account_table
                     return engine.execute(
-                        AccountBindingStorePlugin._account_table.update()
-                        .values(password_blob=new_key, account_id=account_id)
+                        a.update(a.c.account_id == account_id)
+                        .values(password_blob=new_key)
                     )
                 yield storenew
 
@@ -718,24 +727,31 @@ def bye(request):
     yield ISimpleAccountBinding(ISession(request).data).log_out()
     returnValue(Redirect(b"/"))
 
-
-
-@style.render
 @inlineCallbacks
-def if_logged_in(request, tag):
+def authenticated_account(request):
     """
     
     """
     session = yield (session_manager.procurer(request)
                      .procure_session(always_create=False))
     if session is None:
-        returnValue(u"")
+        returnValue(None)
     binding = session.data.getComponent(ISimpleAccountBinding)
     accounts = yield binding.authenticated_accounts()
-    if accounts:
-        returnValue(tag)
-    else:
+    returnValue(next(iter(accounts), None))
+
+
+@style.render
+@inlineCallbacks
+def if_logged_in(request, tag):
+    """
+    Render the given tag if the user is logged in, otherwise don't.
+    """
+    account = yield authenticated_account(request)
+    if account is None:
         returnValue(u"")
+    else:
+        returnValue(tag)
 
 
 @logout.renderer(style.render, "/logout")
@@ -753,10 +769,8 @@ def username(request, tag):
     """
     
     """
-    session = yield session_manager.procurer(request).procure_session()
-    binding = session.data.getComponent(ISimpleAccountBinding)
-    accounts = yield binding.authenticated_accounts()
-    returnValue(tag(accounts[0].username))
+    account = yield authenticated_account(request)
+    returnValue(tag(account.username))
 
 
 login = Form(
@@ -886,22 +900,37 @@ def signup_page(request, the_form):
 
 @style.routed(
     signup.handler(app.route("/signup", methods=["POST"])),
-    [tags.h1("U SIGNED UP YAY"),
-     tags.p("Now ", tags.a(href="/login")("log in"), ".")]
+    [tags.h1(slot("success")),
+     tags.p("Now ", tags.a(href=slot("next_url"))(slot("link_message")), ".")]
 )
 @inlineCallbacks
 def do_signup(request, username, email, password):
     """
     
     """
-    returnValue({
-        "signup_active": "active",
-        "account_id": (yield (
+    acct = (yield (
             request.getComponent(ISession).data
             .getComponent(ISimpleAccountBinding)
             .create_account(username, email, password)
-        )).account_id,
-    })
+    ))
+    result = {
+        "signup_active": "active",
+        "account_id": None
+    }
+    if acct is None:
+        result.update({
+            "success": "Account creation failed!",
+            "link_message": "try again",
+            "next_url": "/signup",
+        })
+    else:
+        result.update({
+            "account_id": acct.account_id,
+            "success": "Account created!",
+            "link_message": "log in",
+            "next_url": "/login"
+        })
+    returnValue(result)
 
 
 if __name__ == '__main__':

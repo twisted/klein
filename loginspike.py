@@ -108,7 +108,6 @@ class SQLiteSessionStore(object):
         """
         
         """
-        result = None
         try:
             print("sql:running", callable)
             cxn = yield self.engine.connect()

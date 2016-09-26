@@ -22,6 +22,12 @@ class NoSuchSession(Exception):
     """
 
 
+class TooLateForCookies(Exception):
+    """
+    It's too late to set a cookie.
+    """
+
+
 
 class ISessionStore(Interface):
     """

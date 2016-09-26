@@ -3,7 +3,8 @@ import attr
 
 from zope.interface import implementer
 from klein.interfaces import (
-    ISessionProcurer, SessionMechanism, NoSuchSession, ISession
+    ISessionProcurer, SessionMechanism, NoSuchSession, ISession,
+    TooLateForCookies
 )
 from twisted.internet.defer import inlineCallbacks, returnValue
 
@@ -30,6 +31,10 @@ class SessionProcurer(object):
     def procure_session(self, force_insecure=False, always_create=True):
         """
         Retrieve a session based on this request.
+
+        @raise TooLateForCookies: if the request bound to this procurer has
+            already sent the headers and therefore we can no longer set a
+            cookie, and we need to set a cookie.
         """
         already_procured = ISession(self._request, None)
         if already_procured is not None:
@@ -82,15 +87,25 @@ class SessionProcurer(object):
                 session_id = None
         if session_id is None:
             if always_create:
+                if self._request.startedWriting:
+                    # At this point, if the mechanism is Header, we either have
+                    # a valid session or we bailed after NoSuchSession above.
+                    raise TooLateForCookies(
+                        "You tried initializing a cookie-based session too"
+                        " late in the request pipeline; the headers"
+                        " were already sent."
+                    )
                 session = yield self._store.new_session(sent_securely,
                                                         mechanism)
             else:
                 returnValue(None)
         if session_id != session.identifier:
             if self._request.startedWriting:
-                raise ValueError("You tried initializing a cookie session too"
-                                 " late in the request pipeline; the headers"
-                                 " were already sent.")
+                raise TooLateForCookies(
+                    "You tried changing a session ID to a new session ID too"
+                    " late in the request pipeline; the headers were already"
+                    " sent."
+                )
             self._request.addCookie(
                 cookie_name, session.identifier, max_age=self._max_age,
                 domain=self._cookie_domain, path=self._cookie_path,

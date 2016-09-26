@@ -31,6 +31,12 @@ class SessionProcurer(object):
     def procure_session(self, force_insecure=False, always_create=True):
         """
         Retrieve a session based on this request.
+        
+        @param force_insecure: Even if the request was transmitted securely (i.e. over HTTPS), retrieve the session that would be used by the same browser if it were sending an insecure (i.e. over HTTP) request; by default, this is False, and the session's security will match that of the request.
+        @type force_insecure: L{bool}
+        
+        @param always_create: Create a session if one is not associated with the request.
+        @param always_create: L{bool}
 
         @raise TooLateForCookies: if the request bound to this procurer has
             already sent the headers and therefore we can no longer set a

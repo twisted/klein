@@ -12,8 +12,16 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 @attr.s
 class SessionProcurer(object):
     """
-    Session procurer.
+    A L{SessionProcurer} procures a session from a request and a store.
+
+    @ivar _store: The session store to procure a session from.
+    @type _store: L{klein.interfaces.ISessionStore}
+
+    @ivar _request: The request to retrieve a session identifier from, and to
+        set cookies on when initializing a new session.
+    @type _request: L{twisted.web.iweb.IRequest}
     """
+
     _store = attr.ib()
     _request = attr.ib()
 
@@ -29,19 +37,6 @@ class SessionProcurer(object):
 
     @inlineCallbacks
     def procure_session(self, force_insecure=False, always_create=True):
-        """
-        Retrieve a session based on this request.
-        
-        @param force_insecure: Even if the request was transmitted securely (i.e. over HTTPS), retrieve the session that would be used by the same browser if it were sending an insecure (i.e. over HTTP) request; by default, this is False, and the session's security will match that of the request.
-        @type force_insecure: L{bool}
-        
-        @param always_create: Create a session if one is not associated with the request.
-        @param always_create: L{bool}
-
-        @raise TooLateForCookies: if the request bound to this procurer has
-            already sent the headers and therefore we can no longer set a
-            cookie, and we need to set a cookie.
-        """
         already_procured = ISession(self._request, None)
         if already_procured is not None:
             returnValue(already_procured)

@@ -77,14 +77,31 @@ class ISessionProcurer(Interface):
     <twisted.web.server.Request>} and can procure a session from that request.
     """
 
-    def procure_session(force_insecure):
+    def procure_session(self, force_insecure=False, always_create=True):
         """
         Retrieve a session using whatever technique is necessary.
 
         If the request already identifies an existing session in the store,
         retrieve it.  If not, create a new session and retrieve that.
 
-        @return: a L{Deferred} that fires with an L{ISession} provider.
+        @param force_insecure: Even if the request was transmitted securely
+            (i.e. over HTTPS), retrieve the session that would be used by the
+            same browser if it were sending an insecure (i.e. over HTTP)
+            request; by default, this is False, and the session's security will
+            match that of the request.
+        @type force_insecure: L{bool}
+
+        @param always_create: Create a session if one is not associated with
+            the request.
+        @param always_create: L{bool}
+
+        @raise TooLateForCookies: if the request bound to this procurer has
+            already sent the headers and therefore we can no longer set a
+            cookie, and we need to set a cookie.
+
+        @return: a new or loaded session from this the a L{Deferred} that fires
+            with an L{ISession} provider.
+        @rtype: L{Session}
         """
 
 

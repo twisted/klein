@@ -71,6 +71,44 @@ class ISessionStore(Interface):
 
 
 
+class ISimpleAccountBinding(Interface):
+    """
+    Data-store agnostic account / session binding manipulation API for "simple"
+    accounts - i.e. those using username, password, and email address as a
+    method to authenticate a user.
+
+    This goes into a user-authentication-capable L{ISession} object's C{data}
+    attribute as a component.
+    """
+
+    def log_in(username, password):
+        """
+        Attach the session this is a component of to an account with the given
+        username and password, if the given username and password correctly
+        authenticate a principal.
+        """
+
+    def authenticated_accounts():
+        """
+        Retrieve the accounts currently associated with the session this is a
+        component of.
+
+        @return: L{Deferred} firing with a L{list} of L{Account}.
+        """
+
+    def log_out():
+        """
+        Disassociate the session this is a component of from any accounts it's
+        logged in to.
+        """
+
+    def create_account(username, email, password):
+        """
+        Create a new account with the given username, email and password.
+        """
+
+
+
 class ISessionProcurer(Interface):
     """
     An L{ISessionProcurer} binds an L{ISessionStore} to a specific L{request

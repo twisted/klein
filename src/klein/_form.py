@@ -14,7 +14,7 @@ from twisted.web.iweb import IRenderable
 from twisted.web.error import MissingRenderMethod
 
 from klein.interfaces import SessionMechanism
-from klein.app import _call
+from klein.app import _call, klein_bindable
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -186,6 +186,7 @@ class RenderableForm(object):
         return self._csrf_field().as_tags()
 
 
+@klein_bindable
 def default_validation_failure_handler(instance, request, renderable):
     """
     
@@ -194,8 +195,6 @@ def default_validation_failure_handler(instance, request, renderable):
     return Element(TagLoader(renderable))
 
 
-
-default_validation_failure_handler.__klein_bound__ = True
 
 @attr.s(init=False)
 class Form(object):
@@ -236,6 +235,7 @@ class Form(object):
         def decorator(function):
             @inlineCallbacks
             @wraps(function, updated=[])
+            @klein_bindable
             def handler_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, self.get_procurer)
                 session = yield procurer.procure_session(request)
@@ -278,7 +278,6 @@ class Form(object):
                     result = yield _call(instance, function, request,
                                          *args, **kw)
                 returnValue(result)
-            handler_decorated.__klein_bound__ = True
             # we can't use the function itself as a dictionary key, because
             # Plating (or another, similar system) might have decorated it to
             # make the route behave differently.  but Plating preserves
@@ -297,6 +296,7 @@ class Form(object):
         def decorator(function):
             @inlineCallbacks
             @wraps(function, updated=[])
+            @klein_bindable
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, self.get_procurer)
                 session = yield procurer.procure_session(request)
@@ -306,7 +306,6 @@ class Form(object):
                 result = yield _call(instance, function, request, *args, **kw)
                 print("resulted", result)
                 returnValue(result)
-            renderer_decorated.__klein_bound__ = True
             route(renderer_decorated)
             return function
         return decorator

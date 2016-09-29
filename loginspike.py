@@ -50,7 +50,7 @@ style = Plating(
                         tags.a("Signup", Class="nav-link", href="/signup")),
                     tags.transparent(render="if_logged_in")(
                         tags.li(Class="nav-item pull-xs-right")(
-                            tags.form(render="logout_csrf",
+                            tags.form(render="logout_glue",
                                       action="/logout",
                                       method="POST")(
                                           tags.button("Logout", Class="btn"),
@@ -132,13 +132,13 @@ def if_logged_in(request, tag):
 
 
 @logout.renderer(style.render, "/logout")
-def logout_csrf(request, tag, form):
+def logout_glue(request, tag, form):
     """
     
     """
-    csrft = form.csrf()
-    print("rendering", csrft)
-    return tag(csrft)
+    glue = form.glue()
+    print("rendering", glue)
+    return tag(glue)
 
 @style.render
 @inlineCallbacks
@@ -167,7 +167,7 @@ login = Form(
          style="margin: auto; width: 400px; margin-top: 100px",
          action="/login",
          method="POST")
-      (slot("csrf_here"),
+      (slot("glue_here"),
        tags.div(Class="form-group row")
        (tags.label(For="username",
                         Class="col-sm-3 col-form-label")("Username: "),
@@ -193,7 +193,7 @@ def loginform(request, login_form):
     """
     return {
         "login_active": "active",
-        "csrf_here": login_form.csrf()
+        "glue_here": login_form.glue()
     }
 
 @style.routed(login.handler(app.route("/login", methods=["POST"])),
@@ -236,7 +236,7 @@ signup = Form(
          style="margin: auto; width: 400px; margin-top: 100px",
          action="/signup",
          method="POST")
-      (slot("csrf_here"),
+      (slot("glue_here"),
        tags.div(Class="form-group row")
        (tags.label(For="email",
                    Class="col-sm-3 col-form-label")("Email: "),
@@ -269,7 +269,7 @@ def signup_page(request, the_form):
     
     """
     return {
-        "csrf_here": the_form.csrf(),
+        "glue_here": the_form.glue(),
         "signup_active": "active"
     }
 

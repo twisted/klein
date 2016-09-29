@@ -170,10 +170,18 @@ class RenderableForm(object):
         )
 
 
-    def csrf(self):
+    def glue(self):
         """
-        Return the CSRF token as a renderable object; this must be dropped into
-        the template within the C{<form>} tag.
+        Provide any glue necessary to render this form; this must be dropped
+        into the template within the C{<form>} tag.
+
+        Presently, this glue includes only the CSRF token argument, but Klein
+        reserves the right to add arbitrary HTML here.  This should not create
+        any user-visible content, however.
+
+        @return: some HTML elements in the form of renderable objects for
+            L{twisted.web.template}
+        @rtype: L{twisted.web.template.Tag}, or L{list} thereof.
         """
         return self._csrf_field().as_tags()
 

@@ -93,7 +93,7 @@ class ISimpleAccountBinding(Interface):
         Retrieve the accounts currently associated with the session this is a
         component of.
 
-        @return: L{Deferred} firing with a L{list} of L{Account}.
+        @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
         """
 
     def log_out():
@@ -109,18 +109,59 @@ class ISimpleAccountBinding(Interface):
 
 
 
-class ISessionProcurer(Interface):
+class ISimpleAccount(Interface):
     """
-    An L{ISessionProcurer} binds an L{ISessionStore} to a specific L{request
-    <twisted.web.server.Request>} and can procure a session from that request.
+    Data-store agnostic account interface.
+    """
+    def add_session(self, session):
+        """
+        Add the given session to this account.
+        """
+
+
+    def change_password(self, new_password):
+        """
+        Change the password of this account.
+        """
+
+
+
+class ISQLSessionDataPlugin(Interface):
+    """
+    
     """
 
-    def procure_session(self, force_insecure=False, always_create=True):
+    def initialize_schema(connection):
+        """
+        
+        """
+
+
+    def data_for_session(session_store, cursor, session, existing):
+        """
+        Get a data object to put onto the session.  This is run in the database
+        thread, but at construction time, so it is not concurrent with any
+        other access to the session.
+        """
+
+
+
+class ISessionProcurer(Interface):
+    """
+    An L{ISessionProcurer} wraps an L{ISessionStore} and can procure sessions
+    that store, given HTTP request objects.
+    """
+
+    def procure_session(self, request, force_insecure=False,
+                        always_create=True):
         """
         Retrieve a session using whatever technique is necessary.
 
         If the request already identifies an existing session in the store,
         retrieve it.  If not, create a new session and retrieve that.
+
+        @param request: The request to procure a session from.
+        @type request:  L{twisted.web.server.Request}
 
         @param force_insecure: Even if the request was transmitted securely
             (i.e. over HTTPS), retrieve the session that would be used by the

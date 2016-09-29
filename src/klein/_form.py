@@ -199,7 +199,7 @@ class Form(object):
     form_data = b'multipart/form-data'
     url_encoded = b'application/x-www-form-urlencoded'
 
-    def __init__(self, fields, procurer_from_request):
+    def __init__(self, fields, get_procurer):
         """
         
         """
@@ -207,7 +207,7 @@ class Form(object):
             name: field.maybe_named(name)
             for name, field in fields.items()
         }
-        self.procurer_from_request = procurer_from_request
+        self.get_procurer = get_procurer
         self.validation_failure_handlers = {}
 
 
@@ -229,9 +229,8 @@ class Form(object):
             @inlineCallbacks
             @wraps(function, updated=[])
             def handler_decorated(instance, request, *args, **kw):
-                procurer = _call(instance, self.procurer_from_request,
-                                 request)
-                session = yield procurer.procure_session()
+                procurer = yield _call(instance, self.get_procurer)
+                session = yield procurer.procure_session(request)
                 if session.authenticated_by == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION, [None])[0]
                     if token != session.identifier:
@@ -291,8 +290,8 @@ class Form(object):
             @inlineCallbacks
             @wraps(function, updated=[])
             def renderer_decorated(instance, request, *args, **kw):
-                procurer = self.procurer_from_request(request)
-                session = yield procurer.procure_session()
+                procurer = yield _call(instance, self.get_procurer)
+                session = yield procurer.procure_session(request)
                 form = RenderableForm(self, session, action, method, enctype)
                 kw[argument] = form
                 print("calling through", function)

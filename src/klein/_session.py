@@ -23,7 +23,6 @@ class SessionProcurer(object):
     """
 
     _store = attr.ib()
-    _request = attr.ib()
 
     _max_age = attr.ib(default=3600)
     _secure_cookie = attr.ib(default=b"Klein-Secure-Session")
@@ -36,7 +35,8 @@ class SessionProcurer(object):
 
 
     @inlineCallbacks
-    def procure_session(self, force_insecure=False, always_create=True):
+    def procure_session(self, request, force_insecure=False,
+                        always_create=True):
         already_procured = ISession(self._request, None)
         if already_procured is not None:
             returnValue(already_procured)

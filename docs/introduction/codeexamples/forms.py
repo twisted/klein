@@ -42,11 +42,11 @@ class MemorySessionStore(object):
         """
         self._storage = {}
 
-    def procurer(self, request):
+    def procurer(self):
         """
         
         """
-        return SessionProcurer(self, request)
+        return SessionProcurer(self)
 
     def new_session(self, is_confidential, authenticated_by):
         """

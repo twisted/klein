@@ -1,416 +1,12 @@
 
 from __future__ import print_function, unicode_literals, absolute_import
 
-import attr
-
-from sqlalchemy import (
-    Table, Column, String,
-    ForeignKey, UniqueConstraint
-)
-from sqlalchemy.exc import IntegrityError
-
-from sqlalchemy.schema import CreateTable
-
-from uuid import uuid4
-from binascii import hexlify
-from os import urandom
-from datetime import datetime
-
-from zope.interface import implementer, Interface
-
 from twisted.web.template import tags, slot
-from twisted.internet.defer import (
-    inlineCallbacks, returnValue, Deferred
-)
-from twisted.python.compat import unicode
-from twisted.python.failure import Failure
-from twisted.logger import Logger
+from twisted.internet.defer import inlineCallbacks, returnValue
 
-from klein import Klein, Plating, Form, SessionProcurer
-from klein.interfaces import ISession, ISessionStore, NoSuchSession
-from klein.storage.sql import AlchimiaSessionStore
-
-@inlineCallbacks
-def upsert(engine, table, to_query, to_change):
-    """
-    Try inserting, if inserting fails, then update.
-    """
-    try:
-        result = yield engine.execute(
-            table.insert().values(**dict(to_query, **to_change))
-        )
-    except IntegrityError:
-        from operator import and_ as And
-        update = table.update().where(
-            reduce(And, (
-                (getattr(table.c, cname) == cvalue)
-                for (cname, cvalue) in to_query.items()
-            ))
-        ).values(**to_change)
-        result = yield engine.execute(update)
-    returnValue(result)
-
-
-@implementer(ISessionStore)
-@attr.s
-class IPTrackingStore(object):
-    """
-    
-    """
-    store = attr.ib()
-    request = attr.ib()
-
-    @inlineCallbacks
-    def _touch_session(self, session, style):
-        """
-        Update a session's IP address.  NB: different txn than the session
-        generation; is it worth smashing these together?
-        """
-        session_id = session.identifier
-        try:
-            ip_address = (self.request.client.host or b"").decode("ascii")
-        except:
-            ip_address = u""
-        print("updating session ip", ip_address)
-        @self.store.sql
-        @inlineCallbacks
-        def touch(engine):
-            print("here we go")
-            address_family = (u"AF_INET6" if u":" in ip_address
-                              else u"AF_INET")
-            last_used = datetime.utcnow()
-            sip = AlchimiaSessionStore._session_ip_table
-            yield upsert(engine, sip,
-                         dict(session_id=session_id,
-                              ip_address=ip_address,
-                              address_family=address_family),
-                         dict(last_used=last_used))
-            print("executed")
-        yield touch
-        print("returning", session, style)
-        returnValue(session)
-
-    def new_session(self, is_confidential, authenticated_by):
-        return (self.store.new_session(is_confidential, authenticated_by)
-                .addCallback(self._touch_session, "new"))
-
-    def load_session(self, identifier, is_confidential, authenticated_by):
-        return (self.store.load_session(identifier, is_confidential,
-                                        authenticated_by)
-                .addCallback(self._touch_session, "load"))
-
-    def sent_insecurely(self, tokens):
-        return self.store.sent_insecurely(tokens)
-
-
-
-class ISQLSessionDataPlugin(Interface):
-    """
-    
-    """
-
-    def initialize_schema(cursor):
-        """
-        
-        """
-
-
-    def data_for_session(session_store, cursor, session, existing):
-        """
-        Get a data object to put onto the session.  This is run in the database
-        thread, but at construction time, so it is not concurrent with any
-        other access to the session.
-        """
-
-
-
-@AlchimiaSessionStore.register_session_plugin(ISimpleAccountBinding)
-@implementer(ISQLSessionDataPlugin)
-class AccountBindingStorePlugin(object):
-    """
-    
-    """
-
-    _account_table = Table(
-        "account", metadata,
-        Column("account_id", String(), primary_key=True,
-               nullable=False),
-        Column("username", String(), unique=True, nullable=False),
-        Column("email", String(), nullable=False),
-        Column("password_blob", String(), nullable=False),
-    )
-
-    _account_session_table = Table(
-        "account_session", metadata,
-        Column("account_id", String(),
-               ForeignKey("account.account_id", ondelete="CASCADE")),
-        Column("session_id", String(),
-               ForeignKey("session.session_id", ondelete="CASCADE")),
-        UniqueConstraint("account_id", "session_id"),
-    )
-
-    def __init__(self, store):
-        """
-        
-        """
-        self._store = store
-
-
-    @inlineCallbacks
-    def initialize_schema(self, engine):
-        """
-        
-        """
-        yield engine.execute(CreateTable(self._account_table))
-        yield engine.execute(CreateTable(self._account_session_table))
-
-
-    def data_for_session(self, session_store, cursor, session, existing):
-        """
-        
-        """
-        return AccountSessionBinding(session, session_store)
-
-
-
-from unicodedata import normalize
-from txscrypt import computeKey, checkPassword
-
-def password_bytes(password_text):
-    """
-    Convert a textual password into some bytes.
-    """
-    return normalize("NFKD", password_text).encode("utf-8")
-
-
-
-@attr.s
-class Account(object):
-    """
-    
-    """
-    store = attr.ib()
-    account_id = attr.ib()
-    username = attr.ib()
-    email = attr.ib()
-
-    def add_session(self, session):
-        """
-        
-        """
-        @self.store.sql
-        def createrow(engine):
-            return engine.execute(
-                AccountBindingStorePlugin._account_session_table
-                .insert().values(account_id=self.account_id,
-                                 session_id=session.identifier)
-            )
-        return createrow
-
-
-    @inlineCallbacks
-    def change_password(self, new_password):
-        """
-        
-        """
-        computedHash = yield computeKey(password_bytes(new_password))
-        @self.store.sql
-        def change(engine):
-            return engine.execute(
-                AccountBindingStorePlugin._account_table.update()
-                .where(account_id=self.account_id)
-                .values(password_blob=computedHash)
-            )
-        returnValue((yield change))
-
-
-
-@implementer(ISimpleAccountBinding)
-@attr.s
-class AccountSessionBinding(object):
-    """
-    (Stateless) binding between an account and a session, so that sessions can
-    attach to, detach from, .
-    """
-    _session = attr.ib()
-    _store = attr.ib()
-
-    @inlineCallbacks
-    def create_account(self, username, email, password):
-        """
-        Create a new account with the given username, email and password.
-
-        @return: an L{Account} if one could be created, L{None} if one could
-            not be.
-        """
-        computedHash = yield computeKey(password_bytes(password))
-        @self._store.sql
-        @inlineCallbacks
-        def store(engine):
-            new_account_id = unicode(uuid4())
-            insert = (AccountBindingStorePlugin._account_table.insert()
-                      .values(account_id=new_account_id,
-                              username=username, email=email,
-                              password_blob=computedHash))
-            try:
-                yield engine.execute(insert)
-            except IntegrityError:
-                returnValue(None)
-            else:
-                returnValue(new_account_id)
-        account_id = (yield store)
-        if account_id is None:
-            returnValue(None)
-        account = Account(self._store, account_id, username, email)
-        returnValue(account)
-
-
-    @inlineCallbacks
-    def log_in(self, username, password):
-        """
-        Associate this session with a given user account, if the password
-        matches.
-
-        @rtype: L{Deferred} firing with L{IAccount} if we succeeded and L{None}
-            if we failed.
-        """
-        print("log in to", repr(username))
-        acc = AccountBindingStorePlugin._account_table
-        @self._store.sql
-        @inlineCallbacks
-        def retrieve(engine):
-            result = yield engine.execute(
-                acc.select(acc.c.username == username)
-            )
-            returnValue((yield result.fetchall()))
-        accounts_info = yield retrieve
-        if not accounts_info:
-            # no account, bye
-            returnValue(None)
-        [row] = accounts_info
-        password_blob = row[acc.c.password_blob]
-        account_id = row[acc.c.account_id]
-        print("login in", account_id, password_blob)
-        pw_bytes = password_bytes(password)
-        if (yield checkPassword(password_blob, pw_bytes)):
-            # Password migration!  Does txscrypt have an awesome *new* hash it
-            # wants to give us?  Store it.
-            new_key = yield computeKey(pw_bytes)
-            if new_key != password_blob:
-                @self._store.sql
-                def storenew(engine):
-                    a = AccountBindingStorePlugin._account_table
-                    return engine.execute(
-                        a.update(a.c.account_id == account_id)
-                        .values(password_blob=new_key)
-                    )
-                yield storenew
-
-            account = Account(self._store, account_id,
-                              row[acc.c.username], row[acc.c.email])
-            yield account.add_session(self._session)
-            returnValue(account)
-
-
-    def authenticated_accounts(self):
-        """
-        Retrieve the accounts currently associated with this session.
-
-        @return: L{Deferred} firing with a L{list} of accounts.
-        """
-        @self._store.sql
-        @inlineCallbacks
-        def retrieve(engine):
-            ast = AccountBindingStorePlugin._account_session_table
-            acc = AccountBindingStorePlugin._account_table
-            result = (yield (yield engine.execute(
-                ast.join(acc, ast.c.account_id == acc.c.account_id)
-                .select(ast.c.session_id == self._session.identifier,
-                        use_labels=True)
-            )).fetchall())
-            returnValue([
-                Account(self._store, it[ast.c.account_id], it[acc.c.username],
-                        it[acc.c.email])
-                for it in result
-            ])
-        return retrieve
-
-
-    def log_out(self):
-        """
-        Disassociate this session from any accounts it's logged in to.
-        """
-        @self._store.sql
-        def retrieve(engine):
-            ast = AccountBindingStorePlugin._account_session_table
-            return engine.execute(ast.delete(
-                ast.c.session_id == self._session.identifier
-            ))
-        return retrieve
-
-
-
-@attr.s
-class EventualProcurer(object):
-    """
-    
-    """
-
-    _eventual_store = attr.ib()
-    _request = attr.ib()
-
-    @inlineCallbacks
-    def procure_session(self, force_insecure=False):
-        """
-        
-        """
-        store = yield self._eventual_store()
-        procurer = SessionProcurer(IPTrackingStore(store, self._request),
-                                   self._request)
-        returnValue((yield procurer.procure_session(force_insecure)))
-
-
-
-class EventualSessionManager(object):
-    """
-    
-    """
-    def __init__(self, store_deferred):
-        """
-        
-        """
-        self._store_deferred = store_deferred
-        self._store = None
-        @store_deferred.addCallback
-        def set_store(result):
-            self._store = result
-            return result
-
-    def _eventual_store(self):
-        """
-        
-        """
-        if self._store is not None:
-            return self._store
-        else:
-            deferred = Deferred()
-            @self._store_deferred.addCallback
-            def set_store(result):
-                deferred.callback(result)
-                return result
-            return deferred
-
-    def procurer(self, request):
-        """
-        
-        """
-        if self._store is None:
-            print("mngr:none")
-            return EventualProcurer(self._eventual_store, request)
-        else:
-            print("hasmanager:", self._store)
-            return SessionProcurer(IPTrackingStore(self._store, request),
-                                   request)
+from klein import Klein, Plating, Form
+from klein.interfaces import ISession, ISimpleAccountBinding
+from klein.storage.sql import open_session_store
 
 # ^^^  framework   ^^^^
 # ---  cut here    ----
@@ -495,11 +91,9 @@ def root(request):
         "home_active": "active"
     }
 
-session_manager = EventualSessionManager(
-    AlchimiaSessionStore.create_with_schema("sqlite:///sessions.sqlite")
-)
+procurer = open_session_store("sqlite:///sessions.sqlite")
 
-logout = Form(dict(), session_manager.procurer)
+logout = Form(dict(), lambda: procurer)
 
 @logout.handler(app.route("/logout", methods=["POST"]))
 @inlineCallbacks
@@ -516,8 +110,7 @@ def authenticated_account(request):
     """
     
     """
-    session = yield (session_manager.procurer(request)
-                     .procure_session(always_create=False))
+    session = yield procurer.procure_session(request, always_create=False)
     if session is None:
         returnValue(None)
     binding = session.data.getComponent(ISimpleAccountBinding)
@@ -562,7 +155,7 @@ login = Form(
         username=Form.text(),
         password=Form.password(),
     ),
-    session_manager.procurer
+    lambda: procurer
 )
 
 @style.routed(
@@ -630,7 +223,7 @@ signup = Form(
         email=Form.text(),
         password=Form.password(),
     ),
-    session_manager.procurer
+    lambda: procurer
 )
 
 @style.routed(

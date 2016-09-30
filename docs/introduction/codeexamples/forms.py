@@ -75,13 +75,13 @@ class MemorySessionStore(object):
         
         """
 
+sessions = MemorySessionStore()
 
 form = Form(
     dict(
         foo=Form.integer(minimum=3, maximum=10),
         bar=Form.text(),
-    ),
-    MemorySessionStore().procurer
+    )
 )
 
 style = Plating(tags=tags.html(
@@ -90,14 +90,16 @@ style = Plating(tags=tags.html(
 )
 
 
-@style.routed(form.renderer(app.route("/my-form", methods=["GET"]),
+@style.routed(form.renderer(sessions.procurer,
+                            app.route("/my-form", methods=["GET"]),
                             action="/my-form?post=yes",
                             argument="the_form"),
               tags.div(slot("an_form")))
 def form_renderer(request, the_form):
     return {"an_form": the_form}
 
-@style.routed(form.handler(app.route("/my-form", methods=["POST"])),
+@style.routed(form.handler(sessions.procurer,
+                           app.route("/my-form", methods=["POST"])),
               tags.h1('u did it: ', slot("an-form-arg")))
 def post_handler(request, foo, bar):
     return {"an-form-arg": foo}

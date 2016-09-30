@@ -24,7 +24,7 @@ def bindable(bindable):
     return bindable
 
 
-def modified(modification, original):
+def modified(modification, original, modifier=None):
     """
     Annotate a callable as a modified wrapper of an original callable.
 
@@ -32,14 +32,27 @@ def modified(modification, original):
         processor" or "request forwarder"; this will be tacked on to the name
         of the resulting function.
 
+    @param modifier: Another decorator which, if given, will be applied to the
+        function that decorates this function.  Additionally, I{any new
+        attributes} set on the decorated function by C{modifier} will be
+        I{copied to} C{original}.  This allows attributes set by "inner"
+        decorators such as L{klein.Form.handler} and L{klein.app.Klein.route}
+        to set attributes that will be visible at the top level.
+
     @return: A new callable; this may have a different argument signature or
         return value, and is only related to C{original} in the sense that it
         likely calls it.
     """
     def decorator(wrapper):
         result = (named(modification + ' for ' + original.__name__)
-                  (wraps(original, updated=[])(wrapper)))
+                  (wraps(original)(wrapper)))
         result.__original__ = original
+        if modifier is not None:
+            before = set(wrapper.__dict__.keys())
+            result = modifier(wrapper)
+            after = set(wrapper.__dict__.keys())
+            for key in after - before:
+                setattr(original, key, wrapper.__dict__[key])
         return result
     return decorator
 
@@ -64,3 +77,5 @@ def original_name(function):
         function = fnext
         fnext = getattr(function, "__original__", None)
     return function.__name__
+
+

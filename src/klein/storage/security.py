@@ -32,7 +32,9 @@ def check_and_reset(stored_password_text, provided_password_text, resetter):
 
 def compute_key_text(password_text):
     """
-    
+    Compute some text to store for a given plain-text password.
+
+    @param password_text: The text of a new password, as entered by a user.
     """
     return (computeKey(_password_bytes(password_text))
             .addCallback(lambda x: x.decode("charmap")))

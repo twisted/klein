@@ -126,9 +126,8 @@ class Plating(object):
         """
         def mydecorator(method):
             loader = TagLoader(content_template)
-            @routing
+            @modified("plating route renderer", method, routing)
             @bindable
-            @modified("plating route renderer", method)
             @inlineCallbacks
             def mymethod(instance, request, *args, **kw):
                 data = yield _call(instance, method, request, *args, **kw)

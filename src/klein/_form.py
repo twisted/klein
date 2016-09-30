@@ -134,8 +134,8 @@ class RenderableForm(object):
         any_submit = False
         for field in self._form.fields.values():
             yield attr.assoc(field,
-                             value=self._prevalidation.get(field, field.value),
-                             error=self._errors.get(field, None))
+                             value=self.prevalidation.get(field, field.value),
+                             error=self.errors.get(field, None))
             if field.form_input_type == "submit":
                 any_submit = True
         if not any_submit:

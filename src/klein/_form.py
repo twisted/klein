@@ -233,12 +233,11 @@ class Form(object):
         """
         def decorator(function):
             vfhc = "validation_failure_handlers"
-            d = getattr(function, vfhc, WeakKeyDictionary())
-            setattr(function, vfhc, d)
-            d[self] = default_validation_failure_handler
-            @route
+            failure_handlers = getattr(function, vfhc, WeakKeyDictionary())
+            setattr(function, vfhc, failure_handlers)
+            failure_handlers[self] = default_validation_failure_handler
+            @modified("form handler", function, route)
             @bindable
-            @modified("form handler", function)
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, get_procurer)
@@ -269,14 +268,8 @@ class Form(object):
                         prevalidation=prevalidation_values,
                         errors=validation_errors,
                     )
-                    if function.validation_failure_handler_container:
-                        [handler] = (
-                            function.validation_failure_handler_container
-                        )
-                    else:
-                        handler = default_validation_failure_handler
-                    result = yield _call(instance, handler, request,
-                                         renderable, *args, **kw)
+                    result = yield _call(instance, failure_handlers[self],
+                                         request, renderable, *args, **kw)
                 else:
                     kw.update(arguments)
                     result = yield _call(instance, function, request,
@@ -292,9 +285,8 @@ class Form(object):
         
         """
         def decorator(function):
-            @route
+            @modified("form renderer", function, route)
             @bindable
-            @modified("form renderer", function)
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, get_procurer)

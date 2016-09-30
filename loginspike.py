@@ -215,6 +215,65 @@ def dologin(request, username, password):
         "new_account_id": an_id,
     })
 
+an_session = Plating(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
+                                  tags.td(slot("when"))))
+@an_session.widgeted
+def one_session(an_dict):
+    """
+    
+    """
+    print("ad?", an_dict)
+    return an_dict
+
+@style.routed(app.route("/sessions", methods=["GET"]),
+              [tags.h1("List of Sessions"),
+               tags.table(border="5",
+                          cellpadding="2", cellspacing="2"
+               )(tags.transparent(render="sessions:list")
+                          (slot("item")))])
+@inlineCallbacks
+def sessions(request):
+    """
+    
+    """
+    session = yield procurer.procure_session(request, always_create=False)
+    print("session?")
+    if session is None:
+        print("NO SESSION")
+        returnValue({"sessions": []})
+    print("session!")
+    binding = (yield session.data.getComponent(ISimpleAccountBinding))
+    store = binding._store
+    sipt = store._session_ip_table
+    from klein.storage._sql import AccountBindingStorePlugin
+    acs = AccountBindingStorePlugin._account_session_table
+    sess = store._session_table
+    @store.sql
+    @inlineCallbacks
+    def query(conn):
+        me = sess.alias()
+        acs2 = acs.alias()
+        from sqlalchemy.sql.expression import select
+        result = yield conn.execute(
+            select([sipt], use_labels=True)
+            .where((me.c.session_id == session.identifier) &
+                   (acs.c.session_id == me.c.session_id) &
+                   (acs.c.account_id == acs2.c.account_id) &
+                   (acs2.c.session_id == sipt.c.session_id)
+            )
+        )
+        returnValue((yield result.fetchall()))
+    rows = yield query
+    dump = {
+        "sessions": [one_session.widget({
+            "id": row[sipt.c.session_id],
+            "ip": row[sipt.c.ip_address],
+            "when": row[sipt.c.last_used]
+            .strftime("%a, %d %b %Y %H:%M:%S +0000").decode("utf-8"),
+        }) for row in rows]
+    }
+    print(dump)
+    returnValue(dump)
 
 
 signup = form(

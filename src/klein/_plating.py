@@ -169,8 +169,8 @@ class Plating(object):
         """
         
         """
-        @bindable
         @modified("plating widgeted renderer", function)
+        @bindable
         def wrapper(instance, *a, **k):
             data = _call(instance, function, *a, **k)
             return self._elementify(instance, data)

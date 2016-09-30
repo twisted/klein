@@ -14,7 +14,7 @@ from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 
 from .app import _call
-from ._decorators import bindable, modified
+from ._decorators import bindable, modified, original_name
 
 def _should_return_json(request):
     """
@@ -117,7 +117,7 @@ class Plating(object):
         """
         
         """
-        self._renderers[text_type(renderer.__name__)] = renderer
+        self._renderers[text_type(original_name(renderer))] = renderer
         return renderer
 
     def routed(self, routing, content_template):

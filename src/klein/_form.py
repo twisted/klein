@@ -3,6 +3,8 @@ from __future__ import unicode_literals, print_function
 
 import attr
 
+from weakref import WeakKeyDictionary
+
 from zope.interface import implementer
 
 from twisted.python.compat import unicode
@@ -195,7 +197,7 @@ def default_validation_failure_handler(instance, request, renderable):
 
 
 
-@attr.s(init=False)
+@attr.s(init=False, hash=False)
 class Form(object):
     """
     
@@ -205,7 +207,7 @@ class Form(object):
     form_data = b'multipart/form-data'
     url_encoded = b'application/x-www-form-urlencoded'
 
-    def __init__(self, fields, get_procurer):
+    def __init__(self, fields):
         """
         
         """
@@ -213,7 +215,6 @@ class Form(object):
             name: field.maybe_named(name)
             for name, field in fields.items()
         }
-        self.get_procurer = get_procurer
         self.validation_failure_handlers = {}
 
 
@@ -222,29 +223,26 @@ class Form(object):
         
         """
         def decorate(decoratee):
-            an_handler.validation_failure_handler_container[:] = [decoratee]
+            an_handler.validation_failure_handlers[self] = decoratee
             return decoratee
         return decorate
 
 
-    def handler(self, route):
+    def handler(self, get_procurer, route):
         """
         
         """
         def decorator(function):
-
-            # we can't use the function itself as a dictionary key, because
-            # Plating (or another, similar system) might have decorated it to
-            # make the route behave differently.  but Plating preserves
-            # attributes set here across into the real handler.
-            function.validation_failure_handler_container = []
-
+            vfhc = "validation_failure_handlers"
+            d = getattr(function, vfhc, WeakKeyDictionary())
+            setattr(function, vfhc, d)
+            d[self] = default_validation_failure_handler
             @route
             @bindable
             @modified("form handler", function)
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
-                procurer = yield _call(instance, self.get_procurer)
+                procurer = yield _call(instance, get_procurer)
                 session = yield procurer.procure_session(request)
                 if session.authenticated_by == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION, [None])[0]
@@ -289,8 +287,8 @@ class Form(object):
         return decorator
 
 
-    def renderer(self, route, action, method="POST", enctype=form_data,
-                 argument="form"):
+    def renderer(self, get_procurer, route, action, method="POST",
+                 enctype=form_data, argument="form"):
         """
         
         """
@@ -300,7 +298,7 @@ class Form(object):
             @modified("form renderer", function)
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
-                procurer = yield _call(instance, self.get_procurer)
+                procurer = yield _call(instance, get_procurer)
                 session = yield procurer.procure_session(request)
                 form = RenderableForm(self, session, action, method, enctype)
                 kw[argument] = form

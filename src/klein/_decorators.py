@@ -37,8 +37,10 @@ def modified(modification, original):
         likely calls it.
     """
     def decorator(wrapper):
-        return (named(modification + ' for ' + original.__name__)
-                (wraps(original, updated=[])(wrapper)))
+        result = (named(modification + ' for ' + original.__name__)
+                  (wraps(original, updated=[])(wrapper)))
+        result.__original__ = original
+        return result
     return decorator
 
 
@@ -50,3 +52,15 @@ def named(name):
         original.__name__ = str(name)
         return original
     return decorator
+
+
+def original_name(function):
+    """
+    Get the original, user-specified name of C{function}, chasing back any
+    wrappers applied with C{modified}.
+    """
+    fnext = function
+    while fnext is not None:
+        current = fnext
+        fnext = getattr(current, "__original__", None)
+    return current

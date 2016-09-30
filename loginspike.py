@@ -4,7 +4,7 @@ from __future__ import print_function, unicode_literals, absolute_import
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from klein import Klein, Plating, Form
+from klein import Klein, Plating, form
 from klein.interfaces import ISession, ISimpleAccountBinding
 from klein.storage.sql import open_session_store
 
@@ -93,7 +93,7 @@ def root(request):
 
 procurer = open_session_store("sqlite:///sessions.sqlite")
 
-logout = Form(dict())
+logout = form()
 
 @logout.handler(lambda: procurer,
                 app.route("/logout", methods=["POST"]))
@@ -151,11 +151,9 @@ def username(request, tag):
     returnValue(tag(account.username))
 
 
-login = Form(
-    dict(
-        username=Form.text(),
-        password=Form.password(),
-    )
+login = form(
+    username=form.text(),
+    password=form.password(),
 )
 
 @style.routed(
@@ -219,12 +217,10 @@ def dologin(request, username, password):
 
 
 
-signup = Form(
-    dict(
-        username=Form.text(),
-        email=Form.text(),
-        password=Form.password(),
-    )
+signup = form(
+    username=form.text(),
+    email=form.text(),
+    password=form.password(),
 )
 
 @style.routed(

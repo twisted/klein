@@ -4,6 +4,7 @@ from __future__ import unicode_literals, print_function
 import attr
 
 from weakref import WeakKeyDictionary
+from itertools import count
 
 from zope.interface import implementer
 
@@ -53,6 +54,7 @@ class Field(object):
     no_label = attr.ib(default=False)
     value = attr.ib(default=u"")
     error = attr.ib(default=None)
+    order = attr.ib(default=attr.Factory(lambda: next(count())))
 
     def maybe_named(self, name):
         """
@@ -124,7 +126,7 @@ class RenderableForm(object):
         """
         
         """
-        return Form.hidden(CSRF_PROTECTION, self._session.identifier)
+        return hidden(CSRF_PROTECTION, self._session.identifier)
 
 
     def _fields_to_render(self):
@@ -132,7 +134,7 @@ class RenderableForm(object):
         
         """
         any_submit = False
-        for field in self._form.fields.values():
+        for field in self._form._fields:
             yield attr.assoc(field,
                              value=self.prevalidation.get(field, field.value),
                              error=self.errors.get(field, None))
@@ -197,25 +199,15 @@ def default_validation_failure_handler(instance, request, renderable):
 
 
 
-@attr.s(init=False, hash=False)
+@attr.s(hash=False)
 class Form(object):
     """
     
     """
-    fields = attr.ib()
+    _fields = attr.ib()
 
     form_data = b'multipart/form-data'
     url_encoded = b'application/x-www-form-urlencoded'
-
-    def __init__(self, fields):
-        """
-        
-        """
-        self.fields = {
-            name: field.maybe_named(name)
-            for name, field in fields.items()
-        }
-
 
     def on_validation_failure_for(self, an_handler):
         """
@@ -250,7 +242,7 @@ class Form(object):
                 validation_errors = {}
                 prevalidation_values = {}
                 arguments = {}
-                for field in self.fields.values():
+                for field in self._fields:
                     text = field.extract_value(request)
                     prevalidation_values[field] = text
                     try:
@@ -301,50 +293,65 @@ class Form(object):
         return decorator
 
 
-    @staticmethod
-    def integer(minimum=None, maximum=None):
-        """
-        An integer within the range [minimum, maximum].
-        """
-        def bounded_int(text):
-            try:
-                value = int(text)
-            except ValueError:
-                raise ValidationError("must be an integer")
-            else:
-                if minimum is not None and value < minimum:
-                    raise ValidationError("value must be >=" + repr(minimum))
-                if maximum is not None and value > maximum:
-                    raise ValidationError("value must be <=" + repr(maximum))
-                return value
-        return Field(converter=bounded_int, form_input_type="number")
+def form(*fields, **named_fields):
+    """
+    Create a form.
+    """
+    return Form(list(fields) + [
+        field.maybe_named(name) for name, field
+        in sorted(named_fields.items(), key=lambda x: x[1].order)
+    ])
 
 
-    @staticmethod
-    def text():
-        """
-        
-        """
-        return Field(converter=lambda x: unicode(x, "utf-8"),
-                     form_input_type="text")
+def add(it):
+    """
+    
+    """
+    setattr(form, it.__name__, it)
+    return it
 
 
-    @staticmethod
-    def password():
-        """
-        
-        """
-        return Field(converter=lambda x: unicode(x, "utf-8"),
-                     form_input_type="password")
+@add
+def text():
+    """
+
+    """
+    return Field(converter=lambda x: unicode(x, "utf-8"),
+                 form_input_type="text")
+
+@add
+def password():
+    """
+
+    """
+    return Field(converter=lambda x: unicode(x, "utf-8"),
+                 form_input_type="password")
+
+@add
+def hidden(name, value):
+    """
+
+    """
+    return Field(converter=lambda x: unicode(x, "utf-8"),
+                 form_input_type="hidden",
+                 no_label=True,
+                 value=value).maybe_named(name)
 
 
-    @staticmethod
-    def hidden(name, value):
-        """
-        
-        """
-        return Field(converter=lambda x: unicode(x, "utf-8"),
-                     form_input_type="hidden",
-                     no_label=True,
-                     value=value).maybe_named(name)
-
+@add
+def integer(minimum=None, maximum=None):
+    """
+    An integer within the range [minimum, maximum].
+    """
+    def bounded_int(text):
+        try:
+            value = int(text)
+        except ValueError:
+            raise ValidationError("must be an integer")
+        else:
+            if minimum is not None and value < minimum:
+                raise ValidationError("value must be >=" + repr(minimum))
+            if maximum is not None and value > maximum:
+                raise ValidationError("value must be <=" + repr(maximum))
+            return value
+    return Field(converter=bounded_int, form_input_type="number")

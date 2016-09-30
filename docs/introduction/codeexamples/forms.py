@@ -10,7 +10,7 @@ from twisted.web.template import tags, slot
 from twisted.python.components import Componentized
 from twisted.internet.defer import succeed, fail
 
-from klein import Klein, Plating, Form, SessionProcurer
+from klein import Klein, Plating, form, SessionProcurer
 from klein.interfaces import ISession, ISessionStore, NoSuchSession
 
 app = Klein()
@@ -32,35 +32,19 @@ class MemorySession(object):
 # do their own session-ID generation unless they really want to
 @implementer(ISessionStore)
 class MemorySessionStore(object):
-    """
-    
-    """
-
     def __init__(self):
-        """
-        
-        """
         self._storage = {}
 
     def procurer(self):
-        """
-        
-        """
         return SessionProcurer(self)
 
     def new_session(self, is_confidential, authenticated_by):
-        """
-        
-        """
         identifier = hexlify(urandom(32))
         session = MemorySession(identifier, is_confidential, authenticated_by)
         self._storage[identifier] = session
         return succeed(session)
 
     def load_session(self, identifier, is_confidential, authenticated_by):
-        """
-        
-        """
         if identifier in self._storage:
             result = self._storage[identifier]
             if is_confidential != result.is_confidential:
@@ -71,17 +55,13 @@ class MemorySessionStore(object):
             return fail(NoSuchSession())
 
     def sent_insecurely(self, tokens):
-        """
-        
-        """
+        return
 
 sessions = MemorySessionStore()
 
-form = Form(
-    dict(
-        foo=Form.integer(minimum=3, maximum=10),
-        bar=Form.text(),
-    )
+sample = form(
+    foo=form.integer(minimum=3, maximum=10),
+    bar=form.text(),
 )
 
 style = Plating(tags=tags.html(
@@ -90,21 +70,21 @@ style = Plating(tags=tags.html(
 )
 
 
-@style.routed(form.renderer(sessions.procurer,
-                            app.route("/my-form", methods=["GET"]),
-                            action="/my-form?post=yes",
-                            argument="the_form"),
+@style.routed(sample.renderer(sessions.procurer,
+                              app.route("/my-form", methods=["GET"]),
+                              action="/my-form?post=yes",
+                              argument="the_form"),
               tags.div(slot("an_form")))
 def form_renderer(request, the_form):
     return {"an_form": the_form}
 
-@style.routed(form.handler(sessions.procurer,
+@style.routed(sample.handler(sessions.procurer,
                            app.route("/my-form", methods=["POST"])),
               tags.h1('u did it: ', slot("an-form-arg")))
 def post_handler(request, foo, bar):
     return {"an-form-arg": foo}
 
-@style.routed(form.on_validation_failure_for(post_handler),
+@style.routed(sample.on_validation_failure_for(post_handler),
               [tags.h1('invalid form'),
                tags.div(slot('the-invalid-form'))])
 def validation_failed(request, form):

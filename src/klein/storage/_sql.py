@@ -380,7 +380,7 @@ class SQLAccount(object):
             )
         returnValue((yield change))
 
-@AlchimiaSessionStore.register_session_plugin
+@AlchimiaSessionStore.register_session_plugin(ISimpleAccountBinding)
 class AccountBindingStorePlugin(object):
     """
     

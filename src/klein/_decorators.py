@@ -49,7 +49,7 @@ def modified(modification, original, modifier=None):
         result.__original__ = original
         if modifier is not None:
             before = set(wrapper.__dict__.keys())
-            result = modifier(wrapper)
+            result = modifier(result)
             after = set(wrapper.__dict__.keys())
             for key in after - before:
                 setattr(original, key, wrapper.__dict__[key])

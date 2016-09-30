@@ -61,6 +61,6 @@ def original_name(function):
     """
     fnext = function
     while fnext is not None:
-        current = fnext
-        fnext = getattr(current, "__original__", None)
-    return current
+        function = fnext
+        fnext = getattr(function, "__original__", None)
+    return function.__name__

@@ -10,8 +10,6 @@ import weakref
 from collections import namedtuple
 from contextlib import contextmanager
 
-from functools import wraps
-
 from werkzeug.routing import Map, Rule, Submount
 
 from twisted.python import log
@@ -24,6 +22,8 @@ from zope.interface import implementer
 
 from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
+
+from ._decorators import modified, named
 
 __all__ = ['Klein', 'run', 'route', 'resource']
 
@@ -172,13 +172,14 @@ class Klein(object):
         if url.endswith('/'):
             segment_count -= 1
 
+        @named("router for '" + url + "'")
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
-                @wraps(f)
+                @modified("branch route '{url}' executor".format(url=url), f)
                 def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
                     return _call(instance, f, request, *a, **kw)
@@ -188,7 +189,7 @@ class Klein(object):
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(Rule(url.rstrip('/') + '/' + '<path:__rest__>', *args, **branchKwargs))
 
-            @wraps(f)
+            @modified("route '{url}' executor".format(url=url), f)
             def _f(instance, request, *a, **kw):
                 return _call(instance, f, request, *a, **kw)
 
@@ -197,8 +198,6 @@ class Klein(object):
             self._endpoints[kwargs['endpoint']] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
             return f
-
-        deco.func_name = ("router for '" + url + "'").encode("utf-8")
         return deco
 
 
@@ -301,7 +300,7 @@ class Klein(object):
             return self.handle_errors(Exception)(f_or_exception)
 
         def deco(f):
-            @wraps(f)
+            @modified("error handling wrapper", f)
             def _f(instance, request, failure):
                 return _call(instance, f, request, failure)
 

@@ -4,7 +4,6 @@
 Templating wrapper support for Klein.
 """
 
-from functools import wraps
 from json import dumps
 
 from six import text_type, integer_types
@@ -15,7 +14,7 @@ from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 
 from .app import _call
-from ._decorators import bindable
+from ._decorators import bindable, modified
 
 def _should_return_json(request):
     """
@@ -74,7 +73,7 @@ class PlatedElement(Element):
         print("renderers?", self._renderers)
         if name in self._renderers:
             wrapped = self._renderers[name]
-            @wraps(wrapped, updated=[])
+            @modified("plated render wrapper", wrapped)
             def renderWrapper(request, tag, *args, **kw):
                 return _call(self._bound_instance, wrapped,
                              request, tag, *args, **kw)
@@ -127,7 +126,9 @@ class Plating(object):
         """
         def mydecorator(method):
             loader = TagLoader(content_template)
+            @routing
             @bindable
+            @modified("plating route renderer", method)
             @inlineCallbacks
             def mymethod(instance, request, *args, **kw):
                 data = yield _call(instance, method, request, *args, **kw)
@@ -144,8 +145,7 @@ class Plating(object):
                                       b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
                     returnValue(self._elementify(instance, data))
-            mymethod.__name__ = "plating renderer for " + method.__name__
-            routing(mymethod)
+
             return method
         return mydecorator
 
@@ -167,10 +167,9 @@ class Plating(object):
         
         """
         @bindable
-        @wraps(function)
+        @modified("plating widgeted renderer", function)
         def wrapper(instance, *a, **k):
             data = _call(instance, function, *a, **k)
             return self._elementify(instance, data)
-        wrapper.__name__ += ".widget"
         function.widget = wrapper
         return function

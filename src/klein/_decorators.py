@@ -1,3 +1,5 @@
+from functools import wraps
+
 def bindable(bindable):
     """
     Mark a method as a "bindable" method.
@@ -24,3 +26,29 @@ def bindable(bindable):
     return bindable
 
 
+def modified(modification, original):
+    """
+    Annotate a callable as a modified wrapper of an original callable.
+
+    @param modification: A name for the type of modification, for example "form
+        processor" or "request forwarder"; this will be tacked on to the name
+        of the resulting function.
+
+    @return: A new callable; this may have a different argument signature or
+        return value, and is only related to C{original} in the sense that it
+        likely calls it.
+    """
+    def decorator(wrapper):
+        return (named(modification + ' for ' + original.__name__)
+                (wraps(original, updated=[])(wrapper)))
+    return decorator
+
+
+def named(name):
+    """
+    Change the name of a function to the given name.
+    """
+    def decorator(original):
+        original.__name__ = str(name)
+        return original
+    return decorator

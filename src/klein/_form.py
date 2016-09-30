@@ -3,8 +3,6 @@ from __future__ import unicode_literals, print_function
 
 import attr
 
-from functools import wraps
-
 from zope.interface import implementer
 
 from twisted.python.compat import unicode
@@ -15,7 +13,7 @@ from twisted.web.error import MissingRenderMethod
 
 from .interfaces import SessionMechanism
 from .app import _call
-from ._decorators import bindable
+from ._decorators import bindable, modified
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -234,8 +232,16 @@ class Form(object):
         
         """
         def decorator(function):
+
+            # we can't use the function itself as a dictionary key, because
+            # Plating (or another, similar system) might have decorated it to
+            # make the route behave differently.  but Plating preserves
+            # attributes set here across into the real handler.
+            function.validation_failure_handler_container = []
+
+            @route
             @bindable
-            @wraps(function, updated=[])
+            @modified("form handler", function)
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, self.get_procurer)
@@ -279,12 +285,6 @@ class Form(object):
                     result = yield _call(instance, function, request,
                                          *args, **kw)
                 returnValue(result)
-            # we can't use the function itself as a dictionary key, because
-            # Plating (or another, similar system) might have decorated it to
-            # make the route behave differently.  but Plating preserves
-            # attributes set here across into the real handler.
-            function.validation_failure_handler_container = []
-            route(handler_decorated)
             return function
         return decorator
 
@@ -295,8 +295,9 @@ class Form(object):
         
         """
         def decorator(function):
+            @route
             @bindable
-            @wraps(function, updated=[])
+            @modified("form renderer", function)
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, self.get_procurer)
@@ -307,7 +308,6 @@ class Form(object):
                 result = yield _call(instance, function, request, *args, **kw)
                 print("resulted", result)
                 returnValue(result)
-            route(renderer_decorated)
             return function
         return decorator
 

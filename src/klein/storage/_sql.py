@@ -328,7 +328,7 @@ class AccountSessionBinding(object):
         """
         Disassociate this session from any accounts it's logged in to.
         """
-        @self._strptime.sql
+        @self._store.sql
         def retrieve(engine):
             ast = AccountBindingStorePlugin._account_session_table
             return engine.execute(ast.delete(

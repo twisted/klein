@@ -247,17 +247,14 @@ def sessions(request):
     sipt = store._session_ip_table
     from klein.storage._sql import AccountBindingStorePlugin
     acs = AccountBindingStorePlugin._account_session_table
-    sess = store._session_table
     @store.sql
     @inlineCallbacks
     def query(conn):
-        me = sess.alias()
         acs2 = acs.alias()
         from sqlalchemy.sql.expression import select
         result = yield conn.execute(
             select([sipt], use_labels=True)
-            .where((me.c.session_id == session.identifier) &
-                   (acs.c.session_id == me.c.session_id) &
+            .where((acs.c.session_id == session.identifier) &
                    (acs.c.account_id == acs2.c.account_id) &
                    (acs2.c.session_id == sipt.c.session_id)
             )

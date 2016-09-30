@@ -215,7 +215,6 @@ class Form(object):
             name: field.maybe_named(name)
             for name, field in fields.items()
         }
-        self.validation_failure_handlers = {}
 
 
     def on_validation_failure_for(self, an_handler):

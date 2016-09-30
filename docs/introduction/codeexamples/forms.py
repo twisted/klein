@@ -106,7 +106,6 @@ def post_handler(request, foo, bar):
               [tags.h1('invalid form'),
                tags.div(slot('the-invalid-form'))])
 def validation_failed(request, form):
-    # handle validation failure; but how do I render the form?
     return {'the-invalid-form': form}
 
 

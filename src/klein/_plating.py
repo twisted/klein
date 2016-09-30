@@ -144,8 +144,9 @@ class Plating(object):
                     text_type = u'html'
                     result = self._elementify(instance, data)
                 request.setHeader(
-                    b'content-type',
-                    u'text/{format}; charset=utf-8'.format(format=text_type)
+                    b'content-type', (u'text/{format}; charset=utf-8'
+                                      .format(format=text_type)
+                                      .encode("charmap"))
                 )
                 returnValue(result)
             return method

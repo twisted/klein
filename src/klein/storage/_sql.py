@@ -518,7 +518,8 @@ class EventualProcurer(object):
         """
         store = yield self._eventual_store()
         procurer = SessionProcurer(IPTrackingStore(store, request))
-        returnValue((yield procurer.procure_session(request, force_insecure)))
+        returnValue((yield procurer.procure_session(request, force_insecure,
+                                                    always_create)))
 
 
 

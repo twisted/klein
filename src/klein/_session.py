@@ -16,10 +16,6 @@ class SessionProcurer(object):
 
     @ivar _store: The session store to procure a session from.
     @type _store: L{klein.interfaces.ISessionStore}
-
-    @ivar _request: The request to retrieve a session identifier from, and to
-        set cookies on when initializing a new session.
-    @type _request: L{twisted.web.iweb.IRequest}
     """
 
     _store = attr.ib()
@@ -37,11 +33,11 @@ class SessionProcurer(object):
     @inlineCallbacks
     def procure_session(self, request, force_insecure=False,
                         always_create=True):
-        already_procured = ISession(self._request, None)
+        already_procured = ISession(request, None)
         if already_procured is not None:
             returnValue(already_procured)
 
-        if self._request.isSecure():
+        if request.isSecure():
             if force_insecure:
                 auth_header = self._insecure_auth_header
                 cookie_name = self._insecure_cookie
@@ -54,10 +50,10 @@ class SessionProcurer(object):
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             all_possible_sent_tokens = (
-                sum([self._request.requestHeaders.getRawHeaders(header, [])
+                sum([request.requestHeaders.getRawHeaders(header, [])
                      for header in [self._secure_auth_header,
                                     self._insecure_auth_header]], []) +
-                [it for it in [self._request.getCookie(cookie)
+                [it for it in [request.getCookie(cookie)
                                for cookie in [self._secure_cookie,
                                               self._insecure_cookie]] if it]
             )
@@ -71,12 +67,12 @@ class SessionProcurer(object):
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        session_id = self._request.getHeader(auth_header)
+        session_id = request.getHeader(auth_header)
         if session_id is not None:
             mechanism = SessionMechanism.Header
         else:
             mechanism = SessionMechanism.Cookie
-            session_id = self._request.getCookie(cookie_name)
+            session_id = request.getCookie(cookie_name)
         if session_id is not None:
             try:
                 session = yield self._store.load_session(
@@ -88,7 +84,7 @@ class SessionProcurer(object):
                 session_id = None
         if session_id is None:
             if always_create:
-                if self._request.startedWriting:
+                if request.startedWriting:
                     # At this point, if the mechanism is Header, we either have
                     # a valid session or we bailed after NoSuchSession above.
                     raise TooLateForCookies(
@@ -101,18 +97,18 @@ class SessionProcurer(object):
             else:
                 returnValue(None)
         if session_id != session.identifier:
-            if self._request.startedWriting:
+            if request.startedWriting:
                 raise TooLateForCookies(
                     "You tried changing a session ID to a new session ID too"
                     " late in the request pipeline; the headers were already"
                     " sent."
                 )
-            self._request.addCookie(
+            request.addCookie(
                 cookie_name, session.identifier, max_age=self._max_age,
                 domain=self._cookie_domain, path=self._cookie_path,
                 secure=sent_securely, httpOnly=True,
             )
         if not force_insecure:
             # Do not cache the insecure session on the secure request, thanks.
-            self._request.setComponent(ISession, session)
+            request.setComponent(ISession, session)
         returnValue(session)

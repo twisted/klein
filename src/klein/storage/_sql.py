@@ -1,6 +1,6 @@
 from alchimia import TWISTED_STRATEGY
 import attr
-import datetime
+from datetime import datetime
 from attr import Factory
 
 from binascii import hexlify

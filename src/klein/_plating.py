@@ -14,7 +14,8 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 
-from klein.app import _call, klein_bindable
+from .app import _call
+from ._decorators import bindable
 
 def _should_return_json(request):
     """
@@ -73,8 +74,7 @@ class PlatedElement(Element):
         print("renderers?", self._renderers)
         if name in self._renderers:
             wrapped = self._renderers[name]
-            @wraps(wrapped)
-            @klein_bindable
+            @wraps(wrapped, updated=[])
             def renderWrapper(request, tag, *args, **kw):
                 return _call(self._bound_instance, wrapped,
                              request, tag, *args, **kw)
@@ -127,8 +127,8 @@ class Plating(object):
         """
         def mydecorator(method):
             loader = TagLoader(content_template)
+            @bindable
             @inlineCallbacks
-            @klein_bindable
             def mymethod(instance, request, *args, **kw):
                 data = yield _call(instance, method, request, *args, **kw)
                 if _should_return_json(request):
@@ -146,7 +146,6 @@ class Plating(object):
                     returnValue(self._elementify(instance, data))
             mymethod.__name__ = "plating renderer for " + method.__name__
             routing(mymethod)
-            method.__dict__.update(mymethod.__dict__)
             return method
         return mydecorator
 
@@ -167,8 +166,8 @@ class Plating(object):
         """
         
         """
+        @bindable
         @wraps(function)
-        @klein_bindable
         def wrapper(instance, *a, **k):
             data = _call(instance, function, *a, **k)
             return self._elementify(instance, data)

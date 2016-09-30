@@ -13,8 +13,9 @@ from twisted.web.template import tags
 from twisted.web.iweb import IRenderable
 from twisted.web.error import MissingRenderMethod
 
-from klein.interfaces import SessionMechanism
-from klein.app import _call, klein_bindable
+from .interfaces import SessionMechanism
+from .app import _call
+from ._decorators import bindable
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -186,7 +187,7 @@ class RenderableForm(object):
         return self._csrf_field().as_tags()
 
 
-@klein_bindable
+@bindable
 def default_validation_failure_handler(instance, request, renderable):
     """
     
@@ -233,9 +234,9 @@ class Form(object):
         
         """
         def decorator(function):
-            @inlineCallbacks
+            @bindable
             @wraps(function, updated=[])
-            @klein_bindable
+            @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, self.get_procurer)
                 session = yield procurer.procure_session(request)
@@ -294,9 +295,9 @@ class Form(object):
         
         """
         def decorator(function):
-            @inlineCallbacks
+            @bindable
             @wraps(function, updated=[])
-            @klein_bindable
+            @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, self.get_procurer)
                 session = yield procurer.procure_session(request)

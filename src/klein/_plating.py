@@ -137,15 +137,17 @@ class Plating(object):
                     json_data.update(data)
                     for ignored in self._presentation_slots:
                         json_data.pop(ignored, None)
-                    request.setHeader(b'content-type',
-                                      b'text/json; charset=utf-8')
-                    returnValue(json_serialize(json_data))
+                    text_type = u'json'
+                    result = json_serialize(json_data)
                 else:
-                    request.setHeader(b'content-type',
-                                      b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
-                    returnValue(self._elementify(instance, data))
-
+                    text_type = u'html'
+                    result = self._elementify(instance, data)
+                request.setHeader(
+                    b'content-type',
+                    u'text/{format}; charset=utf-8'.format(format=text_type)
+                )
+                returnValue(result)
             return method
         return mydecorator
 

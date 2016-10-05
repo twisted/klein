@@ -1,23 +1,15 @@
-from alchimia import TWISTED_STRATEGY
-import attr
-from datetime import datetime
-from attr import Factory
 
 from binascii import hexlify
 from os import urandom
 from uuid import uuid4
+from datetime import datetime
+
+import attr
+from attr import Factory
+
+from six import text_type
 
 from zope.interface import implementer
-from twisted.python.components import Componentized
-
-from twisted.logger import Logger
-
-from klein.interfaces import (
-    ISession, ISessionStore, NoSuchSession, ISimpleAccount,
-    ISimpleAccountBinding, ISessionProcurer
-)
-from klein import SessionProcurer
-from klein.storage.security import compute_key_text, check_and_reset
 
 from sqlalchemy import (
     create_engine, MetaData, Table, Column, Boolean, String,
@@ -26,10 +18,21 @@ from sqlalchemy import (
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError, IntegrityError
 
+from twisted.python.components import Componentized
+from twisted.logger import Logger
 from twisted.internet.defer import (
     Deferred, inlineCallbacks, returnValue
 )
 from twisted.python.failure import Failure
+
+from alchimia import TWISTED_STRATEGY
+
+from klein.interfaces import (
+    ISession, ISessionStore, NoSuchSession, ISimpleAccount,
+    ISimpleAccountBinding, ISessionProcurer
+)
+from klein import SessionProcurer
+from klein.storage.security import compute_key_text, check_and_reset
 
 metadata = MetaData()
 
@@ -230,7 +233,7 @@ class AccountSessionBinding(object):
         @self._store.sql
         @inlineCallbacks
         def store(engine):
-            new_account_id = unicode(uuid4())
+            new_account_id = text_type(uuid4())
             insert = (AccountBindingStorePlugin._account_table.insert()
                       .values(account_id=new_account_id,
                               username=username, email=email,

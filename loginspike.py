@@ -8,6 +8,8 @@ from klein import Klein, Plating, form
 from klein.interfaces import ISession, ISimpleAccountBinding
 from klein.storage.sql import open_session_store
 
+from twisted.web.util import Redirect
+
 # ^^^  framework   ^^^^
 # ---  cut here    ----
 # vvvv application vvvv
@@ -102,7 +104,6 @@ def bye(request):
     """
     Log out.
     """
-    from twisted.web.util import Redirect
     yield ISimpleAccountBinding(ISession(request).data).log_out()
     returnValue(Redirect(b"/"))
 
@@ -215,15 +216,44 @@ def dologin(request, username, password):
         "new_account_id": an_id,
     })
 
-an_session = Plating(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
-                                  tags.td(slot("when"))))
-@an_session.widgeted
-def one_session(an_dict):
+
+logout_other = form(
+    session_id=form.text(),
+)
+
+from klein.interfaces import SessionMechanism
+
+@logout_other.handler(app.route("/sessions/logout", methods=["POST"]))
+@inlineCallbacks
+def log_other_out(request, session_id):
     """
     
     """
-    print("ad?", an_dict)
-    return an_dict
+    binding = ISession(request).data.getComponent(ISimpleAccountBinding)
+    store = binding._store
+    session = yield store.load_session(session_id, request.isSecure(),
+                                       SessionMechanism.Header)
+    from klein.storage._sql import AccountSessionBinding
+    other_binding = AccountSessionBinding(session, store)
+    yield other_binding.log_out()
+    returnValue(Redirect(b"/sessions"))
+
+
+
+an_session = Plating(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
+                                  tags.td(slot("when"))))
+@an_session.widgeted
+def one_session(store, row):
+    """
+    
+    """
+    sipt = store._session_ip_table
+    return {
+        "id": row[sipt.c.session_id],
+        "ip": row[sipt.c.ip_address],
+        "when": row[sipt.c.last_used]
+        .strftime("%a, %d %b %Y %H:%M:%S +0000").decode("utf-8"),
+    }
 
 @style.routed(app.route("/sessions", methods=["GET"]),
               [tags.h1("List of Sessions"),
@@ -262,12 +292,7 @@ def sessions(request):
         returnValue((yield result.fetchall()))
     rows = yield query
     dump = {
-        "sessions": [one_session.widget({
-            "id": row[sipt.c.session_id],
-            "ip": row[sipt.c.ip_address],
-            "when": row[sipt.c.last_used]
-            .strftime("%a, %d %b %Y %H:%M:%S +0000").decode("utf-8"),
-        }) for row in rows]
+        "sessions": [one_session.widget(store, row) for row in rows]
     }
     print(dump)
     returnValue(dump)

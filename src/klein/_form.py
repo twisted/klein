@@ -199,15 +199,16 @@ def default_validation_failure_handler(instance, request, renderable):
 
 
 
+FORM_DATA = b'multipart/form-data'
+URL_ENCODED = b'application/x-www-form-urlencoded'
+
+
 @attr.s(hash=False)
 class Form(object):
     """
     
     """
     _fields = attr.ib()
-
-    form_data = b'multipart/form-data'
-    url_encoded = b'application/x-www-form-urlencoded'
 
     def on_validation_failure_for(self, an_handler):
         """
@@ -252,8 +253,8 @@ class Form(object):
                     else:
                         arguments[field.python_argument_name] = value
                 if validation_errors:
-                    renderable = RenderableForm(
-                        self, session, b"/".join(request.prepath),
+                    renderable = self.bind(
+                        session, b"/".join(request.prepath),
                         request.method,
                         (request.getHeader('content-type')
                          .decode('utf-8').split(';')[0]),
@@ -272,7 +273,7 @@ class Form(object):
 
 
     def renderer(self, get_procurer, route, action, method="POST",
-                 enctype=form_data, argument="form"):
+                 enctype=FORM_DATA, argument="form"):
         """
         
         """
@@ -283,7 +284,7 @@ class Form(object):
             def renderer_decorated(instance, request, *args, **kw):
                 procurer = yield _call(instance, get_procurer)
                 session = yield procurer.procure_session(request)
-                form = RenderableForm(self, session, action, method, enctype)
+                form = self.bind(session, action, method, enctype)
                 kw[argument] = form
                 print("calling through", function)
                 result = yield _call(instance, function, request, *args, **kw)
@@ -291,6 +292,16 @@ class Form(object):
                 returnValue(result)
             return function
         return decorator
+
+
+    def bind(self, session, action, method="POST", enctype=FORM_DATA,
+             prevalidation=None, errors=None):
+        """
+        Bind this form to a session.
+        """
+        return RenderableForm(self, session, action, method, enctype,
+                              prevalidation=prevalidation,
+                              errors=errors)
 
 
 def form(*fields, **named_fields):

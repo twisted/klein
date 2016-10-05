@@ -816,12 +816,8 @@ class KleinResourceTests(TestCase):
 
     def test_notFoundException(self):
         app = self.app
-        request = requestMock(b"/foo")
+        request = requestMock(b"/")
         generic_error_handled = False
-
-        @app.route("/")
-        def root(request):
-            pass
 
         @app.handle_errors(NotFound)
         def handle_not_found(request, failure):

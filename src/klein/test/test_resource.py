@@ -839,6 +839,24 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(), b'Custom Not Found')
         self.assertEqual(request.writeCount, 1)
 
+    def test_errorHandlerNeedsRendering(self):
+        app = self.app
+        request = requestMock(b"/")
+
+        @app.handle_errors(NotFound)
+        def handle_not_found(request, failure):
+            # from twisted.web.template import renderElement
+            # return renderElement(request, SimpleElement("Not Found Element"))
+            return SimpleElement("Not Found Element")
+
+        d = _render(self.kr, request)
+
+        rendered = b"<!DOCTYPE html>\n<h1>Not Found Element</h1>"
+
+        self.assertFired(d)
+        self.assertEqual(request.processingFailed.called, False)
+        self.assertEqual(request.getWrittenData(), rendered)
+
     def test_requestWriteAfterFinish(self):
         app = self.app
         request = requestMock(b"/")

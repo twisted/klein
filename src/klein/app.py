@@ -17,6 +17,8 @@ from werkzeug.routing import Map, Rule, Submount
 from twisted.python import log
 from twisted.python.components import registerAdapter
 
+from twisted.web.iweb import IRenderable
+from twisted.web.template import renderElement
 from twisted.web.server import Site, Request
 from twisted.internet import reactor, endpoints
 
@@ -302,7 +304,10 @@ class Klein(object):
         def deco(f):
             @wraps(f)
             def _f(instance, request, failure):
-                return _call(instance, f, request, failure)
+                r = _call(instance, f, request, failure)
+                if IRenderable.providedBy(r):
+                    return renderElement(request, r)
+                return r
 
             self._error_handlers.append(([f_or_exception] + list(additional_exceptions), _f))
             return _f

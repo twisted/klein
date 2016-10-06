@@ -17,14 +17,13 @@ So ``http://localhost:8080/static/img.gif`` should return an image and ``http://
 
     @route('/')
     def home(request):
-        return '<img src='/static/img.gif'>'
+        return '<img src="/static/img.gif">'
 
     run('localhost', 8080)
 
 To setup a route to a single :api:`twisted.web.static.File <t.w.static.File>` pass ``branch=True`` to the route and set ``isLeaf=True`` on the file resource.
 
 .. code-block:: python
-
 
     from twisted.web.static import File
     from klein import run, route

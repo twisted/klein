@@ -17,6 +17,7 @@ from twisted.web.static import File
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 from twisted.python.compat import unicode, _PY3
+from twisted.python.modules import getModule
 from werkzeug.exceptions import NotFound
 
 from klein import Klein
@@ -527,44 +528,40 @@ class KleinResourceTests(TestCase):
     def test_explicitStaticBranch(self):
         app = self.app
 
-        request = requestMock(b"/static/__init__.py")
+        request = requestMock(b"/static/test_resource.py")
 
-        @app.route("/static", branch=True)
+        @app.route("/static/", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 
         d = _render(self.kr, request)
 
-        self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-            open(
-                os.path.join(
-                    os.path.dirname(__file__), "__init__.py"), 'rb').read())
-        self.assertEqual(request.writeCount, 1)
-        self.assertEqual(request.finishCount, 1)
+        self.successResultOf(d)
+        self.assertEqual(
+            request.getWrittenData(),
+            getModule(__name__).filePath.sibling("test_resource.py").getContent()
+        )
 
     def test_explicitStaticBranchSingleFile(self):
         app = self.app
 
-        request = requestMock(b"/static/__init__.py")
+        request = requestMock(b"/static/test_resource.py")
 
-        @app.route("/static/__init__.py", branch=True)
+        @app.route("/static/test_resource.py", branch=True)
         def root(request):
             path = os.path.join(
-                os.path.dirname(__file__), "__init__.py")
+                os.path.dirname(__file__), "test_resource.py")
             file = File(os.path.abspath(path))
             file.isLeaf = True
             return file
 
         d = _render(self.kr, request)
 
-        self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-            open(
-                os.path.join(
-                    os.path.dirname(__file__), "__init__.py"), "rb").read())
-        self.assertEqual(request.writeCount, 1)
-        self.assertEqual(request.finishCount, 1)
+        self.successResultOf(d)
+        self.assertEqual(
+            request.getWrittenData(),
+            getModule(__name__).filePath.sibling("test_resource.py").getContent()
+        )
 
     def test_staticDirlist(self):
         app = self.app

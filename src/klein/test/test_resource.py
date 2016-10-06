@@ -542,6 +542,23 @@ class KleinResourceTests(TestCase):
             getModule(__name__).filePath.sibling("test_resource.py").getContent()
         )
 
+    def test_explicitStaticBranchWithTrailingSlash(self):
+        app = self.app
+
+        request = requestMock(b"/static/test_resource.py")
+
+        @app.route("/static/", branch=True)
+        def root(request):
+            return File(os.path.dirname(__file__))
+
+        d = _render(self.kr, request)
+
+        self.successResultOf(d)
+        self.assertEqual(
+            request.getWrittenData(),
+            getModule(__name__).filePath.sibling("test_resource.py").getContent()
+        )
+
     def test_explicitStaticBranchSingleFile(self):
         app = self.app
 

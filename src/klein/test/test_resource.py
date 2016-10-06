@@ -530,7 +530,7 @@ class KleinResourceTests(TestCase):
 
         request = requestMock(b"/static/test_resource.py")
 
-        @app.route("/static/", branch=True)
+        @app.route("/static", branch=True)
         def root(request):
             return File(os.path.dirname(__file__))
 

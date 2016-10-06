@@ -534,9 +534,7 @@ class KleinResourceTests(TestCase):
         def root(request):
             return File(os.path.dirname(__file__))
 
-        d = _render(self.kr, request)
-
-        self.successResultOf(d)
+        self.successResultOf(_render(self.kr, request))
         self.assertEqual(
             request.getWrittenData(),
             getModule(__name__).filePath.sibling("test_resource.py").getContent()
@@ -551,9 +549,7 @@ class KleinResourceTests(TestCase):
         def root(request):
             return File(os.path.dirname(__file__))
 
-        d = _render(self.kr, request)
-
-        self.successResultOf(d)
+        self.successResultOf(_render(self.kr, request))
         self.assertEqual(
             request.getWrittenData(),
             getModule(__name__).filePath.sibling("test_resource.py").getContent()
@@ -572,9 +568,7 @@ class KleinResourceTests(TestCase):
             file.isLeaf = True
             return file
 
-        d = _render(self.kr, request)
-
-        self.successResultOf(d)
+        self.successResultOf(_render(self.kr, request))
         self.assertEqual(
             request.getWrittenData(),
             getModule(__name__).filePath.sibling("test_resource.py").getContent()

@@ -16,6 +16,34 @@ class SessionProcurer(object):
 
     @ivar _store: The session store to procure a session from.
     @type _store: L{klein.interfaces.ISessionStore}
+
+    @ivar _max_age: The maximum age (in seconds) of the session cookie.
+    @type _max_age: L{int}
+
+    @ivar _secure_cookie: The name of the cookie to use for sessions protected
+        with TLS (i.e. HTTPS).
+    @type _secure_cookie: L{bytes}
+
+    @ivar _insecure_cookie: The name of the cookie to use for sessions I{not}
+        protected with TLS (i.e. HTTP).
+    @type _insecure_cookie: L{bytes}
+
+    @ivar _cookie_domain: If set, the domain name to restrict the session
+        cookie to.
+    @type _cookie_domain: L{None} or L{bytes}
+
+    @ivar _cookie_path: If set, the URL path to restrict the session cookie to.
+    @type _cookie_path: L{bytes}
+
+    @ivar _secure_token_header: The name of the HTTPS header to try to extract
+        a session token from; API clients should use this header, rather than a
+        cookie.
+    @type _secure_token_header: L{bytes}
+
+    @ivar _insecure_token_header: The name of the HTTP header to try to extract
+        a session token from; API clients should use this header, rather than a
+        cookie.
+    @type _insecure_token_header: L{bytes}
     """
 
     _store = attr.ib()
@@ -26,8 +54,8 @@ class SessionProcurer(object):
     _cookie_domain = attr.ib(default=None)
     _cookie_path = attr.ib(default=b"/")
 
-    _secure_auth_header = attr.ib(default=b"X-Auth-Token")
-    _insecure_auth_header = attr.ib(default=b"X-Insecure-Session")
+    _secure_token_header = attr.ib(default=b"X-Auth-Token")
+    _insecure_token_header = attr.ib(default=b"X-INSECURE-Auth-Token")
 
 
     @inlineCallbacks
@@ -39,11 +67,11 @@ class SessionProcurer(object):
 
         if request.isSecure():
             if force_insecure:
-                auth_header = self._insecure_auth_header
+                token_header = self._insecure_token_header
                 cookie_name = self._insecure_cookie
                 sent_securely = False
             else:
-                auth_header = self._secure_auth_header
+                token_header = self._secure_token_header
                 cookie_name = self._secure_cookie
                 sent_securely = True
         else:
@@ -51,8 +79,8 @@ class SessionProcurer(object):
             # transport, for example, due to a buggy client?
             all_possible_sent_tokens = (
                 sum([request.requestHeaders.getRawHeaders(header, [])
-                     for header in [self._secure_auth_header,
-                                    self._insecure_auth_header]], []) +
+                     for header in [self._secure_token_header,
+                                    self._insecure_token_header]], []) +
                 [it for it in [request.getCookie(cookie)
                                for cookie in [self._secure_cookie,
                                               self._insecure_cookie]] if it]
@@ -60,14 +88,14 @@ class SessionProcurer(object):
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
             yield self._store.sent_insecurely(all_possible_sent_tokens)
-            auth_header = self._insecure_auth_header
+            token_header = self._insecure_token_header
             cookie_name = self._insecure_cookie
             sent_securely = False
             # Fun future feature: honeypot that does this over HTTPS, but sets
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        session_id = request.getHeader(auth_header)
+        session_id = request.getHeader(token_header)
         if session_id is not None:
             mechanism = SessionMechanism.Header
         else:

@@ -1,26 +1,18 @@
-from alchimia import TWISTED_STRATEGY
-import attr
+
 from datetime import datetime
 from six import text_type
 from collections import deque
-
-from attr import Factory
-from attr.validators import instance_of as an
 
 from binascii import hexlify
 from os import urandom
 from uuid import uuid4
 
 from zope.interface import implementer
-from twisted.python.components import Componentized
 
-from klein.interfaces import (
-    ISession, ISessionStore, NoSuchSession, ISimpleAccount,
-    ISimpleAccountBinding, ISessionProcurer, ISQLSchemaComponent
-)
-from klein import SessionProcurer
-from klein.storage.security import compute_key_text, check_and_reset
+from attr import Factory
+from attr.validators import instance_of as an
 
+import attr
 from sqlalchemy import (
     create_engine, MetaData, Table, Column, Boolean, String,
     ForeignKey, DateTime, UniqueConstraint
@@ -28,10 +20,20 @@ from sqlalchemy import (
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError, IntegrityError
 
+from klein.interfaces import (
+    ISession, ISessionStore, NoSuchSession, ISimpleAccount,
+    ISimpleAccountBinding, ISessionProcurer, ISQLSchemaComponent,
+    TransactionEnded, ISessionDataComponent
+)
+
+from klein import SessionProcurer
+from klein.storage.security import compute_key_text, check_and_reset
+
 from twisted.internet.defer import inlineCallbacks, returnValue, gatherResults
 from twisted.python.failure import Failure
-from klein.interfaces import TransactionEnded
-from klein.interfaces import ISessionDataComponent
+from twisted.python.components import Componentized
+
+from alchimia import TWISTED_STRATEGY
 
 @implementer(ISession)
 @attr.s

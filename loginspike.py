@@ -8,6 +8,8 @@ from klein import Klein, Plating, form
 from klein.interfaces import ISession, ISimpleAccountBinding
 from klein.storage.sql import open_session_store
 
+from twisted.web.util import Redirect
+
 # ^^^  framework   ^^^^
 # ---  cut here    ----
 # vvvv application vvvv
@@ -115,7 +117,6 @@ def bye(request):
     """
     Log out.
     """
-    from twisted.web.util import Redirect
     yield ISimpleAccountBinding(ISession(request).data).log_out()
     returnValue(Redirect(b"/"))
 
@@ -227,6 +228,31 @@ def dologin(request, username, password):
         "login_active": "active",
         "new_account_id": an_id,
     })
+
+
+logout_other = form(
+    session_id=form.text(),
+)
+
+from klein.interfaces import SessionMechanism
+
+@logout_other.handler(lambda: procurer,
+                      app.route("/sessions/logout", methods=["POST"]))
+@inlineCallbacks
+def log_other_out(request, session_id):
+    """
+    
+    """
+    binding = ISession(request).data.getComponent(ISimpleAccountBinding)
+    store = binding._store
+    session = yield store.load_session(session_id, request.isSecure(),
+                                       SessionMechanism.Header)
+    from klein.storage._sql import AccountSessionBinding
+    other_binding = AccountSessionBinding(session, store)
+    yield other_binding.log_out()
+    returnValue(Redirect(b"/sessions"))
+
+
 
 an_session = Plating(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
                                   tags.td(slot("when"))))

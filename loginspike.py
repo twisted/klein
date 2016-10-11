@@ -49,6 +49,9 @@ style = Plating(
                     tags.li(Class=["nav-item ", slot("signup_active")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
                     tags.transparent(render="if_logged_in")(
+                        tags.li(Class=["nav-item ", slot("sessions_active")])(
+                            tags.a("Sessions", Class="nav-link",
+                                   href="/sessions")),
                         tags.li(Class="nav-item pull-xs-right")(
                             tags.form(render="logout_glue",
                                       action="/logout",
@@ -79,6 +82,7 @@ style = Plating(
         "home_active": "",
         "login_active": "",
         "signup_active": "",
+        "sessions_active": "",
     }
 )
 
@@ -91,7 +95,16 @@ def root(request):
         "home_active": "active"
     }
 
-procurer = open_session_store("sqlite:///sessions.sqlite")
+from twisted.internet import reactor
+getproc = open_session_store(reactor, "sqlite:///sessions.sqlite")
+@getproc.addCallback
+def set_procurer(opened_procurer):
+    """
+    
+    """
+    global procurer
+    print("got the procurer")
+    procurer = opened_procurer
 
 logout = form()
 
@@ -204,7 +217,7 @@ def dologin(request, username, password):
     
     """
     print('login???', request.args, username)
-    manager = ISession(request).data.getComponent(ISimpleAccountBinding)
+    manager = ISimpleAccountBinding(ISession(request).data)
     account = yield manager.log_in(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
@@ -218,12 +231,17 @@ def dologin(request, username, password):
 an_session = Plating(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
                                   tags.td(slot("when"))))
 @an_session.widgeted
-def one_session(an_dict):
+def one_session(session_info):
     """
     
     """
-    print("ad?", an_dict)
-    return an_dict
+    return dict(
+        id=session_info.id,
+        ip=session_info.ip,
+        when=(session_info.when
+              .strftime("%a, %d %b %Y %H:%M:%S +0000")
+              .decode("utf-8")),
+    )
 
 @style.routed(app.route("/sessions", methods=["GET"]),
               [tags.h1("List of Sessions"),
@@ -242,32 +260,11 @@ def sessions(request):
         print("NO SESSION")
         returnValue({"sessions": []})
     print("session!")
-    binding = (yield session.data.getComponent(ISimpleAccountBinding))
-    store = binding._store
-    sipt = store._session_ip_table
-    from klein.storage._sql import AccountBindingStorePlugin
-    acs = AccountBindingStorePlugin._account_session_table
-    @store.sql
-    @inlineCallbacks
-    def query(conn):
-        acs2 = acs.alias()
-        from sqlalchemy.sql.expression import select
-        result = yield conn.execute(
-            select([sipt], use_labels=True)
-            .where((acs.c.session_id == session.identifier) &
-                   (acs.c.account_id == acs2.c.account_id) &
-                   (acs2.c.session_id == sipt.c.session_id)
-            )
-        )
-        returnValue((yield result.fetchall()))
-    rows = yield query
+    binding = ISimpleAccountBinding(session.data)
+    session_infos = yield binding.attached_sessions()
     dump = {
-        "sessions": [one_session.widget({
-            "id": row[sipt.c.session_id],
-            "ip": row[sipt.c.ip_address],
-            "when": row[sipt.c.last_used]
-            .strftime("%a, %d %b %Y %H:%M:%S +0000").decode("utf-8"),
-        }) for row in rows]
+        "sessions": [one_session.widget(session_info) for session_info in
+                     session_infos]
     }
     print(dump)
     returnValue(dump)
@@ -362,6 +359,7 @@ def do_signup(request, username, email, password):
             "next_url": "/login"
         })
     returnValue(result)
+
 
 
 if __name__ == '__main__':

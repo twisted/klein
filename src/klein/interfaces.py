@@ -28,6 +28,12 @@ class TooLateForCookies(Exception):
     """
 
 
+class TransactionEnded(Exception):
+    """
+    Exception raised when.
+    """
+
+
 
 class ISessionStore(Interface):
     """
@@ -126,22 +132,46 @@ class ISimpleAccount(Interface):
 
 
 
-class ISQLSessionDataPlugin(Interface):
+class ISQLSchemaComponent(Interface):
     """
-    
+    A component of an SQL schema.
     """
 
-    def initialize_schema(connection):
+    def initialize_schema(transaction):
         """
-        
+        Add the relevant tables to the database.
         """
 
 
-    def data_for_session(session_store, cursor, session, existing):
+
+class ISessionDataComponent(Interface):
+    """
+    A component for an L{AlchimiaDataStore} that can populate data on an SQL
+    session.
+    """
+
+    def data_for_session(session_store, transaction, session, existing):
         """
-        Get a data object to put onto the session.  This is run in the database
-        thread, but at construction time, so it is not concurrent with any
-        other access to the session.
+        Get a data object to put onto the session.
+
+        If necessary, load the session data first.
+
+        @param session_store: the store where the session is stored.
+        @type session_store: L{AlchimiaSessionStore}
+
+        @param transaction: The transaction that loaded the session.
+        @type transaction: L{klein.storage.sql.Transaction}
+
+        @param session: The session that said this data will be attached to.
+        @type session: L{ISession}
+
+        @param existing: Is the session being created by this request or did it
+            already exist?
+        @type existing: L{bool}
+
+        @return: the interface and object to set on the session's data.
+        @rtype: a C{2-tuple} of C{(interface, transaction)}, or a L{Deferred}
+            firing the same.
         """
 
 

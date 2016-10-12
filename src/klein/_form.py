@@ -204,11 +204,12 @@ URL_ENCODED = b'application/x-www-form-urlencoded'
 
 
 @attr.s(hash=False)
-class Form(object):
+class BindableForm(object):
     """
     
     """
     _fields = attr.ib()
+    _procure_procurer = attr.ib()
 
     def on_validation_failure_for(self, an_handler):
         """
@@ -220,7 +221,7 @@ class Form(object):
         return decorate
 
 
-    def handler(self, get_procurer, route):
+    def handler(self, route):
         """
         
         """
@@ -233,7 +234,7 @@ class Form(object):
             @bindable
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
-                procurer = yield _call(instance, get_procurer)
+                procurer = yield _call(instance, self._procure_procurer)
                 session = yield procurer.procure_session(request)
                 if session.authenticated_by == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION, [None])[0]
@@ -272,8 +273,8 @@ class Form(object):
         return decorator
 
 
-    def renderer(self, get_procurer, route, action, method="POST",
-                 enctype=FORM_DATA, argument="form"):
+    def renderer(self, route, action, method="POST", enctype=FORM_DATA,
+                 argument="form"):
         """
         
         """
@@ -282,7 +283,7 @@ class Form(object):
             @bindable
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
-                procurer = yield _call(instance, get_procurer)
+                procurer = yield _call(instance, self._procure_procurer)
                 session = yield procurer.procure_session(request)
                 form = self.bind(session, action, method, enctype)
                 kw[argument] = form
@@ -302,6 +303,23 @@ class Form(object):
         return RenderableForm(self, session, action, method, enctype,
                               prevalidation=prevalidation,
                               errors=errors)
+
+
+
+
+@attr.s(hash=False)
+class Form(object):
+    """
+    
+    """
+    _fields = attr.ib()
+
+    def with_procurer_from(self, procurer_creator):
+        """
+        
+        """
+        return BindableForm(self._fields, procurer_creator)
+
 
 
 def form(*fields, **named_fields):

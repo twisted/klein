@@ -7,7 +7,7 @@ from binascii import hexlify
 from os import urandom
 from uuid import uuid4
 
-from zope.interface import implementer
+from zope.interface import implementer, implementedBy
 
 from attr import Factory
 from attr.validators import instance_of as an
@@ -130,9 +130,10 @@ class AlchimiaDataStore(object):
         Get all the components providing the given interface.
         """
         for component in self._components:
-            provider = interface(component, None)
-            if provider is not None:
-                yield provider
+            if interface.providedBy(component):
+                # Adaptation-by-call doesn't work with implementedBy() objects
+                # so we can't query for classes
+                yield component
 
 
     @classmethod
@@ -195,16 +196,6 @@ class AlchimiaSessionStore(object):
             Column("session_id", String(), primary_key=True, nullable=False),
             Column("confidential", Boolean(), nullable=False),
         )
-        self.session_ip_table = Table(
-            "session_ip", metadata,
-            Column("session_id", String(),
-                   ForeignKey("session.session_id", ondelete="CASCADE"),
-                   nullable=False),
-            Column("ip_address", String(), nullable=False),
-            Column("address_family", String(), nullable=False),
-            Column("last_used", DateTime(), nullable=False),
-            UniqueConstraint("session_id", "ip_address", "address_family"),
-        )
 
     def sent_insecurely(self, tokens):
         """
@@ -232,11 +223,10 @@ class AlchimiaSessionStore(object):
         """
         Initialize session-specific schema.
         """
-        for tbl in [self.session_table, self.session_ip_table]:
-            try:
-                yield transaction.execute(CreateTable(tbl))
-            except OperationalError as oe:
-                print(oe)
+        try:
+            yield transaction.execute(CreateTable(self.session_table))
+        except OperationalError as oe:
+            print(oe)
 
 
     def new_session(self, is_confidential, authenticated_by):
@@ -317,7 +307,8 @@ class AccountSessionBinding(object):
         """
         
         """
-        return SQLAccount(self._plugin, self._datastore, account_id, username, email)
+        return SQLAccount(self._plugin, self._datastore, account_id, username,
+                          email)
 
 
     @inlineCallbacks
@@ -436,8 +427,9 @@ class AccountSessionBinding(object):
         acs = self._plugin.account_session_table
         # XXX FIXME this is a bad way to access the table, since the table
         # is not actually part of the interface passed here
-        sipt = (next(self._datastore.components_providing(ISessionStore))
-                .session_ip_table)
+        sipt = (next(self._datastore.components_providing(
+            implementedBy(IPTrackingProcurer)
+        ))._session_ip_table)
         @self._datastore.sql
         @inlineCallbacks
         def query(conn):
@@ -590,77 +582,72 @@ def upsert(engine, table, to_query, to_change):
     returnValue(result)
 
 
-@implementer(ISessionStore)
-@attr.s
-class IPTrackingStore(object):
-    """
-    
-    """
-    _datastore = attr.ib()
-    _session_store = attr.ib()
-    request = attr.ib()
 
-    @inlineCallbacks
-    def _touch_session(self, session, style):
-        """
-        Update a session's IP address.  NB: different txn than the session
-        generation; is it worth smashing these together?
-        """
-        session_id = session.identifier
-        try:
-            ip_address = (self.request.client.host or b"").decode("ascii")
-        except:
-            ip_address = u""
-        print("updating session ip", ip_address)
-        @self._datastore.sql
-        @inlineCallbacks
-        def touch(engine):
-            print("here we go")
-            address_family = (u"AF_INET6" if u":" in ip_address
-                              else u"AF_INET")
-            last_used = datetime.utcnow()
-            sip = self._session_store.session_ip_table
-            yield upsert(engine, sip,
-                         dict(session_id=session_id,
-                              ip_address=ip_address,
-                              address_family=address_family),
-                         dict(last_used=last_used))
-            print("executed")
-        yield touch
-        print("returning", session, style)
-        returnValue(session)
-
-    def new_session(self, is_confidential, authenticated_by):
-        return (self._session_store.new_session(is_confidential,
-                                                authenticated_by)
-                .addCallback(self._touch_session, "new"))
-
-    def load_session(self, identifier, is_confidential, authenticated_by):
-        return (self._session_store.load_session(identifier, is_confidential,
-                                                 authenticated_by)
-                .addCallback(self._touch_session, "load"))
-
-    def sent_insecurely(self, tokens):
-        return self._session_store.sent_insecurely(tokens)
-
-
-@implementer(ISessionProcurer)
-@attr.s
+@implementer(ISessionProcurer, ISQLSchemaComponent)
 class IPTrackingProcurer(object):
 
-    _datastore = attr.ib()
-    _session_store = attr.ib()
-    _create_procurer = attr.ib()
+    def __init__(self, metadata, datastore, procurer):
+        """
+        
+        """
+        self._session_ip_table = Table(
+            "session_ip", metadata,
+            Column("session_id", String(),
+                   ForeignKey("session.session_id", ondelete="CASCADE"),
+                   nullable=False),
+            Column("ip_address", String(), nullable=False),
+            Column("address_family", String(), nullable=False),
+            Column("last_used", DateTime(), nullable=False),
+            UniqueConstraint("session_id", "ip_address", "address_family"),
+        )
+        self._datastore = datastore
+        self._procurer = procurer
+
+
+    def initialize_schema(self, transaction):
+        """
+        
+        """
+        try:
+            yield transaction.execute(CreateTable(self._session_ip_table))
+        except OperationalError as oe:
+            print(oe)
+
 
     def procure_session(self, request, force_insecure=False,
                         always_create=True):
-        return (self._create_procurer(IPTrackingStore(
-            self._datastore, self._session_store, request
-        )).procure_session(request, force_insecure, always_create))
+        andThen = (self._procurer
+                   .procure_session(request, force_insecure, always_create)
+                   .addCallback)
+        @andThen
+        def _(session):
+            if session is None:
+                return
+            session_id = session.identifier
+            try:
+                ip_address = (request.client.host or b"").decode("ascii")
+            except:
+                ip_address = u""
+            print("updating session ip", ip_address)
+            @self._datastore.sql
+            def touch(engine):
+                print("here we go")
+                address_family = (u"AF_INET6" if u":" in ip_address
+                                  else u"AF_INET")
+                last_used = datetime.utcnow()
+                sip = self._session_ip_table
+                return upsert(engine, sip,
+                              dict(session_id=session_id,
+                                   ip_address=ip_address,
+                                   address_family=address_family),
+                              dict(last_used=last_used))
+            return touch.addCallback(lambda ignored: session)
+        return _
 
 
 
-def open_session_store(reactor, db_uri, procurer_from_store=SessionProcurer):
+def open_session_store(reactor, db_uri, component_creators=(),
+                       procurer_from_store=SessionProcurer):
     """
     Open a session store, returning a procurer that can procure sessions from
     it.
@@ -674,11 +661,16 @@ def open_session_store(reactor, db_uri, procurer_from_store=SessionProcurer):
 
     @return: L{Deferred} firing with L{ISessionProcurer}
     """
-    return AlchimiaDataStore.open(
-        reactor, db_uri, [AlchimiaSessionStore, AccountBindingStorePlugin]
-    ).addCallback(
-        lambda datastore: IPTrackingProcurer(
-            datastore, next(datastore.components_providing(ISessionStore)),
-            procurer_from_store
-        )
-    )
+    opened = AlchimiaDataStore.open(
+        reactor, db_uri, [
+            AlchimiaSessionStore, AccountBindingStorePlugin,
+            lambda metadata, store: IPTrackingProcurer(
+                metadata, store, procurer_from_store(next(
+                    store.components_providing(ISessionStore)
+                )))
+        ]
+    ).addCallback
+    @opened
+    def procurify(datastore):
+        return next(datastore.components_providing(ISessionProcurer))
+    return procurify

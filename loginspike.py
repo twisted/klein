@@ -108,10 +108,9 @@ def set_procurer(opened_procurer):
     print("got the procurer")
     procurer = opened_procurer
 
-logout = form()
+logout = form().with_procurer_from(lambda: procurer)
 
-@logout.handler(lambda: procurer,
-                app.route("/logout", methods=["POST"]))
+@logout.handler(app.route("/logout", methods=["POST"]))
 @inlineCallbacks
 def bye(request):
     """
@@ -146,7 +145,7 @@ def if_logged_in(request, tag):
         returnValue(tag)
 
 
-@logout.renderer(lambda: procurer, style.render, "/logout")
+@logout.renderer(style.render, "/logout")
 def logout_glue(request, tag, form):
     """
     
@@ -168,11 +167,10 @@ def username(request, tag):
 login = form(
     username=form.text(),
     password=form.password(),
-)
+).with_procurer_from(lambda: procurer)
 
 @style.routed(
-    login.renderer(lambda: procurer,
-                   app.route("/login", methods=["GET"]), action="/login",
+    login.renderer(app.route("/login", methods=["GET"]), action="/login",
                    argument="login_form"),
     [tags.h1("Log In....."),
      tags.div(Class="container")
@@ -209,8 +207,7 @@ def loginform(request, login_form):
         "glue_here": login_form.glue()
     }
 
-@style.routed(login.handler(lambda: procurer,
-                            app.route("/login", methods=["POST"])),
+@style.routed(login.handler(app.route("/login", methods=["POST"])),
               [tags.h1("u log in 2 ", slot("new_account_id"))])
 @inlineCallbacks
 def dologin(request, username, password):
@@ -232,12 +229,11 @@ def dologin(request, username, password):
 
 logout_other = form(
     session_id=form.text(),
-)
+).with_procurer_from(lambda: procurer)
 
 from klein.interfaces import SessionMechanism
 
-@logout_other.handler(lambda: procurer,
-                      app.route("/sessions/logout", methods=["POST"]))
+@logout_other.handler(app.route("/sessions/logout", methods=["POST"]))
 @inlineCallbacks
 def log_other_out(request, session_id):
     """
@@ -300,10 +296,10 @@ signup = form(
     username=form.text(),
     email=form.text(),
     password=form.password(),
-)
+).with_procurer_from(lambda: procurer)
 
 @style.routed(
-    signup.renderer(lambda: procurer, app.route("/signup", methods=["GET"]),
+    signup.renderer(app.route("/signup", methods=["GET"]),
                     action="/signup",
                     argument="the_form"),
     [tags.h1("Sign Up"),
@@ -352,8 +348,7 @@ def signup_page(request, the_form):
 
 
 @style.routed(
-    signup.handler(lambda: procurer,
-                   app.route("/signup", methods=["POST"])),
+    signup.handler(app.route("/signup", methods=["POST"])),
     [tags.h1(slot("success")),
      tags.p("Now ", tags.a(href=slot("next_url"))(slot("link_message")), ".")]
 )

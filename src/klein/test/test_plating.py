@@ -31,7 +31,8 @@ page = Plating(
     ),
 )
 
-element = Plating(
+
+@Plating.widget(
     defaults={
         "a": "NO VALUE FOR A",
         "b": "NO VALUE FOR B",
@@ -39,8 +40,6 @@ element = Plating(
     tags=tags.div(tags.span("a: ", slot("a")),
                   tags.span("b: ", slot("b"))),
 )
-
-@element.widgeted
 def enwidget(a, b):
     """
     Provide some values for the L{widget} template.
@@ -139,7 +138,7 @@ class PlatingTests(TestCase):
 
     def test_widget_html(self):
         """
-        When L{Plating.widgeted} is applied as a decorator, it gives the
+        When L{Plating.widget} is applied as a decorator, it gives the
         decorated function a C{widget} attribute which is a version of the
         function with a modified return type that turns it into a renderable
         HTML sub-element that may fill a slot.
@@ -154,7 +153,7 @@ class PlatingTests(TestCase):
 
     def test_widget_json(self):
         """
-        When L{Plating.widgeted} is applied as a decorator, and the result is
+        When L{Plating.widget} is applied as a decorator, and the result is
         serialized to JSON, it appears the same as the returned value despite
         the HTML-friendly wrapping described above.
         """

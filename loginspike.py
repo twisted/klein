@@ -250,9 +250,9 @@ def log_other_out(request, session_id):
 
 
 
-an_session = Plating(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
-                                  tags.td(slot("when"))))
-@an_session.widgeted
+
+Plating.widget(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
+                            tags.td(slot("when"))))
 def one_session(session_info):
     """
     

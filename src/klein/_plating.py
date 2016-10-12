@@ -164,14 +164,14 @@ class Plating(object):
                              renderers=self._renderers,
                              bound_instance=instance)
 
-    def widgeted(self, function):
-        """
-        
-        """
-        @modified("plating widgeted renderer", function)
-        @bindable
-        def wrapper(instance, *a, **k):
-            data = _call(instance, function, *a, **k)
-            return self._elementify(instance, data)
-        function.widget = wrapper
-        return function
+    def widget(cls, **kw):
+        self = cls(**kw)
+        def enwidget(function):
+            @modified("Plating.widget renderer", function)
+            @bindable
+            def wrapper(instance, *a, **k):
+                data = _call(instance, function, *a, **k)
+                return self._elementify(instance, data)
+            function.widget = wrapper
+            return function
+        return enwidget

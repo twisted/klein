@@ -14,7 +14,7 @@ from twisted.web.template import tags
 from twisted.web.iweb import IRenderable
 from twisted.web.error import MissingRenderMethod
 
-from .interfaces import SessionMechanism
+from .interfaces import SessionMechanism, ISession
 from .app import _call
 from ._decorators import bindable, modified
 
@@ -120,7 +120,7 @@ class RenderableForm(object):
     _action = attr.ib()
     _method = attr.ib()
     _enctype = attr.ib()
-    _encoding = attr.ib(default="utf-8")
+    _encoding = attr.ib()
 
     def _csrf_field(self):
         """
@@ -166,7 +166,8 @@ class RenderableForm(object):
         """
         return (
             tags.form(action=self._action, method=self._method,
-                      enctype=self._enctype)
+                      enctype=self._enctype,
+                      **{"accept-charset": self._encoding})
             (
                 field.as_tags() for field in self._fields_to_render()
             )
@@ -209,7 +210,7 @@ class BindableForm(object):
     
     """
     _fields = attr.ib()
-    _procure_procurer = attr.ib()
+    _authorized = attr.ib()
 
     def on_validation_failure_for(self, an_handler):
         """
@@ -230,12 +231,12 @@ class BindableForm(object):
             failure_handlers = getattr(function, vfhc, WeakKeyDictionary())
             setattr(function, vfhc, failure_handlers)
             failure_handlers[self] = default_validation_failure_handler
-            @modified("form handler", function, route)
+            @modified("form handler", function,
+                      self._authorized(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
-                procurer = yield _call(instance, self._procure_procurer)
-                session = yield procurer.procure_session(request)
+                session = kw.pop("__session__")
                 if session.authenticated_by == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION, [None])[0]
                     if token != session.identifier:
@@ -274,15 +275,16 @@ class BindableForm(object):
 
 
     def renderer(self, route, action, method="POST", enctype=FORM_DATA,
-                 argument="form"):
+                 argument="form", encoding="utf-8"):
         def decorator(function):
-            @modified("form renderer", function, route)
+            @modified("form renderer", function,
+                      self._authorized(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
-                procurer = yield _call(instance, self._procure_procurer)
-                session = yield procurer.procure_session(request)
-                form = self.bind(session, action, method, enctype)
+                session = kw.pop("__session__")
+                form = self.bind(session, action, method, enctype,
+                                 encoding=encoding)
                 kw[argument] = form
                 result = yield _call(instance, function, request, *args, **kw)
                 returnValue(result)
@@ -291,13 +293,13 @@ class BindableForm(object):
 
 
     def bind(self, session, action, method="POST", enctype=FORM_DATA,
-             prevalidation=None, errors=None):
+             prevalidation=None, errors=None, encoding="utf-8"):
         """
         Bind this form to a session.
         """
         return RenderableForm(self, session, action, method, enctype,
                               prevalidation=prevalidation,
-                              errors=errors)
+                              errors=errors, encoding=encoding)
 
 
 
@@ -309,11 +311,11 @@ class Form(object):
     """
     _fields = attr.ib()
 
-    def with_procurer_from(self, procurer_creator):
+    def authorized_using(self, authorized):
         """
         
         """
-        return BindableForm(self._fields, procurer_creator)
+        return BindableForm(self._fields, authorized)
 
 
 

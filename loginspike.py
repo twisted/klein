@@ -108,10 +108,10 @@ def set_procurer(opened_procurer):
     global procurer
     procurer = opened_procurer
 
-logout = form().with_procurer_from(lambda: procurer)
 from klein._session import requirer, Optional
-
 authorized = requirer(lambda: procurer)
+
+logout = form().authorized_using(authorized)
 
 @authorized(logout.handler(app.route("/logout", methods=["POST"])),
             binding=ISimpleAccountBinding)
@@ -159,7 +159,7 @@ def username(request, tag, binding):
 login = form(
     username=form.text(),
     password=form.password(),
-).with_procurer_from(lambda: procurer)
+).authorized_using(authorized)
 
 @style.routed(
     login.renderer(app.route("/login", methods=["GET"]), action="/login",
@@ -222,7 +222,7 @@ def dologin(request, username, password, binding):
 
 logout_other = form(
     session_id=form.text(),
-).with_procurer_from(lambda: procurer)
+).authorized_using(authorized)
 
 @authorized(
     logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
@@ -305,7 +305,7 @@ signup = form(
     username=form.text(),
     email=form.text(),
     password=form.password(),
-).with_procurer_from(lambda: procurer)
+).authorized_using(authorized)
 
 @style.routed(
     signup.renderer(app.route("/signup", methods=["GET"]),

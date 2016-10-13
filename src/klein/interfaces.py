@@ -144,17 +144,24 @@ class ISQLSchemaComponent(Interface):
 
 
 
-class ISessionDataComponent(Interface):
+class ISQLAuthorizer(Interface):
     """
-    A component for an L{AlchimiaDataStore} that can populate data on an SQL
+    An add-on for an L{AlchimiaDataStore} that can populate data on an Alchimia
     session.
     """
 
-    def data_for_session(session_store, transaction, session, existing):
+    authzn_interface = Attribute(
         """
-        Get a data object to put onto the session.
+        The interface for which a session can be authorized by this
+        L{ISQLAuthorizer}.
+        """
+    )
 
-        If necessary, load the session data first.
+    def authzn_for_session(session_store, transaction, session):
+        """
+        Get a data object that the session has access to.
+
+        If necessary, load related data first.
 
         @param session_store: the store where the session is stored.
         @type session_store: L{AlchimiaSessionStore}
@@ -165,12 +172,8 @@ class ISessionDataComponent(Interface):
         @param session: The session that said this data will be attached to.
         @type session: L{ISession}
 
-        @param existing: Is the session being created by this request or did it
-            already exist?
-        @type existing: L{bool}
-
-        @return: the interface and object to set on the session's data.
-        @rtype: a C{2-tuple} of C{(interface, transaction)}, or a L{Deferred}
+        @return: the object the session is authorized to access
+        @rtype: a providier of C{self.authzn_interface}, or a L{Deferred}
             firing the same.
         """
 
@@ -274,9 +277,23 @@ class ISession(Interface):
         """
     )
 
-    data = Attribute(
+
+    def authorize(interfaces):
         """
-        A L{Componentized} representing application-specific data loaded for
-        this session.
+        Retrieve other objects from this session.
+
+        This method is how you can retrieve application-specific objects from
+        the general-purpose session; define interfaces for each facet of
+        something accessible to a session, then pass it here and to the
+        L{ISessionStore} implementation you're using.
+
+        @param interfaces: A list of interfaces.
+        @type interfaces: L{iterable} of
+            L{zope.interface.interfaces.IInterface}
+
+        @return: all of the providers that could be retrieved from the session.
+        @rtype: L{Deferred} firing with L{dict} mapping
+            L{zope.interface.interfaces.IInterface} to providers of each
+            interface.
         """
-    )
+

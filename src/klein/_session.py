@@ -2,10 +2,13 @@
 import attr
 
 from zope.interface import implementer
-from klein.interfaces import (
+from .interfaces import (
     ISessionProcurer, SessionMechanism, NoSuchSession, ISession,
     TooLateForCookies
 )
+from ._decorators import modified, bindable
+from .app import _call
+
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 @implementer(ISessionProcurer)
@@ -63,6 +66,7 @@ class SessionProcurer(object):
                         always_create=True):
         already_procured = ISession(request, None)
         if already_procured is not None:
+            print("returning already procured", already_procured)
             returnValue(already_procured)
 
         if request.isSecure():
@@ -103,13 +107,17 @@ class SessionProcurer(object):
             session_id = request.getCookie(cookie_name)
         if session_id is not None:
             try:
+                print("loading session", session_id)
                 session = yield self._store.load_session(
                     session_id, sent_securely, mechanism
                 )
+                print("loaded session", session)
             except NoSuchSession:
                 if mechanism == SessionMechanism.Header:
                     raise
                 session_id = None
+        else:
+            print("NO COOKIE?", request)
         if session_id is None:
             if always_create:
                 if request.startedWriting:
@@ -123,6 +131,7 @@ class SessionProcurer(object):
                 session = yield self._store.new_session(sent_securely,
                                                         mechanism)
             else:
+                print("returning none because too late for cookie")
                 returnValue(None)
         if session_id != session.identifier:
             if request.startedWriting:
@@ -139,4 +148,63 @@ class SessionProcurer(object):
         if not force_insecure:
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
+        print("returning", session, "at end")
         returnValue(session)
+
+
+
+def requirer(procure_procurer):
+    def requires(route, **kw):
+        def toroute(thunk):
+            # FIXME: this should probably inspect the signature of 'thunk' to
+            # see if it has default arguments, rather than relying upon people
+            # to pass in Optional instances
+            optified = dict([(k, Required.maybe(v)) for k, v in kw.items()])
+            any_required = any(v._required for v in optified.values())
+            @modified("requirer", thunk, route)
+            @bindable
+            @inlineCallbacks
+            def routed(instance, request, *args, **kwargs):
+                newkw = kwargs.copy()
+                procu = _call(instance, procure_procurer)
+                print("procu", procu)
+                print("anyreq?", any_required)
+                session = yield (procu.procure_session(
+                    request, always_create=any_required)
+                )
+                print("IS-SESSION???", session)
+                values = ({} if session is None else
+                          (yield session.authorize(
+                              [o._interface for o in optified.values()]
+                          )))
+                for k, v in optified.items():
+                    print("retrieving", k, "using", v, "from", values)
+                    oneval = v.retrieve(values)
+                    print("got", oneval)
+                    newkw[k] = oneval
+                returnValue((yield _call(instance, thunk, request,
+                                         *args, **newkw)))
+        return toroute
+    return requires
+
+
+
+@attr.s
+class Optional(object):
+    _interface = attr.ib()
+    _required = False
+    def retrieve(self, dict):
+        return dict.get(self._interface, None)
+@attr.s
+class Required(object):
+    _interface = attr.ib()
+    _required = True
+
+    @classmethod
+    def maybe(cls, it):
+        if isinstance(it, (Optional, Required)):
+            return it
+        return cls(it)
+
+    def retrieve(self, dict):
+        return dict[self._interface]

@@ -23,28 +23,54 @@ from sqlalchemy.exc import OperationalError, IntegrityError
 from klein.interfaces import (
     ISession, ISessionStore, NoSuchSession, ISimpleAccount,
     ISimpleAccountBinding, ISessionProcurer, ISQLSchemaComponent,
-    TransactionEnded, ISessionDataComponent
+    TransactionEnded, ISQLAuthorizer
 )
 
 from klein import SessionProcurer
 from klein.storage.security import compute_key_text, check_and_reset
 
-from twisted.internet.defer import inlineCallbacks, returnValue, gatherResults
+from twisted.internet.defer import (
+    inlineCallbacks, returnValue, gatherResults, maybeDeferred
+)
 from twisted.python.failure import Failure
-from twisted.python.components import Componentized
 
 from alchimia import TWISTED_STRATEGY
 
 @implementer(ISession)
 @attr.s
 class SQLSession(object):
-    """
-    
-    """
+    _session_store = attr.ib()
     identifier = attr.ib()
     is_confidential = attr.ib()
     authenticated_by = attr.ib()
-    data = attr.ib(default=Factory(Componentized))
+
+    def authorize(self, interfaces):
+        interfaces = set(interfaces)
+        datastore = self._session_store._datastore
+        @datastore.sql
+        def authzn(txn):
+            result = {}
+            ds = []
+            authorizers = datastore.components_providing(ISQLAuthorizer)
+            for a in authorizers:
+                # This should probably do something smart with interface
+                # priority, checking isOrExtends or something similar.
+                print("RETRIEVING?", a.authzn_interface, interfaces)
+                if a.authzn_interface in interfaces:
+                    v = maybeDeferred(a.authzn_for_session,
+                                      self._session_store, txn, self)
+                    ds.append(v)
+                    result[a.authzn_interface] = v
+                    v.addCallback(
+                        lambda value, ai: result.__setitem__(ai, value),
+                        ai=a.authzn_interface
+                    )
+            def r(ignored):
+                print("ignoring", ignored)
+                print("got", result)
+                return result
+            return (gatherResults(ds).addCallback(r))
+        return authzn
 
 
 
@@ -232,43 +258,18 @@ class AlchimiaSessionStore(object):
     def new_session(self, is_confidential, authenticated_by):
         @self._datastore.sql
         @inlineCallbacks
-        def created(engine):
+        def created(txn):
             identifier = hexlify(urandom(32))
             s = self.session_table
-            yield engine.execute(s.insert().values(
+            yield txn.execute(s.insert().values(
                 session_id=identifier,
                 confidential=is_confidential,
             ))
-            returnValue((
-                yield self._populate(
-                    engine, SQLSession(
-                        identifier=identifier,
-                        is_confidential=is_confidential,
-                        authenticated_by=authenticated_by))
-            ))
+            returnValue(SQLSession(self,
+                                   identifier=identifier,
+                                   is_confidential=is_confidential,
+                                   authenticated_by=authenticated_by))
         return created
-
-
-    @inlineCallbacks
-    def _populate(self, transaction, session):
-        """
-        Populate a session's data with all the data store components providing
-        L{ISessionDataComponent}.
-
-        @param transaction: The transaction to connect to the data store.
-        @type transaction: L{Transaction}
-
-        @param session: The session that this data will be loaded into.
-        @type session: L{ISession}
-        """
-        for component in self._datastore.components_providing(
-                ISessionDataComponent
-        ):
-            interface, session_data = yield component.data_for_session(
-                self, transaction, session, False
-            )
-            session.data.setComponent(interface, session_data)
-        returnValue(session)
 
 
     def load_session(self, identifier, is_confidential, authenticated_by):
@@ -282,12 +283,11 @@ class AlchimiaSessionStore(object):
             results = yield result.fetchall()
             if not results:
                 raise NoSuchSession()
-            fetched_id = results[0][s.c.session_id]
-            returnValue((yield self._populate(
-                engine, SQLSession(identifier=fetched_id,
+            fetched_identifier = results[0][s.c.session_id]
+            returnValue(SQLSession(self,
+                                   identifier=fetched_identifier,
                                    is_confidential=is_confidential,
-                                   authenticated_by=authenticated_by)
-            )))
+                                   authenticated_by=authenticated_by))
         return loaded
 
 
@@ -513,11 +513,13 @@ class SQLAccount(object):
 
 
 
-@implementer(ISessionDataComponent)
+@implementer(ISQLAuthorizer, ISQLSchemaComponent)
 class AccountBindingStorePlugin(object):
     """
     
     """
+
+    authzn_interface = ISimpleAccountBinding
 
     def __init__(self, metadata, store):
         """
@@ -552,12 +554,8 @@ class AccountBindingStorePlugin(object):
             yield transaction.execute(CreateTable(table))
 
 
-    def data_for_session(self, session_store, transaction, session, existing):
-        """
-        
-        """
-        return (ISimpleAccountBinding,
-                AccountSessionBinding(self, session, self._datastore))
+    def authzn_for_session(self, session_store, transaction, session):
+        return AccountSessionBinding(self, session, self._datastore)
 
 
 
@@ -622,6 +620,7 @@ class IPTrackingProcurer(object):
         @andThen
         def _(session):
             if session is None:
+                print("IPTrackProcNone")
                 return
             session_id = session.identifier
             try:
@@ -641,7 +640,16 @@ class IPTrackingProcurer(object):
                                    ip_address=ip_address,
                                    address_family=address_family),
                               dict(last_used=last_used))
-            return touch.addCallback(lambda ignored: session)
+            print("touching and returning", session)
+            @touch.addCallback
+            def andReturn(ignored):
+                print("_now_ returning", session)
+                return session
+            return andReturn
+        @_.addCallback
+        def showMe(result):
+            print("and at last", result)
+            return result
         return _
 
 
@@ -668,7 +676,7 @@ def open_session_store(reactor, db_uri, component_creators=(),
                 metadata, store, procurer_from_store(next(
                     store.components_providing(ISessionStore)
                 )))
-        ]
+        ] + list(component_creators)
     ).addCallback
     @opened
     def procurify(datastore):

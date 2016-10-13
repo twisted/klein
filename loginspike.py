@@ -5,7 +5,8 @@ from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from klein import Klein, Plating, form
-from klein.interfaces import ISession, ISimpleAccountBinding
+from klein.interfaces import ISimpleAccountBinding, SessionMechanism
+
 from klein.storage.sql import open_session_store
 
 from twisted.web.util import Redirect
@@ -109,39 +110,37 @@ def set_procurer(opened_procurer):
     procurer = opened_procurer
 
 logout = form().with_procurer_from(lambda: procurer)
+from klein._session import requirer, Optional
 
-@logout.handler(app.route("/logout", methods=["POST"]))
+authorized = requirer(lambda: procurer)
+
+@authorized(logout.handler(app.route("/logout", methods=["POST"])),
+            binding=ISimpleAccountBinding)
 @inlineCallbacks
-def bye(request):
+def bye(request, binding):
     """
     Log out.
     """
-    yield ISimpleAccountBinding(ISession(request).data).log_out()
+    yield binding.log_out()
     returnValue(Redirect(b"/"))
 
+@authorized(style.render, binding=Optional(ISimpleAccountBinding))
 @inlineCallbacks
-def authenticated_account(request):
-    """
-    
-    """
-    session = yield procurer.procure_session(request, always_create=False)
-    if session is None:
-        returnValue(None)
-    binding = session.data.getComponent(ISimpleAccountBinding)
-    accounts = yield binding.authenticated_accounts()
-    returnValue(next(iter(accounts), None))
-
-
-@style.render
-@inlineCallbacks
-def if_logged_in(request, tag):
+def if_logged_in(request, tag, binding):
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
-    account = yield authenticated_account(request)
+    print("ILI")
+    if binding is None:
+        print("BINDNONE")
+        returnValue(u"UNBOUND")
+    print("AUTHACC")
+    account = next(iter((yield binding.authenticated_accounts())), None)
     if account is None:
-        returnValue(u"")
+        print("NO-ACC")
+        returnValue(u"NO-ACCOUNT")
     else:
+        print("TAG?", tag)
         returnValue(tag)
 
 
@@ -154,13 +153,13 @@ def logout_glue(request, tag, form):
     print("rendering", glue)
     return tag(glue)
 
-@style.render
+@authorized(style.render, binding=ISimpleAccountBinding)
 @inlineCallbacks
-def username(request, tag):
+def username(request, tag, binding):
     """
     
     """
-    account = yield authenticated_account(request)
+    account = next(iter((yield binding.authenticated_accounts())), None)
     returnValue(tag(account.username))
 
 
@@ -207,16 +206,18 @@ def loginform(request, login_form):
         "glue_here": login_form.glue()
     }
 
-@style.routed(login.handler(app.route("/login", methods=["POST"])),
-              [tags.h1("u log in 2 ", slot("new_account_id"))])
+@authorized(
+    style.routed(login.handler(app.route("/login", methods=["POST"])),
+                 [tags.h1("u log in 2 ", slot("new_account_id"))]),
+    binding=ISimpleAccountBinding,
+)
 @inlineCallbacks
-def dologin(request, username, password):
+def dologin(request, username, password, binding):
     """
     
     """
     print('login???', request.args, username)
-    manager = ISimpleAccountBinding(ISession(request).data)
-    account = yield manager.log_in(username, password)
+    account = yield binding.log_in(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
     else:
@@ -231,15 +232,15 @@ logout_other = form(
     session_id=form.text(),
 ).with_procurer_from(lambda: procurer)
 
-from klein.interfaces import SessionMechanism
-
-@logout_other.handler(app.route("/sessions/logout", methods=["POST"]))
+@authorized(
+    logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
+    binding=ISimpleAccountBinding,
+)
 @inlineCallbacks
-def log_other_out(request, session_id):
+def log_other_out(request, session_id, binding):
     """
     
     """
-    binding = ISession(request).data.getComponent(ISimpleAccountBinding)
     store = binding._store
     session = yield store.load_session(session_id, request.isSecure(),
                                        SessionMechanism.Header)
@@ -251,8 +252,8 @@ def log_other_out(request, session_id):
 
 
 
-Plating.widget(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
-                            tags.td(slot("when"))))
+@Plating.widget(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
+                             tags.td(slot("when"))))
 def one_session(session_info):
     """
     
@@ -265,28 +266,27 @@ def one_session(session_info):
               .decode("utf-8")),
     )
 
-@style.routed(app.route("/sessions", methods=["GET"]),
-              [tags.h1("List of Sessions"),
-               tags.table(border="5",
-                          cellpadding="2", cellspacing="2"
-               )(tags.transparent(render="sessions:list")
-                          (slot("item")))])
+@authorized(
+    style.routed(app.route("/sessions", methods=["GET"]),
+                 [tags.h1("List of Sessions"),
+                  tags.table(border="5",
+                             cellpadding="2", cellspacing="2"
+                  )(tags.transparent(render="sessions:list")
+                    (slot("item")))]),
+    # If all bindings are Optional, then session creation should be optional.
+    binding=Optional(ISimpleAccountBinding),
+)
 @inlineCallbacks
-def sessions(request):
+def sessions(request, binding):
     """
     
     """
-    session = yield procurer.procure_session(request, always_create=False)
-    print("session?")
-    if session is None:
-        print("NO SESSION")
+    if binding is None:
         returnValue({"sessions": []})
     print("session!")
-    binding = ISimpleAccountBinding(session.data)
-    session_infos = yield binding.attached_sessions()
     dump = {
-        "sessions": [one_session.widget(session_info) for session_info in
-                     session_infos]
+        "sessions": [one_session.widget(session_info)
+                     for session_info in (yield binding.attached_sessions())]
     }
     print(dump)
     returnValue(dump)
@@ -347,21 +347,17 @@ def signup_page(request, the_form):
 
 
 
-@style.routed(
+@authorized(style.routed(
     signup.handler(app.route("/signup", methods=["POST"])),
     [tags.h1(slot("success")),
      tags.p("Now ", tags.a(href=slot("next_url"))(slot("link_message")), ".")]
-)
+), binding=ISimpleAccountBinding)
 @inlineCallbacks
-def do_signup(request, username, email, password):
+def do_signup(request, username, email, password, binding):
     """
     
     """
-    acct = (yield (
-            request.getComponent(ISession).data
-            .getComponent(ISimpleAccountBinding)
-            .create_account(username, email, password)
-    ))
+    acct = yield binding.create_account(username, email, password)
     result = {
         "signup_active": "active",
         "account_id": None

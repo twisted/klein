@@ -164,6 +164,7 @@ class Plating(object):
                              renderers=self._renderers,
                              bound_instance=instance)
 
+    @classmethod
     def widget(cls, **kw):
         self = cls(**kw)
         def enwidget(function):

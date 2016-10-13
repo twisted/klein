@@ -287,9 +287,7 @@ class BindableForm(object):
                 session = yield procurer.procure_session(request)
                 form = self.bind(session, action, method, enctype)
                 kw[argument] = form
-                print("calling through", function)
                 result = yield _call(instance, function, request, *args, **kw)
-                print("resulted", result)
                 returnValue(result)
             return function
         return decorator

@@ -55,7 +55,6 @@ class SQLSession(object):
             for a in authorizers:
                 # This should probably do something smart with interface
                 # priority, checking isOrExtends or something similar.
-                print("RETRIEVING?", a.authzn_interface, interfaces)
                 if a.authzn_interface in interfaces:
                     v = maybeDeferred(a.authzn_for_session,
                                       self._session_store, txn, self)
@@ -66,8 +65,6 @@ class SQLSession(object):
                         ai=a.authzn_interface
                     )
             def r(ignored):
-                print("ignoring", ignored)
-                print("got", result)
                 return result
             return (gatherResults(ds).addCallback(r))
         return authzn
@@ -197,7 +194,6 @@ class AlchimiaDataStore(object):
         @inlineCallbacks
         def do(transaction):
             for component in self.components_providing(ISQLSchemaComponent):
-                print("init schema", component)
                 try:
                     yield component.initialize_schema(transaction)
                 except OperationalError as oe:
@@ -251,12 +247,10 @@ class AlchimiaSessionStore(object):
         """
         Initialize session-specific schema.
         """
-        print("init the session store...?")
         try:
             yield transaction.execute(CreateTable(self.session_table))
-            print("sessions created OK")
         except OperationalError as oe:
-            print("sessions?", oe)
+            print("sessions-table", oe)
 
 
     def new_session(self, is_confidential, authenticated_by):
@@ -360,7 +354,6 @@ class AccountSessionBinding(object):
         @rtype: L{Deferred} firing with L{IAccount} if we succeeded and L{None}
             if we failed.
         """
-        print("log in to", repr(username))
         acc = self._plugin.account_table
         @self._datastore.sql
         @inlineCallbacks
@@ -376,7 +369,6 @@ class AccountSessionBinding(object):
         [row] = accounts_info
         stored_password_text = row[acc.c.password_blob]
         account_id = row[acc.c.account_id]
-        print("login in", account_id)
 
         def reset_password(new_pw_text):
             @self._datastore.sql
@@ -614,7 +606,7 @@ class IPTrackingProcurer(object):
         try:
             yield transaction.execute(CreateTable(self._session_ip_table))
         except OperationalError as oe:
-            print(oe)
+            print("ip-schema", oe)
 
 
     def procure_session(self, request, force_insecure=False,
@@ -625,17 +617,14 @@ class IPTrackingProcurer(object):
         @andThen
         def _(session):
             if session is None:
-                print("IPTrackProcNone")
                 return
             session_id = session.identifier
             try:
                 ip_address = (request.client.host or b"").decode("ascii")
             except:
                 ip_address = u""
-            print("updating session ip", ip_address)
             @self._datastore.sql
             def touch(engine):
-                print("here we go")
                 address_family = (u"AF_INET6" if u":" in ip_address
                                   else u"AF_INET")
                 last_used = datetime.utcnow()
@@ -645,15 +634,12 @@ class IPTrackingProcurer(object):
                                    ip_address=ip_address,
                                    address_family=address_family),
                               dict(last_used=last_used))
-            print("touching and returning", session)
             @touch.addCallback
             def andReturn(ignored):
-                print("_now_ returning", session)
                 return session
             return andReturn
         @_.addCallback
         def showMe(result):
-            print("and at last", result)
             return result
         return _
 

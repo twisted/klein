@@ -66,7 +66,6 @@ class SessionProcurer(object):
                         always_create=True):
         already_procured = ISession(request, None)
         if already_procured is not None:
-            print("returning already procured", already_procured)
             returnValue(already_procured)
 
         if request.isSecure():
@@ -107,17 +106,13 @@ class SessionProcurer(object):
             session_id = request.getCookie(cookie_name)
         if session_id is not None:
             try:
-                print("loading session", session_id)
                 session = yield self._store.load_session(
                     session_id, sent_securely, mechanism
                 )
-                print("loaded session", session)
             except NoSuchSession:
                 if mechanism == SessionMechanism.Header:
                     raise
                 session_id = None
-        else:
-            print("NO COOKIE?", request)
         if session_id is None:
             if always_create:
                 if request.startedWriting:
@@ -131,7 +126,6 @@ class SessionProcurer(object):
                 session = yield self._store.new_session(sent_securely,
                                                         mechanism)
             else:
-                print("returning none because too late for cookie")
                 returnValue(None)
         if session_id != session.identifier:
             if request.startedWriting:
@@ -148,7 +142,6 @@ class SessionProcurer(object):
         if not force_insecure:
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
-        print("returning", session, "at end")
         returnValue(session)
 
 
@@ -167,20 +160,15 @@ def requirer(procure_procurer):
             def routed(instance, request, *args, **kwargs):
                 newkw = kwargs.copy()
                 procu = _call(instance, procure_procurer)
-                print("procu", procu)
-                print("anyreq?", any_required)
                 session = yield (procu.procure_session(
                     request, always_create=any_required)
                 )
-                print("IS-SESSION???", session)
                 values = ({} if session is None else
                           (yield session.authorize(
                               [o._interface for o in optified.values()]
                           )))
                 for k, v in optified.items():
-                    print("retrieving", k, "using", v, "from", values)
                     oneval = v.retrieve(values)
-                    print("got", oneval)
                     newkw[k] = oneval
                 returnValue((yield _call(instance, thunk, request,
                                          *args, **newkw)))

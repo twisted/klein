@@ -70,7 +70,6 @@ class PlatedElement(Element):
         """
         @return: a renderer.
         """
-        print("renderers?", self._renderers)
         if name in self._renderers:
             wrapped = self._renderers[name]
             @modified("plated render wrapper", wrapped)

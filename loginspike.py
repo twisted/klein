@@ -106,7 +106,6 @@ def set_procurer(opened_procurer):
     
     """
     global procurer
-    print("got the procurer")
     procurer = opened_procurer
 
 logout = form().with_procurer_from(lambda: procurer)
@@ -130,17 +129,12 @@ def if_logged_in(request, tag, binding):
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
-    print("ILI")
     if binding is None:
-        print("BINDNONE")
-        returnValue(u"UNBOUND")
-    print("AUTHACC")
+        returnValue(u"")
     account = next(iter((yield binding.authenticated_accounts())), None)
     if account is None:
-        print("NO-ACC")
-        returnValue(u"NO-ACCOUNT")
+        returnValue(u"")
     else:
-        print("TAG?", tag)
         returnValue(tag)
 
 
@@ -150,7 +144,6 @@ def logout_glue(request, tag, form):
     
     """
     glue = form.glue()
-    print("rendering", glue)
     return tag(glue)
 
 @authorized(style.render, binding=ISimpleAccountBinding)
@@ -216,7 +209,6 @@ def dologin(request, username, password, binding):
     """
     
     """
-    print('login???', request.args, username)
     account = yield binding.log_in(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
@@ -283,12 +275,10 @@ def sessions(request, binding):
     """
     if binding is None:
         returnValue({"sessions": []})
-    print("session!")
     dump = {
         "sessions": [one_session.widget(session_info)
                      for session_info in (yield binding.attached_sessions())]
     }
-    print(dump)
     returnValue(dump)
 
 

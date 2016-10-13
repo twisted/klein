@@ -233,20 +233,31 @@ def log_other_out(request, session_id, binding):
     """
     
     """
-    store = binding._store
-    session = yield store.load_session(session_id, request.isSecure(),
-                                       SessionMechanism.Header)
-    from klein.storage._sql import AccountSessionBinding
-    other_binding = AccountSessionBinding(session, store)
+    from attr import assoc
+    session = yield binding._session._session_store.load_session(
+        session_id, request.isSecure(),
+        SessionMechanism.Header
+    )
+    other_binding = assoc(binding, _session=session)
     yield other_binding.log_out()
     returnValue(Redirect(b"/sessions"))
 
 
 
 
-@Plating.widget(tags=tags.tr(tags.td(slot("id")), tags.td(slot("ip")),
-                             tags.td(slot("when"))))
-def one_session(session_info):
+@Plating.widget(
+    tags=tags.tr(style=slot("highlight"))(
+        tags.td(slot("id")), tags.td(slot("ip")),
+        tags.td(slot("when")),
+        tags.td(tags.form(action="/sessions/logout",
+                          method="POST")
+                (tags.button("logout"),
+                 tags.input(type="hidden", value=[slot("id")],
+                            name="session_id"),
+                 slot("glue")))
+    )
+)
+def one_session(session_info, form, current):
     """
     
     """
@@ -256,27 +267,35 @@ def one_session(session_info):
         when=(session_info.when
               .strftime("%a, %d %b %Y %H:%M:%S +0000")
               .decode("utf-8")),
+        glue=form.glue(),
+        highlight="background-color: rgb(200, 200, 255)" if current else ""
     )
 
 @authorized(
-    style.routed(app.route("/sessions", methods=["GET"]),
-                 [tags.h1("List of Sessions"),
-                  tags.table(border="5",
-                             cellpadding="2", cellspacing="2"
-                  )(tags.transparent(render="sessions:list")
-                    (slot("item")))]),
+    logout_other.renderer(
+        style.routed(app.route("/sessions", methods=["GET"]),
+                     [tags.h1("List of Sessions"),
+                      tags.table(border="5",
+                                 cellpadding="2", cellspacing="2"
+                      )(tags.transparent(render="sessions:list")
+                        (slot("item")))]),
+        "/sessions/logout",
+    ),
     # If all bindings are Optional, then session creation should be optional.
     binding=Optional(ISimpleAccountBinding),
 )
 @inlineCallbacks
-def sessions(request, binding):
+def sessions(request, binding, form):
     """
     
     """
+    from klein.interfaces import ISession
     if binding is None:
         returnValue({"sessions": []})
     dump = {
-        "sessions": [one_session.widget(session_info)
+        "sessions": [one_session.widget(
+            session_info, form, ISession(request).identifier == session_info.id
+        )
                      for session_info in (yield binding.attached_sessions())]
     }
     returnValue(dump)

@@ -275,9 +275,6 @@ class BindableForm(object):
 
     def renderer(self, route, action, method="POST", enctype=FORM_DATA,
                  argument="form"):
-        """
-        
-        """
         def decorator(function):
             @modified("form renderer", function, route)
             @bindable

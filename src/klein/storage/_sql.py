@@ -197,15 +197,16 @@ class AlchimiaDataStore(object):
         @inlineCallbacks
         def do(transaction):
             for component in self.components_providing(ISQLSchemaComponent):
+                print("init schema", component)
                 try:
                     yield component.initialize_schema(transaction)
-                except OperationalError:
+                except OperationalError as oe:
                     # Table creation failure.  TODO: log this error.
-                    pass
+                    print("OE:", oe)
         return do
 
 
-@implementer(ISessionStore)
+@implementer(ISessionStore, ISQLSchemaComponent)
 @attr.s(init=False)
 class AlchimiaSessionStore(object):
     """
@@ -245,14 +246,17 @@ class AlchimiaSessionStore(object):
         return invalidate
 
 
+    @inlineCallbacks
     def initialize_schema(self, transaction):
         """
         Initialize session-specific schema.
         """
+        print("init the session store...?")
         try:
             yield transaction.execute(CreateTable(self.session_table))
+            print("sessions created OK")
         except OperationalError as oe:
-            print(oe)
+            print("sessions?", oe)
 
 
     def new_session(self, is_confidential, authenticated_by):
@@ -602,6 +606,7 @@ class IPTrackingProcurer(object):
         self._procurer = procurer
 
 
+    @inlineCallbacks
     def initialize_schema(self, transaction):
         """
         

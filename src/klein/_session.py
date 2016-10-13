@@ -154,24 +154,27 @@ def requirer(procure_procurer):
             # to pass in Optional instances
             optified = dict([(k, Required.maybe(v)) for k, v in kw.items()])
             any_required = any(v._required for v in optified.values())
+            session_set = set([Optional(ISession), Required(ISession)])
+            to_authorize = set(x._interface for x in
+                               (set(optified.values()) - session_set))
             @modified("requirer", thunk, route)
             @bindable
             @inlineCallbacks
             def routed(instance, request, *args, **kwargs):
                 newkw = kwargs.copy()
                 procu = _call(instance, procure_procurer)
-                session = yield (procu.procure_session(
-                    request, always_create=any_required)
+                session = yield (
+                    procu.procure_session(request, always_create=any_required)
                 )
                 values = ({} if session is None else
-                          (yield session.authorize(
-                              [o._interface for o in optified.values()]
-                          )))
+                          (yield session.authorize(to_authorize)))
+                values[ISession] = session
                 for k, v in optified.items():
                     oneval = v.retrieve(values)
                     newkw[k] = oneval
-                returnValue((yield _call(instance, thunk, request,
-                                         *args, **newkw)))
+                returnValue(
+                    (yield _call(instance, thunk, request, *args, **newkw))
+                )
         return toroute
     return requires
 

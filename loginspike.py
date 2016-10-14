@@ -102,9 +102,6 @@ from twisted.internet import reactor
 getproc = open_session_store(reactor, "sqlite:///sessions.sqlite")
 @getproc.addCallback
 def set_procurer(opened_procurer):
-    """
-    
-    """
     global procurer
     procurer = opened_procurer
 
@@ -140,18 +137,12 @@ def if_logged_in(request, tag, binding):
 
 @logout.renderer(style.render, "/logout")
 def logout_glue(request, tag, form):
-    """
-    
-    """
     glue = form.glue()
     return tag(glue)
 
 @authorized(style.render, binding=ISimpleAccountBinding)
 @inlineCallbacks
 def username(request, tag, binding):
-    """
-    
-    """
     account = next(iter((yield binding.authenticated_accounts())), None)
     returnValue(tag(account.username))
 
@@ -191,9 +182,6 @@ login = form(
          ("Log In")))))]
 )
 def loginform(request, login_form):
-    """
-    
-    """
     return {
         "login_active": "active",
         "glue_here": login_form.glue()
@@ -206,9 +194,6 @@ def loginform(request, login_form):
 )
 @inlineCallbacks
 def dologin(request, username, password, binding):
-    """
-    
-    """
     account = yield binding.log_in(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
@@ -230,9 +215,6 @@ logout_other = form(
 )
 @inlineCallbacks
 def log_other_out(request, session_id, binding):
-    """
-    
-    """
     from attr import assoc
     session = yield binding._session._session_store.load_session(
         session_id, request.isSecure(),
@@ -259,9 +241,6 @@ def log_other_out(request, session_id, binding):
     presentation_slots=["glue", "highlight"]
 )
 def one_session(session_info, form, current):
-    """
-    
-    """
     return dict(
         id=session_info.id,
         ip=session_info.ip,
@@ -287,9 +266,6 @@ def one_session(session_info, form, current):
 )
 @inlineCallbacks
 def sessions(request, binding, form):
-    """
-    
-    """
     from klein.interfaces import ISession
     if binding is None:
         returnValue({"sessions": []})
@@ -347,9 +323,6 @@ signup = form(
          ("Sign Up")))))]
 )
 def signup_page(request, the_form):
-    """
-    
-    """
     return {
         "glue_here": the_form.glue(),
         "signup_active": "active"
@@ -364,9 +337,6 @@ def signup_page(request, the_form):
 ), binding=ISimpleAccountBinding)
 @inlineCallbacks
 def do_signup(request, username, email, password, binding):
-    """
-    
-    """
     acct = yield binding.create_account(username, email, password)
     result = {
         "signup_active": "active",

@@ -19,6 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError, IntegrityError
+from alchimia import TWISTED_STRATEGY
 
 from ..interfaces import (
     ISession, ISessionStore, NoSuchSession, ISimpleAccount,
@@ -27,14 +28,13 @@ from ..interfaces import (
 )
 
 from .. import SessionProcurer
-from ..security import compute_key_text, check_and_reset
 
 from twisted.internet.defer import (
     inlineCallbacks, returnValue, gatherResults, maybeDeferred
 )
 from twisted.python.failure import Failure
 
-from alchimia import TWISTED_STRATEGY
+from .security import compute_key_text, check_and_reset
 
 @implementer(ISession)
 @attr.s

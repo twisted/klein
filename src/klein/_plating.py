@@ -132,12 +132,12 @@ class Plating(object):
         self._renderers[text_type(original_name(renderer))] = renderer
         return renderer
 
-    def routed(self, routing, content_template):
+    def routed(self, routing, tags):
         """
         
         """
         def mydecorator(method):
-            loader = TagLoader(content_template)
+            loader = TagLoader(tags)
             @modified("plating route renderer", method, routing)
             @bindable
             @inlineCallbacks

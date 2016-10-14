@@ -255,7 +255,8 @@ def log_other_out(request, session_id, binding):
                  tags.input(type="hidden", value=[slot("id")],
                             name="session_id"),
                  slot("glue")))
-    )
+    ),
+    presentation_slots=["glue", "highlight"]
 )
 def one_session(session_info, form, current):
     """

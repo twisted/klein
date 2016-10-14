@@ -29,7 +29,7 @@ def json_serialize(item):
     """
     def helper(unknown):
         if isinstance(unknown, PlatedElement):
-            return unknown.slot_data
+            return unknown._as_json()
         else:
             raise TypeError("{input} not JSON serializable"
                             .format(input=unknown))
@@ -51,7 +51,8 @@ class PlatedElement(Element):
     renderers.
     """
 
-    def __init__(self, slot_data, preloaded, renderers, bound_instance):
+    def __init__(self, slot_data, preloaded, renderers, bound_instance,
+                 presentation_slots):
         """
         @param slot_data: A dictionary mapping names to values.
 
@@ -60,11 +61,23 @@ class PlatedElement(Element):
         self.slot_data = slot_data
         self._renderers = renderers
         self._bound_instance = bound_instance
+        self._presentation_slots = presentation_slots
         super(PlatedElement, self).__init__(
             loader=TagLoader(preloaded.fillSlots(
                 **{k: _extra_types(v) for k, v in slot_data.items()}
             ))
         )
+
+
+    def _as_json(self):
+        """
+        
+        """
+        json_data = self.slot_data.copy()
+        for ignored in self._presentation_slots:
+            json_data.pop(ignored, None)
+        return json_data
+
 
     def lookupRenderMethod(self, name):
         """
@@ -161,7 +174,8 @@ class Plating(object):
         return PlatedElement(slot_data=slot_data,
                              preloaded=loaded,
                              renderers=self._renderers,
-                             bound_instance=instance)
+                             bound_instance=instance,
+                             presentation_slots=self._presentation_slots)
 
     @classmethod
     def widget(cls, **kw):

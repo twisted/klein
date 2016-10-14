@@ -20,14 +20,14 @@ from sqlalchemy import (
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError, IntegrityError
 
-from klein.interfaces import (
+from ..interfaces import (
     ISession, ISessionStore, NoSuchSession, ISimpleAccount,
     ISimpleAccountBinding, ISessionProcurer, ISQLSchemaComponent,
     TransactionEnded, ISQLAuthorizer
 )
 
-from klein import SessionProcurer
-from klein.storage.security import compute_key_text, check_and_reset
+from .. import SessionProcurer
+from ..security import compute_key_text, check_and_reset
 
 from twisted.internet.defer import (
     inlineCallbacks, returnValue, gatherResults, maybeDeferred

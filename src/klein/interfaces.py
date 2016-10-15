@@ -119,6 +119,19 @@ class ISimpleAccount(Interface):
     """
     Data-store agnostic account interface.
     """
+
+    username = Attribute(
+        """
+        Unicode username.
+        """
+    )
+
+    account_id = Attribute(
+        """
+        Unicode account-ID.
+        """
+    )
+
     def add_session(self, session):
         """
         Add the given session to this account.

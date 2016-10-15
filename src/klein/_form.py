@@ -297,10 +297,13 @@ class BindableForm(object):
         """
         Bind this form to a session.
         """
+        if prevalidation is None:
+            prevalidation = {}
+        if errors is None:
+            errors = {}
         return RenderableForm(self, session, action, method, enctype,
                               prevalidation=prevalidation,
                               errors=errors, encoding=encoding)
-
 
 
 

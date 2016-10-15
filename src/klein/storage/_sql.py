@@ -554,6 +554,31 @@ class AccountBindingStorePlugin(object):
         return AccountSessionBinding(self, session, self._datastore)
 
 
+@implementer(ISQLAuthorizer)
+class AccountLoginAuthorizer(object):
+    """
+    
+    """
+
+    authzn_interface = ISimpleAccount
+
+    def __init__(self, metadata, store):
+        """
+        
+        """
+        self.datastore = store
+
+    @inlineCallbacks
+    def authzn_for_session(self, session_store, transaction, session):
+        """
+        
+        """
+        binding = (yield session.authorize([ISimpleAccountBinding])
+                   )[ISimpleAccountBinding]
+        returnValue(next(iter((yield binding.authenticated_accounts())),
+                         None))
+
+
 
 @inlineCallbacks
 def upsert(engine, table, to_query, to_change):
@@ -666,7 +691,8 @@ def open_session_store(reactor, db_uri, component_creators=(),
             lambda metadata, store: IPTrackingProcurer(
                 metadata, store, procurer_from_store(next(
                     store.components_providing(ISessionStore)
-                )))
+                ))),
+            AccountLoginAuthorizer,
         ] + list(component_creators)
     ).addCallback
     @opened

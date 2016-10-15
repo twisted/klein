@@ -110,6 +110,8 @@ authorized = requirer(lambda: procurer)
 
 logout = form().authorized_using(authorized)
 
+
+
 @authorized(logout.handler(app.route("/logout", methods=["POST"])),
             binding=ISimpleAccountBinding)
 @inlineCallbacks
@@ -119,6 +121,8 @@ def bye(request, binding):
     """
     yield binding.log_out()
     returnValue(Redirect(b"/"))
+
+
 
 @authorized(style.render, binding=Optional(ISimpleAccountBinding))
 @inlineCallbacks
@@ -133,6 +137,7 @@ def if_logged_in(request, tag, binding):
         returnValue(u"")
     else:
         returnValue(tag)
+
 
 
 @logout.renderer(style.render, "/logout")
@@ -151,6 +156,8 @@ login = form(
     username=form.text(),
     password=form.password(),
 ).authorized_using(authorized)
+
+
 
 @style.routed(
     login.renderer(app.route("/login", methods=["GET"]), action="/login",
@@ -187,6 +194,8 @@ def loginform(request, login_form):
         "glue_here": login_form.glue()
     }
 
+
+
 @authorized(
     style.routed(login.handler(app.route("/login", methods=["POST"])),
                  [tags.h1("u log in 2 ", slot("new_account_id"))]),
@@ -203,6 +212,7 @@ def dologin(request, username, password, binding):
         "login_active": "active",
         "new_account_id": an_id,
     })
+
 
 
 logout_other = form(
@@ -223,7 +233,6 @@ def log_other_out(request, session_id, binding):
     other_binding = assoc(binding, _session=session)
     yield other_binding.log_out()
     returnValue(Redirect(b"/sessions"))
-
 
 
 
@@ -251,6 +260,8 @@ def one_session(session_info, form, current):
         highlight="background-color: rgb(200, 200, 255)" if current else ""
     )
 
+
+
 @authorized(
     logout_other.renderer(
         style.routed(app.route("/sessions", methods=["GET"]),
@@ -276,6 +287,7 @@ def sessions(request, binding, form):
                      for session_info in (yield binding.attached_sessions())]
     }
     returnValue(dump)
+
 
 
 signup = form(
@@ -330,11 +342,16 @@ def signup_page(request, the_form):
 
 
 
-@authorized(style.routed(
-    signup.handler(app.route("/signup", methods=["POST"])),
-    [tags.h1(slot("success")),
-     tags.p("Now ", tags.a(href=slot("next_url"))(slot("link_message")), ".")]
-), binding=ISimpleAccountBinding)
+@authorized(
+    style.routed(
+        signup.handler(app.route("/signup", methods=["POST"])),
+        [tags.h1(slot("success")),
+         tags.p(
+             "Now ", tags.a(href=slot("next_url"))(slot("link_message")), "."
+         )]
+    ),
+    binding=ISimpleAccountBinding
+)
 @inlineCallbacks
 def do_signup(request, username, email, password, binding):
     acct = yield binding.create_account(username, email, password)

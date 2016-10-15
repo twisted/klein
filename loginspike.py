@@ -5,7 +5,10 @@ from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from klein import Klein, Plating, form
-from klein.interfaces import ISimpleAccountBinding, SessionMechanism
+from klein.interfaces import (
+    ISimpleAccountBinding, SessionMechanism, ISimpleAccount
+)
+
 
 from klein.storage.sql import open_session_store
 
@@ -89,17 +92,121 @@ style = Plating(
     }
 )
 
+from zope.interface import Interface, implementer
+from klein.interfaces import ISQLAuthorizer, ISQLSchemaComponent
 
-@style.routed(app.route("/"),
-              tags.h1(slot('result')))
-def root(request):
-    return {
-        "result": "hello world",
-        "home_active": "active"
-    }
+from sqlalchemy import Table, Column, String, ForeignKey
+from sqlalchemy.schema import CreateTable
+
+class IChirper(Interface):
+    """
+    chirp!
+    """
+
+import attr
+
+@attr.s
+class Chirper(object):
+    chirperizer = attr.ib()
+    account = attr.ib()
+
+    def chirp(self, value):
+        cz = self.chirperizer
+        @cz.datastore.sql
+        def dstor(transaction):
+            return transaction.execute(cz._chirpz.insert().values(
+                account_id=self.account.account_id,
+                chirp=value
+            ))
+        return dstor
+
+
+
+@implementer(ISQLAuthorizer, ISQLSchemaComponent)
+class Chirperizer(object):
+    authzn_interface = IChirper
+
+    def __init__(self, metadata, datastore):
+        self._chirpz = Table(
+            "chirp", metadata,
+            Column("account_id", String(), ForeignKey("account.account_id")),
+            Column("chirp", String()),
+        )
+        self.datastore = datastore
+
+
+    def initialize_schema(self, transaction):
+        return transaction.execute(CreateTable(self._chirpz))
+
+
+    @inlineCallbacks
+    def authzn_for_session(self, session_store, transaction, session):
+        print("AUTHORIZING CHIRPERIZER")
+        account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
+        print("ACCT", account)
+        if account is not None:
+            print("CHIRPER RETURNED")
+            returnValue(Chirper(self, account))
+
+class IChirpReader(Interface):
+    """
+    
+    """
+
+
+@implementer(IChirpReader)
+@attr.s
+class ChirpReader(object):
+    """
+    
+    """
+    datastore = attr.ib()
+    chirp_table = attr.ib()
+    account_table = attr.ib()
+
+    def read_chirps(self, username):
+        """
+        
+        """
+        @self.datastore.sql
+        @inlineCallbacks
+        def read(txn):
+            chirp = self.chirp_table
+            account = self.account_table
+            result = yield ((yield txn.execute(self.chirp_table.select(
+                (chirp.c.account_id == account.c.account_id) &
+                (account.c.username == username)
+            ))).fetchall())
+            returnValue([row[chirp.c.chirp] for row in result])
+        return read
+
+
+@implementer(ISQLAuthorizer)
+@attr.s
+class ChirpReadingAuthorizer(object):
+    """
+    
+    """
+    metadata = attr.ib()
+    datastore = attr.ib()
+
+    authzn_interface = IChirpReader
+
+    def authzn_for_session(self, session_store, transaction, session):
+        """
+        
+        """
+        return ChirpReader(
+            self.datastore,
+            self.metadata.tables["chirp"],
+            self.metadata.tables["account"],
+        )
+
+
 
 from twisted.internet import reactor
-getproc = open_session_store(reactor, "sqlite:///sessions.sqlite")
+getproc = open_session_store(reactor, "sqlite:///sessions.sqlite",
+                             [Chirperizer, ChirpReadingAuthorizer])
 @getproc.addCallback
 def set_procurer(opened_procurer):
     global procurer
@@ -110,6 +217,54 @@ authorized = requirer(lambda: procurer)
 
 logout = form().authorized_using(authorized)
 
+chirp = form(value=form.text()).authorized_using(authorized)
+
+@authorized(
+    chirp.renderer(
+        style.routed(app.route("/"),
+                     [tags.h1(slot('result')),
+                      tags.div(slot("chirp_form"))]),
+        "/chirp", argument="chirp_form"
+    ),
+    account=Optional(ISimpleAccount)
+)
+def root(request, chirp_form, account):
+    if account is None:
+        chirp_form = u""
+    return {
+        "result": "hello world",
+        "home_active": "active",
+        "chirp_form": chirp_form,
+    }
+
+
+@authorized(
+    style.routed(app.route("/u/<user>"),
+                 [tags.h1("chirps for", slot("user")),
+                  tags.div(Class="chirp", render="chirps:list")(
+                      slot("item"),
+                  )]),
+    reader=IChirpReader
+)
+@inlineCallbacks
+def read_some_chirps(request, user, reader):
+    """
+    
+    """
+    chirps = yield reader.read_chirps(user)
+    print("chirps?", repr(chirps))
+    returnValue({
+        "user": user,
+        "chirps": chirps,
+    })
+
+@authorized(chirp.handler(app.route("/chirp", methods=["POST"])),
+            chirper=IChirper)
+@inlineCallbacks
+def chirp(request, chirper, value):
+    print("CHIRPING", repr(value))
+    yield chirper.chirp(value)
+    returnValue(Redirect(b"/"))
 
 
 @authorized(logout.handler(app.route("/logout", methods=["POST"])),
@@ -124,19 +279,15 @@ def bye(request, binding):
 
 
 
-@authorized(style.render, binding=Optional(ISimpleAccountBinding))
-@inlineCallbacks
-def if_logged_in(request, tag, binding):
+@authorized(style.render, account=Optional(ISimpleAccount))
+def if_logged_in(request, tag, account):
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
-    if binding is None:
-        returnValue(u"")
-    account = next(iter((yield binding.authenticated_accounts())), None)
     if account is None:
-        returnValue(u"")
+        return u""
     else:
-        returnValue(tag)
+        return tag
 
 
 
@@ -145,11 +296,9 @@ def logout_glue(request, tag, form):
     glue = form.glue()
     return tag(glue)
 
-@authorized(style.render, binding=ISimpleAccountBinding)
-@inlineCallbacks
-def username(request, tag, binding):
-    account = next(iter((yield binding.authenticated_accounts())), None)
-    returnValue(tag(account.username))
+@authorized(style.render, account=ISimpleAccount)
+def username(request, tag, account):
+    return account.username
 
 
 login = form(
@@ -227,8 +376,7 @@ logout_other = form(
 def log_other_out(request, session_id, binding):
     from attr import assoc
     session = yield binding._session._session_store.load_session(
-        session_id, request.isSecure(),
-        SessionMechanism.Header
+        session_id, request.isSecure(), SessionMechanism.Header
     )
     other_binding = assoc(binding, _session=session)
     yield other_binding.log_out()
@@ -253,8 +401,7 @@ def one_session(session_info, form, current):
     return dict(
         id=session_info.id,
         ip=session_info.ip,
-        when=(session_info.when
-              .strftime("%a, %d %b %Y %H:%M:%S +0000")
+        when=(session_info.when.strftime("%a, %d %b %Y %H:%M:%S +0000")
               .decode("utf-8")),
         glue=form.glue(),
         highlight="background-color: rgb(200, 200, 255)" if current else ""

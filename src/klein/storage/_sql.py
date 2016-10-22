@@ -55,14 +55,14 @@ class SQLSession(object):
             for a in authorizers:
                 # This should probably do something smart with interface
                 # priority, checking isOrExtends or something similar.
-                if a.authzn_interface in interfaces:
+                if a.authzn_for in interfaces:
                     v = maybeDeferred(a.authzn_for_session,
                                       self._session_store, txn, self)
                     ds.append(v)
-                    result[a.authzn_interface] = v
+                    result[a.authzn_for] = v
                     v.addCallback(
                         lambda value, ai: result.__setitem__(ai, value),
-                        ai=a.authzn_interface
+                        ai=a.authzn_for
                     )
             def r(ignored):
                 return result
@@ -515,7 +515,7 @@ class AccountBindingStorePlugin(object):
     
     """
 
-    authzn_interface = ISimpleAccountBinding
+    authzn_for = ISimpleAccountBinding
 
     def __init__(self, metadata, store):
         """
@@ -560,7 +560,7 @@ class AccountLoginAuthorizer(object):
     
     """
 
-    authzn_interface = ISimpleAccount
+    authzn_for = ISimpleAccount
 
     def __init__(self, metadata, store):
         """

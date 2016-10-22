@@ -92,16 +92,11 @@ style = Plating(
     }
 )
 
-from zope.interface import Interface, implementer
+from zope.interface import implementer
 from klein.interfaces import ISQLAuthorizer, ISQLSchemaComponent
 
 from sqlalchemy import Table, Column, String, ForeignKey
 from sqlalchemy.schema import CreateTable
-
-class IChirper(Interface):
-    """
-    chirp!
-    """
 
 import attr
 
@@ -124,7 +119,7 @@ class Chirper(object):
 
 @implementer(ISQLAuthorizer, ISQLSchemaComponent)
 class Chirperizer(object):
-    authzn_interface = IChirper
+    authzn_for = Chirper
 
     def __init__(self, metadata, datastore):
         self._chirpz = Table(
@@ -148,13 +143,6 @@ class Chirperizer(object):
             print("CHIRPER RETURNED")
             returnValue(Chirper(self, account))
 
-class IChirpReader(Interface):
-    """
-    
-    """
-
-
-@implementer(IChirpReader)
 @attr.s
 class ChirpReader(object):
     """
@@ -190,7 +178,7 @@ class ChirpReadingAuthorizer(object):
     metadata = attr.ib()
     datastore = attr.ib()
 
-    authzn_interface = IChirpReader
+    authzn_for = ChirpReader
 
     def authzn_for_session(self, session_store, transaction, session):
         """
@@ -244,7 +232,7 @@ def root(request, chirp_form, account):
                   tags.div(Class="chirp", render="chirps:list")(
                       slot("item"),
                   )]),
-    reader=IChirpReader
+    reader=ChirpReader
 )
 @inlineCallbacks
 def read_some_chirps(request, user, reader):
@@ -259,7 +247,7 @@ def read_some_chirps(request, user, reader):
     })
 
 @authorized(chirp.handler(app.route("/chirp", methods=["POST"])),
-            chirper=IChirper)
+            chirper=Chirper)
 @inlineCallbacks
 def chirp(request, chirper, value):
     print("CHIRPING", repr(value))

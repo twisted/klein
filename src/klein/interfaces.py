@@ -163,9 +163,9 @@ class ISQLAuthorizer(Interface):
     session.
     """
 
-    authzn_interface = Attribute(
+    authzn_for = Attribute(
         """
-        The interface for which a session can be authorized by this
+        The interface or class for which a session can be authorized by this
         L{ISQLAuthorizer}.
         """
     )
@@ -186,8 +186,8 @@ class ISQLAuthorizer(Interface):
         @type session: L{ISession}
 
         @return: the object the session is authorized to access
-        @rtype: a providier of C{self.authzn_interface}, or a L{Deferred}
-            firing the same.
+        @rtype: a providier of C{self.authzn_for}, or a L{Deferred} firing the
+            same.
         """
 
 

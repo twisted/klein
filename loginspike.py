@@ -92,9 +92,6 @@ style = Plating(
     }
 )
 
-from zope.interface import implementer
-from klein.interfaces import ISQLAuthorizer
-
 from sqlalchemy import Column, String, ForeignKey
 
 import attr

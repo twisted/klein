@@ -7,7 +7,7 @@ from binascii import hexlify
 from os import urandom
 from uuid import uuid4
 
-from zope.interface import implementer, implementedBy
+from zope.interface import implementer, provider, implementedBy
 
 from attr import Factory
 from attr.validators import instance_of as an
@@ -699,3 +699,37 @@ def open_session_store(reactor, db_uri, component_creators=(),
     def procurify(datastore):
         return next(datastore.components_providing(ISessionProcurer))
     return procurify
+
+
+def sql_authorizer_for(authzn_for, table_map):
+    """
+    
+    """
+    an_authzn = authzn_for
+    def decorator(decorated):
+        @implementer(ISQLAuthorizer, ISQLSchemaComponent)
+        @attr.s
+        class AnAuthorizer(object):
+            metadata = attr.ib()
+            datastore = attr.ib()
+
+            authzn_for = an_authzn
+
+            @inlineCallbacks
+            def initialize_schema(self, transaction):
+                for k, v in table_map.items():
+                    print("creating table", k)
+                    try:
+                        yield transaction.execute(
+                            CreateTable(Table(k, self.metadata, *v))
+                        )
+                    except OperationalError as oe:
+                        print("failure initializing", decorated, oe)
+
+            def authzn_for_session(self, session_store, transaction, session):
+                return decorated(self.metadata, self.datastore, session_store,
+                                 transaction, session)
+
+        decorated.authorizer = AnAuthorizer
+        return decorated
+    return decorator

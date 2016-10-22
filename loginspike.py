@@ -10,7 +10,7 @@ from klein.interfaces import (
 )
 
 
-from klein.storage.sql import open_session_store
+from klein.storage.sql import open_session_store, sql_authorizer_for
 
 from twisted.web.util import Redirect
 
@@ -93,23 +93,23 @@ style = Plating(
 )
 
 from zope.interface import implementer
-from klein.interfaces import ISQLAuthorizer, ISQLSchemaComponent
+from klein.interfaces import ISQLAuthorizer
 
-from sqlalchemy import Table, Column, String, ForeignKey
-from sqlalchemy.schema import CreateTable
+from sqlalchemy import Column, String, ForeignKey
 
 import attr
 
 @attr.s
 class Chirper(object):
-    chirperizer = attr.ib()
+    datastore = attr.ib()
     account = attr.ib()
+    chirp_table = attr.ib()
 
     def chirp(self, value):
-        cz = self.chirperizer
-        @cz.datastore.sql
+        chirp_table = self.chirp_table
+        @self.datastore.sql
         def dstor(transaction):
-            return transaction.execute(cz._chirpz.insert().values(
+            return transaction.execute(chirp_table.insert().values(
                 account_id=self.account.account_id,
                 chirp=value
             ))
@@ -117,45 +117,26 @@ class Chirper(object):
 
 
 
-@implementer(ISQLAuthorizer, ISQLSchemaComponent)
-class Chirperizer(object):
-    authzn_for = Chirper
-
-    def __init__(self, metadata, datastore):
-        self._chirpz = Table(
-            "chirp", metadata,
-            Column("account_id", String(), ForeignKey("account.account_id")),
-            Column("chirp", String()),
-        )
-        self.datastore = datastore
-
-
-    def initialize_schema(self, transaction):
-        return transaction.execute(CreateTable(self._chirpz))
+@sql_authorizer_for(Chirper, dict(chirp=[
+    Column("account_id", String(), ForeignKey("account.account_id")),
+    Column("chirp", String())
+]))
+@inlineCallbacks
+def authorize_chirper(metadata, datastore, session_store, transaction,
+                      session):
+    account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
+    if account is not None:
+        returnValue(Chirper(datastore, account, metadata.tables["chirp"]))
 
 
-    @inlineCallbacks
-    def authzn_for_session(self, session_store, transaction, session):
-        print("AUTHORIZING CHIRPERIZER")
-        account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
-        print("ACCT", account)
-        if account is not None:
-            print("CHIRPER RETURNED")
-            returnValue(Chirper(self, account))
 
 @attr.s
 class ChirpReader(object):
-    """
-    
-    """
     datastore = attr.ib()
     chirp_table = attr.ib()
     account_table = attr.ib()
 
     def read_chirps(self, username):
-        """
-        
-        """
         @self.datastore.sql
         @inlineCallbacks
         def read(txn):
@@ -169,32 +150,17 @@ class ChirpReader(object):
         return read
 
 
-@implementer(ISQLAuthorizer)
-@attr.s
-class ChirpReadingAuthorizer(object):
-    """
-    
-    """
-    metadata = attr.ib()
-    datastore = attr.ib()
-
-    authzn_for = ChirpReader
-
-    def authzn_for_session(self, session_store, transaction, session):
-        """
-        
-        """
-        return ChirpReader(
-            self.datastore,
-            self.metadata.tables["chirp"],
-            self.metadata.tables["account"],
-        )
-
+@sql_authorizer_for(ChirpReader, {})
+def auth_for_reading(metadata, datastore, session_store, transaction,
+                     session):
+    return ChirpReader(datastore, metadata.tables["chirp"],
+                       metadata.tables["account"])
 
 
 from twisted.internet import reactor
 getproc = open_session_store(reactor, "sqlite:///sessions.sqlite",
-                             [Chirperizer, ChirpReadingAuthorizer])
+                             [authorize_chirper.authorizer,
+                              auth_for_reading.authorizer])
 @getproc.addCallback
 def set_procurer(opened_procurer):
     global procurer

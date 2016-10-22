@@ -14,10 +14,6 @@ from klein.storage.sql import open_session_store, sql_authorizer_for
 
 from twisted.web.util import Redirect
 
-# ^^^  framework   ^^^^
-# ---  cut here    ----
-# vvvv application vvvv
-
 app = Klein()
 
 def bootstrap(x):

@@ -21,6 +21,7 @@ This is an introduction to Klein, going through from creating a simple web site 
 
     introduction/1-gettingstarted
     introduction/2-twistdtap
+    tutorial/1-buildingapp
 
 
 Klein Examples

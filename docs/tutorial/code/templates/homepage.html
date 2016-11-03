@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Webpage</title>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+<style>
+    .container {
+        max-width: 750px
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header clearfix">
+            <ul class="nav nav-pills pull-right">
+                <li role="presentation" class="active"><a href="#">Home</a></li>
+                <li role="presentation"><a href="#">About</a></li>
+                <li role="presentation"><a href="#">Contact</a></li>
+            </ul>
+            <h3 class="text-muted"> {% if username %} Hi {{username}}! {% endif %} Welcome to online library</h3>
+        </div>
+        <div class="row">
+            <div >
+            {% for item in books %}
+            <p> {{item[1]}} - {{ item[3]}}<a href="/book/{{item[0]}}" class="btn btn-default" role="button">check stock</a></p>
+
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

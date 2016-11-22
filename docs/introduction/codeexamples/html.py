@@ -16,11 +16,11 @@ app = Klein()
 
 myStyle = Plating(
     tags=tags.html(
-        tags.head(tags.title(slot("title"))),
-        tags.body(tags.h1(slot("title"), Class="title"),
+        tags.head(tags.title(slot("pageTitle"))),
+        tags.body(tags.h1(slot("pageTitle"), Class="titleHeading"),
                   tags.div(slot(Plating.CONTENT)))
     ),
-    defaults={"title": "Places & Foods"}
+    defaults={"pageTitle": "Places & Foods"}
 )
 
 @myStyle.routed(
@@ -46,7 +46,7 @@ def root(request):
 def one_food(request, food):
     random = random_from_string(food)
     return {"name": food,
-            "title": "Food: {}".format(food),
+            "pageTitle": "Food: {}".format(food),
             "rating": random.randint(1, 5),
             "carbohydrates": random.randint(0, 100)}
 
@@ -63,7 +63,8 @@ def one_place(request, place):
     possible_foods = ["hamburgers", "cheeseburgers", "hot dogs", "pizza",
                       "叉烧", "皮蛋", "foie gras"]
     random.shuffle(possible_foods)
-    return {"name": place, "title": "Place: {}".format(place),
+    return {"name": place,
+            "pageTitle": "Place: {}".format(place),
             "latitude": random.uniform(-90, 90),
             "longitude": random.uniform(-180, 180),
             "foods": possible_foods[:3]}

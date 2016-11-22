@@ -130,13 +130,13 @@ appear.  That'll look something like this:
 
 Notice that we have defined a ``"title"`` slot in the template - individual
 pages must each provide a value for the title themselves in order to use the
-``style`` frame.  Nothing's special about "title", by the way; you may define
+``myStyle`` frame.  Nothing's special about "title", by the way; you may define
 whatever slots you want in your page template.
 
 You can also specify a dictionary of default values to fill slots with.
 
 Next, you want to create a route that is plated with that ``Plating``, by using
-the ``Plating.routed`` decorator.  ``@style.routed`` takes a route from the
+the ``Plating.routed`` decorator.  ``@myStyle.routed`` takes a route from the
 Klein instance, in this case ``app``, and then a template for the content
 portion (the ``Plating.CONTENT`` slot) of the page.  The decorated function
 must then return a dictionary of the values to populate the slots in the
@@ -151,7 +151,7 @@ the content slot.
 This page generates some links to various sub-pages which we'll get to in a
 moment.  But first, if you load ``http://localhost:8080/``, you'll see that the
 template specified for ``root`` is inserted at the point in the template for
-``style`` specified the content should go.
+``myStyle`` specified the content should go.
 
 Next, we should actually try injecting some data.
 

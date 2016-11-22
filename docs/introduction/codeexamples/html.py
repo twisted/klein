@@ -14,7 +14,7 @@ from twisted.web.template import tags, slot
 from klein import Klein, Plating
 app = Klein()
 
-style = Plating(
+myStyle = Plating(
     tags=tags.html(
         tags.head(tags.title(slot("title"))),
         tags.body(tags.h1(slot("title"), Class="title"),
@@ -23,7 +23,7 @@ style = Plating(
     defaults={"title": "Places & Foods"}
 )
 
-@style.routed(
+@myStyle.routed(
     app.route("/"),
     tags.div(
         tags.h2("Sample Places:"),
@@ -36,7 +36,7 @@ style = Plating(
 def root(request):
     return {}
 
-@style.routed(app.route("/foods/<food>"),
+@myStyle.routed(app.route("/foods/<food>"),
               tags.table(border="2", style="color: blue")(
                   tags.tr(tags.td("Name:"), tags.td(slot("name"))),
                   tags.tr(tags.td("Deliciousness:"),
@@ -50,7 +50,7 @@ def one_food(request, food):
             "rating": random.randint(1, 5),
             "carbohydrates": random.randint(0, 100)}
 
-@style.routed(
+@myStyle.routed(
     app.route("/places/<place>"),
     tags.div(style="color: green")(
         tags.h1("Place: ", slot("name")),

@@ -45,7 +45,8 @@ def root(request):
                           tags.td(slot("carbohydrates")))))
 def one_food(request, food):
     random = random_from_string(food)
-    return {"name": food, "title": "Food: {}".format(food),
+    return {"name": food,
+            "title": "Food: {}".format(food),
             "rating": random.randint(1, 5),
             "carbohydrates": random.randint(0, 100)}
 

@@ -1,3 +1,5 @@
+.. _example-nonglobalstate
+
 =================================
 Example -- Using Non-Global State
 =================================

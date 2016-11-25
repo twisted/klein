@@ -37,6 +37,7 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/handlingpost
     examples/subroutes
     examples/nonglobalstate
+    examples/extendandcompose
     examples/handlingerrors
 
 

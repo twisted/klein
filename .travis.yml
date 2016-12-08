@@ -52,6 +52,8 @@ matrix:
     - env: TOX_ENV=trial-py35-twtrunk
     - env: TOX_ENV=trial-pypy-twtrunk
 
+    - env: TOX_ENV=docs-linkcheck
+
 
 install:
   - pip install tox coverage codecov

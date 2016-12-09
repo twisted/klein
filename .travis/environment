@@ -7,7 +7,11 @@ This is used by CI tools.
 
 from sys import stdout, version, executable
 from os import environ as environment, getcwd
-from twisted import __version__ as twistedVersion
+
+try:
+    from twisted import __version__ as twistedVersion
+except ImportError:
+    twistedVersion = None
 
 
 class Writer(object):
@@ -44,4 +48,7 @@ for line in version.split("\n"):
     out.line(line)
 
 out.heading("Twisted version")
-out.line(twistedVersion)
+if twistedVersion is None:
+    out.line("Twisted is not installed.")
+else:
+    out.line(twistedVersion)

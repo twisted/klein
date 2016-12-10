@@ -10,7 +10,7 @@ from klein.interfaces import (
 )
 
 
-from klein.storage.sql import open_session_store, sql_authorizer_for
+from klein.storage.sql import open_session_store, authorizer_for, tables
 
 from twisted.web.util import Redirect
 
@@ -110,7 +110,7 @@ class Chirper(object):
 
 
 
-@sql_authorizer_for(Chirper, dict(chirp=[
+@authorizer_for(Chirper, tables(chirp=[
     Column("account_id", String(), ForeignKey("account.account_id")),
     Column("chirp", String())
 ]))
@@ -143,7 +143,7 @@ class ChirpReader(object):
         return read
 
 
-@sql_authorizer_for(ChirpReader, {})
+@authorizer_for(ChirpReader)
 def auth_for_reading(metadata, datastore, session_store, transaction,
                      session):
     return ChirpReader(datastore, metadata.tables["chirp"],

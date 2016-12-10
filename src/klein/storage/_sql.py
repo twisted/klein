@@ -701,9 +701,51 @@ def open_session_store(reactor, db_uri, component_creators=(),
     return procurify
 
 
-def sql_authorizer_for(authzn_for, table_map):
+
+def tables(**kw):
     """
-    
+    Take a mapping of table names to columns and return a callable that takes a
+    transaction and metadata and then ensures those tables with those columns
+    exist.
+
+    This is a quick-start way to initialize your schema; any kind of
+    application that has a longer maintenance cycle will need a more
+    sophisticated schema-migration approach.
+    """
+    @inlineCallbacks
+    def callme(transaction, metadata):
+        # TODO: inspect information schema, verify tables exist, don't try to
+        # create them otherwise.
+        for k, v in kw.items():
+            print("creating table", k)
+            try:
+                yield transaction.execute(
+                    CreateTable(Table(k, metadata, *v))
+                )
+            except OperationalError as oe:
+                print("failure initializing table", k, oe)
+    return callme
+
+
+
+def authorizer_for(authzn_for, schema=lambda txn, metadata: None):
+    """
+    Declare an SQL authorizer, implemented by a given function.  Used like so::
+
+        @authorizer_for(Foo, tables(foo=[Column("bar", String())]))
+        def authorize_foo(metadata, datastore, session_store, transaction,
+                          session):
+            return Foo(metadata, metadata.tables["foo"])
+
+    @param authzn_for: The type we are creating an authorizer for.
+
+    @param schema: a callable that takes a transaction and metadata, and
+        returns a L{Deferred} which fires when it's done initializing the
+        schema on that transaction.  See L{tables} for a convenient way to
+        specify that.
+
+    @return: a decorator that can decorate a function with the signature
+        C{(metadata, datastore, session_store, transaction, session)}
     """
     an_authzn = authzn_for
     def decorator(decorated):
@@ -715,16 +757,8 @@ def sql_authorizer_for(authzn_for, table_map):
 
             authzn_for = an_authzn
 
-            @inlineCallbacks
             def initialize_schema(self, transaction):
-                for k, v in table_map.items():
-                    print("creating table", k)
-                    try:
-                        yield transaction.execute(
-                            CreateTable(Table(k, self.metadata, *v))
-                        )
-                    except OperationalError as oe:
-                        print("failure initializing", decorated, oe)
+                return schema(transaction, self.metadata)
 
             def authzn_for_session(self, session_store, transaction, session):
                 return decorated(self.metadata, self.datastore, session_store,

@@ -10,6 +10,7 @@ report_file="$(mktemp)";
 git fetch origin "+refs/heads/master:refs/remotes/origin/master";
 
 # Run twistedchecker and store the output to a file
+type twistedchecker 2> /dev/null;  # Error out if executable isn't found.
 twistedchecker \
     --output-format=parseable \
     "${target}" \

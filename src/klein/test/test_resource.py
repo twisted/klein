@@ -1158,6 +1158,6 @@ class ExtractURLpartsTests(TestCase):
 
 
 if _PY3:
-    from pathlib import Path
-    path = Path(__file__).parent / "py3_test_resource.py"
-    exec(path.open().read())
+    from os.path import join, dirname
+    name = join(dirname(__file__), "py3_test_resource.py")
+    exec(open(name).read())

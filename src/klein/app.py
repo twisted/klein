@@ -14,7 +14,8 @@ from functools import wraps
 try:
     from inspect import iscoroutine
 except ImportError:
-    iscoroutine = lambda x: False
+    def iscoroutine(*args, **kwargs):
+        return False
 
 from werkzeug.routing import Map, Rule, Submount
 
@@ -23,7 +24,12 @@ from twisted.python.components import registerAdapter
 
 from twisted.web.server import Site, Request
 from twisted.internet import reactor, endpoints
-from twisted.internet.defer import ensureDeferred
+
+try:
+    from twisted.internet.defer import ensureDeferred
+except ImportError:
+    def ensureDeferred(*args, **kwagrs):
+        raise NotImplementedError("Coroutines support requires Twisted>=16.6")
 
 from zope.interface import implementer
 

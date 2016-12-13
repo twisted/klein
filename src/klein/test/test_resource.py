@@ -434,22 +434,6 @@ class KleinResourceTests(TestCase):
                 b"I am a leaf in the wind.")
 
 
-    def test_asyncResourceRendering(self):
-        app = self.app
-
-        request = requestMock(b"/resource/leaf")
-
-        @app.route("/resource/leaf")
-        async def leaf(request):
-            return LeafResource()
-
-        d = _render(self.kr, request)
-
-        self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-                b"I am a leaf in the wind.")
-
-
     def test_childResourceRendering(self):
         app = self.app
         request = requestMock(b"/resource/children/betty")
@@ -1171,3 +1155,9 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(server_port, int)
         self.assertIsInstance(path_info, unicode)
         self.assertIsInstance(script_name, unicode)
+
+
+if _PY3:
+    from pathlib import Path
+    path = Path(__file__).parent / "py3_test_resource.py"
+    exec(path.open().read())

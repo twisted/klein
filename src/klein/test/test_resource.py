@@ -433,23 +433,6 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(),
                 b"I am a leaf in the wind.")
 
-
-    def test_asyncResourceRendering(self):
-        app = self.app
-
-        request = requestMock(b"/resource/leaf")
-
-        @app.route("/resource/leaf")
-        async def leaf(request):
-            return LeafResource()
-
-        d = _render(self.kr, request)
-
-        self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-                b"I am a leaf in the wind.")
-
-
     def test_childResourceRendering(self):
         app = self.app
         request = requestMock(b"/resource/children/betty")
@@ -463,7 +446,6 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(),
                 b"I'm a child named betty!")
-
 
     def test_childrenResourceRendering(self):
         app = self.app

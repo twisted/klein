@@ -1,3 +1,5 @@
+import twisted
+
 from klein import Klein
 from klein.resource import KleinResource
 from klein.test.util import TestCase
@@ -24,7 +26,18 @@ class PY3KleinResourceTests(TestCase):
         async def leaf(request):
             return LeafResource()
 
-        d = _render(resource, request)
+        if (
+            twisted.version.major < 16 or
+            (twisted.version.major == 16 and twisted.version.minor < 6)
+        ):
+            # Twisted version in use does not have ensureDeferred
+            d = _render(resource, request)
+            self.assertFailure(d, NotImplementedError)
+        else:
+            d = _render(resource, request)
+            self.assertFired(d)
+            self.assertEqual(
+                request.getWrittenData(), b"I am a leaf in the wind."
+            )
 
-        self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), b"I am a leaf in the wind.")
+        return d

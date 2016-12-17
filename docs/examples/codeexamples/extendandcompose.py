@@ -4,8 +4,8 @@ import json
 from klein import Klein
 
 class Jsonify(object):
-    def __init__(self, app=None, secret=None):
-        self.app = Klein() if not app else app
+    def __init__(self, router=None, secret=None):
+        self.router = Klein() if not router else router
         self.secret = 'twisted-klein' if not secret else secret
 
     def route(self, url, *args, **kwargs):
@@ -13,11 +13,11 @@ class Jsonify(object):
             restricted = kwargs.pop('restricted', False)
             if restricted:
                 f = self.authenticate(f)
-            f = self.jsonMiddleware(f)
-            self.app.route(url, *args, **kwargs)(f)
+            f = self.jsonify(f)
+            self.router.route(url, *args, **kwargs)(f)
         return deco
 
-    def jsonMiddleware(self, f):
+    def jsonify(self, f):
         @wraps(f)
         def deco(*args, **kwargs):
             request = args[1]
@@ -37,27 +37,27 @@ class Jsonify(object):
             return f(*args, **kwargs)
         return deco
 
-class Main(object):
-    app = Klein()
-    jsonApp = Jsonify(app=app, secret='Tw!5t3d-kL3!n')
+class Application(object):
+    router = Klein()
+    json_api = Jsonify(router=router, secret='Tw!5t3d-kL3!n')
 
-    @app.route('/')
+    @router.route('/')
     def hello(self, request):
         return 'Hello World'
 
-    @jsonApp.route('/jsonify', methods=['GET'])
-    def jsonify(self, request):
+    @json_api.route('/jsonify', methods=['GET'])
+    def return_dict(self, request):
         return {'foo': 'bar'}
 
-    @jsonApp.route('/admin', restricted=True)
+    @json_api.route('/admin', restricted=True)
     def admin(self, request):
         return {'access': 'granted'}
 
-    @jsonApp.route('/alternate-admin')
-    @jsonApp.authenticate
+    @json_api.route('/alternate-admin')
+    @json_api.authenticate
     def alternate(self, request):
         return {'access': 'granted (alternate)'}
 
 if __name__=='__main__':
-    main = Main()
-    main.app.run('localhost', 8080)
+    app = Application()
+    app.router.run('localhost', 8080)

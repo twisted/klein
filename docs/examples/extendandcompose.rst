@@ -6,8 +6,8 @@ Example -- Extend and Compose
 
 Let's say there's a need to build a RESTful API within a Klein application and the responses must be in JSON format.
 All API responses must also have the content type ``application/json`` in the header.
-Finally, to add complexity to this scenario, some endpoints must use an authentication method to gain access.
-A typical endpoint might look something like:
+The final requirement is that certain endpoints must use a means of authentication to gain or restrict access.
+A typical endpoint might look something like this:
 
 .. code-block:: python
 
@@ -20,16 +20,16 @@ A typical endpoint might look something like:
             result = {'access': 'denied'}
 
 
-The downside would be the fact that all the endpoints would need to use the same syntax, making it tedious to write.
+The downside would be the fact that all the endpoints would need to reuse the same syntax, making it tedious and error prone to write.
 A solution would be to extend the functionality of the ``Klein`` object and separate out the reusable bits.
 
 .. literalinclude:: codeexamples/extendandcompose.py
     :lines: 1-38
 
 
-Instead of subclassing ``klein.Klein`` this example chose to "extend" its functionality by using decorators.
-Most of the logic is in the ``route`` method, which applies authentication logic (via the ``authenticate`` decorator) and converts responses to proper JSON (via the ``jsonMiddleware`` decorator).
-Now that the reusable JSON API parts have been encapsulated in a class, the technique from the :ref:`example-nonglobalstate` can be combined to compose the main part of the application.
+Instead of subclassing ``klein.Klein`` this example demonstrates how to "extend" functionality by using decorators/middlewares.
+Most of the logic is in the ``route`` method, which applies authentication logic (via the ``authenticate`` decorator) and converts responses to proper JSON (via the ``jsonify`` decorator).
+Now that the reusable JSON API parts have been encapsulated in a class, the technique from the :ref:`example-nonglobalstate` can be combined to compose the main application.
 
 .. literalinclude:: codeexamples/extendandcompose.py
     :lines: 40-63

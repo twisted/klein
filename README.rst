@@ -8,6 +8,9 @@ Klein, a Web Micro-Framework
 .. image:: https://codecov.io/github/twisted/klein/coverage.svg?branch=master
     :target: https://codecov.io/github/twisted/klein?branch=master
     :alt: Code Coverage
+.. image:: https://img.shields.io/pypi/pyversions/klein.svg
+    :target: https://pypi.python.org/pypi/klein
+    :alt: Python Version Compatibility
 
 Klein is a micro-framework for developing production-ready web services with Python.
 It is 'micro' in that it has an incredibly small API similar to `Bottle <http://bottlepy.org/docs/dev/index.html>`_ and `Flask <http://flask.pocoo.org/>`_.

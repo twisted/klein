@@ -19,7 +19,7 @@ from twisted.python import log
 from twisted.python.components import registerAdapter
 
 from twisted.web.server import Site, Request
-from twisted.internet import reactor
+from twisted.internet import reactor, endpoints
 
 from zope.interface import implementer
 
@@ -335,7 +335,8 @@ class Klein(object):
         return deco
 
 
-    def run(self, host, port, logFile=None):
+    def run(self, host=None, port=None, logFile=None,
+            endpoint_description=None):
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -354,12 +355,23 @@ class Klein(object):
 
         @param logFile: The file object to log to, by default C{sys.stdout}
         @type logFile: file object
+
+        @param endpoint_description: specification of endpoint. Must contain
+            protocol, port and interface. May contain other optional arguments,
+             e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
+        @type endpoint_description: str
         """
         if logFile is None:
             logFile = sys.stdout
 
         log.startLogging(logFile)
-        reactor.listenTCP(port, Site(self.resource()), interface=host)
+
+        if not endpoint_description:
+            endpoint_description = "tcp:port={0}:interface={1}".format(port,
+                                                                       host)
+
+        endpoint = endpoints.serverFromString(reactor, endpoint_description)
+        endpoint.listen(Site(self.resource()))
         reactor.run()
 
 

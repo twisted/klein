@@ -4,6 +4,7 @@ import os
 
 from io import BytesIO
 
+from six.moves.urllib.parse import parse_qs
 from mock import Mock, call
 
 from twisted.internet.defer import succeed, Deferred, fail, CancelledError
@@ -37,12 +38,15 @@ def requestMock(path, method=b"GET", host=b"localhost", port=8080,
     if not body:
         body = b''
 
+    path, qpath = (path.split(b"?", 1) + [b""])[:2]
+
     request = server.Request(DummyChannel(), False)
     request.site = Mock(server.Site)
     request.gotLength(len(body))
     request.content = BytesIO()
     request.content.write(body)
     request.content.seek(0)
+    request.args = parse_qs(qpath)
     request.requestHeaders = Headers(headers)
     request.setHost(host, port, isSecure)
     request.uri = path
@@ -130,6 +134,12 @@ class SimpleElement(Element):
     def name(self, request, tag):
         return tag(self._name)
 
+class DeferredElement(SimpleElement):
+    @renderer
+    def name(self, request, tag):
+        self.deferred = Deferred()
+        self.deferred.addCallback(lambda ignored: tag(self._name))
+        return self.deferred
 
 class LeafResource(Resource):
     isLeaf = True
@@ -383,6 +393,29 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(),
                          b"<!DOCTYPE html>\n<h1>foo</h1>")
+
+
+    def test_deferredElementRendering(self):
+        app = self.app
+
+        elements = []
+
+        @app.route("/element/<string:name>")
+        def element(request, name):
+            it = DeferredElement(name)
+            elements.append(it)
+            return it
+
+        request = requestMock(b"/element/bar")
+
+        d = _render(self.kr, request)
+        self.assertEqual(len(elements), 1)
+        [oneElement] = elements
+        self.assertNoResult(d)
+        oneElement.deferred.callback(None)
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(),
+                         b"<!DOCTYPE html>\n<h1>bar</h1>")
 
 
     def test_leafResourceRendering(self):

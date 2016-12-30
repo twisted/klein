@@ -28,7 +28,7 @@ We can now use ``@app.route`` to decorate the methods of the class.
         @app.route('/<string:name>', methods=['PUT'])
         def save_item(self, request, name):
             request.setHeader('Content-Type', 'application/json')
-            body = json.loads(request.content.read())
+            body = json.load(request.content)
             self._items[name] = body
             return json.dumps({'success': True})
 

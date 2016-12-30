@@ -373,16 +373,12 @@ class KleinTestCase(unittest.TestCase):
         """
         app = Klein()
 
-        @app.handle_errors(ValueError)
-        def value_error(request, failure):
-            pass
+        app.handle_errors(ValueError)(lambda request, failure: 'foo')
 
         app_copy = copy.copy(app)
 
         self.assertEquals(app._error_handlers, app_copy._error_handlers)
 
-        @app_copy.handle_errors(KeyError)
-        def error_value(request, failure):
-            pass
+        app.handle_errors(KeyError)(lambda request, failure: 'foo')
 
         self.assertNotEquals(app._error_handlers, app_copy._error_handlers)

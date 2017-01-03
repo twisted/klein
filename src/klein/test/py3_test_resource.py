@@ -26,10 +26,7 @@ class PY3KleinResourceTests(TestCase):
         async def leaf(request):
             return LeafResource()
 
-        if (
-            twisted.version.major < 16 or
-            (twisted.version.major == 16 and twisted.version.minor < 6)
-        ):
+        if (twisted.version.major, twisted.version.minor) < (16, 6):
             # Twisted version in use does not have ensureDeferred
             d = _render(resource, request)
             self.assertFailure(d, NotImplementedError)

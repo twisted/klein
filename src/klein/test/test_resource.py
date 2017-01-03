@@ -1158,9 +1158,7 @@ class ExtractURLpartsTests(TestCase):
 
 
 if _PY3:
-    from sys import version_info as pyVersion
-
-    if pyVersion.major > 3 or (pyVersion.major == 3 and pyVersion.minor >= 5):
-        from os.path import join, dirname
-        name = join(dirname(__file__), "py3_test_resource.py")
-        exec(open(name).read())
+    import sys
+    if sys.version_info >= (3, 5):
+        from .py3_test_resource import PY3KleinResourceTests
+        PY3KleinResourceTests  # shh pyflakes

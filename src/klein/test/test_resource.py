@@ -433,6 +433,7 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(),
                 b"I am a leaf in the wind.")
 
+
     def test_childResourceRendering(self):
         app = self.app
         request = requestMock(b"/resource/children/betty")
@@ -446,6 +447,7 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(),
                 b"I'm a child named betty!")
+
 
     def test_childrenResourceRendering(self):
         app = self.app
@@ -1153,3 +1155,10 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(server_port, int)
         self.assertIsInstance(path_info, unicode)
         self.assertIsInstance(script_name, unicode)
+
+
+if _PY3:
+    import sys
+    if sys.version_info >= (3, 5):
+        from .py3_test_resource import PY3KleinResourceTests
+        PY3KleinResourceTests  # shh pyflakes

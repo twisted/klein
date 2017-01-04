@@ -205,17 +205,6 @@ class KleinResource(Resource):
 
         d = defer.maybeDeferred(_execute)
 
-        def write_response(r):
-            if r is not _StandInResource:
-                if isinstance(r, unicode):
-                    r = r.encode('utf-8')
-
-                if (r is not None) and (r != NOT_DONE_YET):
-                    request.write(r)
-
-                if not request_finished[0]:
-                    request.finish()
-
         def process(r):
             """
             Recursively go through r and any child Resources until something
@@ -276,5 +265,18 @@ class KleinResource(Resource):
 
 
         d.addErrback(processing_failed, self._app._error_handlers)
+
+        def write_response(r):
+            if r is not _StandInResource:
+                if isinstance(r, unicode):
+                    r = r.encode('utf-8')
+
+                if (r is not None) and (r != NOT_DONE_YET):
+                    request.write(r)
+
+                if not request_finished[0]:
+                    request.finish()
+
         d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
+
         return server.NOT_DONE_YET

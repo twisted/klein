@@ -46,7 +46,9 @@ class PY3KleinResourceTests(TestCase):
 
             d = _render(resource, request)
 
-        self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), expected)
+        def assertResult(_):
+            self.assertEqual(request.getWrittenData(), expected)
+
+        d.addCallback(assertResult)
 
         return d

@@ -840,6 +840,9 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.writeCount, 1)
 
     def test_errorHandlerNeedsRendering(self):
+        """
+        Renderables returned by L{handle_errors} are rendered.
+        """
         app = self.app
         request = requestMock(b"/")
 

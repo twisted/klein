@@ -59,6 +59,8 @@ matrix:
     - python: 2.7
       env: TOX_ENV=pyflakes
     - python: 2.7
+      env: TOX_ENV=twistedchecker-diff
+    - python: 2.7
       env: TOX_ENV=docs
     - python: 2.7
       env: TOX_ENV=docs-linkcheck
@@ -70,6 +72,7 @@ matrix:
     - env: TOX_ENV=trial-py35-twtrunk
     - env: TOX_ENV=trial-pypy-twtrunk
 
+    - env: TOX_ENV=twistedchecker-diff
     - env: TOX_ENV=docs-linkcheck
 
 

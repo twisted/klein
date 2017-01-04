@@ -14,16 +14,16 @@ from twisted.web.template import tags, slot
 from klein import Klein, Plating
 app = Klein()
 
-style = Plating(
+myStyle = Plating(
     tags=tags.html(
-        tags.head(tags.title(slot("title"))),
-        tags.body(tags.h1(slot("title"), Class="title"),
+        tags.head(tags.title(slot("pageTitle"))),
+        tags.body(tags.h1(slot("pageTitle"), Class="titleHeading"),
                   tags.div(slot(Plating.CONTENT)))
     ),
-    defaults={"title": "Places & Foods"}
+    defaults={"pageTitle": "Places & Foods"}
 )
 
-@style.routed(
+@myStyle.routed(
     app.route("/"),
     tags.div(
         tags.h2("Sample Places:"),
@@ -36,7 +36,7 @@ style = Plating(
 def root(request):
     return {}
 
-@style.routed(app.route("/foods/<food>"),
+@myStyle.routed(app.route("/foods/<food>"),
               tags.table(border="2", style="color: blue")(
                   tags.tr(tags.td("Name:"), tags.td(slot("name"))),
                   tags.tr(tags.td("Deliciousness:"),
@@ -45,11 +45,12 @@ def root(request):
                           tags.td(slot("carbohydrates")))))
 def one_food(request, food):
     random = random_from_string(food)
-    return {"name": food, "title": "Food: {}".format(food),
+    return {"name": food,
+            "pageTitle": "Food: {}".format(food),
             "rating": random.randint(1, 5),
             "carbohydrates": random.randint(0, 100)}
 
-@style.routed(
+@myStyle.routed(
     app.route("/places/<place>"),
     tags.div(style="color: green")(
         tags.h1("Place: ", slot("name")),
@@ -62,7 +63,8 @@ def one_place(request, place):
     possible_foods = ["hamburgers", "cheeseburgers", "hot dogs", "pizza",
                       "叉烧", "皮蛋", "foie gras"]
     random.shuffle(possible_foods)
-    return {"name": place, "title": "Place: {}".format(place),
+    return {"name": place,
+            "pageTitle": "Place: {}".format(place),
             "latitude": random.uniform(-90, 90),
             "longitude": random.uniform(-180, 180),
             "foods": possible_foods[:3]}

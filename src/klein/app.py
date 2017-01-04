@@ -9,8 +9,13 @@ import weakref
 
 from collections import namedtuple
 from contextlib import contextmanager
-
 from functools import wraps
+
+try:
+    from inspect import iscoroutine
+except ImportError:
+    def iscoroutine(*args, **kwargs):
+        return False
 
 from werkzeug.routing import Map, Rule, Submount
 
@@ -22,6 +27,12 @@ from twisted.web.template import renderElement
 from twisted.web.server import Site, Request
 from twisted.internet import reactor, endpoints
 
+try:
+    from twisted.internet.defer import ensureDeferred
+except ImportError:
+    def ensureDeferred(*args, **kwagrs):
+        raise NotImplementedError("Coroutines support requires Twisted>=16.6")
+
 from zope.interface import implementer
 
 from klein.resource import KleinResource
@@ -32,9 +43,14 @@ __all__ = ['Klein', 'run', 'route', 'resource']
 
 def _call(instance, f, *args, **kwargs):
     if instance is None:
-        return f(*args, **kwargs)
+        result = f(*args, **kwargs)
+    else:
+        result = f(instance, *args, **kwargs)
 
-    return f(instance, *args, **kwargs)
+    if iscoroutine(result):
+        result = ensureDeferred(result)
+
+    return result
 
 
 @implementer(IKleinRequest)

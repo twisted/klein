@@ -22,7 +22,7 @@ Here is a list of shell commands that will install the dependencies of Klein, ru
    tox -e docs
    tox -e pyflakes
 
-`Tox <https://testrun.org/tox/latest/index.html>`_ makes a virtualenv, installs Klein's dependencies into the virtualenv, and then runs a set of commands based on the ``-e`` (environment) argument.
+`Tox <https://tox.readthedocs.io/en/latest/>`_ makes a virtualenv, installs Klein's dependencies into the virtualenv, and then runs a set of commands based on the ``-e`` (environment) argument.
 This strategy allows one to make and test changes to Klein without needing to change system-level Python packages.
 
 
@@ -42,7 +42,7 @@ Code
 - Please run ``tox -e pyflakes`` to check for style issues in changed code.
   PyFlakes and similar tools expose many small-but-common errors early enough that it's easy to remedy the problem.
 - Code changes should have tests: untested code is buggy code.
-  Klein uses `Twisted Trial <http://twistedmatrix.com/documents/current/api/twisted.trial.html>`_ and `tox <https://testrun.org/tox/latest/index.html>`_ for its tests.
+  Klein uses `Twisted Trial <http://twistedmatrix.com/documents/current/api/twisted.trial.html>`_ and `tox <https://tox.readthedocs.io/en/latest/>`_ for its tests.
   The command to run the full test suite is ``tox`` with no arguments.
   This will run tests against several versions of Python and Twisted, which can be time-consuming.
   To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py33-tw150`` will run tests with Python 3.3 and Twisted 15.0.

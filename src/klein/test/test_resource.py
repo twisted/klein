@@ -848,8 +848,6 @@ class KleinResourceTests(TestCase):
 
         @app.handle_errors(NotFound)
         def handle_not_found(request, failure):
-            # from twisted.web.template import renderElement
-            # return renderElement(request, SimpleElement("Not Found Element"))
             return SimpleElement("Not Found Element")
 
         d = _render(self.kr, request)

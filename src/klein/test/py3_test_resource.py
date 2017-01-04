@@ -26,15 +26,27 @@ class PY3KleinResourceTests(TestCase):
         async def leaf(request):
             return LeafResource()
 
-        if (twisted.version.major, twisted.version.minor) < (16, 6):
-            # Twisted version in use does not have ensureDeferred
+        if (twisted.version.major, twisted.version.minor) >= (16, 6):
+            expected = b"I am a leaf in the wind."
+
             d = _render(resource, request)
-            self.assertFailure(d, NotImplementedError)
+
         else:
+            expected = b"** Twisted>=16.6 is required **"
+
+            # Twisted version in use does not have ensureDeferred, so
+            # attempting to use an async resource will raise
+            # NotImplementedError.
+            # resource.render(), and therefore _render(), does not return the
+            # deferred object that does the rendering, so we need to check for
+            # errors indirectly via handle_errors().
+            @app.handle_errors(NotImplementedError)
+            def notImplementedError(request, failure):
+                return expected
+
             d = _render(resource, request)
-            self.assertFired(d)
-            self.assertEqual(
-                request.getWrittenData(), b"I am a leaf in the wind."
-            )
+
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), expected)
 
         return d

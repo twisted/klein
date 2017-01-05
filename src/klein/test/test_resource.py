@@ -433,6 +433,7 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(),
                 b"I am a leaf in the wind.")
 
+
     def test_childResourceRendering(self):
         app = self.app
         request = requestMock(b"/resource/children/betty")
@@ -446,6 +447,7 @@ class KleinResourceTests(TestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(),
                 b"I'm a child named betty!")
+
 
     def test_childrenResourceRendering(self):
         app = self.app
@@ -816,12 +818,8 @@ class KleinResourceTests(TestCase):
 
     def test_notFoundException(self):
         app = self.app
-        request = requestMock(b"/foo")
+        request = requestMock(b"/")
         generic_error_handled = False
-
-        @app.route("/")
-        def root(request):
-            pass
 
         @app.handle_errors(NotFound)
         def handle_not_found(request, failure):
@@ -842,6 +840,25 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.code, 404)
         self.assertEqual(request.getWrittenData(), b'Custom Not Found')
         self.assertEqual(request.writeCount, 1)
+
+    def test_errorHandlerNeedsRendering(self):
+        """
+        Renderables returned by L{handle_errors} are rendered.
+        """
+        app = self.app
+        request = requestMock(b"/")
+
+        @app.handle_errors(NotFound)
+        def handle_not_found(request, failure):
+            return SimpleElement("Not Found Element")
+
+        d = _render(self.kr, request)
+
+        rendered = b"<!DOCTYPE html>\n<h1>Not Found Element</h1>"
+
+        self.assertFired(d)
+        self.assertEqual(request.processingFailed.called, False)
+        self.assertEqual(request.getWrittenData(), rendered)
 
     def test_requestWriteAfterFinish(self):
         app = self.app
@@ -1153,3 +1170,10 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(server_port, int)
         self.assertIsInstance(path_info, unicode)
         self.assertIsInstance(script_name, unicode)
+
+
+if _PY3:
+    import sys
+    if sys.version_info >= (3, 5):
+        from .py3_test_resource import PY3KleinResourceTests
+        PY3KleinResourceTests  # shh pyflakes

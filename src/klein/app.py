@@ -10,13 +10,27 @@ import weakref
 from collections import namedtuple
 from contextlib import contextmanager
 
+try:
+    from inspect import iscoroutine
+except ImportError:
+    def iscoroutine(*args, **kwargs):
+        return False
+
 from werkzeug.routing import Map, Rule, Submount
 
 from twisted.python import log
 from twisted.python.components import registerAdapter
 
+from twisted.web.iweb import IRenderable
+from twisted.web.template import renderElement
 from twisted.web.server import Site, Request
 from twisted.internet import reactor, endpoints
+
+try:
+    from twisted.internet.defer import ensureDeferred
+except ImportError:
+    def ensureDeferred(*args, **kwagrs):
+        raise NotImplementedError("Coroutines support requires Twisted>=16.6")
 
 from zope.interface import implementer
 
@@ -29,10 +43,12 @@ __all__ = ['Klein', 'run', 'route', 'resource']
 
 
 def _call(instance, f, *args, **kwargs):
-    if instance is None and not getattr(f, "__klein_bound__", False):
-        return f(*args, **kwargs)
-
-    return f(instance, *args, **kwargs)
+    if instance is not None or getattr(f, "__klein_bound__", False):
+        args = (instance,) + args
+    result = f(*args, **kwargs)
+    if iscoroutine(result):
+        result = ensureDeferred(result)
+    return result
 
 
 @implementer(IKleinRequest)
@@ -302,7 +318,10 @@ class Klein(object):
         def deco(f):
             @modified("error handling wrapper", f)
             def _f(instance, request, failure):
-                return _call(instance, f, request, failure)
+                r = _call(instance, f, request, failure)
+                if IRenderable.providedBy(r):
+                    return renderElement(request, r)
+                return r
 
             self._error_handlers.append(([f_or_exception] + list(additional_exceptions), _f))
             return _f

@@ -17,20 +17,16 @@ from twisted.web.util import Redirect
 app = Klein()
 
 def bootstrap(x):
-    return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.3/" + x
+    return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/" + x
 
 style = Plating(
     tags=tags.html(
         tags.head(
             tags.link(rel="stylesheet",
                       href=bootstrap("css/bootstrap.min.css"),
-                      integrity="sha384-MIwDKRSSImVFAZCVLtU0LMDdON6KVCrZHyVQQ"
-                      "j6e8wIEJkW4tvwqXrbMIya1vriY",
                       crossorigin="anonymous"),
             # tags.script(
             #     src=bootstrap("js/bootstrap.min.js"),
-            #     integrity=("sha384-ux8v3A6CPtOTqOzMKiuo3d/DomGaaClxFYdCu2HPM"
-            #                "BEkf6x2xiDyJ7gkXU0MWwaD"),
             #     crossorigin="anonymous"
             # ),
             tags.title("hooray")

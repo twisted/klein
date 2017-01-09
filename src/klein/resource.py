@@ -291,7 +291,7 @@ class KleinHTTPRequest(server.Request):
         """
         key = ensure_utf8_bytes(key)
         value = self.arg[key]
-        if len(value) > 1:
+        if len(value) != 1:
             raise ValueError('Too many values for: {0}'.format(key))
         return value[0]
 

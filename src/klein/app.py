@@ -5,6 +5,7 @@ Applications are great.  Lets have more of them.
 from __future__ import absolute_import, division
 
 import sys
+import warnings
 import weakref
 
 from collections import namedtuple
@@ -16,10 +17,13 @@ except ImportError:
     def iscoroutine(*args, **kwargs):
         return False
 
-from twisted.internet import endpoints, reactor
+from six import string_types, binary_type
+
+from twisted.internet import reactor, endpoints
 from twisted.python import log
 from twisted.python.components import registerAdapter
-from twisted.web.server import Request, Site
+from twisted.python.url import URL
+from twisted.web.server import Site, Request
 
 try:
     from twisted.internet.defer import ensureDeferred
@@ -185,8 +189,9 @@ class Klein(object):
             def index(request):
                 return "Hello"
 
-        @param url: A werkzeug URL pattern given to C{werkzeug.routing.Rule}.
-        @type url: str
+        @param url: A C{twisted.python.url.URL} instance, transformed to werkzeug
+            pattern, and thus used to initialize C{werkzeug.routing.Rule}.
+        @type url: C{twisted.python.url.URL} or string
 
         @param branch: A bool indiciated if a branch endpoint should
             be added that allows all child path segments that don't
@@ -196,16 +201,44 @@ class Klein(object):
 
         @returns: decorated handler function.
         """
-        segment_count = self._segments_in_url(url) + self._subroute_segments
 
-        @named("router for '" + url + "'")
+        def _urlToString(_url):
+            return _url.asText() if URL is not False else _url
+
+        if URL is not False:
+
+            if isinstance(url, string_types + (binary_type, )):
+                url = URL.fromText(url)
+            if url.absolute or url.port or url.userinfo:
+                warnings.warn(
+                    "Mind to use base URI for an application routing, "
+                    "instead of "
+                    + url.asText(includeSecrets=False))
+                url = url.replace(
+                    host=None,
+                    scheme=None,
+                    port=None,
+                    userinfo=u"",
+                )
+
+            if not url.rooted:
+                url = url.replace(rooted=True)
+
+            segment_count = len([item for item in url.path if item]) + self._subroute_segments
+
+        else:
+            # Compatibility hook for twisteds < 15.5
+            segment_count = self._segments_in_url(url) + self._subroute_segments
+
+        @named("router for '" + url.asURI().asText() + "'")
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
-                @modified("branch route '{url}' executor".format(url=url), f)
+                @modified("branch route '{url}' executor".format(
+                    url=url.asURI().asText()), f)
                 def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = (
                         kw.pop('__rest__', '').split('/')
@@ -216,20 +249,18 @@ class Klein(object):
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(
-                    Rule(
-                        url.rstrip('/') + '/' + '<path:__rest__>',
-                        *args, **branchKwargs
-                    )
-                )
+                    Rule(_urlToString(url).rstrip('/') + '/' + '<path:__rest__>',
+                         *args, **branchKwargs))
 
-            @modified("route '{url}' executor".format(url=url), f)
+            @modified("route '{url}' executor".format(
+                url=url.asURI().asText()), f)
             def _f(instance, request, *a, **kw):
                 return _call(instance, f, request, *a, **kw)
 
             _f.segment_count = segment_count
 
             self._endpoints[kwargs['endpoint']] = _f
-            self._url_map.add(Rule(url, *args, **kwargs))
+            self._url_map.add(Rule(_urlToString(url), *args, **kwargs))
             return f
         return deco
 

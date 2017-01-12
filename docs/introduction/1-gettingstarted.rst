@@ -128,15 +128,15 @@ appear.  That'll look something like this:
 .. literalinclude:: codeexamples/html.py
     :lines: 13-24
 
-Notice that we have defined a ``"title"`` slot in the template - individual
+Notice that we have defined a ``"pageTitle"`` slot in the template - individual
 pages must each provide a value for the title themselves in order to use the
-``style`` frame.  Nothing's special about "title", by the way; you may define
-whatever slots you want in your page template.
+``myStyle`` frame.  Nothing's special about ``"pageTitle"``, by the way; you
+may define whatever slots you want in your page template.
 
 You can also specify a dictionary of default values to fill slots with.
 
 Next, you want to create a route that is plated with that ``Plating``, by using
-the ``Plating.routed`` decorator.  ``@style.routed`` takes a route from the
+the ``Plating.routed`` decorator.  ``@myStyle.routed`` takes a route from the
 Klein instance, in this case ``app``, and then a template for the content
 portion (the ``Plating.CONTENT`` slot) of the page.  The decorated function
 must then return a dictionary of the values to populate the slots in the
@@ -151,7 +151,7 @@ the content slot.
 This page generates some links to various sub-pages which we'll get to in a
 moment.  But first, if you load ``http://localhost:8080/``, you'll see that the
 template specified for ``root`` is inserted at the point in the template for
-``style`` specified the content should go.
+``myStyle`` specified the content should go.
 
 Next, we should actually try injecting some data.
 
@@ -162,7 +162,7 @@ Here you can see the ``/foods/...`` route for showing information about a food.
 In the content template, we've got slots for ``"name"``, ``"rating"``, and
 ``"carbohydrates"``, the three primary properties which define a food.  The
 decorated function then returns a dictionary that returns values for each of
-those slots, as well as a value for "title".
+those slots, as well as a value for ``"pageTitle"``.
 
 Each of these slots is only filled with a single item, though.  What if you
 need to put multiple items into the template?  The route for ``/places/...``
@@ -196,7 +196,7 @@ result like this:
         "latitude": -32.610538480748815,
         "longitude": -9.38433633489143,
         "name": "chicago",
-        "title": "Place: chicago"
+        "pageTitle": "Place: chicago"
     }
 
 Any route decorated by ``@routed`` will similarly give you structured data if

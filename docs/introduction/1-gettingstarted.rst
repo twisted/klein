@@ -45,6 +45,11 @@ However, by creating a Klein instance, then calling the ``run`` and ``route`` me
 
 By not using the global Klein instance, you can have different Klein routers, each having different routes, if your application requires that in the future.
 
+You may also use ``twisted.python.url.URL`` abstraction to instantiate routes, simply as:
+
+.. literalinclude:: codeexamples/helloWorldURL.py
+
+Note, that there is no need to explicitly specify presence of leading slash, while constructing ``URL`` -- Klein adds it for you.
 
 Adding Routes
 =============

@@ -2,7 +2,7 @@
 Klein, a Web Micro-Framework
 ============================
 
-.. image:: https://travis-ci.org/twisted/klein.png?branch=master
+.. image:: https://travis-ci.org/twisted/klein.svg?branch=master
     :target: http://travis-ci.org/twisted/klein
     :alt: Build Status
 .. image:: https://codecov.io/github/twisted/klein/coverage.svg?branch=master

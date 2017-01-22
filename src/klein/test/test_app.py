@@ -246,12 +246,12 @@ class KleinTestCase(unittest.TestCase):
 
 
     @patch('klein.app.KleinResource')
-    @patch('klein.app.Site')
+    @patch('klein.app.KleinSite')
     @patch('klein.app.log')
     @patch('klein.app.reactor')
     def test_run(self, reactor, mock_log, mock_site, mock_kr):
         """
-        L{Klein.run} configures a L{KleinResource} and a L{Site}
+        L{Klein.run} configures a L{KleinResource} and a L{KleinSite}
         listening on the specified interface and port, and logs
         to stdout.
         """
@@ -270,7 +270,7 @@ class KleinTestCase(unittest.TestCase):
 
 
     @patch('klein.app.KleinResource')
-    @patch('klein.app.Site')
+    @patch('klein.app.KleinSite')
     @patch('klein.app.log')
     @patch('klein.app.reactor')
     def test_runWithLogFile(self, reactor, mock_log, mock_site, mock_kr):

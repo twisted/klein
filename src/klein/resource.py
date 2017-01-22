@@ -288,9 +288,13 @@ class KleinHTTPRequest(server.Request):
     def getArg(self, key):
         """
         Get a single arg value.
+
+        @raises KeyError: If key doesn't exist
+        @raises ValueError: If there is more than 1 value
+        @return: L{list} of L{bytes}
         """
         key = ensure_utf8_bytes(key)
-        value = self.arg[key]
+        value = self.args[key]
         if len(value) != 1:
             raise ValueError('Too many values for: {0}'.format(key))
         return value[0]
@@ -298,23 +302,11 @@ class KleinHTTPRequest(server.Request):
     def getArgs(self, key):
         """
         Get the list of values for a key.
+
+        @return: L{list} of L{bytes}
         """
         key = ensure_utf8_bytes(key)
         return self.args.get(key, [])
-
-    def appendArg(self, key, value):
-        """
-        Append a value into the list.
-        """
-        key = ensure_utf8_bytes(key)
-        self.args.setdefault(key, []).append(value)
-
-    def setArg(self, key, value):
-        """
-        Set a value for a given key. The value will always be in a list.
-        """
-        key = ensure_utf8_bytes(key)
-        self.args[key] = [value]
 
 
 

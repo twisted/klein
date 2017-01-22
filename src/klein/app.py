@@ -24,7 +24,7 @@ from twisted.python.components import registerAdapter
 
 from twisted.web.iweb import IRenderable
 from twisted.web.template import renderElement
-from twisted.web.server import Site, Request
+from twisted.web.server import Request
 from twisted.internet import reactor, endpoints
 
 try:
@@ -35,7 +35,7 @@ except ImportError:
 
 from zope.interface import implementer
 
-from klein.resource import KleinResource
+from klein.resource import KleinResource, KleinSite
 from klein.interfaces import IKleinRequest
 
 __all__ = ['Klein', 'run', 'route', 'resource']
@@ -367,7 +367,7 @@ class Klein(object):
                                                                        host)
 
         endpoint = endpoints.serverFromString(reactor, endpoint_description)
-        endpoint.listen(Site(self.resource()))
+        endpoint.listen(KleinSite(self.resource()))
         reactor.run()
 
 

@@ -7,6 +7,18 @@ branches:
     - master
 
 
+#
+# Test test matrix is spelled out explicitly here.
+#
+# For each supported version of Python, we will test with:
+#
+#  * The first minor version of Twisted for each major version that supports
+#    the tested version of Python, staring with Twisted 13.
+#
+#  * The current release of Twisted.
+#
+#  * Twisted trunk, at the time of the build.
+#
 matrix:
   include:
     - python: pypy
@@ -72,13 +84,17 @@ matrix:
       env: TOX_ENV=docs-linkcheck
 
   allow_failures:
+    # Tests against Twisted trunk are allow to fail, as they are not supported.
     - env: TOX_ENV=trial-py27-twtrunk
     - env: TOX_ENV=trial-py33-twtrunk
     - env: TOX_ENV=trial-py34-twtrunk
     - env: TOX_ENV=trial-py35-twtrunk
     - env: TOX_ENV=trial-pypy-twtrunk
 
+    # This is not yet required.
     - env: TOX_ENV=twistedchecker-diff
+
+    # This depends on external web sites, so it's allowed to fail.
     - env: TOX_ENV=docs-linkcheck
 
 

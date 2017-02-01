@@ -62,7 +62,7 @@ def requestMock(path, method=b"GET", host=b"localhost", port=8080,
 
     def registerProducer(producer, streaming):
         request.producer = producer
-        for x in range(2):
+        for _ in range(2):
             if request.producer:
                 request.producer.resumeProducing()
 

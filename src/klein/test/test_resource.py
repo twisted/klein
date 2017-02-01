@@ -119,7 +119,7 @@ def _render(resource, request, notifyFinish=True):
         else:
             return request.notifyFinish()
     else:
-        raise ValueError("Unexpected return value: %r" % (result,))
+        raise ValueError("Unexpected return value: {!r}".format(result))
 
 
 class SimpleElement(Element):
@@ -251,8 +251,10 @@ class KleinResourceTests(TestCase):
         _pawn = object()
         result = getattr(deferred, 'result', _pawn)
         if result != _pawn:
-            self.fail("Expected deferred not to have fired, "
-                      "but it has: %r" % (deferred,))
+            self.fail(
+                "Expected deferred not to have fired, but it has: {!r}"
+                .format(deferred)
+            )
 
 
     def test_simplePost(self):

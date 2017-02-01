@@ -253,9 +253,9 @@ class PlatingTests(TestCase):
         """
         from klein._plating import json_serialize
 
-        class reprish(object):
+        class Reprish(object):
             def __repr__(self):
                 return '<blub>'
 
-        te = self.assertRaises(TypeError, json_serialize, {"an": reprish()})
+        te = self.assertRaises(TypeError, json_serialize, {"an": Reprish()})
         self.assertIn("<blub>", str(te))

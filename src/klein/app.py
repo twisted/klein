@@ -17,15 +17,12 @@ except ImportError:
     def iscoroutine(*args, **kwargs):
         return False
 
-from werkzeug.routing import Map, Rule, Submount
-
+from twisted.internet import endpoints, reactor
 from twisted.python import log
 from twisted.python.components import registerAdapter
-
 from twisted.web.iweb import IRenderable
+from twisted.web.server import Request, Site
 from twisted.web.template import renderElement
-from twisted.web.server import Site, Request
-from twisted.internet import reactor, endpoints
 
 try:
     from twisted.internet.defer import ensureDeferred
@@ -33,10 +30,12 @@ except ImportError:
     def ensureDeferred(*args, **kwagrs):
         raise NotImplementedError("Coroutines support requires Twisted>=16.6")
 
+from werkzeug.routing import Map, Rule, Submount
+
 from zope.interface import implementer
 
-from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
+from klein.resource import KleinResource
 
 
 __all__ = (

@@ -3,10 +3,9 @@ Shared tools for Klein's test suite.
 """
 
 import twisted
-
-from twisted.trial.unittest import TestCase
 from twisted.python import failure
 from twisted.python.versions import Version
+from twisted.trial.unittest import TestCase
 
 
 

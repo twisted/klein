@@ -1,33 +1,31 @@
 from __future__ import absolute_import, division
 
 import os
-
 from io import BytesIO
 
-from six.moves.urllib.parse import parse_qs
 from mock import Mock, call
 
-from twisted.internet.defer import succeed, Deferred, fail, CancelledError
+from six.moves.urllib.parse import parse_qs
+
+from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
+from twisted.python.compat import _PY3, unicode
 from twisted.web import server
 from twisted.web.http_headers import Headers
 from twisted.web.resource import Resource
 from twisted.web.static import File
 from twisted.web.template import Element, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
-from twisted.python.compat import unicode, _PY3
+
 from werkzeug.exceptions import NotFound
 
 from klein import Klein
 from klein.interfaces import IKleinRequest
 from klein.resource import (
-    KleinResource,
-    _URLDecodeError,
-    _extractURLparts,
-    ensure_utf8_bytes,
+    KleinResource, _URLDecodeError, _extractURLparts, ensure_utf8_bytes
 )
-from klein.test.util import TestCase, EqualityTestsMixin
+from klein.test.util import EqualityTestsMixin, TestCase
 
 
 def requestMock(path, method=b"GET", host=b"localhost", port=8080,

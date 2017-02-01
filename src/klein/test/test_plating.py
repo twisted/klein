@@ -8,13 +8,12 @@ from __future__ import (
 
 import json
 
-from klein import Plating
-from twisted.web.template import tags, slot
 from twisted.web.error import FlattenerError, MissingRenderMethod
+from twisted.web.template import slot, tags
 
-from klein.test.test_resource import requestMock, _render
+from klein import Klein, Plating
+from klein.test.test_resource import _render, requestMock
 from klein.test.util import TestCase
-from klein import Klein
 
 page = Plating(
     defaults={

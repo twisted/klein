@@ -3,11 +3,11 @@
 from __future__ import absolute_import, division
 
 from twisted.internet import defer
-from twisted.python import log, failure
-from twisted.python.compat import unicode, intToBytes
+from twisted.python import failure, log
+from twisted.python.compat import intToBytes, unicode
 from twisted.web import server
 from twisted.web.iweb import IRenderable
-from twisted.web.resource import Resource, IResource, getChildForRequest
+from twisted.web.resource import IResource, Resource, getChildForRequest
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
 

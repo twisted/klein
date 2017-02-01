@@ -7,10 +7,12 @@ Templating wrapper support for Klein.
 from functools import wraps
 from json import dumps
 
-from six import text_type, integer_types
+from six import integer_types, text_type
 
-from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
+from twisted.web.template import Element, TagLoader
+
+
 
 def _should_return_json(request):
     """
@@ -39,6 +41,7 @@ def _extra_types(input):
     if isinstance(input, (float,) + integer_types):
         return text_type(input)
     return input
+
 
 
 class PlatedElement(Element):
@@ -78,6 +81,7 @@ class PlatedElement(Element):
             return types[type]
         else:
             raise MissingRenderMethod(self, name)
+
 
 
 class Plating(object):

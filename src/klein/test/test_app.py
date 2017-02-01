@@ -1,12 +1,11 @@
 from __future__ import absolute_import, division
 
-from twisted.trial import unittest
-
 import sys
 
 from mock import Mock, patch
 
 from twisted.python.components import registerAdapter
+from twisted.trial import unittest
 
 from klein import Klein
 from klein.app import KleinRequest

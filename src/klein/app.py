@@ -38,7 +38,13 @@ from zope.interface import implementer
 from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
 
-__all__ = ['Klein', 'run', 'route', 'resource']
+
+__all__ = (
+    "Klein",
+    "run",
+    "route",
+    "resource",
+)
 
 
 def _call(instance, f, *args, **kwargs):

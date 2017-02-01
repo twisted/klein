@@ -17,7 +17,10 @@ from klein.interfaces import IKleinRequest
 
 
 
-__all__ = ["KleinResource", "ensure_utf8_bytes"]
+__all__ = (
+    "KleinResource",
+    "ensure_utf8_bytes",
+)
 
 
 

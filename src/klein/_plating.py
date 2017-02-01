@@ -92,7 +92,6 @@ class Plating(object):
     def __init__(self, defaults=None, tags=None,
                  presentation_slots=frozenset()):
         """
-        
         """
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
@@ -100,11 +99,11 @@ class Plating(object):
 
     def routed(self, routing, content_template):
         """
-        
         """
         @wraps(routing)
         def mydecorator(method):
             loader = TagLoader(content_template)
+
             @routing
             @wraps(method)
             def mymethod(request, *args, **kw):
@@ -122,12 +121,12 @@ class Plating(object):
                                       b'text/html; charset=utf-8')
                     data[self.CONTENT] = loader.load()
                     return self._elementify(data)
+
             return method
         return mydecorator
 
     def _elementify(self, to_fill_with):
         """
-        
         """
         slot_data = self._defaults.copy()
         slot_data.update(to_fill_with)
@@ -138,7 +137,6 @@ class Plating(object):
 
     def widgeted(self, function):
         """
-        
         """
         @wraps(function)
         def wrapper(*a, **k):

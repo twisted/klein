@@ -101,8 +101,8 @@ class KleinTestCase(unittest.TestCase):
 
     def test_stackedRoute(self):
         """
-        L{Klein.route} can be stacked to create multiple endpoints of
-        a single function.
+        L{Klein.route} can be stacked to create multiple endpoints of a single
+        function.
         """
         app = Klein()
 
@@ -115,10 +115,14 @@ class KleinTestCase(unittest.TestCase):
 
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo"), ("foobar", {}))
-        self.assertEqual(app.execute_endpoint("foobar", DummyRequest(1)), "foobar")
+        self.assertEqual(
+            app.execute_endpoint("foobar", DummyRequest(1)), "foobar"
+        )
 
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEqual(app.execute_endpoint("bar", DummyRequest(2)), "foobar")
+        self.assertEqual(
+            app.execute_endpoint("bar", DummyRequest(2)), "foobar"
+        )
 
 
     def test_branchRoute(self):
@@ -150,6 +154,7 @@ class KleinTestCase(unittest.TestCase):
         is defined as a class variable.
         """
         bar_calls = []
+
         class Foo(object):
             app = Klein()
 
@@ -161,7 +166,9 @@ class KleinTestCase(unittest.TestCase):
         foo = Foo()
         c = foo.app.url_map.bind("bar")
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEquals(foo.app.execute_endpoint("bar", DummyRequest(1)), "bar")
+        self.assertEquals(
+            foo.app.execute_endpoint("bar", DummyRequest(1)), "bar"
+        )
 
         self.assertEqual(bar_calls, [(foo, DummyRequest(1))])
 

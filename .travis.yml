@@ -57,7 +57,7 @@ matrix:
       env: TOX_ENV=trial-py35-twtrunk
 
     - python: 2.7
-      env: TOX_ENV=pyflakes
+      env: TOX_ENV=flake8
     - python: 2.7
       env: TOX_ENV=twistedchecker-diff
     - python: 2.7

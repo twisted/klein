@@ -25,9 +25,8 @@ page = Plating(
         tags.head(tags.title(slot("title"))),
         tags.body(
             tags.h1(slot("title")),
-            tags.div(slot(Plating.CONTENT),
-                     Class="content")
-        )
+            tags.div(slot(Plating.CONTENT), Class="content"),
+        ),
     ),
 )
 
@@ -36,8 +35,10 @@ element = Plating(
         "a": "NO VALUE FOR A",
         "b": "NO VALUE FOR B",
     },
-    tags=tags.div(tags.span("a: ", slot("a")),
-                  tags.span("b: ", slot("b"))),
+    tags=tags.div(
+        tags.span("a: ", slot("a")),
+        tags.span("b: ", slot("b")),
+    ),
 )
 
 @element.widgeted
@@ -76,10 +77,10 @@ class PlatingTests(TestCase):
         Rendering a L{Plating.routed} decorated route results in templated
         HTML.
         """
-        @page.routed(self.app.route("/"),
-                     tags.span(slot("ok")))
+        @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "test-data-present"}
+
         request, written = self.get(b"/")
         self.assertIn(b'<span>test-data-present</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
@@ -89,10 +90,10 @@ class PlatingTests(TestCase):
         Rendering a L{Plating.routed} decorated route with a query parameter
         asking for JSON will yield JSON instead.
         """
-        @page.routed(self.app.route("/"),
-                     tags.span(slot("ok")))
+        @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "an-plating-test"}
+
         request, written = self.get(b"/?json=true")
         self.assertEqual(
             request.responseHeaders.getRawHeaders(b'content-type')[0],
@@ -109,15 +110,19 @@ class PlatingTests(TestCase):
         serializable by twisted.web.template, will be converted by plating into
         their decimal representation.
         """
-        @page.routed(self.app.route("/"),
-                     tags.div(tags.span(slot("anInteger")),
-                              tags.i(slot("anFloat")),
-                              tags.b(slot("anLong")),
-                     ))
+        @page.routed(
+            self.app.route("/"),
+            tags.div(
+                tags.span(slot("anInteger")),
+                tags.i(slot("anFloat")),
+                tags.b(slot("anLong")),
+            ),
+        )
         def plateMe(result):
             return {"anInteger": 7,
                     "anFloat": 3.2,
                     "anLong": 0x10000000000000001}
+
         request, written = self.get(b"/")
         self.assertIn(b"<span>7</span>", written)
         self.assertIn(b"<i>3.2</i>", written)
@@ -128,11 +133,13 @@ class PlatingTests(TestCase):
         The C{:list} renderer suffix will render the slot named by the renderer
         as a list, filling each slot.
         """
-        @page.routed(self.app.route("/"),
-                     tags.ul(tags.li(slot("item"),
-                                     render="subplating:list")))
+        @page.routed(
+            self.app.route("/"),
+            tags.ul(tags.li(slot("item"), render="subplating:list"))
+        )
         def rsrc(request):
             return {"subplating": [1, 2, 3]}
+
         request, written = self.get(b"/")
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
@@ -144,10 +151,10 @@ class PlatingTests(TestCase):
         function with a modified return type that turns it into a renderable
         HTML sub-element that may fill a slot.
         """
-        @page.routed(self.app.route("/"),
-                     tags.div(slot("widget")))
+        @page.routed(self.app.route("/"), tags.div(slot("widget")))
         def rsrc(request):
             return {"widget": enwidget.widget(3, 4)}
+
         request, written = self.get(b"/")
         self.assertIn(b"<span>a: 3</span>", written)
         self.assertIn(b"<span>b: 4</span>", written)
@@ -158,10 +165,10 @@ class PlatingTests(TestCase):
         serialized to JSON, it appears the same as the returned value despite
         the HTML-friendly wrapping described above.
         """
-        @page.routed(self.app.route("/"),
-                     tags.div(slot("widget")))
+        @page.routed(self.app.route("/"), tags.div(slot("widget")))
         def rsrc(request):
             return {"widget": enwidget.widget(3, 4)}
+
         request, written = self.get(b"/?json=1")
         self.assertEqual(json.loads(written.decode('utf-8')),
                          {"widget": {"a": 3, "b": 4},
@@ -174,10 +181,11 @@ class PlatingTests(TestCase):
         applying a decorator to it...
         """
         exact_result = {"ok": "some nonsense value"}
-        @page.routed(self.app.route("/"),
-                     tags.span(slot("ok")))
+
+        @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request):
             return exact_result
+
         self.assertIdentical(plateMe(None), exact_result)
 
     def test_prime_directive_arguments(self):
@@ -185,10 +193,10 @@ class PlatingTests(TestCase):
         ... or shall require the function to modify its signature under these
         Articles Of Federation.
         """
-        @page.routed(self.app.route("/"),
-                     tags.span(slot("ok")))
+        @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request, one, two, three):
             return (one, two, three)
+
         exact_one = {"one": "and"}
         exact_two = {"two": "and"}
         exact_three = {"three": "and"}
@@ -204,12 +212,15 @@ class PlatingTests(TestCase):
         Slots marked as "presentation only" will not be reflected in the
         output.
         """
-        plating = Plating(tags=tags.span(slot("title")),
-                          presentation_slots={"title"})
-        @plating.routed(self.app.route("/"),
-                        tags.span(slot("data")))
+        plating = Plating(
+            tags=tags.span(slot("title")),
+            presentation_slots={"title"}
+        )
+
+        @plating.routed(self.app.route("/"), tags.span(slot("data")))
         def justJson(request):
             return {"title": "uninteresting", "data": "interesting"}
+
         request, written = self.get(b"/?json=1")
         self.assertEqual(json.loads(written.decode("utf-8")),
                          {"data": "interesting"})
@@ -220,13 +231,18 @@ class PlatingTests(TestCase):
         """
         def test(missing):
             plating = Plating(tags=tags.span(slot(Plating.CONTENT)))
-            @plating.routed(self.app.route("/"),
-                            tags.span(tags.span(render=missing)))
+
+            @plating.routed(
+                self.app.route("/"),
+                tags.span(tags.span(render=missing))
+            )
             def no(request):
                 return {}
+
             self.get(b"/")
             [fe] = self.flushLoggedErrors(FlattenerError)
             self.assertIsInstance(fe.value.args[0], MissingRenderMethod)
+
         test("garbage")
         test("garbage:missing")
 
@@ -236,9 +252,10 @@ class PlatingTests(TestCase):
         appropriate type.
         """
         from klein._plating import json_serialize
+
         class reprish(object):
             def __repr__(self):
                 return '<blub>'
+
         te = self.assertRaises(TypeError, json_serialize, {"an": reprish()})
         self.assertIn("<blub>", str(te))
-

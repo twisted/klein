@@ -150,8 +150,9 @@ class KleinResource(Resource):
     def render(self, request):
         # Stuff we need to know for the mapper.
         try:
-            url_scheme, server_name, server_port, path_info, script_name = \
+            url_scheme, server_name, server_port, path_info, script_name = (
                 _extractURLparts(request)
+            )
         except _URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, "Invalid encoding in {what}.".format(what=what))
@@ -243,7 +244,9 @@ class KleinResource(Resource):
                     resp = he.get_response({})
 
                     for header, value in resp.headers:
-                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
+                        request.setHeader(
+                            ensure_utf8_bytes(header), ensure_utf8_bytes(value)
+                        )
 
                     return ensure_utf8_bytes(he.get_body({}))
                 else:
@@ -252,7 +255,8 @@ class KleinResource(Resource):
 
             error_handler = error_handlers[0]
 
-            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
+            # Each error handler is a tuple of
+            # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
                 d = defer.maybeDeferred(self._app.execute_error_handler,
                                         error_handler[1],
@@ -262,7 +266,6 @@ class KleinResource(Resource):
                 return d.addErrback(processing_failed, error_handlers[1:])
 
             return processing_failed(failure, error_handlers[1:])
-
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
@@ -277,6 +280,7 @@ class KleinResource(Resource):
                 if not request_finished[0]:
                     request.finish()
 
-        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
+        d.addCallback(write_response)
+        d.addErrback(log.err, _why="Unhandled Error writing response")
 
         return server.NOT_DONE_YET

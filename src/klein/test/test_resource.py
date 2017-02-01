@@ -123,9 +123,10 @@ def _render(resource, request, notifyFinish=True):
 
 
 class SimpleElement(Element):
-    loader = XMLString("""
-    <h1 xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" t:render="name" />
-    """)
+    loader = XMLString(
+        '<h1 xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1" '
+        't:render="name" />'
+    )
 
     def __init__(self, name):
         self._name = name
@@ -203,17 +204,21 @@ class KleinResourceEqualityTests(TestCase, EqualityTestsMixin):
     """
     class _One(object):
         oneKlein = Klein()
+
         @oneKlein.route("/foo")
         def foo(self):
             pass
+
     _one = _One()
 
 
     class _Another(object):
         anotherKlein = Klein()
+
         @anotherKlein.route("/bar")
         def bar(self):
             pass
+
     _another = _Another()
 
 
@@ -430,8 +435,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-                b"I am a leaf in the wind.")
+        self.assertEqual(request.getWrittenData(), b"I am a leaf in the wind.")
 
 
     def test_childResourceRendering(self):
@@ -445,8 +449,9 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-                b"I'm a child named betty!")
+        self.assertEqual(
+            request.getWrittenData(), b"I'm a child named betty!"
+        )
 
 
     def test_childrenResourceRendering(self):
@@ -482,9 +487,10 @@ class KleinResourceTests(TestCase):
 
         d = _render(self.kr, request, notifyFinish=False)
 
-        self.assertNotEqual(request.getWrittenData(), b"abcd", "The full "
-                            "response should not have been written at this "
-                            "point.")
+        self.assertNotEqual(
+            request.getWrittenData(), b"abcd",
+            "The full response should not have been written at this point."
+        )
 
         while request.producer:
             request.producer.resumeProducing()
@@ -540,7 +546,11 @@ class KleinResourceTests(TestCase):
 
     def test_staticRoot(self):
         app = self.app
+
         request = requestMock(b"/__init__.py")
+        expected = open(
+            os.path.join(os.path.dirname(__file__), "__init__.py"), 'rb'
+        ).read()
 
         @app.route("/", branch=True)
         def root(request):
@@ -549,10 +559,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-            open(
-                os.path.join(
-                    os.path.dirname(__file__), "__init__.py"), 'rb').read())
+        self.assertEqual(request.getWrittenData(), expected)
         self.assertEqual(request.finishCount, 1)
 
 
@@ -560,6 +567,9 @@ class KleinResourceTests(TestCase):
         app = self.app
 
         request = requestMock(b"/static/__init__.py")
+        expected = open(
+            os.path.join(os.path.dirname(__file__), "__init__.py"), 'rb'
+        ).read()
 
         @app.route("/static/", branch=True)
         def root(request):
@@ -568,10 +578,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(),
-            open(
-                os.path.join(
-                    os.path.dirname(__file__), "__init__.py"), 'rb').read())
+        self.assertEqual(request.getWrittenData(), expected)
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
@@ -603,10 +610,11 @@ class KleinResourceTests(TestCase):
 
         self.assertFired(d)
         self.assertEqual(request.setHeader.call_count, 3)
-        request.setHeader.assert_has_calls(
-            [call(b'Content-Type', b'text/html; charset=utf-8'),
-             call(b'Content-Length', b'259'),
-             call(b'Location', b'http://localhost:8080/foo/')])
+        request.setHeader.assert_has_calls([
+            call(b'Content-Type', b'text/html; charset=utf-8'),
+            call(b'Content-Length', b'259'),
+            call(b'Location', b'http://localhost:8080/foo/')
+        ])
 
     def test_methodNotAllowed(self):
         app = self.app
@@ -665,8 +673,7 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(str(request_url[0]),
-            "http://localhost:8080/foo/bar")
+        self.assertEqual(str(request_url[0]), "http://localhost:8080/foo/bar")
         self.assertEqual(request.getWrittenData(), b'foo')
         self.assertEqual(request.code, 200)
 
@@ -684,8 +691,9 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(str(request_url[0]),
-            'http://localhost:8080/egg/chicken')
+        self.assertEqual(
+            str(request_url[0]), 'http://localhost:8080/egg/chicken'
+        )
 
     def test_URLPath_root(self):
         app = self.app
@@ -722,8 +730,9 @@ class KleinResourceTests(TestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(str(request_url[0]),
-            'http://localhost:8080/resource/foo')
+        self.assertEqual(
+            str(request_url[0]), 'http://localhost:8080/resource/foo'
+        )
 
     def test_handlerRaises(self):
         app = self.app
@@ -978,8 +987,9 @@ class KleinResourceTests(TestCase):
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
             krequest = IKleinRequest(request)
-            relative_url[0] = krequest.url_for('foo', {'bar': bar + 1},
-                force_external=True)
+            relative_url[0] = krequest.url_for(
+                'foo', {'bar': bar + 1}, force_external=True
+            )
 
         d = _render(self.kr, request)
 
@@ -1163,7 +1173,9 @@ class ExtractURLpartsTests(TestCase):
         server_mock = Mock(Server)
         server_mock.getRequestHostname = u'/var/run/twisted.socket'
         request.host = server_mock
-        url_scheme, server_name, server_port, path_info, script_name = _extractURLparts(request)
+        (
+            url_scheme, server_name, server_port, path_info, script_name
+        ) = _extractURLparts(request)
 
         self.assertIsInstance(url_scheme, unicode)
         self.assertIsInstance(server_name, unicode)

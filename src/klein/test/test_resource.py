@@ -1083,6 +1083,26 @@ class KleinResourceTests(TestCase):
     else:
         test_urlDecodeErrorReprPy3.skip = "Only works on Py3"
 
+
+    def test_subroutedBranch(self):
+        subapp = Klein()
+        @subapp.route('/foo')
+        def foo(request):
+            return b'foo'
+
+        app = self.app
+        with app.subroute('/sub') as app:
+            @app.route('/app', branch=True)
+            def subapp_endpoint(request):
+                return subapp.resource()
+
+        request = requestMock(b'/sub/app/foo')
+        d = _render(self.kr, request)
+
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), b'foo')
+
+
 class ExtractURLpartsTests(TestCase):
     """
     Tests for L{klein.resource._extractURLparts}.

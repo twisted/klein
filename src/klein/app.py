@@ -345,7 +345,7 @@ class Klein(object):
 
     def url_for(self, request, endpoint, values = None, method = None, force_external = False, append_unknown = True):
         host = request.getHeader(b'host')
-        if not host:
+        if host is None:
             host = b''
         return self.url_map.bind(host).build(endpoint, values, method, force_external, append_unknown)
 

@@ -1103,6 +1103,23 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.getWrittenData(), b'foo')
 
 
+    def test_correctContentLengthForRequestRedirect(self):
+        app = self.app
+
+        @app.route('/alias', alias=True)
+        @app.route('/real')
+        def real(req): return 'real'
+
+        request = requestMock(b'/alias')
+        d = _render(self.kr, request)
+        self.assertFired(d)
+        request.setResponseCode.assert_called_with(301)
+
+        actual_length = len(request.getWrittenData())
+        reported_length = int(request.responseHeaders.getRawHeaders(b'content-length')[0])
+        self.assertEqual(reported_length, actual_length)
+
+
 class ExtractURLpartsTests(TestCase):
     """
     Tests for L{klein.resource._extractURLparts}.

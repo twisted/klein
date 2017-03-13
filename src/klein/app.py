@@ -343,6 +343,13 @@ class Klein(object):
         return deco
 
 
+    def url_for(self, request, endpoint, values = None, method = None, force_external = False, append_unknown = True):
+        host = request.getHeader(b'host')
+        if not host:
+            host = b''
+        return self.url_map.bind(host).build(endpoint, values, method, force_external, append_unknown)
+
+
     def run(self, host=None, port=None, logFile=None,
             endpoint_description=None):
         """
@@ -388,3 +395,4 @@ _globalKleinApp = Klein()
 route = _globalKleinApp.route
 run = _globalKleinApp.run
 resource = _globalKleinApp.resource
+url_for = _globalKleinApp.url_for

@@ -12,6 +12,7 @@ from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
+from klein.test.test_resource import requestMock
 
 
 
@@ -341,3 +342,34 @@ class KleinTestCase(unittest.TestCase):
 
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
+
+    def test_urlFor(self):
+        """L{Klein.url_for} builds an URL for an endpoint with parameters"""
+
+        app = Klein()
+
+        @app.route('/user/<name>')
+        def userpage(req, name):
+            return name
+
+        @app.route('/post/<int:postid>', endpoint='bar')
+        def foo(req, postid):
+            return str(postid)
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}), '/user/john')
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}, force_external=True),
+                         'http://localhost:8080/user/john')
+
+        request = requestMock(b'/addr', host=b'example.com', port=4321)
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}, force_external=True),
+                         'http://example.com:4321/user/john')
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john', 'age': 29}, append_unknown=True),
+                         '/user/john?age=29')
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.url_for(request, 'bar', {'postid': 123}), '/post/123')

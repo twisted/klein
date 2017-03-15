@@ -5,7 +5,6 @@ Applications are great.  Lets have more of them.
 from __future__ import absolute_import, division
 
 import sys
-import warnings
 import weakref
 
 from collections import namedtuple
@@ -189,8 +188,7 @@ class Klein(object):
             def index(request):
                 return "Hello"
 
-        @param url: A C{twisted.python.url.URL} instance, transformed to werkzeug
-            pattern, and thus used to initialize C{werkzeug.routing.Rule}.
+        @param url: str
         @type url: C{twisted.python.url.URL} or string
 
         @param branch: A bool indiciated if a branch endpoint should
@@ -203,23 +201,12 @@ class Klein(object):
         """
 
         def _urlToString(_url):
-            return _url.asText() if URL is not False else _url
+            return _url.asText() if URL is not None else _url
 
-        if URL is not False:
+        if URL is not None:
 
             if isinstance(url, string_types + (binary_type, )):
                 url = URL.fromText(url)
-            if url.absolute or url.port or url.userinfo:
-                warnings.warn(
-                    "Mind to use base URI for an application routing, "
-                    "instead of "
-                    + url.asText(includeSecrets=False))
-                url = url.replace(
-                    host=None,
-                    scheme=None,
-                    port=None,
-                    userinfo=u"",
-                )
 
             if not url.rooted:
                 url = url.replace(rooted=True)
@@ -228,6 +215,10 @@ class Klein(object):
 
         else:
             # Compatibility hook for twisteds < 15.5
+
+            if not url.startswith('/'):
+                url = '/' + url
+
             segment_count = self._segments_in_url(url) + self._subroute_segments
 
         @named("router for '" + url.asURI().asText() + "'")

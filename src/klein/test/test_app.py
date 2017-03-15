@@ -97,32 +97,8 @@ class KleinTestCase(unittest.TestCase):
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
 
-    @patch('warnings.warn')
-    def test_nonBaseClassBasedURLRoute(self, mock_warn):
-        """
-        L{Klein.route} issues a warning, when non-base URI is passed as an argument,
-        although adds a routable endpoint.
-        """
-        app = Klein()
-
-        @app.route(u"https://perfect-site.com/foo")
-        def foo(request):
-            return "foo"
-
-        mock_warn.assert_called_with(
-            u'Mind to use base URI for an application routing,'
-            u' instead of https://perfect-site.com/foo',
-        )
-
-        c = app.url_map.bind("foo")
-        self.assertEqual(c.match("/foo"), ("foo", {}))
-        self.assertEqual(len(app.endpoints), 1)
-
-        self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
-
-    if URL is False:
-        test_classBasedURLRoute.skip = test_nonBaseClassBasedURLRoute.skip =\
-            "Only works on Twisted >= 15.5"
+    if URL is None:
+        test_classBasedURLRoute.skip = "URL class not available"
 
     def test_submountedRoute(self):
         """

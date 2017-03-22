@@ -1108,7 +1108,12 @@ class KleinResourceTests(TestCase):
 
         @app.route('/alias', alias=True)
         @app.route('/real')
-        def real(req): return 'real'
+        def real(req): return b'42'
+
+        request = requestMock(b'/real')
+        d = _render(self.kr, request)
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), b'42')
 
         request = requestMock(b'/alias')
         d = _render(self.kr, request)

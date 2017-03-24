@@ -77,6 +77,8 @@ class Klein(object):
 
     _bound_klein_instances = weakref.WeakKeyDictionary()
 
+    _subroute_segments = 0
+
     def __init__(self):
         self._url_map = Map()
         self._endpoints = {}
@@ -161,6 +163,14 @@ class Klein(object):
         return k
 
 
+    @staticmethod
+    def _segments_in_url(url):
+        segment_count = url.count('/')
+        if url.endswith('/'):
+            segment_count -= 1
+        return segment_count
+
+
     def route(self, url, *args, **kwargs):
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
@@ -184,9 +194,7 @@ class Klein(object):
 
         @returns: decorated handler function.
         """
-        segment_count = url.count('/')
-        if url.endswith('/'):
-            segment_count -= 1
+        segment_count = self._segments_in_url(url) + self._subroute_segments
 
         @named("router for '" + url + "'")
         def deco(f):
@@ -246,17 +254,21 @@ class Klein(object):
 
         _map_before_submount = self._url_map
 
+        segments = self._segments_in_url(prefix)
+
         submount_map = namedtuple(
             'submount', ['rules', 'add'])(
                 [], lambda r: submount_map.rules.append(r))
 
         try:
             self._url_map = submount_map
+            self._subroute_segments += segments
             yield self
             _map_before_submount.add(
                 Submount(prefix, submount_map.rules))
         finally:
             self._url_map = _map_before_submount
+            self._subroute_segments -= segments
 
 
     def handle_errors(self, f_or_exception, *additional_exceptions):

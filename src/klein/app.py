@@ -9,7 +9,6 @@ import weakref
 
 from collections import namedtuple
 from contextlib import contextmanager
-from functools import wraps
 
 try:
     from inspect import iscoroutine
@@ -38,18 +37,17 @@ from zope.interface import implementer
 from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
 
+from ._decorators import modified, named
+
 __all__ = ['Klein', 'run', 'route', 'resource']
 
 
 def _call(instance, f, *args, **kwargs):
-    if instance is None:
-        result = f(*args, **kwargs)
-    else:
-        result = f(instance, *args, **kwargs)
-
+    if instance is not None or getattr(f, "__klein_bound__", False):
+        args = (instance,) + args
+    result = f(*args, **kwargs)
     if iscoroutine(result):
         result = ensureDeferred(result)
-
     return result
 
 
@@ -198,13 +196,14 @@ class Klein(object):
         """
         segment_count = self._segments_in_url(url) + self._subroute_segments
 
+        @named("router for '" + url + "'")
         def deco(f):
             kwargs.setdefault('endpoint', f.__name__)
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
 
-                @wraps(f)
+                @modified("branch route '{url}' executor".format(url=url), f)
                 def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
                     return _call(instance, f, request, *a, **kw)
@@ -214,7 +213,7 @@ class Klein(object):
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(Rule(url.rstrip('/') + '/' + '<path:__rest__>', *args, **branchKwargs))
 
-            @wraps(f)
+            @modified("route '{url}' executor".format(url=url), f)
             def _f(instance, request, *a, **kw):
                 return _call(instance, f, request, *a, **kw)
 
@@ -223,7 +222,6 @@ class Klein(object):
             self._endpoints[kwargs['endpoint']] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
             return f
-
         return deco
 
 
@@ -330,7 +328,7 @@ class Klein(object):
             return self.handle_errors(Exception)(f_or_exception)
 
         def deco(f):
-            @wraps(f)
+            @modified("error handling wrapper", f)
             def _f(instance, request, failure):
                 r = _call(instance, f, request, failure)
                 if IRenderable.providedBy(r):

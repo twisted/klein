@@ -12,6 +12,7 @@ from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
+from klein._decorators import bindable
 
 
 
@@ -129,19 +130,43 @@ class KleinTestCase(unittest.TestCase):
         app = Klein()
 
         @app.route("/foo/", branch=True)
-        def foo(request):
+        def branchfunc(request):
             return "foo"
 
         c = app.url_map.bind("foo")
-        self.assertEqual(c.match("/foo/"), ("foo", {}))
+        self.assertEqual(c.match("/foo/"), ("branchfunc", {}))
         self.assertEqual(
             c.match("/foo/bar"),
-            ("foo_branch", {'__rest__': 'bar'}))
+            ("branchfunc_branch", {'__rest__': 'bar'}))
 
-        self.assertEquals(app.endpoints["foo"].__name__, "foo")
+        self.assertEquals(app.endpoints["branchfunc"].__name__,
+                          "route '/foo/' executor for branchfunc")
         self.assertEquals(
-            app.endpoints["foo_branch"].__name__,
-            "foo")
+            app.endpoints["branchfunc_branch"].__name__,
+            "branch route '/foo/' executor for branchfunc"
+        )
+
+
+    def test_bindable(self):
+        """
+        L{bindable} is a decorator which allows a function decorated by @route
+        to have a uniform signature regardless of whether it is receiving a
+        bound object from its L{Klein} or not.
+        """
+        k = Klein()
+        calls = []
+        @k.route("/test")
+        @bindable
+        def method(*args):
+            calls.append(args)
+            return 7
+        req = object()
+        k.execute_endpoint("method", req)
+        class BoundTo(object):
+            app = k
+        b = BoundTo()
+        b.app.execute_endpoint("method", req)
+        self.assertEquals(calls, [(None, req), (b, req)])
 
 
     def test_classicalRoute(self):

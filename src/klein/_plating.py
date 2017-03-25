@@ -51,8 +51,7 @@ class PlatedElement(Element):
     renderers.
     """
 
-    def __init__(self, slot_data, preloaded, renderers, boundInstance,
-                 presentationSlots):
+    def __init__(self, slot_data, preloaded, boundInstance, presentationSlots):
         """
         @param slot_data: A dictionary mapping names to values.
 

@@ -333,8 +333,6 @@ class Klein(object):
             @wraps(f)
             def _f(instance, request, failure):
                 r = _call(instance, f, request, failure)
-                if IRenderable.providedBy(r):
-                    return renderElement(request, r)
                 return r
 
             self._error_handlers.append(([f_or_exception] + list(additional_exceptions), _f))

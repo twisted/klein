@@ -259,6 +259,8 @@ class KleinResource(Resource):
                                         request,
                                         failure)
 
+                d.addCallback(process)
+
                 return d.addErrback(processing_failed, error_handlers[1:])
 
             return processing_failed(failure, error_handlers[1:])

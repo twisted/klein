@@ -860,6 +860,29 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.processingFailed.called, False)
         self.assertEqual(request.getWrittenData(), rendered)
 
+    def test_errorHandlerReturnsResource(self):
+        """
+        Resources returned by L{handle_errors} are rendered
+        """
+        app = self.app
+        request = requestMock(b"/")
+
+        class NotFoundResource(Resource):
+            isLeaf = True
+            def render(self, request):
+                request.setResponseCode(404)
+                return b'Nothing found'
+
+        @app.handle_errors(NotFound)
+        def handle_not_found(request, failure):
+            return NotFoundResource()
+
+        d = _render(self.kr, request)
+
+        self.assertFired(d)
+        self.assertEqual(request.code, 404)
+        self.assertEqual(request.getWrittenData(), b'Nothing found')
+
     def test_requestWriteAfterFinish(self):
         app = self.app
         request = requestMock(b"/")

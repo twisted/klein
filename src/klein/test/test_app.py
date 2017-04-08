@@ -145,6 +145,11 @@ class KleinTestCase(unittest.TestCase):
             app.endpoints["branchfunc_branch"].__name__,
             "branch route '/foo/' executor for branchfunc"
         )
+        self.assertEquals(
+            app.execute_endpoint("branchfunc_branch",
+                                 DummyRequest("looking for foo")),
+            "foo"
+        )
 
 
     def test_bindable(self):

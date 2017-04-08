@@ -12,7 +12,7 @@ from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
-from klein._decorators import bindable, originalName
+from klein._decorators import bindable, originalName, modified
 
 
 
@@ -168,6 +168,25 @@ class KleinTestCase(unittest.TestCase):
         b.app.execute_endpoint("method", req)
         self.assertEquals(calls, [(None, req), (b, req)])
         self.assertEqual(originalName(method), "method")
+
+
+    def test_modified(self):
+        """
+        L{modified} is a decorator which alters the thing that it decorates,
+        and describes itself as such.
+        """
+        def annotate(decoratee):
+            decoratee.supersized = True
+            return decoratee
+        def add(a, b):
+            return a + b
+        @modified("supersizer", add, modifier=annotate)
+        def megaAdd(a, b):
+            return add(a*1000, b*10000)
+        self.assertEqual(megaAdd.supersized, True)
+        self.assertEqual(add.supersized, True)
+        self.assertIn("supersizer for add", str(megaAdd))
+        self.assertEqual(megaAdd(3, 4), 43000)
 
 
     def test_classicalRoute(self):

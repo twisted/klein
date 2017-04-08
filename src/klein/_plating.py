@@ -14,7 +14,7 @@ from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 
 from .app import _call
-from ._decorators import bindable, modified, original_name
+from ._decorators import bindable, modified, originalName
 
 def _should_return_json(request):
     """
@@ -29,7 +29,7 @@ def json_serialize(item):
     """
     def helper(unknown):
         if isinstance(unknown, PlatedElement):
-            return unknown._as_json()
+            return unknown._asJSON()
         else:
             raise TypeError("{input} not JSON serializable"
                             .format(input=unknown))
@@ -51,17 +51,17 @@ class PlatedElement(Element):
     renderers.
     """
 
-    def __init__(self, slot_data, preloaded, renderers, bound_instance,
-                 presentation_slots):
+    def __init__(self, slot_data, preloaded, boundInstance, presentationSlots,
+                 renderers):
         """
         @param slot_data: A dictionary mapping names to values.
 
         @param preloaded: The pre-loaded data.
         """
         self.slot_data = slot_data
+        self._boundInstance = boundInstance
+        self._presentationSlots = presentationSlots
         self._renderers = renderers
-        self._bound_instance = bound_instance
-        self._presentation_slots = presentation_slots
         super(PlatedElement, self).__init__(
             loader=TagLoader(preloaded.fillSlots(
                 **{k: _extra_types(v) for k, v in slot_data.items()}
@@ -69,12 +69,12 @@ class PlatedElement(Element):
         )
 
 
-    def _as_json(self):
+    def _asJSON(self):
         """
-        
+        Render this L{PlatedElement} as JSON-serializable data.
         """
         json_data = self.slot_data.copy()
-        for ignored in self._presentation_slots:
+        for ignored in self._presentationSlots:
             json_data.pop(ignored, None)
         return json_data
 
@@ -122,14 +122,14 @@ class Plating(object):
         """
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
-        self._presentation_slots = {self.CONTENT} | set(presentation_slots)
+        self._presentationSlots = {self.CONTENT} | set(presentation_slots)
         self._renderers = {}
 
     def render(self, renderer):
         """
         
         """
-        self._renderers[text_type(original_name(renderer))] = renderer
+        self._renderers[text_type(originalName(renderer))] = renderer
         return renderer
 
     def routed(self, routing, tags):
@@ -146,7 +146,7 @@ class Plating(object):
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
                     json_data.update(data)
-                    for ignored in self._presentation_slots:
+                    for ignored in self._presentationSlots:
                         json_data.pop(ignored, None)
                     text_type = u'json'
                     result = json_serialize(json_data)
@@ -163,9 +163,10 @@ class Plating(object):
             return method
         return mydecorator
 
+
     def _elementify(self, instance, to_fill_with):
         """
-        
+        Convert this L{Plating} into a L{PlatedElement}.
         """
         slot_data = self._defaults.copy()
         slot_data.update(to_fill_with)
@@ -174,18 +175,15 @@ class Plating(object):
         return PlatedElement(slot_data=slot_data,
                              preloaded=loaded,
                              renderers=self._renderers,
-                             bound_instance=instance,
-                             presentation_slots=self._presentation_slots)
+                             boundInstance=instance,
+                             presentationSlots=self._presentationSlots)
 
-    @classmethod
-    def widget(cls, **kw):
-        self = cls(**kw)
-        def enwidget(function):
-            @modified("Plating.widget renderer", function)
-            @bindable
-            def wrapper(instance, *a, **k):
-                data = _call(instance, function, *a, **k)
-                return self._elementify(instance, data)
-            function.widget = wrapper
-            return function
-        return enwidget
+
+    def widgeted(self, function):
+        @modified("Plating.widget renderer", function)
+        @bindable
+        def wrapper(instance, *a, **k):
+            data = _call(instance, function, *a, **k)
+            return self._elementify(instance, data)
+        function.widget = wrapper
+        return function

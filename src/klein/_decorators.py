@@ -63,11 +63,12 @@ def named(name):
     """
     def decorator(original):
         original.__name__ = str(name)
+        original.__qualname__ = str(name)
         return original
     return decorator
 
 
-def original_name(function):
+def originalName(function):
     """
     Get the original, user-specified name of C{function}, chasing back any
     wrappers applied with C{modified}.

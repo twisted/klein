@@ -12,6 +12,7 @@ from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
+from klein._decorators import bindable, originalName, modified
 
 
 
@@ -144,6 +145,53 @@ class KleinTestCase(unittest.TestCase):
             app.endpoints["branchfunc_branch"].__name__,
             "branch route '/foo/' executor for branchfunc"
         )
+        self.assertEquals(
+            app.execute_endpoint("branchfunc_branch",
+                                 DummyRequest("looking for foo")),
+            "foo"
+        )
+
+
+    def test_bindable(self):
+        """
+        L{bindable} is a decorator which allows a function decorated by @route
+        to have a uniform signature regardless of whether it is receiving a
+        bound object from its L{Klein} or not.
+        """
+        k = Klein()
+        calls = []
+        @k.route("/test")
+        @bindable
+        def method(*args):
+            calls.append(args)
+            return 7
+        req = object()
+        k.execute_endpoint("method", req)
+        class BoundTo(object):
+            app = k
+        b = BoundTo()
+        b.app.execute_endpoint("method", req)
+        self.assertEquals(calls, [(None, req), (b, req)])
+        self.assertEqual(originalName(method), "method")
+
+
+    def test_modified(self):
+        """
+        L{modified} is a decorator which alters the thing that it decorates,
+        and describes itself as such.
+        """
+        def annotate(decoratee):
+            decoratee.supersized = True
+            return decoratee
+        def add(a, b):
+            return a + b
+        @modified("supersizer", add, modifier=annotate)
+        def megaAdd(a, b):
+            return add(a*1000, b*10000)
+        self.assertEqual(megaAdd.supersized, True)
+        self.assertEqual(add.supersized, True)
+        self.assertIn("supersizer for add", str(megaAdd))
+        self.assertEqual(megaAdd(3, 4), 43000)
 
 
     def test_classicalRoute(self):

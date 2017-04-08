@@ -12,7 +12,7 @@ from klein import Klein
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
-from klein._decorators import bindable
+from klein._decorators import bindable, originalName
 
 
 
@@ -167,6 +167,7 @@ class KleinTestCase(unittest.TestCase):
         b = BoundTo()
         b.app.execute_endpoint("method", req)
         self.assertEquals(calls, [(None, req), (b, req)])
+        self.assertEqual(originalName(method), "method")
 
 
     def test_classicalRoute(self):

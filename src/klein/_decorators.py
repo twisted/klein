@@ -63,6 +63,7 @@ def named(name):
     """
     def decorator(original):
         original.__name__ = str(name)
+        original.__qualname__ = str(name)
         return original
     return decorator
 

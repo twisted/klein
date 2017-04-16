@@ -22,6 +22,9 @@ This, of course, made it too good of a pun to pass up.
 
 Klein's documentation can be found at `Read The Docs <http://klein.readthedocs.org>`_.
 
+Klein Installation
+==================
+Quick setup for klein with pip: ``pip install git+https://github.com/twisted/klein.git``
 
 Example
 =======

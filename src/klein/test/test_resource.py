@@ -1083,6 +1083,48 @@ class KleinResourceTests(TestCase):
     else:
         test_urlDecodeErrorReprPy3.skip = "Only works on Py3"
 
+
+    def test_subroutedBranch(self):
+        subapp = Klein()
+        @subapp.route('/foo')
+        def foo(request):
+            return b'foo'
+
+        app = self.app
+        with app.subroute('/sub') as app:
+            @app.route('/app', branch=True)
+            def subapp_endpoint(request):
+                return subapp.resource()
+
+        request = requestMock(b'/sub/app/foo')
+        d = _render(self.kr, request)
+
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), b'foo')
+
+
+    def test_correctContentLengthForRequestRedirect(self):
+        app = self.app
+
+        @app.route('/alias', alias=True)
+        @app.route('/real')
+        def real(req): return b'42'
+
+        request = requestMock(b'/real')
+        d = _render(self.kr, request)
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), b'42')
+
+        request = requestMock(b'/alias')
+        d = _render(self.kr, request)
+        self.assertFired(d)
+        request.setResponseCode.assert_called_with(301)
+
+        actual_length = len(request.getWrittenData())
+        reported_length = int(request.responseHeaders.getRawHeaders(b'content-length')[0])
+        self.assertEqual(reported_length, actual_length)
+
+
 class ExtractURLpartsTests(TestCase):
     """
     Tests for L{klein.resource._extractURLparts}.

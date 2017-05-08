@@ -5,7 +5,7 @@ from __future__ import absolute_import, division
 from twisted.internet import defer
 from twisted.python import log, failure
 from twisted.python.compat import unicode, intToBytes
-from twisted.web import server
+from twisted.web import http, server
 from twisted.web.iweb import IRenderable
 from twisted.web.resource import Resource, IResource, getChildForRequest
 from twisted.web.server import NOT_DONE_YET
@@ -280,3 +280,39 @@ class KleinResource(Resource):
         d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
 
         return server.NOT_DONE_YET
+
+
+
+class KleinHTTPRequest(server.Request):
+
+    def getArg(self, key):
+        """
+        Get a single arg value.
+
+        @raises KeyError: If key doesn't exist
+        @raises ValueError: If there is more than 1 value
+        @return: L{list} of L{bytes}
+        """
+        key = ensure_utf8_bytes(key)
+        value = self.args[key]
+        if len(value) != 1:
+            raise ValueError('Too many values for: {0}'.format(key))
+        return value[0]
+
+    def getArgs(self, key):
+        """
+        Get the list of values for a key.
+
+        @return: L{list} of L{bytes}
+        """
+        key = ensure_utf8_bytes(key)
+        return self.args.get(key, [])
+
+
+
+class KleinSite(server.Site):
+    def buildProtocol(self, addr):
+        channel = http.HTTPFactory.buildProtocol(self, addr)
+        channel.requestFactory = KleinHTTPRequest
+        channel.site = self
+        return channel

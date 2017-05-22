@@ -251,7 +251,7 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return ensure_utf8_bytes(he.get_body({}))
+                    return ensure_utf8_bytes(b''.join(resp.iter_encoded()))
                 else:
                     request.processingFailed(failure)
                     return

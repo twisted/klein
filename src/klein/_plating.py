@@ -9,7 +9,6 @@ from json import dumps
 from six import integer_types, text_type
 
 from twisted.internet.defer import inlineCallbacks, returnValue
-
 from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader

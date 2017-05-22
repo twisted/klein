@@ -16,15 +16,12 @@ except ImportError:
     def iscoroutine(*args, **kwargs):
         return False
 
-from werkzeug.routing import Map, Rule, Submount
-
+from twisted.internet import endpoints, reactor
 from twisted.python import log
 from twisted.python.components import registerAdapter
-
 from twisted.web.iweb import IRenderable
+from twisted.web.server import Request, Site
 from twisted.web.template import renderElement
-from twisted.web.server import Site, Request
-from twisted.internet import reactor, endpoints
 
 try:
     from twisted.internet.defer import ensureDeferred
@@ -32,14 +29,21 @@ except ImportError:
     def ensureDeferred(*args, **kwagrs):
         raise NotImplementedError("Coroutines support requires Twisted>=16.6")
 
+from werkzeug.routing import Map, Rule, Submount
+
 from zope.interface import implementer
 
-from klein.resource import KleinResource
 from klein.interfaces import IKleinRequest
+from klein.resource import KleinResource
 
 from ._decorators import modified, named
 
-__all__ = ['Klein', 'run', 'route', 'resource']
+__all__ = (
+    "Klein",
+    "run",
+    "route",
+    "resource",
+)
 
 
 def _call(instance, f, *args, **kwargs):
@@ -205,13 +209,20 @@ class Klein(object):
 
                 @modified("branch route '{url}' executor".format(url=url), f)
                 def branch_f(instance, request, *a, **kw):
-                    IKleinRequest(request).branch_segments = kw.pop('__rest__', '').split('/')
+                    IKleinRequest(request).branch_segments = (
+                        kw.pop('__rest__', '').split('/')
+                    )
                     return _call(instance, f, request, *a, **kw)
 
                 branch_f.segment_count = segment_count
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
-                self._url_map.add(Rule(url.rstrip('/') + '/' + '<path:__rest__>', *args, **branchKwargs))
+                self._url_map.add(
+                    Rule(
+                        url.rstrip('/') + '/' + '<path:__rest__>',
+                        *args, **branchKwargs
+                    )
+                )
 
             @modified("route '{url}' executor".format(url=url), f)
             def _f(instance, request, *a, **kw):
@@ -324,7 +335,10 @@ class Klein(object):
         # Try to detect calls using the "simple" @app.handle_error syntax by
         # introspecting the first argument - if it isn't a type which
         # subclasses Exception we assume the simple syntax was used.
-        if not isinstance(f_or_exception, type) or not issubclass(f_or_exception, Exception):
+        if (
+            not isinstance(f_or_exception, type) or
+            not issubclass(f_or_exception, Exception)
+        ):
             return self.handle_errors(Exception)(f_or_exception)
 
         def deco(f):
@@ -335,7 +349,9 @@ class Klein(object):
                     return renderElement(request, r)
                 return r
 
-            self._error_handlers.append(([f_or_exception] + list(additional_exceptions), _f))
+            self._error_handlers.append(
+                ([f_or_exception] + list(additional_exceptions), _f)
+            )
             return _f
 
         return deco
@@ -353,7 +369,8 @@ class Klein(object):
 
         @param host: The hostname or IP address to bind the listening socket
             to.  "0.0.0.0" will allow you to listen on all interfaces, and
-            "127.0.0.1" will allow you to listen on just the loopback interface.
+            "127.0.0.1" will allow you to listen on just the loopback
+            interface.
         @type host: str
 
         @param port: The TCP port to accept HTTP requests on.

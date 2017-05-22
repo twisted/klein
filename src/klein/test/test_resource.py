@@ -1096,6 +1096,7 @@ class KleinResourceTests(TestCase):
 
     def test_subroutedBranch(self):
         subapp = Klein()
+
         @subapp.route('/foo')
         def foo(request):
             return b'foo'
@@ -1118,7 +1119,8 @@ class KleinResourceTests(TestCase):
 
         @app.route('/alias', alias=True)
         @app.route('/real')
-        def real(req): return b'42'
+        def real(req):
+            return b'42'
 
         request = requestMock(b'/real')
         d = _render(self.kr, request)
@@ -1131,7 +1133,9 @@ class KleinResourceTests(TestCase):
         request.setResponseCode.assert_called_with(301)
 
         actual_length = len(request.getWrittenData())
-        reported_length = int(request.responseHeaders.getRawHeaders(b'content-length')[0])
+        reported_length = int(
+            request.responseHeaders.getRawHeaders(b'content-length')[0]
+        )
         self.assertEqual(reported_length, actual_length)
 
 
@@ -1143,8 +1147,9 @@ class ExtractURLpartsTests(TestCase):
         """
         Returns the correct types.
         """
-        url_scheme, server_name, server_port, path_info, script_name = \
+        url_scheme, server_name, server_port, path_info, script_name = (
             _extractURLparts(requestMock(b"/f\xc3\xb6\xc3\xb6"))
+        )
 
         self.assertIsInstance(url_scheme, unicode)
         self.assertIsInstance(server_name, unicode)

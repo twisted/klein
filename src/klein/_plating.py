@@ -9,14 +9,12 @@ from json import dumps
 from six import integer_types, text_type
 
 from twisted.internet.defer import inlineCallbacks, returnValue
-from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader
 
-
-
-from .app import _call
 from ._decorators import bindable, modified
+from .app import _call
+
 
 def _should_return_json(request):
     """
@@ -123,6 +121,7 @@ class Plating(object):
         """
         def mydecorator(method):
             loader = TagLoader(tags)
+
             @modified("plating route renderer", method, routing)
             @bindable
             @inlineCallbacks

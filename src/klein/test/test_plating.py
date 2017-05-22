@@ -81,6 +81,7 @@ class PlatingTests(TestCase):
             return {"ok": "test-data-present"}
 
         request, written = self.get(b"/")
+
         self.assertIn(b'<span>test-data-present</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
@@ -91,15 +92,18 @@ class PlatingTests(TestCase):
         """
         class AppObj(object):
             app = Klein()
+
             def __init__(self, x):
                 self.x = x
-            @page.routed(app.route("/"),
-                         tags.span(slot('yeah')))
+
+            @page.routed(app.route("/"), tags.span(slot('yeah')))
             def plateInstance(self, request):
                 return {"yeah": "test-instance-data-" + self.x}
+
         obj = AppObj("confirmed")
         self.kr = obj.app.resource()
         request, written = self.get(b"/")
+
         self.assertIn(b'<span>test-instance-data-confirmed</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
@@ -142,6 +146,7 @@ class PlatingTests(TestCase):
                     "anLong": 0x10000000000000001}
 
         request, written = self.get(b"/")
+
         self.assertIn(b"<span>7</span>", written)
         self.assertIn(b"<i>3.2</i>", written)
         self.assertIn(b"<b>18446744073709551617</b>", written)
@@ -159,6 +164,7 @@ class PlatingTests(TestCase):
             return {"subplating": [1, 2, 3]}
 
         request, written = self.get(b"/")
+
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
@@ -174,6 +180,7 @@ class PlatingTests(TestCase):
             return {"widget": enwidget.widget(3, 4)}
 
         request, written = self.get(b"/")
+
         self.assertIn(b"<span>a: 3</span>", written)
         self.assertIn(b"<span>b: 4</span>", written)
 
@@ -221,6 +228,7 @@ class PlatingTests(TestCase):
         result_one, result_two, result_three = plateMe(
             None, exact_one, exact_two, three=exact_three
         )
+
         self.assertIdentical(result_one, exact_one)
         self.assertIdentical(result_two, exact_two)
         self.assertIdentical(result_three, exact_three)
@@ -240,6 +248,7 @@ class PlatingTests(TestCase):
             return {"title": "uninteresting", "data": "interesting"}
 
         request, written = self.get(b"/?json=1")
+
         self.assertEqual(json.loads(written.decode("utf-8")),
                          {"data": "interesting"})
 

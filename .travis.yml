@@ -7,29 +7,41 @@ branches:
     - master
 
 
+#
+# Test test matrix is spelled out explicitly here.
+#
+# For each supported version of Python, we will test with:
+#
+#  * The first minor version of Twisted for each major version that supports
+#    the tested version of Python, staring with Twisted 13.
+#
+#  * The current release of Twisted.
+#
+#  * Twisted trunk, at the time of the build.
+#
 matrix:
   include:
     - python: pypy
-      env: TOX_ENV=trial-pypy-tw132
+      env: TOX_ENV=trial-pypy-tw130
     - python: pypy
       env: TOX_ENV=trial-pypy-tw140
     - python: pypy
       env: TOX_ENV=trial-pypy-tw150
     - python: pypy
-      env: TOX_ENV=trial-pypy-tw155
+      env: TOX_ENV=trial-pypy-tw160
     - python: pypy
       env: TOX_ENV=trial-pypy-twcurrent
     - python: pypy
       env: TOX_ENV=trial-pypy-twtrunk
 
     - python: 2.7
-      env: TOX_ENV=trial-py27-tw132
+      env: TOX_ENV=trial-py27-tw130
     - python: 2.7
       env: TOX_ENV=trial-py27-tw140
     - python: 2.7
       env: TOX_ENV=trial-py27-tw150
     - python: 2.7
-      env: TOX_ENV=trial-py27-tw155
+      env: TOX_ENV=trial-py27-tw160
     - python: 2.7
       env: TOX_ENV=trial-py27-twcurrent
     - python: 2.7
@@ -38,12 +50,16 @@ matrix:
     - python: 3.3
       env: TOX_ENV=trial-py33-tw155
     - python: 3.3
+      env: TOX_ENV=trial-py33-tw160
+    - python: 3.3
       env: TOX_ENV=trial-py33-twcurrent
     - python: 3.3
       env: TOX_ENV=trial-py33-twtrunk
 
     - python: 3.4
       env: TOX_ENV=trial-py34-tw155
+    - python: 3.4
+      env: TOX_ENV=trial-py34-tw160
     - python: 3.4
       env: TOX_ENV=trial-py34-twcurrent
     - python: 3.4
@@ -52,12 +68,14 @@ matrix:
     - python: 3.5
       env: TOX_ENV=trial-py35-tw155
     - python: 3.5
+      env: TOX_ENV=trial-py35-tw160
+    - python: 3.5
       env: TOX_ENV=trial-py35-twcurrent
     - python: 3.5
       env: TOX_ENV=trial-py35-twtrunk
 
-    - python: 2.7
-      env: TOX_ENV=pyflakes
+    - python: 3.5
+      env: TOX_ENV=flake8
     - python: 2.7
       env: TOX_ENV=twistedchecker-diff
     - python: 2.7
@@ -66,13 +84,17 @@ matrix:
       env: TOX_ENV=docs-linkcheck
 
   allow_failures:
+    # Tests against Twisted trunk are allow to fail, as they are not supported.
     - env: TOX_ENV=trial-py27-twtrunk
     - env: TOX_ENV=trial-py33-twtrunk
     - env: TOX_ENV=trial-py34-twtrunk
     - env: TOX_ENV=trial-py35-twtrunk
     - env: TOX_ENV=trial-pypy-twtrunk
 
+    # This is not yet required.
     - env: TOX_ENV=twistedchecker-diff
+
+    # This depends on external web sites, so it's allowed to fail.
     - env: TOX_ENV=docs-linkcheck
 
 

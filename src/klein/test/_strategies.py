@@ -12,7 +12,7 @@ from hyperlink import URL
 
 from hypothesis import assume
 from hypothesis.strategies import (
-    composite, lists, integers, iterables, sampled_from, text
+    composite, integers, iterables, lists, sampled_from, text
 )
 
 from twisted.python.compat import unicode

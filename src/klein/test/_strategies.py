@@ -88,7 +88,9 @@ def hostnames(draw, allow_leading_digit=True, allow_idn=True):
     @param allow_idn: Whether to allow non-ASCII characters as allowed by
         internationalized domain names (IDNs).
     """
-    labels = draw(lists(hostname_labels(allow_idn=allow_idn), min_size=1))
+    labels = draw(lists(
+        hostname_labels(allow_idn=allow_idn), min_size=1, average_size=2
+    ))
 
     name = u".".join(labels)
 
@@ -113,7 +115,7 @@ def http_urls(draw):
     if port == 0:
         port = None
 
-    path = tuple(draw(iterables(text(min_size=1))))
+    path = tuple(draw(iterables(text(min_size=1), average_size=3)))
 
     return URL(
         scheme=draw(sampled_from((u"http", u"https"))),

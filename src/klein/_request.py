@@ -15,7 +15,7 @@ from tubes.itube import IDrain, IFount, ISegment
 from tubes.kit import Pauser
 # from tubes.undefer import fountToDeferred
 
-from twisted.python.compat import unicode
+from twisted.python.compat import nativeString
 from twisted.python.failure import Failure
 from twisted.web.iweb import IRequest as IWebRequest
 
@@ -120,7 +120,7 @@ class HTTPRequest(object):
         else:
             scheme = u"http"
 
-        netloc = request.getRequestHostname()
+        netloc = nativeString(request.getRequestHostname())
 
         port = request.getHost().port
         if request.isSecure():
@@ -130,8 +130,8 @@ class HTTPRequest(object):
         if port != default:
             netloc += u":{}".format(port)
 
-        path = request.uri
-        if path and path[0] == "/":
+        path = nativeString(request.uri)
+        if path and path[0] == u"/":
             path = path[1:]
 
         return URL.fromText(u"{}://{}/{}".format(scheme, netloc, path))

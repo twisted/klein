@@ -6,11 +6,12 @@
 Hypothesis strategies.
 """
 
+from os import getenv
 from string import ascii_letters, digits, punctuation
 
 from hyperlink import URL
 
-from hypothesis import assume
+from hypothesis import HealthCheck, assume, settings
 from hypothesis.strategies import (
     composite, integers, iterables, lists, sampled_from, text
 )
@@ -20,6 +21,13 @@ from twisted.python.compat import unicode
 
 __all__ = ()
 
+
+
+settings.register_profile(
+    "ci", settings(suppress_health_check=[HealthCheck.too_slow])
+)
+if getenv("CI") == "true":
+    settings.load_profile("ci")
 
 
 def _is_idna_compatible(text, max_length):

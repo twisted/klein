@@ -86,7 +86,7 @@ class IHTTPRequest(Interface):
 
 
 
-# Implementation
+# Simple implementation
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)

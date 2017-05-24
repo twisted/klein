@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -e
+set -u
+
+case "${TOXENV}" in
+    pypy*)
+        PYENV_ROOT="${HOME}/.pyenv";
+
+        rm -rf "${PYENV_ROOT}";
+        git clone "https://github.com/pyenv/pyenv" "${PYENV_ROOT}";
+
+        pyenv="${PYENV_ROOT}/bin/pyenv";
+
+        eval "$("${pyenv}" init -)";
+        pyenv install "pypy-${PYPY_VERSION}";
+        pyenv global "pypy-${PYPY_VERSION}";
+        ;;
+esac;
+
+pip install tox coverage codecov;

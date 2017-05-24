@@ -99,11 +99,11 @@ matrix:
 
 
 install:
-  - pip install tox coverage codecov
+  - ./.travis/install
 
 
 script:
-  - tox -e "${TOX_ENV}"
+  - ./.travis/run -e "${TOX_ENV}"
 
 
 after_success:

@@ -7,6 +7,7 @@ from klein.test.util import TestCase
 from .test_resource import LeafResource, requestMock, _render
 
 
+
 class PY3KleinResourceTests(TestCase):
 
     def assertFired(self, deferred, result=None):

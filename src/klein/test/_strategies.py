@@ -15,6 +15,8 @@ from hypothesis.strategies import (
     composite, lists, integers, iterables, sampled_from, text
 )
 
+from twisted.python.compat import unicode
+
 
 __all__ = ()
 

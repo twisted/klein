@@ -21,18 +21,13 @@ branches:
 #
 matrix:
   include:
-    - python: pypy
-      env: TOXENV=trial-pypy-tw130
-    - python: pypy
-      env: TOXENV=trial-pypy-tw140
-    - python: pypy
-      env: TOXENV=trial-pypy-tw150
-    - python: pypy
-      env: TOXENV=trial-pypy-tw160
-    - python: pypy
-      env: TOXENV=trial-pypy-twcurrent
-    - python: pypy
-      env: TOXENV=trial-pypy-twtrunk
+    # PyPy (Python 2.7)
+    - env: PYPY_VERSION=5.7.1 TOXENV=trial-pypy-tw130
+    - env: PYPY_VERSION=5.7.1 TOXENV=trial-pypy-tw140
+    - env: PYPY_VERSION=5.7.1 TOXENV=trial-pypy-tw150
+    - env: PYPY_VERSION=5.7.1 TOXENV=trial-pypy-tw160
+    - env: PYPY_VERSION=5.7.1 TOXENV=trial-pypy-twcurrent
+    - env: PYPY_VERSION=5.7.1 TOXENV=trial-pypy-twtrunk
 
     - python: 2.7
       env: TOXENV=trial-py27-tw130

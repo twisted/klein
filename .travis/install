@@ -5,7 +5,7 @@ set -u
 set -x
 
 case "${TOXENV}" in
-    pypy*)
+    *-pypy*)
         PYENV_ROOT="${HOME}/.pyenv";
 
         rm -rf "${PYENV_ROOT}";

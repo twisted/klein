@@ -21,12 +21,7 @@ case "${TOXENV}" in
         set -e
         set -u
 
-        echo "1";
-
         pyenv install "pypy-${PYPY_VERSION}";
-
-        echo "2";
-
         pyenv global "pypy-${PYPY_VERSION}";
 
         echo "Python: $(type python)";

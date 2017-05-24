@@ -15,7 +15,11 @@ case "${TOXENV}" in
 
         pyenv="${PYENV_ROOT}/bin/pyenv";
 
+        unset -e
+        unset -u
         eval "$("${pyenv}" init -)";
+        set -e
+        set -u
 
         echo "1";
 

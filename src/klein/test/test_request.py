@@ -8,6 +8,8 @@ Tests for L{klein._request}.
 
 from string import ascii_uppercase
 
+from hyperlink import URL
+
 from hypothesis import given, note
 from hypothesis.strategies import binary, text
 
@@ -35,7 +37,7 @@ class HTTPRequestTests(TestCase):
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=None,
         )
-        raise NotImplementedError()
+        self.assertProvides(IHTTPRequest, request)
 
     test_interface.todo = "unimplemented"
 

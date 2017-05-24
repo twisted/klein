@@ -1,18 +1,17 @@
 from __future__ import absolute_import, division
 
-from twisted.trial import unittest
-
 import sys
 
 from mock import Mock, patch
 
 from twisted.python.components import registerAdapter
+from twisted.trial import unittest
 
 from klein import Klein
+from klein._decorators import bindable, modified, originalName
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
 from klein.test.util import EqualityTestsMixin
-from klein._decorators import bindable, originalName, modified
 
 
 
@@ -102,8 +101,8 @@ class KleinTestCase(unittest.TestCase):
 
     def test_stackedRoute(self):
         """
-        L{Klein.route} can be stacked to create multiple endpoints of
-        a single function.
+        L{Klein.route} can be stacked to create multiple endpoints of a single
+        function.
         """
         app = Klein()
 
@@ -116,10 +115,14 @@ class KleinTestCase(unittest.TestCase):
 
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo"), ("foobar", {}))
-        self.assertEqual(app.execute_endpoint("foobar", DummyRequest(1)), "foobar")
+        self.assertEqual(
+            app.execute_endpoint("foobar", DummyRequest(1)), "foobar"
+        )
 
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEqual(app.execute_endpoint("bar", DummyRequest(2)), "foobar")
+        self.assertEqual(
+            app.execute_endpoint("bar", DummyRequest(2)), "foobar"
+        )
 
 
     def test_branchRoute(self):
@@ -160,17 +163,22 @@ class KleinTestCase(unittest.TestCase):
         """
         k = Klein()
         calls = []
+
         @k.route("/test")
         @bindable
         def method(*args):
             calls.append(args)
             return 7
+
         req = object()
         k.execute_endpoint("method", req)
+
         class BoundTo(object):
             app = k
+
         b = BoundTo()
         b.app.execute_endpoint("method", req)
+
         self.assertEquals(calls, [(None, req), (b, req)])
         self.assertEqual(originalName(method), "method")
 
@@ -183,11 +191,14 @@ class KleinTestCase(unittest.TestCase):
         def annotate(decoratee):
             decoratee.supersized = True
             return decoratee
+
         def add(a, b):
             return a + b
+
         @modified("supersizer", add, modifier=annotate)
         def megaAdd(a, b):
-            return add(a*1000, b*10000)
+            return add(a * 1000, b * 10000)
+
         self.assertEqual(megaAdd.supersized, True)
         self.assertEqual(add.supersized, True)
         self.assertIn("supersizer for add", str(megaAdd))
@@ -200,6 +211,7 @@ class KleinTestCase(unittest.TestCase):
         is defined as a class variable.
         """
         bar_calls = []
+
         class Foo(object):
             app = Klein()
 
@@ -210,9 +222,11 @@ class KleinTestCase(unittest.TestCase):
 
         foo = Foo()
         c = foo.app.url_map.bind("bar")
-        self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEquals(foo.app.execute_endpoint("bar", DummyRequest(1)), "bar")
 
+        self.assertEqual(c.match("/bar"), ("bar", {}))
+        self.assertEqual(
+            foo.app.execute_endpoint("bar", DummyRequest(1)), "bar"
+        )
         self.assertEqual(bar_calls, [(foo, DummyRequest(1))])
 
 
@@ -243,6 +257,7 @@ class KleinTestCase(unittest.TestCase):
 
         foo_1_app.execute_endpoint('bar', dr1)
         foo_2_app.execute_endpoint('bar', dr2)
+
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
@@ -274,6 +289,7 @@ class KleinTestCase(unittest.TestCase):
 
         foo_1_app.execute_endpoint('bar_branch', dr1)
         foo_2_app.execute_endpoint('bar_branch', dr2)
+
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 

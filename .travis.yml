@@ -1,5 +1,8 @@
-language: python
+dist: trusty
 sudo: false
+
+
+language: python
 
 
 branches:

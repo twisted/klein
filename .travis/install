@@ -3,16 +3,21 @@
 set -e
 set -u
 
+type python || true
+type pypy || true
+
 case "${TOXENV}" in
     *-pypy*)
         echo "Installing PyPy..."
 
-        PYENV_ROOT="${HOME}/.pyenv";
+        # PYENV_ROOT="${HOME}/.pyenv";
 
-        rm -rf "${PYENV_ROOT}";
-        git clone "https://github.com/pyenv/pyenv" "${PYENV_ROOT}";
+        # rm -rf "${PYENV_ROOT}";
+        # git clone "https://github.com/pyenv/pyenv" "${PYENV_ROOT}";
 
-        pyenv="${PYENV_ROOT}/bin/pyenv";
+        # pyenv="${PYENV_ROOT}/bin/pyenv";
+
+        pyenv="pyenv";
 
         set +e
         set +u

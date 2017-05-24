@@ -2,7 +2,6 @@
 
 set -e
 set -u
-set -x
 
 case "${TOXENV}" in
     *-pypy*)
@@ -21,8 +20,8 @@ case "${TOXENV}" in
         set -e
         set -u
 
-        pyenv install "pypy-${PYPY_VERSION}";
-        pyenv global "pypy-${PYPY_VERSION}";
+        "${pyenv}" install "pypy-${PYPY_VERSION}";
+        "${pyenv}" global "pypy-${PYPY_VERSION}";
 
         echo "Python: $(type python)";
         python -V;

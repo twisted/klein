@@ -12,11 +12,12 @@ from attr.validators import instance_of, optional, provides
 from hyperlink import URL
 
 from tubes.itube import IDrain, IFount, ISegment
-from tubes.kit import Pauser
-# from tubes.undefer import fountToDeferred
+from tubes.kit import Pauser, beginFlowingTo
+from tubes.undefer import fountToDeferred
 
 from twisted.python.compat import nativeString
 from twisted.python.failure import Failure
+from twisted.internet.defer import succeed
 from twisted.web.iweb import IRequest as IWebRequest
 
 from zope.interface import implementer
@@ -97,11 +98,18 @@ class HTTPRequest(object):
     HTTP request.
     """
 
-    _request = attrib(validator=provides(IWebRequest))
+    @attrs(frozen=False)
+    class State(object):
+        """
+        Internal mutable state for L{HTTPRequest}.
+        """
 
-    _content = attrib(
-        validator=optional(instance_of(bytes)), default=None, init=False
-    )
+        _content = attrib(
+            validator=optional(instance_of(bytes)), default=None, init=False
+        )
+
+    _request = attrib(validator=provides(IWebRequest))
+    _state = attrib(default=State(), init=False)
 
 
     @property
@@ -141,25 +149,26 @@ class HTTPRequest(object):
 
 
     def bodyFount(self):
-        input = _request.content
-
-        if input is None:
+        source = self._request.content
+        if source is None:
             raise NoContentError()
 
-        fount = IOFount(input)
+        fount = IOFount(source)
 
-        _request.content = None
+        self._request.content = None
+
+        return fount
 
 
     def bodyBytes(self):
-        if self._content is not None:
-            return self._content
-
-        fount = self.bodyFount()
+        if self._state._content is not None:
+            return succeed(self._state._content)
 
         def collect(chunks):
             content = b"".join(chunks)
-            self._content = content
+            self._state._content = content
+            return content
 
         d = fountToDeferred(self.bodyFount())
         d.addCallback(collect)
+        return d

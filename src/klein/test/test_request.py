@@ -8,8 +8,8 @@ Tests for L{klein._request}.
 
 from string import ascii_uppercase
 
-from hypothesis import given, note, settings
-from hypothesis.strategies import text
+from hypothesis import given, note
+from hypothesis.strategies import binary, text
 
 from twisted.trial.unittest import SynchronousTestCase as TestCase
 
@@ -48,21 +48,16 @@ class HTTPRequestTests(TestCase):
 
 
     @given(http_urls())
-    @settings(max_examples=20)
     def test_url(self, url):
         """
         L{HTTPRequest.url} matches the underlying legacy request URL.
         """
         url = url.asURI()  # Normalize as (network-friendly) URI
-
         path = (
             url.replace(scheme=u"", host=u"", port=None)
             .asText()
             .encode("ascii")
         )
-
-        note("_request.uri: {!r}".format(path))
-
         legacyRequest = self.webRequest(
             isSecure=(url.scheme == u"https"),
             host=url.host.encode("ascii"), port=url.port, path=path,
@@ -73,6 +68,19 @@ class HTTPRequestTests(TestCase):
         def normalize(url):
             return url.replace(path=(s for s in url.path if s))
 
+        note("_request.uri: {!r}".format(path))
         note("request.url: {!r}".format(request.url))
 
         self.assertEqual(normalize(request.url), normalize(url))
+
+
+    @given(binary())
+    def test_bodyBytes(self, data):
+        """
+        L{HTTPRequest.bodyBytes} matches the underlying legacy request body.
+        """
+        legacyRequest = self.webRequest(body=data)
+        request = HTTPRequest(request=legacyRequest)
+        body = self.successResultOf(request.bodyBytes())
+
+        self.assertEqual(body, data)

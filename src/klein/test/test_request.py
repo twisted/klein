@@ -15,7 +15,7 @@ from twisted.trial.unittest import SynchronousTestCase as TestCase
 
 from ._strategies import http_urls
 from .test_resource import requestMock
-from .._request import HTTPRequest, NoContentError
+from .._request import HTTPRequest
 
 
 __all__ = ()

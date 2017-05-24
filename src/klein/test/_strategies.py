@@ -7,7 +7,7 @@ Hypothesis strategies.
 """
 
 from os import getenv
-from string import ascii_letters, digits, punctuation
+from string import ascii_letters, digits
 
 from hyperlink import URL
 

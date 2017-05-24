@@ -1,0 +1,36 @@
+#!/bin/sh
+
+#
+# Work around bugs in mypy by filtering out false positive error messages.
+#
+
+set -e
+set -u
+
+tmp="$(mktemp -t mypy.XXXX)";
+
+mypy "$@"      \
+    | grep -v  \
+        -e '^src/klein/_decorators.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/_plating.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/app.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \
+        -e '^src/klein/app.py:.[0-9:]*: error: Need type annotation for variable'  \
+        -e '^src/klein/interfaces.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/resource.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/py3_test_resource.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/_trial.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_app.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_plating.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_resource.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_resource.py:.[0-9:]*: error: .* has no attribute'  \
+        -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'  \
+        -e ': error: Callable\[\[[^\]*\], None\] has no attribute "todo"'  \
+        > "${tmp}" || true;
+
+sort < "${tmp}";
+
+if grep -e ": error: " "${tmp}" > /dev/null; then
+  exit 1;
+fi;

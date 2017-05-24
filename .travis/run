@@ -1,0 +1,15 @@
+#!/bin/sh
+
+set -e
+set -u
+set -x
+
+case "${TOXENV}" in
+    *-pypy*)
+        PYENV_ROOT="${HOME}/.pyenv";
+        pyenv="${PYENV_ROOT}/bin/pyenv";
+        eval "$("${pyenv}" init -)";
+        ;;
+esac;
+
+exec "$@";

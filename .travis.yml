@@ -1,5 +1,8 @@
-language: python
+dist: trusty
 sudo: false
+
+
+language: python
 
 
 branches:
@@ -21,91 +24,81 @@ branches:
 #
 matrix:
   include:
-    - python: pypy
-      env: TOX_ENV=trial-pypy-tw130
-    - python: pypy
-      env: TOX_ENV=trial-pypy-tw140
-    - python: pypy
-      env: TOX_ENV=trial-pypy-tw150
-    - python: pypy
-      env: TOX_ENV=trial-pypy-tw160
-    - python: pypy
-      env: TOX_ENV=trial-pypy-twcurrent
-    - python: pypy
-      env: TOX_ENV=trial-pypy-twtrunk
-
-    - python: 2.7
-      env: TOX_ENV=trial-py27-tw130
-    - python: 2.7
-      env: TOX_ENV=trial-py27-tw140
-    - python: 2.7
-      env: TOX_ENV=trial-py27-tw150
-    - python: 2.7
-      env: TOX_ENV=trial-py27-tw160
-    - python: 2.7
-      env: TOX_ENV=trial-py27-twcurrent
-    - python: 2.7
-      env: TOX_ENV=trial-py27-twtrunk
-
-    - python: 3.3
-      env: TOX_ENV=trial-py33-tw155
-    - python: 3.3
-      env: TOX_ENV=trial-py33-tw160
-    - python: 3.3
-      env: TOX_ENV=trial-py33-twcurrent
-    - python: 3.3
-      env: TOX_ENV=trial-py33-twtrunk
+    - python: 3.5
+      env: TOXENV=coverage-py35-twtrunk
+    - python: 3.5
+      env: TOXENV=coverage-py35-twcurrent
+    - python: 3.5
+      env: TOXENV=coverage-py35-tw160
+    - python: 3.5
+      env: TOXENV=coverage-py35-tw155
 
     - python: 3.4
-      env: TOX_ENV=trial-py34-tw155
+      env: TOXENV=coverage-py34-twtrunk
     - python: 3.4
-      env: TOX_ENV=trial-py34-tw160
+      env: TOXENV=coverage-py34-twcurrent
     - python: 3.4
-      env: TOX_ENV=trial-py34-twcurrent
+      env: TOXENV=coverage-py34-tw160
     - python: 3.4
-      env: TOX_ENV=trial-py34-twtrunk
+      env: TOXENV=coverage-py34-tw155
+
+    - python: 3.3
+      env: TOXENV=coverage-py33-twtrunk
+    - python: 3.3
+      env: TOXENV=coverage-py33-twcurrent
+    - python: 3.3
+      env: TOXENV=coverage-py33-tw160
+    - python: 3.3
+      env: TOXENV=coverage-py33-tw155
+
+    - python: 2.7
+      env: TOXENV=coverage-py27-twtrunk
+    - python: 2.7
+      env: TOXENV=coverage-py27-twcurrent
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw160
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw150
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw140
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw130
+
+    # PyPy (Python 2.7)
+    - env: TOXENV=coverage-pypy-twtrunk   PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twcurrent PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw160     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw150     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw140     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw130     PYPY_VERSION=5.7.1
 
     - python: 3.5
-      env: TOX_ENV=trial-py35-tw155
-    - python: 3.5
-      env: TOX_ENV=trial-py35-tw160
-    - python: 3.5
-      env: TOX_ENV=trial-py35-twcurrent
-    - python: 3.5
-      env: TOX_ENV=trial-py35-twtrunk
-
-    - python: 3.5
-      env: TOX_ENV=flake8
+      env: TOXENV=flake8
     - python: 2.7
-      env: TOX_ENV=twistedchecker-diff
+      env: TOXENV=twistedchecker-diff
     - python: 2.7
-      env: TOX_ENV=docs
+      env: TOXENV=docs
     - python: 2.7
-      env: TOX_ENV=docs-linkcheck
+      env: TOXENV=docs-linkcheck
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
-    - env: TOX_ENV=trial-py27-twtrunk
-    - env: TOX_ENV=trial-py33-twtrunk
-    - env: TOX_ENV=trial-py34-twtrunk
-    - env: TOX_ENV=trial-py35-twtrunk
-    - env: TOX_ENV=trial-pypy-twtrunk
+    - env: TOXENV=coverage-py35-twtrunk
+    - env: TOXENV=coverage-py34-twtrunk
+    - env: TOXENV=coverage-py33-twtrunk
+    - env: TOXENV=coverage-py27-twtrunk
+    - env: TOXENV=coverage-pypy-twtrunk
 
     # This is not yet required.
-    - env: TOX_ENV=twistedchecker-diff
+    - env: TOXENV=twistedchecker-diff
 
     # This depends on external web sites, so it's allowed to fail.
-    - env: TOX_ENV=docs-linkcheck
+    - env: TOXENV=docs-linkcheck
 
 
 install:
-  - pip install tox coverage codecov
+  - ./.travis/install
 
 
 script:
-  - tox -e "${TOX_ENV}"
-
-
-after_success:
-  - coverage combine
-  - codecov
+  - ./.travis/run tox

@@ -15,20 +15,21 @@ from tubes.itube import IDrain, IFount, ISegment
 from tubes.kit import Pauser, beginFlowingTo
 from tubes.undefer import fountToDeferred
 
+from twisted.internet.defer import succeed
 from twisted.python.compat import nativeString
 from twisted.python.failure import Failure
-from twisted.internet.defer import succeed
 from twisted.web.iweb import IRequest as IWebRequest
 
-from zope.interface import implementer
+from zope.interface import Attribute, Interface, implementer
+
+from ._headers import IHTTPHeaders
 
 
-__all__ = (
-    "NoContentError",
-    "HTTPRequest",
-)
+__all__ = ()
 
 
+
+# Interfaces
 
 class NoContentError(Exception):
     """
@@ -38,11 +39,175 @@ class NoContentError(Exception):
 
 
 
+class IHTTPRequest(Interface):
+    """
+    HTTP request.
+    """
+
+    method  = Attribute("Request method.")
+    uri     = Attribute("Request URI.")
+    headers = Attribute("Request entity headers.")
+
+
+    def bodyAsFount():
+        """
+        The request entity body, as a fount.
+
+        @note: The fount may only be accessed once.
+            It provides a mechanism for accessing the body as a stream of data,
+            potentially as it is read from the network, without having to cache
+            the entire body, which may be large.
+            Because there is no caching, it is not possible to "start over" by
+            accessing the fount a second time.
+            Attempting to do so will raise L{NoContentError}.
+
+        @raise NoContentError: If the fount has previously been accessed.
+        """
+
+
+    def bodyAsBytes():
+        """
+        The request entity body, as bytes.
+
+        @note: This necessarily reads the entire request body into memory,
+            which may be a problem if the body is large (eg. a large upload).
+
+        @note: This method caches the body, which means that unlike
+            C{self.bodyAsFount}, calling it repeatedly will return the same
+            data.
+
+        @note: This method accesses the fount (via C{self.bodyAsFount}), which
+            means the found will not be available afterwards, and that if
+            C{self.bodyAsFount} has previously been called directly, this
+            method will raise L{NoContentError}.
+
+        @raise NoContentError: If the fount has previously been accessed.
+        """
+
+
+
+# Implementation
+
+@implementer(IHTTPRequest)
+@attrs(frozen=True)
+class HTTPRequest(object):
+    """
+    HTTP request.
+    """
+
+    method  = attrib(validator=instance_of(str))
+    uri     = attrib(validator=instance_of(URL))
+    headers = attrib(validator=provides(IHTTPHeaders))
+
+
+    def bodyAsFount(self):
+        raise NotImplementedError()
+
+
+    def bodyAsBytes(self):
+        raise NotImplementedError()
+
+
+
+# Support for L{twisted.web.iweb.IRequest}
+
+@implementer(IHTTPRequest)
+@attrs(frozen=True)
+class HTTPRequestFromIRequest(object):
+    """
+    HTTP request.
+
+    This is an L{IHTTPRequest} implementation that wraps a
+    L{twisted.web.iweb.IRequest} object.
+
+    This is used by Klein to expose "legacy" request objects from
+    L{twisted.web} to clients while presenting the new interface.
+    """
+
+    @attrs(frozen=False)
+    class _State(object):
+        """
+        Internal mutable state for L{HTTPRequestFromIRequest}.
+        """
+
+        _cachedBody = attrib(
+            validator=optional(instance_of(bytes)), default=None, init=False
+        )
+
+    _request = attrib(validator=provides(IWebRequest))
+    _state = attrib(default=Factory(_State), init=False)
+
+
+    @property
+    def method(self):
+        return self._request.method.decode("ascii")
+
+
+    @property
+    def uri(self):
+        request = self._request
+
+        # This code borrows from t.w.server.Request._prePathURL.
+
+        if request.isSecure():
+            scheme = u"https"
+        else:
+            scheme = u"http"
+
+        netloc = nativeString(request.getRequestHostname())
+
+        port = request.getHost().port
+        if request.isSecure():
+            default = 443
+        else:
+            default = 80
+        if port != default:
+            netloc += u":{}".format(port)
+
+        path = nativeString(request.uri)
+        if path and path[0] == u"/":
+            path = path[1:]
+
+        return URL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
+
+
+    @property
+    def headers(self):
+        raise NotImplementedError()
+
+
+    def bodyAsFount(self):
+        source = self._request.content
+        if source is None:
+            raise NoContentError()
+
+        fount = _IOFount(source=source)
+
+        self._request.content = None
+
+        return fount
+
+
+    def bodyAsBytes(self):
+        if self._state._cachedBody is not None:
+            return succeed(self._state._cachedBody)
+
+        def collect(chunks):
+            bodyBytes = b"".join(chunks)
+            self._state._cachedBody = bodyBytes
+            return bodyBytes
+
+        d = fountToDeferred(self.bodyAsFount())
+        d.addCallback(collect)
+        return d
+
+
+
 # FIXME: move this to tubes.
 # FIXME: this should stream.
 @implementer(IFount)
-@attrs()
-class IOFount(object):
+@attrs(frozen=False)
+class _IOFount(object):
     """
     Fount that reads from a file-like-object.
     """
@@ -90,121 +255,3 @@ class IOFount(object):
     def _resume(self):
         self._paused = False
         self._flowToDrain()
-
-
-
-@attrs(frozen=True)
-class HTTPRequest(object):
-    """
-    HTTP request.
-    """
-
-    @attrs(frozen=False)
-    class State(object):
-        """
-        Internal mutable state for L{HTTPRequest}.
-        """
-
-        _cachedBody = attrib(
-            validator=optional(instance_of(bytes)), default=None, init=False
-        )
-
-    _request = attrib(validator=provides(IWebRequest))
-    _state = attrib(default=Factory(State), init=False)
-
-
-    @property
-    def method(self):
-        """
-        The request method.
-        """
-        return self._request.method.decode("ascii")
-
-
-    @property
-    def uri(self):
-        """
-        The request URI.
-        """
-        request = self._request
-
-        # This code borrows from t.w.server.Request._prePathURL.
-
-        if request.isSecure():
-            scheme = u"https"
-        else:
-            scheme = u"http"
-
-        netloc = nativeString(request.getRequestHostname())
-
-        port = request.getHost().port
-        if request.isSecure():
-            default = 443
-        else:
-            default = 80
-        if port != default:
-            netloc += u":{}".format(port)
-
-        path = nativeString(request.uri)
-        if path and path[0] == u"/":
-            path = path[1:]
-
-        return URL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
-
-
-    # headers = attrib(validator=instance_of(Headers))
-
-
-    def bodyAsFount(self):
-        """
-        The request entity body, as a fount.
-
-        @note: The fount may only be accessed once.
-            It provides a mechanism for accessing the body as a stream of data,
-            potentially as it is read from the network, without having to cache
-            the entire body, which may be large.
-            Because there is no caching, it is not possible to "start over" by
-            accessing the fount a second time.
-            Attempting to do so will raise L{NoContentError}.
-
-        @raise NoContentError: If the fount has previously been accessed.
-        """
-        source = self._request.content
-        if source is None:
-            raise NoContentError()
-
-        fount = IOFount(source=source)
-
-        self._request.content = None
-
-        return fount
-
-
-    def bodyAsBytes(self):
-        """
-        The request entity body, as bytes.
-
-        @note: This necessarily reads the entire request body into memory,
-            which may be a problem if the body is large (eg. a large upload).
-
-        @note: This method caches the body, which means that unlike
-            C{self.bodyAsFount}, calling it repeatedly will return the same data.
-
-        @note: This method accesses the fount (via C{self.bodyAsFount}), which
-            means the found will not be available afterwards, and that if
-            C{self.bodyAsFount} has previously been called directly, this method
-            will raise L{NoContentError}.
-
-        @raise NoContentError: If the fount has previously been accessed.
-        """
-        if self._state._cachedBody is not None:
-            return succeed(self._state._cachedBody)
-
-        def collect(chunks):
-            bodyBytes = b"".join(chunks)
-            self._state._cachedBody = bodyBytes
-            return bodyBytes
-
-        d = fountToDeferred(self.bodyAsFount())
-        d.addCallback(collect)
-        return d

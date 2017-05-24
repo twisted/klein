@@ -54,20 +54,24 @@ class HTTPRequestTests(TestCase):
         """
         url = url.asURI()  # Normalize as (network-friendly) URI
 
-        host = url.host.encode("ascii")
-        path = url.replace(scheme=u"", host=u"", port=None).asText()
+        path = (
+            url.replace(scheme=u"", host=u"", port=None)
+            .asText()
+            .encode("ascii")
+        )
 
-        note("path: {!r}".format(path))
+        note("_request.uri: {!r}".format(path))
 
         legacyRequest = self.webRequest(
             isSecure=(url.scheme == u"https"),
-            host=url.host.encode("ascii"), port=url.port,
-            path=path.encode("ascii"),
+            host=url.host.encode("ascii"), port=url.port, path=path,
         )
         request = HTTPRequest(request=legacyRequest)
 
         # # Work around for https://github.com/mahmoud/hyperlink/issues/5
         def normalize(url):
             return url.replace(path=(s for s in url.path if s))
+
+        note("request.url: {!r}".format(request.url))
 
         self.assertEqual(normalize(request.url), normalize(url))

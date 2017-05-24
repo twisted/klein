@@ -6,7 +6,7 @@
 HTTP request.
 """
 
-from attr import attrib, attrs
+from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
 
 from hyperlink import URL
@@ -38,7 +38,8 @@ class NoContentError(Exception):
 
 
 
-# FIXME: move this to tubes.  Also: make it stream.
+# FIXME: move this to tubes.
+# FIXME: this should stream.
 @implementer(IFount)
 @attrs()
 class IOFount(object):
@@ -48,7 +49,7 @@ class IOFount(object):
 
     outputType = ISegment
 
-    _input = attrib()
+    _source = attrib()
 
     drain = attrib(
         validator=optional(provides(IDrain)), default=None, init=False
@@ -62,7 +63,7 @@ class IOFount(object):
 
     def _flowToDrain(self):
         if self.drain is not None and not self._paused:
-            data = self._input.read()
+            data = self._source.read()
             if data:
                 self.drain.receive(data)
             self.drain.flowStopped(Failure(StopIteration()))
@@ -104,21 +105,27 @@ class HTTPRequest(object):
         Internal mutable state for L{HTTPRequest}.
         """
 
-        _content = attrib(
+        _cachedBody = attrib(
             validator=optional(instance_of(bytes)), default=None, init=False
         )
 
     _request = attrib(validator=provides(IWebRequest))
-    _state = attrib(default=State(), init=False)
+    _state = attrib(default=Factory(State), init=False)
 
 
     @property
     def method(self):
+        """
+        The request method.
+        """
         return self._request.method.decode("ascii")
 
 
     @property
-    def url(self):
+    def uri(self):
+        """
+        The request URI.
+        """
         request = self._request
 
         # This code borrows from t.w.server.Request._prePathURL.
@@ -148,27 +155,56 @@ class HTTPRequest(object):
     # headers = attrib(validator=instance_of(Headers))
 
 
-    def bodyFount(self):
+    def bodyAsFount(self):
+        """
+        The request entity body, as a fount.
+
+        @note: The fount may only be accessed once.
+            It provides a mechanism for accessing the body as a stream of data,
+            potentially as it is read from the network, without having to cache
+            the entire body, which may be large.
+            Because there is no caching, it is not possible to "start over" by
+            accessing the fount a second time.
+            Attempting to do so will raise L{NoContentError}.
+
+        @raise NoContentError: If the fount has previously been accessed.
+        """
         source = self._request.content
         if source is None:
             raise NoContentError()
 
-        fount = IOFount(source)
+        fount = IOFount(source=source)
 
         self._request.content = None
 
         return fount
 
 
-    def bodyBytes(self):
-        if self._state._content is not None:
-            return succeed(self._state._content)
+    def bodyAsBytes(self):
+        """
+        The request entity body, as bytes.
+
+        @note: This necessarily reads the entire request body into memory,
+            which may be a problem if the body is large (eg. a large upload).
+
+        @note: This method caches the body, which means that unlike
+            C{self.bodyAsFount}, calling it repeatedly will return the same data.
+
+        @note: This method accesses the fount (via C{self.bodyAsFount}), which
+            means the found will not be available afterwards, and that if
+            C{self.bodyAsFount} has previously been called directly, this method
+            will raise L{NoContentError}.
+
+        @raise NoContentError: If the fount has previously been accessed.
+        """
+        if self._state._cachedBody is not None:
+            return succeed(self._state._cachedBody)
 
         def collect(chunks):
-            content = b"".join(chunks)
-            self._state._content = content
-            return content
+            bodyBytes = b"".join(chunks)
+            self._state._cachedBody = bodyBytes
+            return bodyBytes
 
-        d = fountToDeferred(self.bodyFount())
+        d = fountToDeferred(self.bodyAsFount())
         d.addCallback(collect)
         return d

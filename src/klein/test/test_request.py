@@ -48,39 +48,39 @@ class HTTPRequestTests(TestCase):
 
 
     @given(http_urls())
-    def test_url(self, url):
+    def test_uri(self, url):
         """
-        L{HTTPRequest.url} matches the underlying legacy request URL.
+        L{HTTPRequest.uri} matches the underlying legacy request URI.
         """
-        url = url.asURI()  # Normalize as (network-friendly) URI
+        uri = url.asURI()  # Normalize as (network-friendly) URI
         path = (
-            url.replace(scheme=u"", host=u"", port=None)
+            uri.replace(scheme=u"", host=u"", port=None)
             .asText()
             .encode("ascii")
         )
         legacyRequest = self.webRequest(
-            isSecure=(url.scheme == u"https"),
-            host=url.host.encode("ascii"), port=url.port, path=path,
+            isSecure=(uri.scheme == u"https"),
+            host=uri.host.encode("ascii"), port=uri.port, path=path,
         )
         request = HTTPRequest(request=legacyRequest)
 
         # Work around for https://github.com/mahmoud/hyperlink/issues/5
-        def normalize(url):
-            return url.replace(path=(s for s in url.path if s))
+        def normalize(uri):
+            return uri.replace(path=(s for s in uri.path if s))
 
         note("_request.uri: {!r}".format(path))
-        note("request.url: {!r}".format(request.url))
+        note("request.uri: {!r}".format(request.uri))
 
-        self.assertEqual(normalize(request.url), normalize(url))
+        self.assertEqual(normalize(request.uri), normalize(uri))
 
 
     @given(binary())
-    def test_bodyBytes(self, data):
+    def test_bodyAsBytes(self, data):
         """
-        L{HTTPRequest.bodyBytes} matches the underlying legacy request body.
+        L{HTTPRequest.bodyAsBytes} matches the underlying legacy request body.
         """
         legacyRequest = self.webRequest(body=data)
         request = HTTPRequest(request=legacyRequest)
-        body = self.successResultOf(request.bodyBytes())
+        body = self.successResultOf(request.bodyAsBytes())
 
         self.assertEqual(body, data)

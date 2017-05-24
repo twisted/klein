@@ -89,7 +89,8 @@ def hostnames(draw, allow_leading_digit=True, allow_idn=True):
         internationalized domain names (IDNs).
     """
     labels = draw(lists(
-        hostname_labels(allow_idn=allow_idn), min_size=1, average_size=2
+        hostname_labels(allow_idn=allow_idn),
+        min_size=1, max_size=5, average_size=2
     ))
 
     name = u".".join(labels)
@@ -115,7 +116,7 @@ def http_urls(draw):
     if port == 0:
         port = None
 
-    path = tuple(draw(iterables(text(min_size=1), average_size=3)))
+    path = draw(iterables(text(min_size=1), max_size=10, average_size=3))
 
     return URL(
         scheme=draw(sampled_from((u"http", u"https"))),

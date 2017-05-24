@@ -8,7 +8,7 @@ Tests for L{klein._request}.
 
 from string import ascii_uppercase
 
-from hypothesis import given, note
+from hypothesis import given, note, settings
 from hypothesis.strategies import text
 
 from twisted.trial.unittest import SynchronousTestCase as TestCase
@@ -48,6 +48,7 @@ class HTTPRequestTests(TestCase):
 
 
     @given(http_urls())
+    @settings(max_examples=100)
     def test_url(self, url):
         """
         L{HTTPRequest.url} matches the underlying legacy request URL.
@@ -68,7 +69,7 @@ class HTTPRequestTests(TestCase):
         )
         request = HTTPRequest(request=legacyRequest)
 
-        # # Work around for https://github.com/mahmoud/hyperlink/issues/5
+        # Work around for https://github.com/mahmoud/hyperlink/issues/5
         def normalize(url):
             return url.replace(path=(s for s in url.path if s))
 

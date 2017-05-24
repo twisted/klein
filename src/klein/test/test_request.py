@@ -48,7 +48,7 @@ class HTTPRequestTests(TestCase):
 
 
     @given(http_urls())
-    @settings(max_examples=100)
+    @settings(max_examples=20)
     def test_url(self, url):
         """
         L{HTTPRequest.url} matches the underlying legacy request URL.

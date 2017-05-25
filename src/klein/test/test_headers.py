@@ -19,8 +19,8 @@ from .._headers import (
     FrozenHTTPHeaders, HTTPHeadersFromHeaders,
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
     IFrozenHTTPHeaders,
-    headerNameAsBytes, headerNameAsUnicode,
-    headerValueAsBytes, headerValueAsUnicode,
+    headerNameAsBytes, headerNameAsText,
+    headerValueAsBytes, headerValueAsText,
 )
 
 
@@ -233,7 +233,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
         binaryValues = defaultdict(list)
         for name, value in rawHeaders:
-            binaryValues[headerNameAsUnicode(name)].append(value)
+            binaryValues[headerNameAsText(name)].append(value)
 
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
         note("raw headers: {!r}".format(headers.rawHeaders))
@@ -243,7 +243,7 @@ class FrozenHTTPHeadersTests(TestCase):
             note("binary values: {!r}".format(values))
             self.assertEqual(
                 tuple(headers.get(name)),
-                tuple(headerValueAsUnicode(v) for v in values)
+                tuple(headerValueAsText(v) for v in values)
             )
 
 

@@ -8,9 +8,8 @@ HTTP headers.
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
-from typing import AnyStr, Iterable, List, Sequence, Tuple, Union, cast
+from typing import AnyStr, Iterable, List, Sequence, Text, Tuple, Union, cast
 
-from twisted.python.compat import unicode
 from twisted.web.http_headers import Headers
 
 from zope.interface import Attribute, Interface, implementer
@@ -22,7 +21,7 @@ __all__ = ()
 
 # Interfaces
 
-String = Union[bytes, unicode]
+String = Union[bytes, Text]
 
 RawHeader  = Tuple[bytes, bytes]
 RawHeaders = Iterable[RawHeader]
@@ -71,9 +70,9 @@ class IFrozenHTTPHeaders(Interface):
         If the given name is L{bytes}, the value will be returned as the
         raw header L{bytes}.
 
-        If the given name is L{unicode}, the name will be encoded as ASCII and
-        the value will be returned as L{unicode} text, by decoding the raw
-        header value bytes as ISO-8859-1 text.
+        If the given name is L{Text}, the name will be encoded as ASCII and the
+        value will be returned as text, by decoding the raw header value bytes
+        with ISO-8859-1.
 
         @param name: The name of the header to look for.
 
@@ -92,7 +91,7 @@ class IHTTPHeaders(IFrozenHTTPHeaders):
         """
         Remove all header name/value pairs for the given name,
 
-        If the given name is L{unicode}, it will be encoded as ASCII before
+        If the given name is L{Text}, it will be encoded as ASCII before
         comparing to the (L{bytes}) header names.
 
         @param name: The name of the header to remove.
@@ -106,8 +105,8 @@ class IHTTPHeaders(IFrozenHTTPHeaders):
 
         If the given name is L{bytes}, the value must also be L{bytes}.
 
-        If the given name is L{unicode}, it will be encoded as ASCII, and the
-        value, which must also be L{unicode}, will be encoded as ISO-8859-1.
+        If the given name is L{Text}, it will be encoded as ASCII, and the
+        value, which must also be L{Text}, will be encoded as ISO-8859-1.
         """
 
 
@@ -144,18 +143,18 @@ def headerNameAsBytes(name):
     Convert a header name to bytes if necessary.
     """
     if type(name) is bytes:
-        return name
+        return cast(bytes, name)
     else:
-        return cast(unicode, name).encode(HEADER_NAME_ENCODING)
+        return cast(Text, name).encode(HEADER_NAME_ENCODING)
 
 
-def headerNameAsUnicode(name):
-    # type: (String) -> unicode
+def headerNameAsText(name):
+    # type: (String) -> Text
     """
     Convert a header name to text if necessary.
     """
-    if type(name) is unicode:
-        return name
+    if type(name) is Text:
+        return cast(Text, name)
     else:
         return cast(bytes, name).decode(HEADER_NAME_ENCODING)
 
@@ -166,20 +165,20 @@ def headerValueAsBytes(value):
     Convert a header value to bytes if necessary.
     """
     if type(value) is bytes:
-        return value
+        return cast(bytes, value)
     else:
-        return cast(unicode, value).encode(HEADER_VALUE_ENCODING)
+        return cast(Text, value).encode(HEADER_VALUE_ENCODING)
 
 
-def headerValueAsUnicode(value):
-    # type: (String) -> unicode
+def headerValueAsText(value):
+    # type: (String) -> Text
     """
     Convert a header value to text if necessary.
     """
-    if type(value) is unicode:
-        return value
+    if type(value) is Text:
+        return cast(Text, value)
     else:
-        return cast(unicode, bytes).decode(HEADER_VALUE_ENCODING)
+        return cast(bytes, value).decode(HEADER_VALUE_ENCODING)
 
 
 def getFromHeadersTartare(headersTartare, name):
@@ -190,14 +189,14 @@ def getFromHeadersTartare(headersTartare, name):
     if type(name) is bytes:
         return (v for n, v in headersTartare if name == n)
 
-    if type(name) is unicode:
+    if type(name) is Text:
         rawName = headerNameAsBytes(name)
         return(
-            headerValueAsUnicode(v)
+            headerValueAsText(v)
             for n, v in headersTartare if rawName == n
         )
 
-    raise TypeError("name must be unicode or bytes")
+    raise TypeError("name must be text or bytes")
 
 
 
@@ -244,10 +243,10 @@ class HTTPHeaders(object):
         # type: (String) -> None
         if type(name) is bytes:
             rawName = name
-        elif type(name) is unicode:
+        elif type(name) is Text:
             rawName = headerNameAsBytes(name)
         else:
-            raise TypeError("name must be unicode or bytes")
+            raise TypeError("name must be text or bytes")
 
         self._rawHeaders[:] = [p for p in self._rawHeaders if p[0] != rawName]
 
@@ -257,14 +256,14 @@ class HTTPHeaders(object):
         if type(name) is bytes:
             rawName = name
             rawValue = bytes(value)
-        elif type(name) is unicode:
-            if type(value) is not unicode:
-                raise TypeError("value must be unicode to match name")
+        elif type(name) is Text:
+            if type(value) is not Text:
+                raise TypeError("value must be text to match name")
 
             rawName  = headerNameAsBytes(name)
             rawValue = headerValueAsBytes(value)
         else:
-            raise TypeError("name must be unicode or bytes")
+            raise TypeError("name must be text or bytes")
 
 
 

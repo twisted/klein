@@ -3,6 +3,7 @@
 .DS_Store
 .coverage.*
 /.hypothesis/
+/.mypy_cache/
 /.tox/
 /docs/_build/
 /src/*.egg-info

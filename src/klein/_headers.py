@@ -8,6 +8,7 @@ HTTP headers.
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
+from typing import AnyStr, Iterable, List, Sequence, Tuple, Union, cast
 
 from twisted.python.compat import unicode
 from twisted.web.http_headers import Headers
@@ -20,6 +21,13 @@ __all__ = ()
 
 
 # Interfaces
+
+String = Union[bytes, unicode]
+
+RawHeader  = Tuple[bytes, bytes]
+RawHeaders = Iterable[RawHeader]
+
+
 
 class IFrozenHTTPHeaders(Interface):
     """
@@ -52,10 +60,11 @@ class IFrozenHTTPHeaders(Interface):
         Headers with multiple values are provided as separate name and value
         pairs.
         """
-    )
+    )  # type: RawHeaders
 
 
     def get(name):
+        # type: (AnyStr) -> AnyStr
         """
         Get the values associated with the given header name.
 
@@ -79,6 +88,7 @@ class IHTTPHeaders(IFrozenHTTPHeaders):
     """
 
     def remove(name):
+        # type: (AnyStr) -> None
         """
         Remove all header name/value pairs for the given name,
 
@@ -90,6 +100,7 @@ class IHTTPHeaders(IFrozenHTTPHeaders):
 
 
     def add(self, name, value):
+        # type: (AnyStr, AnyStr) -> None
         """
         Add the given header name/value pair.
 
@@ -108,6 +119,7 @@ HEADER_VALUE_ENCODING = "iso-8859-1"
 
 
 def headersTartare(values):
+    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
     if type(values) is tuple:
         for pair in values:
             if type(pair) is tuple:
@@ -116,56 +128,65 @@ def headersTartare(values):
             else:
                 break
         else:
-            return values
+            return cast(RawHeaders, values)
 
     return tuple((bytes(name), bytes(value)) for name, value in values)
 
 
 def headersTartareMutable(values):
+    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
     return [(bytes(name), bytes(value)) for name, value in values]
 
 
 def headerNameAsBytes(name):
+    # type: (String) -> bytes
     """
-    Convert a header name (L{bytes}) to text (L{unicode}).
+    Convert a header name to bytes if necessary.
     """
     if type(name) is bytes:
         return name
     else:
-        return name.encode(HEADER_NAME_ENCODING)
+        return cast(unicode, name).encode(HEADER_NAME_ENCODING)
 
 
 def headerNameAsUnicode(name):
+    # type: (String) -> unicode
     """
-    Convert a header name (L{bytes}) to text (L{unicode}).
+    Convert a header name to text if necessary.
     """
     if type(name) is unicode:
         return name
     else:
-        return name.decode(HEADER_NAME_ENCODING)
+        return cast(bytes, name).decode(HEADER_NAME_ENCODING)
 
 
 def headerValueAsBytes(value):
+    # type: (String) -> bytes
     """
-    Convert a header value (L{bytes}) to text (L{unicode}).
+    Convert a header value to bytes if necessary.
     """
     if type(value) is bytes:
         return value
     else:
-        return value.encode(HEADER_VALUE_ENCODING)
+        return cast(unicode, value).encode(HEADER_VALUE_ENCODING)
 
 
 def headerValueAsUnicode(value):
+    # type: (String) -> unicode
     """
-    Convert a header value (L{bytes}) to text (L{unicode}).
+    Convert a header value to text if necessary.
     """
     if type(value) is unicode:
         return value
     else:
-        return value.decode(HEADER_VALUE_ENCODING)
+        return cast(unicode, bytes).decode(HEADER_VALUE_ENCODING)
 
 
 def getFromHeadersTartare(headersTartare, name):
+    # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
+    """
+    Get a value from raw headers.
+    """
     if type(name) is bytes:
         return (v for n, v in headersTartare if name == n)
 
@@ -187,10 +208,11 @@ class FrozenHTTPHeaders(object):
     HTTP entity headers (immutable).
     """
 
-    rawHeaders = attrib(convert=headersTartare)
+    rawHeaders = attrib(convert=headersTartare)  # type: RawHeaders
 
 
     def get(self, name):
+        # type: (AnyStr) -> Iterable[AnyStr]
         return getFromHeadersTartare(self.rawHeaders, name)
 
 
@@ -202,14 +224,24 @@ class HTTPHeaders(object):
     HTTP entity headers (mutable).
     """
 
-    rawHeaders = attrib(convert=headersTartareMutable)
+    _rawHeaders = attrib(
+        convert=headersTartareMutable
+    )  # type: List[RawHeader]
+
+
+    @property
+    def rawHeaders(self):
+        # type: () -> RawHeaders
+        return iter(self._rawHeaders)
 
 
     def get(self, name):
-        return getFromHeadersTartare(self.rawHeaders, name)
+        # type: (AnyStr) -> Iterable[AnyStr]
+        return getFromHeadersTartare(self._rawHeaders, name)
 
 
     def remove(self, name):
+        # type: (String) -> None
         if type(name) is bytes:
             rawName = name
         elif type(name) is unicode:
@@ -217,10 +249,11 @@ class HTTPHeaders(object):
         else:
             raise TypeError("name must be unicode or bytes")
 
-        newRawHeaders[:] = [p for p in self.rawHeaders if p[0] != rawName]
+        self._rawHeaders[:] = [p for p in self._rawHeaders if p[0] != rawName]
 
 
     def add(self, name, value):
+        # type: (AnyStr, AnyStr) -> None
         if type(name) is bytes:
             rawName = name
             rawValue = bytes(value)
@@ -228,7 +261,7 @@ class HTTPHeaders(object):
             if type(value) is not unicode:
                 raise TypeError("value must be unicode to match name")
 
-            rawName = headerNameAsBytes(name)
+            rawName  = headerNameAsBytes(name)
             rawValue = headerValueAsBytes(value)
         else:
             raise TypeError("name must be unicode or bytes")
@@ -256,10 +289,11 @@ class HTTPHeadersFromHeaders(object):
         Internal mutable state for L{HTTPRequestFromIRequest}.
         """
 
-    _headers = attrib(validator=instance_of(Headers))
-    _state = attrib(default=Factory(_State), init=False)
+    _headers = attrib(validator=instance_of(Headers))     # type: Headers
+    _state = attrib(default=Factory(_State), init=False)  # type: _State
 
 
     @property
     def rawHeaders(self):
+        # type: () -> RawHeaders
         raise NotImplementedError()

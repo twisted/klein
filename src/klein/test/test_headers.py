@@ -7,21 +7,81 @@ Tests for L{klein._headers}.
 """
 
 from collections import defaultdict
-from string import ascii_letters
 
-from hypothesis import given, note
-from hypothesis.strategies import binary, iterables, text, tuples
+from hypothesis import assume, given, note
+from hypothesis.strategies import characters, binary, iterables, text, tuples
 
 from twisted.web.http_headers import Headers
 
+from ._strategies import ascii_text, latin1_text
 from ._trial import TestCase
 from .._headers import (
-    FrozenHTTPHeaders, HTTPHeadersFromHeaders, IHTTPHeaders,
-    headerValueAsUnicode,
+    FrozenHTTPHeaders, HTTPHeadersFromHeaders,
+    HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
+    IFrozenHTTPHeaders,
+    headerNameAsBytes, headerNameAsUnicode,
+    headerValueAsBytes, headerValueAsUnicode,
 )
 
 
 __all__ = ()
+
+
+
+def encodeName(name):
+    try:
+        return name.encode(HEADER_NAME_ENCODING)
+    except UnicodeEncodeError:
+        return None
+
+
+def encodeValue(name):
+    try:
+        return name.encode(HEADER_VALUE_ENCODING)
+    except UnicodeEncodeError:
+        return None
+
+
+
+class EncodingTests(TestCase):
+    """
+    Tests for encoding support in L{klein._headers}.
+    """
+
+    @given(binary())
+    def test_headerNameAsBytesWithBytes(self, name):
+        """
+        L{headerNameAsBytes} passes through L{bytes}.
+        """
+        self.assertIdentical(headerNameAsBytes(name), name)
+
+
+    @given(text(min_size=1))
+    def test_headerNameAsBytesWithUnicode(self, name):
+        """
+        L{headerNameAsBytes} encodes L{unicode} as ISO-8859-1.
+        """
+        rawName = encodeName(name)
+        assume(rawName is not None)
+        self.assertEqual(headerNameAsBytes(name), rawName)
+
+
+    @given(binary())
+    def test_headerValueAsBytesWithBytes(self, value):
+        """
+        L{headerValueAsBytes} passes through L{bytes}.
+        """
+        self.assertIdentical(headerValueAsBytes(value), value)
+
+
+    @given(text(min_size=1))
+    def test_headerValueAsBytesWithUnicode(self, value):
+        """
+        L{headerValueAsBytes} encodes L{unicode} as ISO-8859-1.
+        """
+        rawValue = encodeName(value)
+        assume(rawValue is not None)
+        self.assertEqual(headerValueAsBytes(value), rawValue)
 
 
 
@@ -32,10 +92,10 @@ class FrozenHTTPHeadersTests(TestCase):
 
     def test_interface(self):
         """
-        L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
+        L{FrozenHTTPHeaders} implements L{IFrozenHTTPHeaders}.
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertProvides(IHTTPHeaders, headers)
+        self.assertProvides(IFrozenHTTPHeaders, headers)
 
 
     def test_rawHeadersNotTuple(self):
@@ -135,12 +195,14 @@ class FrozenHTTPHeadersTests(TestCase):
             self.assertEqual(tuple(headers.get(name)), (value,))
 
 
-    @given(iterables(tuples(text(min_size=1, alphabet=ascii_letters), text())))
+    @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
     def test_getUnicodeName(self, textPairs):
         """
         L{FrozenHTTPHeaders.get} returns an iterable of L{unicode} values for
         the given L{unicode} header name.
         """
+        note("text pairs: {!r}".format(textPairs))
+
         textHeaders = tuple((name, value) for name, value in textPairs)
 
         textValues = defaultdict(list)
@@ -148,7 +210,8 @@ class FrozenHTTPHeadersTests(TestCase):
             textValues[name].append(values)
 
         headers = FrozenHTTPHeaders(rawHeaders=(
-            (n.encode("ascii"), v.encode("utf-8")) for n, v in textHeaders
+            (headerNameAsBytes(name), headerValueAsBytes(value))
+            for name, value in textHeaders
         ))
         note("raw headers: {!r}".format(headers.rawHeaders))
 
@@ -158,21 +221,19 @@ class FrozenHTTPHeadersTests(TestCase):
             self.assertEqual(list(headers.get(name)), values)
 
 
-    @given(
-        iterables(tuples(text(min_size=1, alphabet=ascii_letters), binary()))
-    )
+    @given(iterables(tuples(ascii_text(min_size=1), binary())))
     def test_getUnicodeNameBytesValues(self, pairs):
         """
         L{FrozenHTTPHeaders.get} returns an iterable of L{unicode} values for
         the given L{unicode} header name.
         """
         rawHeaders = tuple(
-            (name.encode("ascii"), value) for name, value in pairs
+            (headerNameAsBytes(name), value) for name, value in pairs
         )
 
         binaryValues = defaultdict(list)
         for name, value in rawHeaders:
-            binaryValues[name.decode("ascii")].append(value)
+            binaryValues[headerNameAsUnicode(name)].append(value)
 
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
         note("raw headers: {!r}".format(headers.rawHeaders))
@@ -203,9 +264,9 @@ class HTTPHeadersFromHeadersTests(TestCase):
 
     def test_interface(self):
         """
-        L{HTTPHeadersFromHeaders} implements L{IHTTPHeaders}.
+        L{HTTPHeadersFromHeaders} implements L{IFrozenHTTPHeaders}.
         """
         headers = HTTPHeadersFromHeaders(Headers({}))
-        self.assertProvides(IHTTPHeaders, headers)
+        self.assertProvides(IFrozenHTTPHeaders, headers)
 
     test_interface.todo = "unimplemented"

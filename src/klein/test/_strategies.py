@@ -13,7 +13,7 @@ from hyperlink import URL
 
 from hypothesis import HealthCheck, assume, settings
 from hypothesis.strategies import (
-    composite, integers, iterables, lists, sampled_from, text
+    characters, composite, integers, iterables, lists, sampled_from, text
 )
 
 from twisted.python.compat import unicode
@@ -30,7 +30,68 @@ if getenv("CI") == "true":
     settings.load_profile("ci")
 
 
-def _is_idna_compatible(text, max_length):
+# Note this may be incorrect (most likely: incomplete), but it's at least OK
+# for generating INDA test data.
+IDNA_CHARACTER_CATEGORIES = (
+    "Lu", "Ll", "Lt",                    # cased letters
+    "Mn", "Mc", "Me",                    # marks
+    "Nd", "Nl", "No",                    # nubers
+    "Pc", "Pd", "Ps", "Pe", "Pe", "Pf",  # punctuation not Po
+    "Sm", "Sc", "Sk", "So",              # symbols not So
+)
+
+
+@composite
+def ascii_text(draw, min_size=None, max_size=None):
+    """
+    A strategy which generates ASCII-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return draw(text(
+        min_size=min_size, max_size=max_size, alphabet=ascii_letters
+    ))
+
+
+@composite
+def latin1_text(draw, min_size=None, max_size=None):
+    """
+    A strategy which generates ISO-8859-1-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return u"".join(draw(lists(
+        characters(max_codepoint=255),
+        min_size=min_size, max_size=max_size,
+    )))
+
+
+@composite
+def idna_text(draw, min_size=None, max_size=None):
+    """
+    A strategy which generates IDNA-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return u"".join(draw(lists(
+        characters(whitelist_categories=IDNA_CHARACTER_CATEGORIES),
+        min_size=min_size, max_size=max_size,
+    )))
+
+
+def is_idna_compatible(text, max_length):
     """
     Determine whether some text contains only characters that can be encoded
     as IDNA, and that the encoded text is less than the given maximum length.
@@ -70,17 +131,14 @@ def hostname_labels(draw, allow_idn=True):
     @param allow_idn: Whether to allow non-ASCII characters as allowed by
         internationalized domain names (IDNs).
     """
-    alphabet = unicode(ascii_letters + digits + u"-")
     if allow_idn:
-        # FIXME: get a more complete character set
-        # Throw in some non-ASCII values for now
-        alphabet += u"\N{LATIN SMALL LETTER A WITH ACUTE}"
-        alphabet += u"\N{SNOWMAN}"
-
-    label = draw(text(min_size=1, max_size=63, alphabet=alphabet))
-
-    if allow_idn:
-        assume(_is_idna_compatible(label, 63))
+        label = draw(idna_text(min_size=1, max_size=63))
+        assume(is_idna_compatible(label, 63))
+    else:
+        label = draw(text(
+            min_size=1, max_size=63,
+            alphabet=unicode(ascii_letters + digits + u"-")
+        ))
 
     return label
 
@@ -104,7 +162,7 @@ def hostnames(draw, allow_leading_digit=True, allow_idn=True):
     name = u".".join(labels)
 
     if allow_idn:
-        assume(_is_idna_compatible(name, 252))
+        assume(is_idna_compatible(name, 252))
     else:
         assume(len(name) <= 252)
 

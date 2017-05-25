@@ -18,11 +18,11 @@ from tubes.undefer import fountToDeferred
 from twisted.internet.defer import succeed
 from twisted.python.compat import nativeString
 from twisted.python.failure import Failure
-from twisted.web.iweb import IRequest as IWebRequest
+from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface, implementer
 
-from ._headers import IHTTPHeaders
+from ._headers import FrozenHTTPHeaders, HTTPHeadersFromHeaders, IHTTPHeaders
 
 
 __all__ = ()
@@ -97,7 +97,7 @@ class HTTPRequest(object):
 
     method  = attrib(validator=instance_of(str))
     uri     = attrib(validator=instance_of(URL))
-    headers = attrib(validator=provides(IHTTPHeaders))
+    headers = attrib(validator=instance_of(FrozenHTTPHeaders))
 
 
     def bodyAsFount(self):
@@ -109,7 +109,7 @@ class HTTPRequest(object):
 
 
 
-# Support for L{twisted.web.iweb.IRequest}
+# Support for L{IRequest}
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
@@ -117,11 +117,10 @@ class HTTPRequestFromIRequest(object):
     """
     HTTP request.
 
-    This is an L{IHTTPRequest} implementation that wraps a
-    L{twisted.web.iweb.IRequest} object.
+    This is an L{IHTTPRequest} implementation that wraps an L{IRequest} object.
 
-    This is used by Klein to expose "legacy" request objects from
-    L{twisted.web} to clients while presenting the new interface.
+    This is used by Klein to expose objects from L{twisted.web} to clients
+    while presenting the Klein interface.
     """
 
     @attrs(frozen=False)
@@ -134,7 +133,7 @@ class HTTPRequestFromIRequest(object):
             validator=optional(instance_of(bytes)), default=None, init=False
         )
 
-    _request = attrib(validator=provides(IWebRequest))
+    _request = attrib(validator=provides(IRequest))
     _state = attrib(default=Factory(_State), init=False)
 
 
@@ -173,7 +172,7 @@ class HTTPRequestFromIRequest(object):
 
     @property
     def headers(self):
-        raise NotImplementedError()
+        return HTTPHeadersFromHeaders(self._request.headers)
 
 
     def bodyAsFount(self):
@@ -181,7 +180,7 @@ class HTTPRequestFromIRequest(object):
         if source is None:
             raise NoContentError()
 
-        fount = _IOFount(source=source)
+        fount = IOFount(source=source)
 
         self._request.content = None
 
@@ -207,7 +206,7 @@ class HTTPRequestFromIRequest(object):
 # FIXME: this should stream.
 @implementer(IFount)
 @attrs(frozen=False)
-class _IOFount(object):
+class IOFount(object):
     """
     Fount that reads from a file-like-object.
     """

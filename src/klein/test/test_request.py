@@ -30,7 +30,7 @@ class HTTPRequestTests(TestCase):
 
     def test_interface(self):
         """
-        L{HTTPRequest} implements L(IHTTPRequest).
+        L{HTTPRequest} implements L{IHTTPRequest}.
         """
         request = HTTPRequest(
             method=u"GET",
@@ -59,7 +59,7 @@ class HTTPRequestFromIRequestTests(TestCase):
     Tests for L{HTTPRequestFromIRequest}.
     """
 
-    def webRequest(
+    def legacyRequest(
         self, path=b"/", method=b"GET", host=b"localhost", port=8080,
         isSecure=False, body=None, headers=None,
     ):
@@ -71,9 +71,9 @@ class HTTPRequestFromIRequestTests(TestCase):
 
     def test_interface(self):
         """
-        L{HTTPRequestFromIRequest} implements L(IHTTPRequest).
+        L{HTTPRequestFromIRequest} implements L{IHTTPRequest}.
         """
-        request = HTTPRequestFromIRequest(request=self.webRequest())
+        request = HTTPRequestFromIRequest(request=self.legacyRequest())
         self.assertProvides(IHTTPRequest, request)
 
     test_interface.todo = "request.headers unimplemented"
@@ -85,7 +85,7 @@ class HTTPRequestFromIRequestTests(TestCase):
         L{HTTPRequestFromIRequest.method} matches the underlying legacy request
         method.
         """
-        legacyRequest = self.webRequest(method=methodText.encode("ascii"))
+        legacyRequest = self.legacyRequest(method=methodText.encode("ascii"))
         request = HTTPRequestFromIRequest(request=legacyRequest)
         self.assertEqual(request.method, methodText)
 
@@ -102,7 +102,7 @@ class HTTPRequestFromIRequestTests(TestCase):
             .asText()
             .encode("ascii")
         )
-        legacyRequest = self.webRequest(
+        legacyRequest = self.legacyRequest(
             isSecure=(uri.scheme == u"https"),
             host=uri.host.encode("ascii"), port=uri.port, path=path,
         )
@@ -118,13 +118,24 @@ class HTTPRequestFromIRequestTests(TestCase):
         self.assertEqual(normalize(request.uri), normalize(uri))
 
 
+    def test_headers(self):
+        """
+        L{HTTPRequestFromIRequest.headers} returns an
+        L{HTTPRequestFromIRequest} containing the underlying legacy request
+        headers.
+        """
+        legacyRequest = self.legacyRequest()
+        request = HTTPRequestFromIRequest(request=legacyRequest)
+        self.assertIdentical(request._request, legacyRequest)
+
+
     @given(binary())
     def test_bodyAsBytes(self, data):
         """
         L{HTTPRequestFromIRequest.bodyAsBytes} matches the underlying legacy
         request body.
         """
-        legacyRequest = self.webRequest(body=data)
+        legacyRequest = self.legacyRequest(body=data)
         request = HTTPRequestFromIRequest(request=legacyRequest)
         body = self.successResultOf(request.bodyAsBytes())
 

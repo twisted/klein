@@ -34,30 +34,30 @@ from twisted.internet.defer import (
 )
 from twisted.python.failure import Failure
 
-from .security import compute_key_text, check_and_reset
+from .security import computeKeyText, checkAndReset
 
 @implementer(ISession)
 @attr.s
 class SQLSession(object):
-    _session_store = attr.ib()
+    _sessionStore = attr.ib()
     identifier = attr.ib()
-    is_confidential = attr.ib()
-    authenticated_by = attr.ib()
+    isConfidential = attr.ib()
+    authenticatedBy = attr.ib()
 
     def authorize(self, interfaces):
         interfaces = set(interfaces)
-        datastore = self._session_store._datastore
+        datastore = self._sessionStore._datastore
         @datastore.sql
         def authzn(txn):
             result = {}
             ds = []
-            authorizers = datastore.components_providing(ISQLAuthorizer)
+            authorizers = datastore.componentsProviding(ISQLAuthorizer)
             for a in authorizers:
                 # This should probably do something smart with interface
                 # priority, checking isOrExtends or something similar.
                 if a.authzn_for in interfaces:
                     v = maybeDeferred(a.authzn_for_session,
-                                      self._session_store, txn, self)
+                                      self._sessionStore, txn, self)
                     ds.append(v)
                     result[a.authzn_for] = v
                     v.addCallback(
@@ -148,7 +148,7 @@ class AlchimiaDataStore(object):
             self._free_connections.append(cxn)
 
 
-    def components_providing(self, interface):
+    def componentsProviding(self, interface):
         """
         Get all the components providing the given interface.
         """
@@ -193,7 +193,7 @@ class AlchimiaDataStore(object):
         @self.sql
         @inlineCallbacks
         def do(transaction):
-            for component in self.components_providing(ISQLSchemaComponent):
+            for component in self.componentsProviding(ISQLSchemaComponent):
                 try:
                     yield component.initialize_schema(transaction)
                 except OperationalError as oe:
@@ -216,7 +216,7 @@ class AlchimiaSessionStore(object):
         self._datastore = datastore
         self.session_table = Table(
             "session", metadata,
-            Column("session_id", String(), primary_key=True, nullable=False),
+            Column("sessionID", String(), primary_key=True, nullable=False),
             Column("confidential", Boolean(), nullable=False),
         )
 
@@ -235,7 +235,7 @@ class AlchimiaSessionStore(object):
             s = self.session_table
             return gatherResults([
                 txn.execute(
-                    s.delete().where((s.c.session_id == token) &
+                    s.delete().where((s.c.sessionID == token) &
                                      (s.c.confidential == True))
                 ) for token in tokens
             ])
@@ -253,39 +253,39 @@ class AlchimiaSessionStore(object):
             print("sessions-table", oe)
 
 
-    def new_session(self, is_confidential, authenticated_by):
+    def newSession(self, isConfidential, authenticatedBy):
         @self._datastore.sql
         @inlineCallbacks
         def created(txn):
             identifier = hexlify(urandom(32))
             s = self.session_table
             yield txn.execute(s.insert().values(
-                session_id=identifier,
-                confidential=is_confidential,
+                sessionID=identifier,
+                confidential=isConfidential,
             ))
             returnValue(SQLSession(self,
                                    identifier=identifier,
-                                   is_confidential=is_confidential,
-                                   authenticated_by=authenticated_by))
+                                   isConfidential=isConfidential,
+                                   authenticatedBy=authenticatedBy))
         return created
 
 
-    def load_session(self, identifier, is_confidential, authenticated_by):
+    def loadSession(self, identifier, isConfidential, authenticatedBy):
         @self._datastore.sql
         @inlineCallbacks
         def loaded(engine):
             s = self.session_table
             result = yield engine.execute(
-                s.select((s.c.session_id==identifier) &
-                         (s.c.confidential==is_confidential)))
+                s.select((s.c.sessionID==identifier) &
+                         (s.c.confidential==isConfidential)))
             results = yield result.fetchall()
             if not results:
                 raise NoSuchSession()
-            fetched_identifier = results[0][s.c.session_id]
+            fetched_identifier = results[0][s.c.sessionID]
             returnValue(SQLSession(self,
                                    identifier=fetched_identifier,
-                                   is_confidential=is_confidential,
-                                   authenticated_by=authenticated_by))
+                                   isConfidential=isConfidential,
+                                   authenticatedBy=authenticatedBy))
         return loaded
 
 
@@ -301,11 +301,11 @@ class AccountSessionBinding(object):
     _session = attr.ib()
     _datastore = attr.ib()
 
-    def _account(self, account_id, username, email):
+    def _account(self, accountID, username, email):
         """
         
         """
-        return SQLAccount(self._plugin, self._datastore, account_id, username,
+        return SQLAccount(self._plugin, self._datastore, accountID, username,
                           email)
 
 
@@ -317,25 +317,25 @@ class AccountSessionBinding(object):
         @return: an L{Account} if one could be created, L{None} if one could
             not be.
         """
-        computedHash = yield compute_key_text(password)
+        computedHash = yield computeKeyText(password)
         @self._datastore.sql
         @inlineCallbacks
         def store(engine):
-            new_account_id = unicode(uuid4())
-            insert = (self._plugin.account_table.insert()
-                      .values(account_id=new_account_id,
+            newAccountID = unicode(uuid4())
+            insert = (self._plugin.accountTable.insert()
+                      .values(accountID=newAccountID,
                               username=username, email=email,
-                              password_blob=computedHash))
+                              passwordBlob=computedHash))
             try:
                 yield engine.execute(insert)
             except IntegrityError:
                 returnValue(None)
             else:
-                returnValue(new_account_id)
-        account_id = (yield store)
-        if account_id is None:
+                returnValue(newAccountID)
+        accountID = (yield store)
+        if accountID is None:
             returnValue(None)
-        account = self._account(account_id, username, email)
+        account = self._account(accountID, username, email)
         returnValue(account)
 
 
@@ -354,7 +354,7 @@ class AccountSessionBinding(object):
         @rtype: L{Deferred} firing with L{IAccount} if we succeeded and L{None}
             if we failed.
         """
-        acc = self._plugin.account_table
+        acc = self._plugin.accountTable
         @self._datastore.sql
         @inlineCallbacks
         def retrieve(engine):
@@ -362,28 +362,28 @@ class AccountSessionBinding(object):
                 acc.select(acc.c.username == username)
             )
             returnValue((yield result.fetchall()))
-        accounts_info = yield retrieve
-        if not accounts_info:
+        accountsInfo = yield retrieve
+        if not accountsInfo:
             # no account, bye
             returnValue(None)
-        [row] = accounts_info
-        stored_password_text = row[acc.c.password_blob]
-        account_id = row[acc.c.account_id]
+        [row] = accountsInfo
+        stored_password_text = row[acc.c.passwordBlob]
+        accountID = row[acc.c.accountID]
 
-        def reset_password(new_pw_text):
+        def reset_password(newPWText):
             @self._datastore.sql
             def storenew(engine):
-                a = self._plugin.account_table
+                a = self._plugin.accountTable
                 return engine.execute(
-                    a.update(a.c.account_id == account_id)
-                    .values(password_blob=new_pw_text)
+                    a.update(a.c.accountID == accountID)
+                    .values(passwordBlob=newPWText)
                 )
             return storenew
 
-        if (yield check_and_reset(stored_password_text,
+        if (yield checkAndReset(stored_password_text,
                                   password,
                                   reset_password)):
-            account = self._account(account_id, row[acc.c.username],
+            account = self._account(accountID, row[acc.c.username],
                                     row[acc.c.email])
             yield account.add_session(self._session)
             returnValue(account)
@@ -399,14 +399,14 @@ class AccountSessionBinding(object):
         @inlineCallbacks
         def retrieve(engine):
             ast = self._plugin.account_session_table
-            acc = self._plugin.account_table
+            acc = self._plugin.accountTable
             result = (yield (yield engine.execute(
-                ast.join(acc, ast.c.account_id == acc.c.account_id)
-                .select(ast.c.session_id == self._session.identifier,
+                ast.join(acc, ast.c.accountID == acc.c.accountID)
+                .select(ast.c.sessionID == self._session.identifier,
                         use_labels=True)
             )).fetchall())
             returnValue([
-                self._account(it[ast.c.account_id], it[acc.c.username],
+                self._account(it[ast.c.accountID], it[acc.c.username],
                               it[acc.c.email])
                 for it in result
             ])
@@ -423,7 +423,7 @@ class AccountSessionBinding(object):
         acs = self._plugin.account_session_table
         # XXX FIXME this is a bad way to access the table, since the table
         # is not actually part of the interface passed here
-        sipt = (next(self._datastore.components_providing(
+        sipt = (next(self._datastore.componentsProviding(
             implementedBy(IPTrackingProcurer)
         ))._session_ip_table)
         @self._datastore.sql
@@ -433,14 +433,14 @@ class AccountSessionBinding(object):
             from sqlalchemy.sql.expression import select
             result = yield conn.execute(
                 select([sipt], use_labels=True)
-                .where((acs.c.session_id == self._session.identifier) &
-                       (acs.c.account_id == acs2.c.account_id) &
-                       (acs2.c.session_id == sipt.c.session_id)
+                .where((acs.c.sessionID == self._session.identifier) &
+                       (acs.c.accountID == acs2.c.accountID) &
+                       (acs2.c.sessionID == sipt.c.sessionID)
                 )
             )
             returnValue([
                 SessionIPInformation(
-                    id=row[sipt.c.session_id],
+                    id=row[sipt.c.sessionID],
                     ip=row[sipt.c.ip_address],
                     when=row[sipt.c.last_used])
                 for row in (yield result.fetchall())
@@ -458,7 +458,7 @@ class AccountSessionBinding(object):
         def retrieve(engine):
             ast = self._plugin.account_session_table
             return engine.execute(ast.delete(
-                ast.c.session_id == self._session.identifier
+                ast.c.sessionID == self._session.identifier
             ))
         return retrieve
 
@@ -473,7 +473,7 @@ class SQLAccount(object):
     """
     _plugin = attr.ib()
     _datastore = attr.ib()
-    account_id = attr.ib()
+    accountID = attr.ib()
     username = attr.ib()
     email = attr.ib()
 
@@ -485,8 +485,8 @@ class SQLAccount(object):
         def createrow(engine):
             return engine.execute(
                 self._plugin.account_session_table
-                .insert().values(account_id=self.account_id,
-                                 session_id=session.identifier)
+                .insert().values(accountID=self.accountID,
+                                 sessionID=session.identifier)
             )
         return createrow
 
@@ -497,13 +497,13 @@ class SQLAccount(object):
         @param new_password: The text of the new password.
         @type new_password: L{unicode}
         """
-        computed_hash = compute_key_text(new_password)
+        computed_hash = computeKeyText(new_password)
         @self._datastore.sql
         def change(engine):
             return engine.execute(
-                self._plugin.account_table.update()
-                .where(account_id=self.account_id)
-                .values(password_blob=computed_hash)
+                self._plugin.accountTable.update()
+                .where(accountID=self.accountID)
+                .values(passwordBlob=computed_hash)
             )
         returnValue((yield change))
 
@@ -523,22 +523,22 @@ class AccountBindingStorePlugin(object):
         """
         self._datastore = store
 
-        self.account_table = Table(
+        self.accountTable = Table(
             "account", metadata,
-            Column("account_id", String(), primary_key=True,
+            Column("accountID", String(), primary_key=True,
                    nullable=False),
             Column("username", String(), unique=True, nullable=False),
             Column("email", String(), nullable=False),
-            Column("password_blob", String(), nullable=False),
+            Column("passwordBlob", String(), nullable=False),
         )
 
         self.account_session_table = Table(
             "account_session", metadata,
-            Column("account_id", String(),
-                   ForeignKey("account.account_id", ondelete="CASCADE")),
-            Column("session_id", String(),
-                   ForeignKey("session.session_id", ondelete="CASCADE")),
-            UniqueConstraint("account_id", "session_id"),
+            Column("accountID", String(),
+                   ForeignKey("account.accountID", ondelete="CASCADE")),
+            Column("sessionID", String(),
+                   ForeignKey("session.sessionID", ondelete="CASCADE")),
+            UniqueConstraint("accountID", "sessionID"),
         )
 
     @inlineCallbacks
@@ -546,7 +546,7 @@ class AccountBindingStorePlugin(object):
         """
         
         """
-        for table in [self.account_table, self.account_session_table]:
+        for table in [self.accountTable, self.account_session_table]:
             yield transaction.execute(CreateTable(table))
 
 
@@ -611,13 +611,13 @@ class IPTrackingProcurer(object):
         """
         self._session_ip_table = Table(
             "session_ip", metadata,
-            Column("session_id", String(),
-                   ForeignKey("session.session_id", ondelete="CASCADE"),
+            Column("sessionID", String(),
+                   ForeignKey("session.sessionID", ondelete="CASCADE"),
                    nullable=False),
             Column("ip_address", String(), nullable=False),
             Column("address_family", String(), nullable=False),
             Column("last_used", DateTime(), nullable=False),
-            UniqueConstraint("session_id", "ip_address", "address_family"),
+            UniqueConstraint("sessionID", "ip_address", "address_family"),
         )
         self._datastore = datastore
         self._procurer = procurer
@@ -634,16 +634,16 @@ class IPTrackingProcurer(object):
             print("ip-schema", oe)
 
 
-    def procure_session(self, request, force_insecure=False,
-                        always_create=True):
+    def procureSession(self, request, forceInsecure=False,
+                        alwaysCreate=True):
         andThen = (self._procurer
-                   .procure_session(request, force_insecure, always_create)
+                   .procureSession(request, forceInsecure, alwaysCreate)
                    .addCallback)
         @andThen
         def _(session):
             if session is None:
                 return
-            session_id = session.identifier
+            sessionID = session.identifier
             try:
                 ip_address = (request.client.host or b"").decode("ascii")
             except:
@@ -655,7 +655,7 @@ class IPTrackingProcurer(object):
                 last_used = datetime.utcnow()
                 sip = self._session_ip_table
                 return upsert(engine, sip,
-                              dict(session_id=session_id,
+                              dict(sessionID=sessionID,
                                    ip_address=ip_address,
                                    address_family=address_family),
                               dict(last_used=last_used))
@@ -670,7 +670,7 @@ class IPTrackingProcurer(object):
 
 
 
-def open_session_store(reactor, db_uri, component_creators=(),
+def openSessionStore(reactor, db_uri, component_creators=(),
                        procurer_from_store=SessionProcurer):
     """
     Open a session store, returning a procurer that can procure sessions from
@@ -690,14 +690,14 @@ def open_session_store(reactor, db_uri, component_creators=(),
             AlchimiaSessionStore, AccountBindingStorePlugin,
             lambda metadata, store: IPTrackingProcurer(
                 metadata, store, procurer_from_store(next(
-                    store.components_providing(ISessionStore)
+                    store.componentsProviding(ISessionStore)
                 ))),
             AccountLoginAuthorizer,
         ] + list(component_creators)
     ).addCallback
     @opened
     def procurify(datastore):
-        return next(datastore.components_providing(ISessionProcurer))
+        return next(datastore.componentsProviding(ISessionProcurer))
     return procurify
 
 
@@ -728,11 +728,11 @@ def tables(**kw):
 
 
 
-def authorizer_for(authzn_for, schema=lambda txn, metadata: None):
+def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
     """
     Declare an SQL authorizer, implemented by a given function.  Used like so::
 
-        @authorizer_for(Foo, tables(foo=[Column("bar", String())]))
+        @authorizerFor(Foo, tables(foo=[Column("bar", String())]))
         def authorize_foo(metadata, datastore, session_store, transaction,
                           session):
             return Foo(metadata, metadata.tables["foo"])

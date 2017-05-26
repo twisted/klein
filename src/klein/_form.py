@@ -47,16 +47,16 @@ class Field(object):
     """
 
     converter = attr.ib()
-    form_input_type = attr.ib()
-    python_argument_name = attr.ib(default=None)
-    form_field_name = attr.ib(default=None)
-    form_label = attr.ib(default=None)
-    no_label = attr.ib(default=False)
+    formInputType = attr.ib()
+    pythonArgumentName = attr.ib(default=None)
+    formFieldName = attr.ib(default=None)
+    formLabel = attr.ib(default=None)
+    noLabel = attr.ib(default=False)
     value = attr.ib(default=u"")
     error = attr.ib(default=None)
     order = attr.ib(default=attr.Factory(lambda: next(count())))
 
-    def maybe_named(self, name):
+    def maybeNamed(self, name):
         """
         Create a new L{Field} like this one, but with all the name default
         values filled in.
@@ -67,10 +67,10 @@ class Field(object):
         maybe = lambda it, that=name: that if it is None else it
         return attr.assoc(
             self,
-            python_argument_name=maybe(self.python_argument_name),
-            form_field_name=maybe(self.form_field_name),
-            form_label=maybe(self.form_label,
-                             name.capitalize() if not self.no_label else None),
+            pythonArgumentName=maybe(self.pythonArgumentName),
+            formFieldName=maybe(self.formFieldName),
+            formLabel=maybe(self.formLabel,
+                             name.capitalize() if not self.noLabel else None),
         )
 
 
@@ -78,10 +78,10 @@ class Field(object):
         """
         
         """
-        input_tag = tags.input(type=self.form_input_type,
-                               name=self.form_field_name, value=self.value)
-        if self.form_label:
-            yield tags.label(self.form_label, ": ", input_tag)
+        input_tag = tags.input(type=self.formInputType,
+                               name=self.formFieldName, value=self.value)
+        if self.formLabel:
+            yield tags.label(self.formLabel, ": ", input_tag)
         else:
             yield input_tag
         if self.error:
@@ -92,7 +92,7 @@ class Field(object):
         """
         extract some bytes value from the request
         """
-        return (request.args.get(self.form_field_name) or [b""])[0]
+        return (request.args.get(self.formFieldName) or [b""])[0]
 
 
     def validate_value(self, value):
@@ -138,13 +138,13 @@ class RenderableForm(object):
             yield attr.assoc(field,
                              value=self.prevalidation.get(field, field.value),
                              error=self.errors.get(field, None))
-            if field.form_input_type == "submit":
+            if field.formInputType == "submit":
                 any_submit = True
         if not any_submit:
-            yield Field(str, form_input_type="submit",
+            yield Field(str, formInputType="submit",
                         value=u"submit",
-                        python_argument_name="submit",
-                        form_field_name="submit")
+                        pythonArgumentName="submit",
+                        formFieldName="submit")
         yield self._csrf_field()
 
     # Public interface below.
@@ -237,7 +237,7 @@ class BindableForm(object):
             @inlineCallbacks
             def handler_decorated(instance, request, *args, **kw):
                 session = kw.pop("__session__")
-                if session.authenticated_by == SessionMechanism.Cookie:
+                if session.authenticatedBy == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION, [None])[0]
                     if token != session.identifier:
                         raise CrossSiteRequestForgery(token,
@@ -253,7 +253,7 @@ class BindableForm(object):
                     except ValidationError as ve:
                         validation_errors[field] = ve
                     else:
-                        arguments[field.python_argument_name] = value
+                        arguments[field.pythonArgumentName] = value
                 if validation_errors:
                     renderable = self.bind(
                         session, b"/".join(request.prepath),
@@ -327,7 +327,7 @@ def form(*fields, **named_fields):
     Create a form.
     """
     return Form(list(fields) + [
-        field.maybe_named(name) for name, field
+        field.maybeNamed(name) for name, field
         in sorted(named_fields.items(), key=lambda x: x[1].order)
     ])
 
@@ -346,7 +346,7 @@ def text():
 
     """
     return Field(converter=lambda x: unicode(x, "utf-8"),
-                 form_input_type="text")
+                 formInputType="text")
 
 @add
 def password():
@@ -354,7 +354,7 @@ def password():
 
     """
     return Field(converter=lambda x: unicode(x, "utf-8"),
-                 form_input_type="password")
+                 formInputType="password")
 
 @add
 def hidden(name, value):
@@ -362,9 +362,9 @@ def hidden(name, value):
 
     """
     return Field(converter=lambda x: unicode(x, "utf-8"),
-                 form_input_type="hidden",
-                 no_label=True,
-                 value=value).maybe_named(name)
+                 formInputType="hidden",
+                 noLabel=True,
+                 value=value).maybeNamed(name)
 
 
 @add
@@ -383,4 +383,4 @@ def integer(minimum=None, maximum=None):
             if maximum is not None and value > maximum:
                 raise ValidationError("value must be <=" + repr(maximum))
             return value
-    return Field(converter=bounded_int, form_input_type="number")
+    return Field(converter=bounded_int, formInputType="number")

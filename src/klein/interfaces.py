@@ -40,7 +40,7 @@ class ISessionStore(Interface):
     Backing storage for sessions.
     """
 
-    def new_session(is_confidential, authenticated_by):
+    def newSession(isConfidential, authenticatedBy):
         """
         Create a new L{ISession}.
 
@@ -49,7 +49,7 @@ class ISessionStore(Interface):
         """
 
 
-    def load_session(identifier, is_confidential, authenticated_by):
+    def loadSession(identifier, isConfidential, authenticatedBy):
         """
         Load a session given the given identifier and security properties.
 
@@ -58,7 +58,7 @@ class ISessionStore(Interface):
         round-trip to a data store, this method may return a L{Session} object
         with an C{identifier} attribute that does not match C{identifier}.
         However, please keep in mind when implementing L{ISessionStore} that
-        this behavior is only necessary for requests where C{authenticated_by}
+        this behavior is only necessary for requests where C{authenticatedBy}
         is L{SessionMechanism.Cookie}; an unauthenticated
         L{SessionMechanism.Header} session is from an API client and its
         session should be valid already.
@@ -126,7 +126,7 @@ class ISimpleAccount(Interface):
         """
     )
 
-    account_id = Attribute(
+    accountID = Attribute(
         """
         Unicode account-ID.
         """
@@ -198,8 +198,8 @@ class ISessionProcurer(Interface):
     that store, given HTTP request objects.
     """
 
-    def procure_session(self, request, force_insecure=False,
-                        always_create=True):
+    def procureSession(self, request, forceInsecure=False,
+                        alwaysCreate=True):
         """
         Retrieve a session using whatever technique is necessary.
 
@@ -209,16 +209,16 @@ class ISessionProcurer(Interface):
         @param request: The request to procure a session from.
         @type request:  L{twisted.web.server.Request}
 
-        @param force_insecure: Even if the request was transmitted securely
+        @param forceInsecure: Even if the request was transmitted securely
             (i.e. over HTTPS), retrieve the session that would be used by the
             same browser if it were sending an insecure (i.e. over HTTP)
             request; by default, this is False, and the session's security will
             match that of the request.
-        @type force_insecure: L{bool}
+        @type forceInsecure: L{bool}
 
-        @param always_create: Create a session if one is not associated with
+        @param alwaysCreate: Create a session if one is not associated with
             the request.
-        @param always_create: L{bool}
+        @param alwaysCreate: L{bool}
 
         @raise TooLateForCookies: if the request bound to this procurer has
             already sent the headers and therefore we can no longer set a
@@ -273,7 +273,7 @@ class ISession(Interface):
         """
     )
 
-    is_confidential = Attribute(
+    isConfidential = Attribute(
         """
         A L{bool} indicating whether this session mechanism transmitted over an
         encrypted transport, i.e., HTTPS.  If C{True}, this means that this
@@ -283,7 +283,7 @@ class ISession(Interface):
         """
     )
 
-    authenticated_by = Attribute(
+    authenticatedBy = Attribute(
         """
         A L{SessionMechanism} indicating what mechanism was used to
         authenticate this session.

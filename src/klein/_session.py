@@ -23,98 +23,98 @@ class SessionProcurer(object):
     @ivar _maxAge: The maximum age (in seconds) of the session cookie.
     @type _maxAge: L{int}
 
-    @ivar _secure_cookie: The name of the cookie to use for sessions protected
+    @ivar _secureCookie: The name of the cookie to use for sessions protected
         with TLS (i.e. HTTPS).
-    @type _secure_cookie: L{bytes}
+    @type _secureCookie: L{bytes}
 
-    @ivar _insecure_cookie: The name of the cookie to use for sessions I{not}
+    @ivar _insecureCookie: The name of the cookie to use for sessions I{not}
         protected with TLS (i.e. HTTP).
-    @type _insecure_cookie: L{bytes}
+    @type _insecureCookie: L{bytes}
 
-    @ivar _cookie_domain: If set, the domain name to restrict the session
+    @ivar _cookieDomain: If set, the domain name to restrict the session
         cookie to.
-    @type _cookie_domain: L{None} or L{bytes}
+    @type _cookieDomain: L{None} or L{bytes}
 
-    @ivar _cookie_path: If set, the URL path to restrict the session cookie to.
-    @type _cookie_path: L{bytes}
+    @ivar _cookiePath: If set, the URL path to restrict the session cookie to.
+    @type _cookiePath: L{bytes}
 
-    @ivar _secure_token_header: The name of the HTTPS header to try to extract
+    @ivar _secureTokenHeader: The name of the HTTPS header to try to extract
         a session token from; API clients should use this header, rather than a
         cookie.
-    @type _secure_token_header: L{bytes}
+    @type _secureTokenHeader: L{bytes}
 
-    @ivar _insecure_token_header: The name of the HTTP header to try to extract
+    @ivar _insecureTokenHeader: The name of the HTTP header to try to extract
         a session token from; API clients should use this header, rather than a
         cookie.
-    @type _insecure_token_header: L{bytes}
+    @type _insecureTokenHeader: L{bytes}
     """
 
     _store = attr.ib()
 
     _maxAge = attr.ib(default=3600)
-    _secure_cookie = attr.ib(default=b"Klein-Secure-Session")
-    _insecure_cookie = attr.ib(default=b"Klein-INSECURE-Session")
-    _cookie_domain = attr.ib(default=None)
-    _cookie_path = attr.ib(default=b"/")
+    _secureCookie = attr.ib(default=b"Klein-Secure-Session")
+    _insecureCookie = attr.ib(default=b"Klein-INSECURE-Session")
+    _cookieDomain = attr.ib(default=None)
+    _cookiePath = attr.ib(default=b"/")
 
-    _secure_token_header = attr.ib(default=b"X-Auth-Token")
-    _insecure_token_header = attr.ib(default=b"X-INSECURE-Auth-Token")
+    _secureTokenHeader = attr.ib(default=b"X-Auth-Token")
+    _insecureTokenHeader = attr.ib(default=b"X-INSECURE-Auth-Token")
 
 
     @inlineCallbacks
-    def procure_session(self, request, force_insecure=False,
-                        always_create=True):
-        already_procured = ISession(request, None)
-        if already_procured is not None:
-            returnValue(already_procured)
+    def procureSession(self, request, forceInsecure=False,
+                        alwaysCreate=True):
+        alreadyProcured = ISession(request, None)
+        if alreadyProcured is not None:
+            returnValue(alreadyProcured)
 
         if request.isSecure():
-            if force_insecure:
-                token_header = self._insecure_token_header
-                cookie_name = self._insecure_cookie
-                sent_securely = False
+            if forceInsecure:
+                token_header = self._insecureTokenHeader
+                cookie_name = self._insecureCookie
+                sentSecurely = False
             else:
-                token_header = self._secure_token_header
-                cookie_name = self._secure_cookie
-                sent_securely = True
+                token_header = self._secureTokenHeader
+                cookie_name = self._secureCookie
+                sentSecurely = True
         else:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             all_possible_sent_tokens = (
                 sum([request.requestHeaders.getRawHeaders(header, [])
-                     for header in [self._secure_token_header,
-                                    self._insecure_token_header]], []) +
+                     for header in [self._secureTokenHeader,
+                                    self._insecureTokenHeader]], []) +
                 [it for it in [request.getCookie(cookie)
-                               for cookie in [self._secure_cookie,
-                                              self._insecure_cookie]] if it]
+                               for cookie in [self._secureCookie,
+                                              self._insecureCookie]] if it]
             )
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
             yield self._store.sent_insecurely(all_possible_sent_tokens)
-            token_header = self._insecure_token_header
-            cookie_name = self._insecure_cookie
-            sent_securely = False
+            token_header = self._insecureTokenHeader
+            cookie_name = self._insecureCookie
+            sentSecurely = False
             # Fun future feature: honeypot that does this over HTTPS, but sets
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        session_id = request.getHeader(token_header)
-        if session_id is not None:
+        sessionID = request.getHeader(token_header)
+        if sessionID is not None:
             mechanism = SessionMechanism.Header
         else:
             mechanism = SessionMechanism.Cookie
-            session_id = request.getCookie(cookie_name)
-        if session_id is not None:
+            sessionID = request.getCookie(cookie_name)
+        if sessionID is not None:
             try:
-                session = yield self._store.load_session(
-                    session_id, sent_securely, mechanism
+                session = yield self._store.loadSession(
+                    sessionID, sentSecurely, mechanism
                 )
             except NoSuchSession:
                 if mechanism == SessionMechanism.Header:
                     raise
-                session_id = None
-        if session_id is None:
-            if always_create:
+                sessionID = None
+        if sessionID is None:
+            if alwaysCreate:
                 if request.startedWriting:
                     # At this point, if the mechanism is Header, we either have
                     # a valid session or we bailed after NoSuchSession above.
@@ -123,11 +123,11 @@ class SessionProcurer(object):
                         " late in the request pipeline; the headers"
                         " were already sent."
                     )
-                session = yield self._store.new_session(sent_securely,
-                                                        mechanism)
+                session = yield self._store.newSession(sentSecurely,
+                                                       mechanism)
             else:
                 returnValue(None)
-        if session_id != session.identifier:
+        if sessionID != session.identifier:
             if request.startedWriting:
                 raise TooLateForCookies(
                     "You tried changing a session ID to a new session ID too"
@@ -136,10 +136,10 @@ class SessionProcurer(object):
                 )
             request.addCookie(
                 cookie_name, session.identifier, max_age=self._maxAge,
-                domain=self._cookie_domain, path=self._cookie_path,
-                secure=sent_securely, httpOnly=True,
+                domain=self._cookieDomain, path=self._cookiePath,
+                secure=sentSecurely, httpOnly=True,
             )
-        if not force_insecure:
+        if not forceInsecure:
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
         returnValue(session)
@@ -164,7 +164,7 @@ def requirer(procure_procurer):
                 newkw = kwargs.copy()
                 procu = _call(instance, procure_procurer)
                 session = yield (
-                    procu.procure_session(request, always_create=any_required)
+                    procu.procureSession(request, alwaysCreate=any_required)
                 )
                 values = ({} if session is None else
                           (yield session.authorize(to_authorize)))

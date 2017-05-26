@@ -116,13 +116,13 @@ class Plating(object):
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None,
-                 presentation_slots=frozenset()):
+                 presentationSlots=frozenset()):
         """
         
         """
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
-        self._presentationSlots = {self.CONTENT} | set(presentation_slots)
+        self._presentationSlots = {self.CONTENT} | set(presentationSlots)
         self._renderers = {}
 
     def render(self, renderer):

@@ -10,7 +10,7 @@ from klein.interfaces import (
 )
 
 
-from klein.storage.sql import open_session_store, authorizer_for, tables
+from klein.storage.sql import openSessionStore, authorizerFor, tables
 
 from twisted.web.util import Redirect
 
@@ -36,18 +36,18 @@ style = Plating(
                 tags.a("Navbar", Class="navbar-brand",
                        href="/"),
                 tags.ul(Class="nav navbar-nav")(
-                    tags.li(Class=["nav-item ", slot("home_active")])(
+                    tags.li(Class=["nav-item ", slot("homeActive")])(
                         tags.a(Class="nav-link",
                                href="/")(
                             "Home", tags.span(Class="sr-only")("(current)"))),
-                    tags.li(Class=["nav-item ", slot("login_active")])(
+                    tags.li(Class=["nav-item ", slot("loginActive")])(
                         tags.a("Login",
                                Class="nav-link",
                                href="/login")),
-                    tags.li(Class=["nav-item ", slot("signup_active")])(
+                    tags.li(Class=["nav-item ", slot("signupActive")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
                     tags.transparent(render="if_logged_in")(
-                        tags.li(Class=["nav-item ", slot("sessions_active")])(
+                        tags.li(Class=["nav-item ", slot("sessionsActive")])(
                             tags.a("Sessions", Class="nav-link",
                                    href="/sessions")),
                         tags.li(Class="nav-item pull-xs-right")(
@@ -77,10 +77,10 @@ style = Plating(
         )
     ),
     defaults={
-        "home_active": "",
-        "login_active": "",
-        "signup_active": "",
-        "sessions_active": "",
+        "homeActive": "",
+        "loginActive": "",
+        "signupActive": "",
+        "sessionsActive": "",
     }
 )
 
@@ -92,22 +92,22 @@ import attr
 class Chirper(object):
     datastore = attr.ib()
     account = attr.ib()
-    chirp_table = attr.ib()
+    chirpTable = attr.ib()
 
     def chirp(self, value):
-        chirp_table = self.chirp_table
+        chirpTable = self.chirpTable
         @self.datastore.sql
         def dstor(transaction):
-            return transaction.execute(chirp_table.insert().values(
-                account_id=self.account.account_id,
+            return transaction.execute(chirpTable.insert().values(
+                accountID=self.account.accountID,
                 chirp=value
             ))
         return dstor
 
 
 
-@authorizer_for(Chirper, tables(chirp=[
-    Column("account_id", String(), ForeignKey("account.account_id")),
+@authorizerFor(Chirper, tables(chirp=[
+    Column("accountID", String(), ForeignKey("account.accountID")),
     Column("chirp", String())
 ]))
 @inlineCallbacks
@@ -122,24 +122,24 @@ def authorize_chirper(metadata, datastore, session_store, transaction,
 @attr.s
 class ChirpReader(object):
     datastore = attr.ib()
-    chirp_table = attr.ib()
-    account_table = attr.ib()
+    chirpTable = attr.ib()
+    accountTable = attr.ib()
 
     def read_chirps(self, username):
         @self.datastore.sql
         @inlineCallbacks
         def read(txn):
-            chirp = self.chirp_table
-            account = self.account_table
-            result = yield ((yield txn.execute(self.chirp_table.select(
-                (chirp.c.account_id == account.c.account_id) &
+            chirp = self.chirpTable
+            account = self.accountTable
+            result = yield ((yield txn.execute(self.chirpTable.select(
+                (chirp.c.accountID == account.c.accountID) &
                 (account.c.username == username)
             ))).fetchall())
             returnValue([row[chirp.c.chirp] for row in result])
         return read
 
 
-@authorizer_for(ChirpReader)
+@authorizerFor(ChirpReader)
 def auth_for_reading(metadata, datastore, session_store, transaction,
                      session):
     return ChirpReader(datastore, metadata.tables["chirp"],
@@ -147,7 +147,7 @@ def auth_for_reading(metadata, datastore, session_store, transaction,
 
 
 from twisted.internet import reactor
-getproc = open_session_store(reactor, "sqlite:///sessions.sqlite",
+getproc = openSessionStore(reactor, "sqlite:///sessions.sqlite",
                              [authorize_chirper.authorizer,
                               auth_for_reading.authorizer])
 @getproc.addCallback
@@ -176,7 +176,7 @@ def root(request, chirp_form, account):
         chirp_form = u""
     return {
         "result": "hello world",
-        "home_active": "active",
+        "homeActive": "active",
         "chirp_form": chirp_form,
     }
 
@@ -282,7 +282,7 @@ login = form(
 )
 def loginform(request, login_form):
     return {
-        "login_active": "active",
+        "loginActive": "active",
         "glue_here": login_form.glue()
     }
 
@@ -290,7 +290,7 @@ def loginform(request, login_form):
 
 @authorized(
     style.routed(login.handler(app.route("/login", methods=["POST"])),
-                 [tags.h1("u log in 2 ", slot("new_account_id"))]),
+                 [tags.h1("u log in 2 ", slot("newAccountID"))]),
     binding=ISimpleAccountBinding,
 )
 @inlineCallbacks
@@ -299,16 +299,16 @@ def dologin(request, username, password, binding):
     if account is None:
         an_id = 'naaaahtthiiiing'
     else:
-        an_id = account.account_id
+        an_id = account.accountID
     returnValue({
-        "login_active": "active",
-        "new_account_id": an_id,
+        "loginActive": "active",
+        "newAccountID": an_id,
     })
 
 
 
 logout_other = form(
-    session_id=form.text(),
+    sessionID=form.text(),
 ).authorized_using(authorized)
 
 @authorized(
@@ -316,10 +316,10 @@ logout_other = form(
     binding=ISimpleAccountBinding,
 )
 @inlineCallbacks
-def log_other_out(request, session_id, binding):
+def log_other_out(request, sessionID, binding):
     from attr import assoc
-    session = yield binding._session._session_store.load_session(
-        session_id, request.isSecure(), SessionMechanism.Header
+    session = yield binding._session._sessionStore.loadSession(
+        sessionID, request.isSecure(), SessionMechanism.Header
     )
     other_binding = assoc(binding, _session=session)
     yield other_binding.log_out()
@@ -327,7 +327,7 @@ def log_other_out(request, session_id, binding):
 
 
 
-@Plating.widget(
+@Plating.widgeted(
     tags=tags.tr(style=slot("highlight"))(
         tags.td(slot("id")), tags.td(slot("ip")),
         tags.td(slot("when")),
@@ -335,10 +335,10 @@ def log_other_out(request, session_id, binding):
                           method="POST")
                 (tags.button("logout"),
                  tags.input(type="hidden", value=[slot("id")],
-                            name="session_id"),
+                            name="sessionID"),
                  slot("glue")))
     ),
-    presentation_slots=["glue", "highlight"]
+    presentationSlots=["glue", "highlight"]
 )
 def one_session(session_info, form, current):
     return dict(
@@ -427,7 +427,7 @@ signup = form(
 def signup_page(request, the_form):
     return {
         "glue_here": the_form.glue(),
-        "signup_active": "active"
+        "signupActive": "active"
     }
 
 
@@ -446,8 +446,8 @@ def signup_page(request, the_form):
 def do_signup(request, username, email, password, binding):
     acct = yield binding.create_account(username, email, password)
     result = {
-        "signup_active": "active",
-        "account_id": None
+        "signupActive": "active",
+        "accountID": None
     }
     if acct is None:
         result.update({
@@ -457,7 +457,7 @@ def do_signup(request, username, email, password, binding):
         })
     else:
         result.update({
-            "account_id": acct.account_id,
+            "accountID": acct.accountID,
             "success": "Account created!",
             "link_message": "log in",
             "next_url": "/login"

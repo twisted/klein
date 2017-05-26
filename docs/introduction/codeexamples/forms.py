@@ -22,8 +22,8 @@ class MemorySession(object):
     
     """
     identifier = attr.ib()
-    is_confidential = attr.ib()
-    authenticated_by = attr.ib()
+    isConfidential = attr.ib()
+    authenticatedBy = attr.ib()
     data = attr.ib(default=Factory(Componentized))
 
 
@@ -38,16 +38,16 @@ class MemorySessionStore(object):
     def procurer(self):
         return SessionProcurer(self)
 
-    def new_session(self, is_confidential, authenticated_by):
+    def newSession(self, isConfidential, authenticatedBy):
         identifier = hexlify(urandom(32))
-        session = MemorySession(identifier, is_confidential, authenticated_by)
+        session = MemorySession(identifier, isConfidential, authenticatedBy)
         self._storage[identifier] = session
         return succeed(session)
 
-    def load_session(self, identifier, is_confidential, authenticated_by):
+    def loadSession(self, identifier, isConfidential, authenticatedBy):
         if identifier in self._storage:
             result = self._storage[identifier]
-            if is_confidential != result.is_confidential:
+            if isConfidential != result.isConfidential:
                 self._storage.pop(identifier)
                 return fail(NoSuchSession())
             return succeed(result)

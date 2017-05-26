@@ -5,7 +5,7 @@ from twisted.internet.defer import returnValue, inlineCallbacks
 
 
 @inlineCallbacks
-def check_and_reset(stored_password_text, provided_password_text, resetter):
+def checkAndReset(stored_password_text, provided_password_text, resetter):
     """
     Check the given stored password text against the given provided password
     text.
@@ -30,7 +30,7 @@ def check_and_reset(stored_password_text, provided_password_text, resetter):
 
 
 
-def compute_key_text(password_text):
+def computeKeyText(password_text):
     """
     Compute some text to store for a given plain-text password.
 

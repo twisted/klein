@@ -8,7 +8,10 @@ HTTP headers.
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
-from typing import AnyStr, Iterable, List, Text, Tuple, Union, cast
+from typing import (
+    Any, AnyStr, Iterable, List, MutableSequence, Sequence, Text,
+    Tuple, Union, cast,
+)
 
 from twisted.web.http_headers import Headers
 
@@ -24,9 +27,9 @@ __all__ = ()
 
 String = Union[bytes, Text]
 
-RawHeader  = Tuple[bytes, bytes]
-RawHeaders = Iterable[RawHeader]
-
+RawHeader = Tuple[bytes, bytes]
+RawHeaders = Sequence[RawHeader]
+MutableRawHeaders = MutableSequence[RawHeader]
 
 
 class IFrozenHTTPHeaders(Interface):
@@ -164,41 +167,17 @@ def headerValueAsText(value):
 
 # Internal data representation
 
-def headersTartare(headerPairs):
-    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
-    if type(headerPairs) is tuple:
-        for pair in headerPairs:
-            if type(pair) is tuple:
-                name, value = pair
-                if type(name) is not bytes:
-                    raise TypeError("header name must be bytes")
-                if type(value) is not bytes:
-                    raise TypeError("header value must be bytes")
-            else:
-                break
-        else:
-            return cast(RawHeaders, headerPairs)
+def validateHeadersTartare(instance, attribute, headerPairs):
+    # type: (Any, Any, Iterable[Iterable[bytes]]) -> None
+    for pair in headerPairs:
+        if not type(pair) is tuple:
+            raise TypeError("header pair must be a tuple")
 
-    try:
-        return tuple(
-            (bytes(name), bytes(value)) for name, value in headerPairs
-        )
-    except TypeError:
-        # error message from bytes() ("string argument without an encoding") is
-        # confusing in this context, so raise an exception with a more
-        # appropriate message.
-        raise TypeError("header name and value must be bytes")
-
-
-def mutableHeadersTartare(headerPairs):
-    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
-    try:
-        return [(bytes(name), bytes(value)) for name, value in headerPairs]
-    except TypeError:
-        # error message from bytes() ("string argument without an encoding") is
-        # confusing in this context, so raise an exception with a more
-        # appropriate message.
-        raise TypeError("header name and value must be bytes")
+        name, value = pair
+        if type(name) is not bytes:
+            raise TypeError("header name must be bytes")
+        if type(value) is not bytes:
+            raise TypeError("header value must be bytes")
 
 
 def getFromHeadersTartare(headersTartare, name):
@@ -229,7 +208,9 @@ class FrozenHTTPHeaders(object):
     HTTP entity headers (immutable).
     """
 
-    rawHeaders = attrib(convert=headersTartare)  # type: RawHeaders
+    rawHeaders = attrib(
+        convert=tuple, validator=validateHeadersTartare
+    )  # type: RawHeaders
 
 
     def get(self, name):
@@ -246,14 +227,14 @@ class HTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=mutableHeadersTartare
-    )  # type: List[RawHeader]
+        convert=list, validator=validateHeadersTartare
+    )  # type: MutableRawHeaders
 
 
     @property
     def rawHeaders(self):
         # type: () -> RawHeaders
-        return iter(self._rawHeaders)
+        return tuple(self._rawHeaders)
 
 
     def get(self, name):

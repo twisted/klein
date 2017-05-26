@@ -21,7 +21,7 @@ from .._headers import (
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
     IFrozenHTTPHeaders, IHTTPHeaders,
     headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
-    headersTartare, mutableHeadersTartare,
+    validateHeadersTartare,
 )
 
 Dict, List, Optional, Text, Tuple  # Silence linter
@@ -140,109 +140,53 @@ class EncodingTests(TestCase):
 
 
 
-class HeadersTartareTests(TestCase):
+class HeadersTartareValidationTests(TestCase):
     """
-    Tests for "headers tartare" internal representation utilities.
+    Tests for L{validateHeadersTartare}.
     """
 
-    def test_pairsNotTuple(self):
+    def test_pairNotTuple(self):
         # type: () -> None
         """
-        L{headersTartare} raises L{TypeError} if the C{headerPairs} argument is
-        not an iterable of 2-item L{tuple}s where the first item in the 2-item
-        L{tuple} is L{bytes}.
-        """
-        self.assertRaises(TypeError, headersTartare, object())
-
-
-    def test_pairsNameNotBytes(self):
-        # type: () -> None
-        """
-        L{headersTartare} raises L{TypeError} if the C{headerPairs} argument is
-        not an iterable of 2-item L{tuple}s where the first item in the 2-item
-        L{tuple} is L{bytes}.
-        """
-        self.assertRaises(TypeError, headersTartare, ((u"k", b"v"),))
-
-
-    def test_pairsValueNotBytes(self):
-        # type: () -> None
-        """
-        L{headersTartare} raises L{TypeError} if the C{headerPairs} argument is
-        not an iterable of 2-item L{tuple}s where the second item in the 2-item
-        L{tuple} is bytes.
+        L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
+        argument is not an tuple L{tuple}s.
         """
         self.assertRaises(
-            TypeError, headersTartare, headerPairs=((b"k", u"v"),)
+            TypeError, validateHeadersTartare, None, None, ([b"k", b"v"],)
         )
 
 
-    def test_pairsTupleIdentical(self):
-        # type: () -> None
-        """
-        L{headersTartare} stores the given C{headerPairs} argument directly if
-        it is a L{tuple} of 2-item L{tuple}s of L{bytes}.
-        """
-        headerPairs = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"))
-        self.assertIdentical(headersTartare(headerPairs), headerPairs)
-
-
-    def test_pairsIterableEquals(self):
-        # type: () -> None
-        """
-        L{headersTartare} stores the given C{headerPairs} data if it is an
-        iterable of 2-item L{tuple}s of L{bytes}.
-        """
-        headerPairs = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"))
-        self.assertEqual(headersTartare(iter(headerPairs)), headerPairs)
-
-
-
-class HeadersTartareMutableTests(TestCase):
-    """
-    Tests for mutable "headers tartare" internal representation utilities.
-    """
-
-    def test_pairsNotTuple(self):
-        # type: () -> None
-        """
-        L{mutableHeadersTartare} raises L{TypeError} if the C{headerPairs}
-        argument is not an iterable of 2-item L{tuple}s where the first item in
-        the 2-item L{tuple} is L{bytes}.
-        """
-        self.assertRaises(TypeError, mutableHeadersTartare, object())
-
-
     def test_pairsNameNotBytes(self):
         # type: () -> None
         """
-        L{mutableHeadersTartare} raises L{TypeError} if the C{headerPairs}
-        argument is not an iterable of 2-item L{tuple}s where the first item in
+        L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
+        argument is not an tuple of 2-item L{tuple}s where the first item in
         the 2-item L{tuple} is L{bytes}.
         """
-        self.assertRaises(TypeError, mutableHeadersTartare, ((u"k", b"v"),))
+        self.assertRaises(
+            TypeError, validateHeadersTartare, None, None, ((u"k", b"v"),)
+        )
 
 
     def test_pairsValueNotBytes(self):
         # type: () -> None
         """
-        L{mutableHeadersTartare} raises L{TypeError} if the C{headerPairs}
-        argument is not an iterable of 2-item L{tuple}s where the second item
+        L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
+        argument is not an tuple of 2-item L{tuple}s where the second item
         in the 2-item L{tuple} is bytes.
         """
         self.assertRaises(
-            TypeError, mutableHeadersTartare, headerPairs=((b"k", u"v"),)
+            TypeError,
+            validateHeadersTartare, None, None, headerPairs=((b"k", u"v"),)
         )
 
 
-    def test_pairsIterableEquals(self):
-        # type: () -> None
-        """
-        L{mutableHeadersTartare} stores the given C{headerPairs} data if it is
-        an iterable of 2-item L{tuple}s of L{bytes}.
-        """
-        headerPairs = [(b"a", b"1"), (b"b", b"2"), (b"c", b"3")]
-        self.assertEqual(mutableHeadersTartare(iter(headerPairs)), headerPairs)
+
+class HeadersTartareReadTests(TestCase):
+    """
+    Tests for utilities that access data from the "headers tartare" internal
+    representation.
+    """
 
 
 
@@ -260,21 +204,6 @@ class FrozenHTTPHeadersTests(TestCase):
         self.assertProvides(IFrozenHTTPHeaders, headers)
 
 
-    def test_rawHeadersPairsIterableEquals(self):
-        # type: () -> None
-        """
-        L{FrozenHTTPHeaders} stores the given C{rawHeaders} data if it is a
-        L{tuple} of 2-item iterables of L{bytes}.
-        """
-        rawHeaders = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"))
-        self.assertEqual(
-            FrozenHTTPHeaders(
-                rawHeaders=tuple(iter(p) for p in rawHeaders)
-            ).rawHeaders,
-            rawHeaders
-        )
-
-
     def test_rawHeadersTuplePairsWrongLength(self):
         # type: () -> None
         """
@@ -282,17 +211,6 @@ class FrozenHTTPHeadersTests(TestCase):
         data if it is a L{tuple} of iterables of the wrong size.
         """
         self.assertRaises(ValueError, FrozenHTTPHeaders, rawHeaders=((b"k",),))
-
-
-    def test_rawHeadersIterablePairsWrongLength(self):
-        # type: () -> None
-        """
-        L{FrozenHTTPHeaders} raises L{ValueError} if the given C{rawHeaders}
-        data is an iterable of iterables of the wrong size.
-        """
-        self.assertRaises(
-            ValueError, FrozenHTTPHeaders, rawHeaders=iter((b"k",),)
-        )
 
 
     def test_getBytesName(self):

@@ -27,6 +27,7 @@ if __name__ == "__main__":
         use_incremental=True,
         install_requires=[
             "six",
+            "typing",
             "attrs",
             "hyperlink",
             "Twisted>=13.2",

@@ -260,7 +260,6 @@ class AlchimiaSessionStore(object):
         @inlineCallbacks
         def created(txn):
             identifier = hexlify(urandom(32)).decode('ascii')
-            print("GEN_ID", identifier)
             s = self.session_table
             yield txn.execute(s.insert().values(
                 sessionID=identifier,
@@ -285,8 +284,6 @@ class AlchimiaSessionStore(object):
             if not results:
                 raise NoSuchSession()
             fetched_identifier = results[0][s.c.sessionID]
-            print(s.c.sessionID)
-            print("FETCH_ID", fetched_identifier)
             returnValue(SQLSession(self,
                                    identifier=fetched_identifier,
                                    isConfidential=isConfidential,

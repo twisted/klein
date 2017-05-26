@@ -263,7 +263,7 @@ class ISession(Interface):
 
     identifier = Attribute(
         """
-        L{bytes} identifying a session.
+        L{unicode} identifying a session.
 
         This value should be:
 

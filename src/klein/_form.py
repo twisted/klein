@@ -92,7 +92,8 @@ class Field(object):
         """
         extract some bytes value from the request
         """
-        return (request.args.get(self.formFieldName) or [b""])[0]
+        return (request.args.get(self.formFieldName.encode("utf-8")) or
+                [b""])[0]
 
 
     def validate_value(self, value):
@@ -238,7 +239,9 @@ class BindableForm(object):
             def handler_decorated(instance, request, *args, **kw):
                 session = kw.pop("__session__")
                 if session.authenticatedBy == SessionMechanism.Cookie:
-                    token = request.args.get(CSRF_PROTECTION, [None])[0]
+                    token = request.args.get(CSRF_PROTECTION.encode("ascii"),
+                                             [b""])[0]
+                    token = token.decode("ascii")
                     if token != session.identifier:
                         raise CrossSiteRequestForgery(token,
                                                       session.identifier)

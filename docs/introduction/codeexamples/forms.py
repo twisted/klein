@@ -39,7 +39,7 @@ class MemorySessionStore(object):
         return SessionProcurer(self)
 
     def newSession(self, isConfidential, authenticatedBy):
-        identifier = hexlify(urandom(32))
+        identifier = hexlify(urandom(32)).decode('ascii')
         session = MemorySession(identifier, isConfidential, authenticatedBy)
         self._storage[identifier] = session
         return succeed(session)

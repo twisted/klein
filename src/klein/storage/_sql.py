@@ -2,19 +2,20 @@
 from datetime import datetime
 from six import text_type
 from collections import deque
+from functools import reduce
 
 from binascii import hexlify
 from os import urandom
 from uuid import uuid4
 
-from zope.interface import implementer, provider, implementedBy
+from zope.interface import implementer, implementedBy
 
 from attr import Factory
 from attr.validators import instance_of as an
 
 import attr
 from sqlalchemy import (
-    create_engine, MetaData, Table, Column, Boolean, String,
+    create_engine, MetaData, Table, Column, Boolean, Unicode,
     ForeignKey, DateTime, UniqueConstraint
 )
 from sqlalchemy.schema import CreateTable
@@ -32,6 +33,7 @@ from .. import SessionProcurer
 from twisted.internet.defer import (
     inlineCallbacks, returnValue, gatherResults, maybeDeferred
 )
+from twisted.python.compat import unicode
 from twisted.python.failure import Failure
 
 from .security import computeKeyText, checkAndReset
@@ -216,7 +218,7 @@ class AlchimiaSessionStore(object):
         self._datastore = datastore
         self.session_table = Table(
             "session", metadata,
-            Column("sessionID", String(), primary_key=True, nullable=False),
+            Column("sessionID", Unicode(), primary_key=True, nullable=False),
             Column("confidential", Boolean(), nullable=False),
         )
 
@@ -257,7 +259,8 @@ class AlchimiaSessionStore(object):
         @self._datastore.sql
         @inlineCallbacks
         def created(txn):
-            identifier = hexlify(urandom(32))
+            identifier = hexlify(urandom(32)).decode('ascii')
+            print("GEN_ID", identifier)
             s = self.session_table
             yield txn.execute(s.insert().values(
                 sessionID=identifier,
@@ -282,6 +285,8 @@ class AlchimiaSessionStore(object):
             if not results:
                 raise NoSuchSession()
             fetched_identifier = results[0][s.c.sessionID]
+            print(s.c.sessionID)
+            print("FETCH_ID", fetched_identifier)
             returnValue(SQLSession(self,
                                    identifier=fetched_identifier,
                                    isConfidential=isConfidential,
@@ -525,18 +530,18 @@ class AccountBindingStorePlugin(object):
 
         self.accountTable = Table(
             "account", metadata,
-            Column("accountID", String(), primary_key=True,
+            Column("accountID", Unicode(), primary_key=True,
                    nullable=False),
-            Column("username", String(), unique=True, nullable=False),
-            Column("email", String(), nullable=False),
-            Column("passwordBlob", String(), nullable=False),
+            Column("username", Unicode(), unique=True, nullable=False),
+            Column("email", Unicode(), nullable=False),
+            Column("passwordBlob", Unicode(), nullable=False),
         )
 
         self.account_session_table = Table(
             "account_session", metadata,
-            Column("accountID", String(),
+            Column("accountID", Unicode(),
                    ForeignKey("account.accountID", ondelete="CASCADE")),
-            Column("sessionID", String(),
+            Column("sessionID", Unicode(),
                    ForeignKey("session.sessionID", ondelete="CASCADE")),
             UniqueConstraint("accountID", "sessionID"),
         )
@@ -611,11 +616,11 @@ class IPTrackingProcurer(object):
         """
         self._session_ip_table = Table(
             "session_ip", metadata,
-            Column("sessionID", String(),
+            Column("sessionID", Unicode(),
                    ForeignKey("session.sessionID", ondelete="CASCADE"),
                    nullable=False),
-            Column("ip_address", String(), nullable=False),
-            Column("address_family", String(), nullable=False),
+            Column("ip_address", Unicode(), nullable=False),
+            Column("address_family", Unicode(), nullable=False),
             Column("last_used", DateTime(), nullable=False),
             UniqueConstraint("sessionID", "ip_address", "address_family"),
         )
@@ -732,7 +737,7 @@ def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
     """
     Declare an SQL authorizer, implemented by a given function.  Used like so::
 
-        @authorizerFor(Foo, tables(foo=[Column("bar", String())]))
+        @authorizerFor(Foo, tables(foo=[Column("bar", Unicode())]))
         def authorize_foo(metadata, datastore, session_store, transaction,
                           session):
             return Foo(metadata, metadata.tables["foo"])

@@ -327,7 +327,7 @@ def log_other_out(request, sessionID, binding):
 
 
 
-@Plating.widgeted(
+widget = Plating(
     tags=tags.tr(style=slot("highlight"))(
         tags.td(slot("id")), tags.td(slot("ip")),
         tags.td(slot("when")),
@@ -340,6 +340,8 @@ def log_other_out(request, sessionID, binding):
     ),
     presentationSlots=["glue", "highlight"]
 )
+
+@widget.widgeted
 def one_session(session_info, form, current):
     return dict(
         id=session_info.id,
@@ -444,6 +446,7 @@ def signup_page(request, the_form):
 )
 @inlineCallbacks
 def do_signup(request, username, email, password, binding):
+    print("u", username, "e", email, "p", password, "b", binding)
     acct = yield binding.create_account(username, email, password)
     result = {
         "signupActive": "active",

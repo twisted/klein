@@ -36,8 +36,13 @@ def computeKeyText(password_text):
 
     @param password_text: The text of a new password, as entered by a user.
     """
-    return (computeKey(_password_bytes(password_text))
-            .addCallback(lambda x: x.decode("charmap")))
+    print("CKT", repr(password_text))
+    pwb = _password_bytes(password_text)
+    print("PWB", pwb)
+    keyComputation = computeKey(pwb)
+    return (keyComputation
+            .addCallback(lambda x: x if not isinstance(x, bytes)
+                         else x.decode("charmap")))
 
 
 

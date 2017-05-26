@@ -105,6 +105,7 @@ class SessionProcurer(object):
             mechanism = SessionMechanism.Cookie
             sessionID = request.getCookie(cookie_name)
         if sessionID is not None:
+            sessionID = sessionID.decode('ascii')
             try:
                 session = yield self._store.loadSession(
                     sessionID, sentSecurely, mechanism

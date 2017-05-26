@@ -87,7 +87,7 @@ class PlatedElement(Element):
             wrapped = self._renderers[name]
             @modified("plated render wrapper", wrapped)
             def renderWrapper(request, tag, *args, **kw):
-                return _call(self._bound_instance, wrapped,
+                return _call(self._boundInstance, wrapped,
                              request, tag, *args, **kw)
             return renderWrapper
         if ":" not in name:

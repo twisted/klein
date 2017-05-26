@@ -281,7 +281,7 @@ class FrozenHTTPHeadersTests(TestCase):
             for name, value in textHeaders
         ))
 
-        for name, values in textValues.items():
+        for name, values in textValues:
             self.assertEqual(list(headers.get(name)), values)
 
 
@@ -308,10 +308,10 @@ class FrozenHTTPHeadersTests(TestCase):
 
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
 
-        for name, values in binaryValues.items():
+        for textName, values in binaryValues.items():
             self.assertEqual(
-                tuple(headers.get(name)),
-                tuple(headerValueAsText(v) for v in values)
+                tuple(headers.get(textName)),
+                tuple(headerValueAsText(value) for value in values)
             )
 
 

@@ -20,8 +20,8 @@ class SessionProcurer(object):
     @ivar _store: The session store to procure a session from.
     @type _store: L{klein.interfaces.ISessionStore}
 
-    @ivar _max_age: The maximum age (in seconds) of the session cookie.
-    @type _max_age: L{int}
+    @ivar _maxAge: The maximum age (in seconds) of the session cookie.
+    @type _maxAge: L{int}
 
     @ivar _secure_cookie: The name of the cookie to use for sessions protected
         with TLS (i.e. HTTPS).
@@ -51,7 +51,7 @@ class SessionProcurer(object):
 
     _store = attr.ib()
 
-    _max_age = attr.ib(default=3600)
+    _maxAge = attr.ib(default=3600)
     _secure_cookie = attr.ib(default=b"Klein-Secure-Session")
     _insecure_cookie = attr.ib(default=b"Klein-INSECURE-Session")
     _cookie_domain = attr.ib(default=None)
@@ -135,7 +135,7 @@ class SessionProcurer(object):
                     " sent."
                 )
             request.addCookie(
-                cookie_name, session.identifier, max_age=self._max_age,
+                cookie_name, session.identifier, max_age=self._maxAge,
                 domain=self._cookie_domain, path=self._cookie_path,
                 secure=sent_securely, httpOnly=True,
             )

@@ -8,6 +8,7 @@ Hypothesis strategies.
 
 from os import getenv
 from string import ascii_letters, digits
+from typing import Callable, Optional, Text, TypeVar
 
 from hyperlink import URL
 
@@ -18,9 +19,10 @@ from hypothesis.strategies import (
 
 from twisted.python.compat import unicode
 
+Optional, Text  # Silence linter
+
 
 __all__ = ()
-
 
 
 settings.register_profile(
@@ -28,6 +30,10 @@ settings.register_profile(
 )
 if getenv("CI") == "true":
     settings.load_profile("ci")
+
+
+T = TypeVar('T')
+DrawCallable = Callable[[Callable[..., T]], T]
 
 
 # Note this may be incorrect (most likely: incomplete), but it's at least OK
@@ -43,6 +49,7 @@ IDNA_CHARACTER_CATEGORIES = (
 
 @composite
 def ascii_text(draw, min_size=None, max_size=None):
+    # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ASCII-encodable text.
 
@@ -59,6 +66,7 @@ def ascii_text(draw, min_size=None, max_size=None):
 
 @composite
 def latin1_text(draw, min_size=None, max_size=None):
+    # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ISO-8859-1-encodable text.
 
@@ -76,6 +84,7 @@ def latin1_text(draw, min_size=None, max_size=None):
 
 @composite
 def idna_text(draw, min_size=None, max_size=None):
+    # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates IDNA-encodable text.
 
@@ -92,6 +101,7 @@ def idna_text(draw, min_size=None, max_size=None):
 
 
 def is_idna_compatible(text, max_length):
+    # type: (Text, int) -> bool
     """
     Determine whether some text contains only characters that can be encoded
     as IDNA, and that the encoded text is less than the given maximum length.
@@ -110,6 +120,7 @@ def is_idna_compatible(text, max_length):
 
 @composite
 def port_numbers(draw, allow_zero=False):
+    # type: (DrawCallable, bool) -> int
     """
     A strategy which generates port numbers.
 
@@ -125,6 +136,7 @@ def port_numbers(draw, allow_zero=False):
 
 @composite
 def hostname_labels(draw, allow_idn=True):
+    # type: (DrawCallable, bool) -> Text
     """
     A strategy which generates host name labels.
 
@@ -145,6 +157,7 @@ def hostname_labels(draw, allow_idn=True):
 
 @composite
 def hostnames(draw, allow_leading_digit=True, allow_idn=True):
+    # type: (DrawCallable, bool, bool) -> Text
     """
     A strategy which generates host names.
 
@@ -171,6 +184,7 @@ def hostnames(draw, allow_leading_digit=True, allow_idn=True):
 
 @composite
 def http_urls(draw):
+    # type: (DrawCallable) -> URL
     """
     A strategy which generates (human-friendly, unicode) IRI-form L{URL}s.
     Call the C{asURI} method on each URL to get a (network-friendly, ASCII)

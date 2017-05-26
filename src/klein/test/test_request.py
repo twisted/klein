@@ -7,16 +7,22 @@ Tests for L{klein._request}.
 """
 
 from string import ascii_uppercase
+from typing import Dict, List, Optional, Text, Tuple
 
 from hyperlink import URL
 
 from hypothesis import given, note
 from hypothesis.strategies import binary, text
 
+from twisted.web.http_headers import Headers
+from twisted.web.iweb import IRequest
+
 from ._strategies import http_urls
 from ._trial import TestCase
 from .test_resource import requestMock
 from .._request import HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest
+
+Dict, Headers, IRequest, List, Optional, Text, Tuple  # Silence linter
 
 
 __all__ = ()
@@ -29,6 +35,7 @@ class HTTPRequestTests(TestCase):
     """
 
     def test_interface(self):
+        # type: () -> None
         """
         L{HTTPRequest} implements L{IHTTPRequest}.
         """
@@ -44,6 +51,7 @@ class HTTPRequestTests(TestCase):
 
     @given(binary())
     def test_bodyAsBytes(self, data):
+        # type: (bytes) -> None
         """
         L{HTTPRequestFromIRequest.bodyAsBytes} matches the underlying legacy
         request body.
@@ -60,9 +68,16 @@ class HTTPRequestFromIRequestTests(TestCase):
     """
 
     def legacyRequest(
-        self, path=b"/", method=b"GET", host=b"localhost", port=8080,
-        isSecure=False, body=None, headers=None,
+        self,
+        path=b"/",          # type: bytes
+        method=b"GET",      # type: bytes
+        host=b"localhost",  # type: bytes
+        port=8080,          # type: int
+        isSecure=False,     # type: bool
+        body=None,          # type: Optional[bytes]
+        headers=None,       # type: Optional[Headers]
     ):
+        # type: (...) -> IRequest
         return requestMock(
             path=path, method=method, host=host, port=port,
             isSecure=isSecure, body=body, headers=headers,
@@ -70,6 +85,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
 
     def test_interface(self):
+        # type: () -> None
         """
         L{HTTPRequestFromIRequest} implements L{IHTTPRequest}.
         """
@@ -81,6 +97,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
     def test_method(self, methodText):
+        # type: (Text) -> None
         """
         L{HTTPRequestFromIRequest.method} matches the underlying legacy request
         method.
@@ -92,6 +109,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
     @given(http_urls())
     def test_uri(self, url):
+        # type: (URL) -> None
         """
         L{HTTPRequestFromIRequest.uri} matches the underlying legacy request
         URI.
@@ -110,6 +128,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
         # Work around for https://github.com/mahmoud/hyperlink/issues/5
         def normalize(uri):
+            # type: (URL) -> URL
             return uri.replace(path=(s for s in uri.path if s))
 
         note("_request.uri: {!r}".format(path))
@@ -119,6 +138,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
 
     def test_headers(self):
+        # type: () -> None
         """
         L{HTTPRequestFromIRequest.headers} returns an
         L{HTTPRequestFromIRequest} containing the underlying legacy request
@@ -131,6 +151,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
     @given(binary())
     def test_bodyAsBytes(self, data):
+        # type: (bytes) -> None
         """
         L{HTTPRequestFromIRequest.bodyAsBytes} matches the underlying legacy
         request body.

@@ -26,12 +26,17 @@ mypy "$@"      \
         -e '^src/klein/test/test_resource.py:.[0-9:]*: error: .* has no attribute'  \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'  \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'  \
-        -e ': error: Too many arguments for "HTTPHeadersFromHeaders"'                  \
-        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                \
-        -e ': error: Incompatible return value type (got "[^"]*", expected "I[^"]*")'  \
-        -e ': error: Method must have at least one argument'                           \
-        -e ': error: Callable\[\[[^\]*\], None\] has no attribute "todo"'              \
-        -e ': error: Generator has incompatible item type'                             \
+        -e '^src/klein/_headers.py:.[0-9:]*: error: Incompatible types in assignment (expression has type "str", variable has type "bytes")'  \
+        -e ': error: Too many arguments for "FrozenHTTPHeaders"'                         \
+        -e ': error: Too many arguments for "HTTPHeadersFromHeaders"'                    \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequest"'              \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestFromIRequest"'  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                  \
+        -e ': error: Incompatible return value type (got "[^"]*", expected "I[^"]*")'    \
+        -e ': error: Method must have at least one argument'                             \
+        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "todo"'               \
+        -e ': error: Generator has incompatible item type'                               \
         > "${tmp}" || true;
 
 sort < "${tmp}";

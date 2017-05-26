@@ -7,16 +7,17 @@ HTTP headers.
 """
 
 from attr import Factory, attrib, attrs
-from attr.validators import instance_of, optional, provides
-from typing import AnyStr, Iterable, List, Sequence, Text, Tuple, Union, cast
+from attr.validators import instance_of
+from typing import AnyStr, Iterable, List, Text, Tuple, Union, cast
 
 from twisted.web.http_headers import Headers
 
 from zope.interface import Attribute, Interface, implementer
 
+AnyStr, List  # Silence linter
+
 
 __all__ = ()
-
 
 
 # Interfaces
@@ -123,13 +124,22 @@ def headersTartare(values):
         for pair in values:
             if type(pair) is tuple:
                 name, value = pair
-                bytes(name), bytes(value)
+                if type(name) is not bytes:
+                    raise TypeError("header name must be bytes")
+                if type(value) is not bytes:
+                    raise TypeError("header value must be bytes")
             else:
                 break
         else:
             return cast(RawHeaders, values)
 
-    return tuple((bytes(name), bytes(value)) for name, value in values)
+    try:
+        return tuple((bytes(name), bytes(value)) for name, value in values)
+    except TypeError:
+        # error message from bytes() ("string argument without an encoding") is
+        # confusing in this context, so raise an exception with a more
+        # appropriate message.
+        raise TypeError("header name and value must be bytes")
 
 
 def headersTartareMutable(values):
@@ -257,8 +267,8 @@ class HTTPHeaders(object):
             if type(value) is not bytes:
                 raise TypeError("value must be bytes to match name")
 
-            rawName  = name   # type: String
-            rawValue = value  # type: String
+            rawName  = name   # type: bytes
+            rawValue = value  # type: bytes
 
         elif type(name) is Text:
             if type(value) is not Text:
@@ -269,6 +279,8 @@ class HTTPHeaders(object):
 
         else:
             raise TypeError("name must be text or bytes")
+
+        self._rawHeaders.append((rawName, rawValue))
 
 
 

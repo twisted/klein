@@ -8,8 +8,8 @@ HTTP request.
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
-from typing import AnyStr, Iterable, List, Sequence, Text, Tuple, Union, cast
-from typing.io import BytesIO
+from typing import Text
+from typing.io import BinaryIO
 
 from hyperlink import URL
 
@@ -25,8 +25,10 @@ from twisted.web.iweb import IRequest
 from zope.interface import Attribute, Interface, implementer
 
 from ._headers import (
-    FrozenHTTPHeaders, HTTPHeadersFromHeaders, IFrozenHTTPHeaders, IHTTPHeaders
+    FrozenHTTPHeaders, HTTPHeadersFromHeaders, IFrozenHTTPHeaders
 )
+
+BinaryIO, IFrozenHTTPHeaders, Text  # Silence linter
 
 
 __all__ = ()
@@ -228,7 +230,7 @@ class IOFount(object):
 
     outputType = ISegment
 
-    _source = attrib()  # type: BytesIO
+    _source = attrib()  # type: BinaryIO
 
     drain = attrib(
         validator=optional(provides(IDrain)), default=None, init=False

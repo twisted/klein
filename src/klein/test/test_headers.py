@@ -7,9 +7,10 @@ Tests for L{klein._headers}.
 """
 
 from collections import defaultdict
+from typing import Dict, List, Optional, Text, Tuple
 
-from hypothesis import assume, given, note
-from hypothesis.strategies import characters, binary, iterables, text, tuples
+from hypothesis import assume, given
+from hypothesis.strategies import binary, iterables, text, tuples
 
 from twisted.web.http_headers import Headers
 
@@ -23,23 +24,37 @@ from .._headers import (
     headerValueAsBytes, headerValueAsText,
 )
 
+Dict, List, Optional, Text, Tuple  # Silence linter
+
 
 __all__ = ()
 
 
 
 def encodeName(name):
+    # type: (Text) -> Optional[bytes]
     try:
         return name.encode(HEADER_NAME_ENCODING)
     except UnicodeEncodeError:
         return None
 
 
+def decodeName(name):
+    # type: (bytes) -> Text
+    return name.decode(HEADER_NAME_ENCODING)
+
+
 def encodeValue(name):
+    # type: (Text) -> Optional[bytes]
     try:
         return name.encode(HEADER_VALUE_ENCODING)
     except UnicodeEncodeError:
         return None
+
+
+def decodeValue(name):
+    # type: (bytes) -> Text
+    return name.decode(HEADER_VALUE_ENCODING)
 
 
 
@@ -50,6 +65,7 @@ class EncodingTests(TestCase):
 
     @given(binary())
     def test_headerNameAsBytesWithBytes(self, name):
+        # type: (bytes) -> None
         """
         L{headerNameAsBytes} passes through L{bytes}.
         """
@@ -57,9 +73,10 @@ class EncodingTests(TestCase):
 
 
     @given(text(min_size=1))
-    def test_headerNameAsBytesWithUnicode(self, name):
+    def test_headerNameAsBytesWithText(self, name):
+        # type: (Text) -> None
         """
-        L{headerNameAsBytes} encodes L{unicode} as ISO-8859-1.
+        L{headerNameAsBytes} encodes L{Text} using L{HEADER_NAME_ENCODING}.
         """
         rawName = encodeName(name)
         assume(rawName is not None)
@@ -67,7 +84,26 @@ class EncodingTests(TestCase):
 
 
     @given(binary())
+    def test_headerNameAsTextWithBytes(self, name):
+        # type: (bytes) -> None
+        """
+        L{headerNameAsText} decodes L{bytes} using L{HEADER_NAME_ENCODING}.
+        """
+        self.assertEqual(headerNameAsText(name), decodeName(name))
+
+
+    @given(text(min_size=1))
+    def test_headerNameAsTextWithText(self, name):
+        # type: (Text) -> None
+        """
+        L{headerNameAsText} passes through L{Text}.
+        """
+        self.assertIdentical(headerNameAsText(name), name)
+
+
+    @given(binary())
     def test_headerValueAsBytesWithBytes(self, value):
+        # type: (bytes) -> None
         """
         L{headerValueAsBytes} passes through L{bytes}.
         """
@@ -75,13 +111,32 @@ class EncodingTests(TestCase):
 
 
     @given(text(min_size=1))
-    def test_headerValueAsBytesWithUnicode(self, value):
+    def test_headerValueAsBytesWithText(self, value):
+        # type: (Text) -> None
         """
-        L{headerValueAsBytes} encodes L{unicode} as ISO-8859-1.
+        L{headerValueAsBytes} encodes L{Text} using L{HEADER_VALUE_ENCODING}.
         """
         rawValue = encodeName(value)
         assume(rawValue is not None)
         self.assertEqual(headerValueAsBytes(value), rawValue)
+
+
+    @given(binary())
+    def test_headerValueAsTextWithBytes(self, value):
+        # type: (bytes) -> None
+        """
+        L{headerValueAsText} decodes L{bytes} using L{HEADER_VALUE_ENCODING}.
+        """
+        self.assertEqual(headerValueAsText(value), decodeValue(value))
+
+
+    @given(text(min_size=1))
+    def test_headerValueAsTextWithText(self, value):
+        # type: (Text) -> None
+        """
+        L{headerValueAsText} passes through L{Text}.
+        """
+        self.assertIdentical(headerValueAsText(value), value)
 
 
 
@@ -91,6 +146,7 @@ class FrozenHTTPHeadersTests(TestCase):
     """
 
     def test_interface(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} implements L{IFrozenHTTPHeaders}.
         """
@@ -98,7 +154,8 @@ class FrozenHTTPHeadersTests(TestCase):
         self.assertProvides(IFrozenHTTPHeaders, headers)
 
 
-    def test_rawHeadersNotTuple(self):
+    def test_initRawHeadersNotTuple(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} raises L{TypeError} if the C{rawHeaders} argument
         is not an iterable.
@@ -106,7 +163,8 @@ class FrozenHTTPHeadersTests(TestCase):
         self.assertRaises(TypeError, FrozenHTTPHeaders, rawHeaders=None)
 
 
-    def test_rawHeadersNameNotBytes(self):
+    def test_initRawHeadersNameNotBytes(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} raises L{TypeError} if the C{rawHeaders} argument
         is not an iterable of 2-item L{tuple}s where the first item in the
@@ -117,7 +175,8 @@ class FrozenHTTPHeadersTests(TestCase):
         )
 
 
-    def test_rawHeadersValueNotBytes(self):
+    def test_initRawHeadersValueNotBytes(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} raises L{TypeError} if the C{rawHeaders} argument
         is not an iterable of 2-item L{tuple}s where the second item in the
@@ -128,7 +187,8 @@ class FrozenHTTPHeadersTests(TestCase):
         )
 
 
-    def test_rawHeadersTupleIdentical(self):
+    def test_initRawHeadersTupleIdentical(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} stores the given C{rawHeaders} argument directly
         if it is a L{tuple} of 2-item L{tuple}s of L{bytes}.
@@ -139,7 +199,8 @@ class FrozenHTTPHeadersTests(TestCase):
         )
 
 
-    def test_rawHeadersIterableEquals(self):
+    def test_initRawHeadersIterableEquals(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} stores the given C{rawHeaders} data if it is an
         iterable of 2-item L{tuple}s of L{bytes}.
@@ -152,6 +213,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
     def test_rawHeadersPairsIterableEquals(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} stores the given C{rawHeaders} data if it is a
         L{tuple} of 2-item iterables of L{bytes}.
@@ -166,6 +228,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
     def test_rawHeadersTuplePairsWrongLength(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} raises L{ValueError} if the given C{rawHeaders}
         data if it is a L{tuple} of iterables of the wrong size.
@@ -174,6 +237,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
     def test_rawHeadersIterablePairsWrongLength(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders} raises L{ValueError} if the given C{rawHeaders}
         data is an iterable of iterables of the wrong size.
@@ -184,6 +248,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
     def test_getBytesName(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders.get} returns an iterable of L{bytes} values for the
         given L{bytes} header name.
@@ -196,16 +261,18 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
     @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
-    def test_getUnicodeName(self, textPairs):
+    def test_getTextName(self, textPairs):
+        # type: (Tuple[Text, Text]) -> None
         """
-        L{FrozenHTTPHeaders.get} returns an iterable of L{unicode} values for
-        the given L{unicode} header name.
-        """
-        note("text pairs: {!r}".format(textPairs))
+        L{FrozenHTTPHeaders.get} returns an iterable of L{Text} values for
+        the given L{Text} header name.
 
+        This test only inserts Latin1 text into the header values, which is
+        valid data.
+        """
         textHeaders = tuple((name, value) for name, value in textPairs)
 
-        textValues = defaultdict(list)
+        textValues = defaultdict(list)  # type: Dict[Text, List[Text]]
         for name, values in textHeaders:
             textValues[name].append(values)
 
@@ -213,34 +280,35 @@ class FrozenHTTPHeadersTests(TestCase):
             (headerNameAsBytes(name), headerValueAsBytes(value))
             for name, value in textHeaders
         ))
-        note("raw headers: {!r}".format(headers.rawHeaders))
 
         for name, values in textValues.items():
-            note("text name: {!r}".format(name))
-            note("text values: {!r}".format(values))
             self.assertEqual(list(headers.get(name)), values)
 
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
-    def test_getUnicodeNameBytesValues(self, pairs):
+    def test_getTextNameBinaryValues(self, pairs):
+        # type: (Tuple[Text, bytes]) -> None
         """
-        L{FrozenHTTPHeaders.get} returns an iterable of L{unicode} values for
-        the given L{unicode} header name.
+        L{FrozenHTTPHeaders.get} returns an iterable of L{Text} values for
+        the given L{Text} header name.
+
+        This test only inserts binary data into the header values, which
+        includes invalid data if you are a sane person, but arguably
+        technically valid if you read the spec because the spec is unclear
+        about header encodings, so we made sure that works also, if only sort
+        of.
         """
         rawHeaders = tuple(
             (headerNameAsBytes(name), value) for name, value in pairs
         )
 
-        binaryValues = defaultdict(list)
+        binaryValues = defaultdict(list)  # type: Dict[Text, List[bytes]]
         for name, value in rawHeaders:
             binaryValues[headerNameAsText(name)].append(value)
 
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
-        note("raw headers: {!r}".format(headers.rawHeaders))
 
         for name, values in binaryValues.items():
-            note("text name: {!r}".format(name))
-            note("binary values: {!r}".format(values))
             self.assertEqual(
                 tuple(headers.get(name)),
                 tuple(headerValueAsText(v) for v in values)
@@ -248,6 +316,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
     def test_getInvalidNameType(self):
+        # type: () -> None
         """
         L{FrozenHTTPHeaders.get} raises L{} when the given header name is of an
         unknown type.
@@ -263,6 +332,7 @@ class HTTPHeadersFromHeadersTests(TestCase):
     """
 
     def test_interface(self):
+        # type: () -> None
         """
         L{HTTPHeadersFromHeaders} implements L{IFrozenHTTPHeaders}.
         """

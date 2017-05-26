@@ -112,39 +112,10 @@ class IHTTPHeaders(IFrozenHTTPHeaders):
 
 
 
-# Simple implementation
+# Encoding/decoding header data
 
 HEADER_NAME_ENCODING  = "iso-8859-1"
 HEADER_VALUE_ENCODING = "iso-8859-1"
-
-
-def headersTartare(values):
-    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
-    if type(values) is tuple:
-        for pair in values:
-            if type(pair) is tuple:
-                name, value = pair
-                if type(name) is not bytes:
-                    raise TypeError("header name must be bytes")
-                if type(value) is not bytes:
-                    raise TypeError("header value must be bytes")
-            else:
-                break
-        else:
-            return cast(RawHeaders, values)
-
-    try:
-        return tuple((bytes(name), bytes(value)) for name, value in values)
-    except TypeError:
-        # error message from bytes() ("string argument without an encoding") is
-        # confusing in this context, so raise an exception with a more
-        # appropriate message.
-        raise TypeError("header name and value must be bytes")
-
-
-def headersTartareMutable(values):
-    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
-    return [(bytes(name), bytes(value)) for name, value in values]
 
 
 def headerNameAsBytes(name):
@@ -191,6 +162,45 @@ def headerValueAsText(value):
         return cast(bytes, value).decode(HEADER_VALUE_ENCODING)
 
 
+# Internal data representation
+
+def headersTartare(headerPairs):
+    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
+    if type(headerPairs) is tuple:
+        for pair in headerPairs:
+            if type(pair) is tuple:
+                name, value = pair
+                if type(name) is not bytes:
+                    raise TypeError("header name must be bytes")
+                if type(value) is not bytes:
+                    raise TypeError("header value must be bytes")
+            else:
+                break
+        else:
+            return cast(RawHeaders, headerPairs)
+
+    try:
+        return tuple(
+            (bytes(name), bytes(value)) for name, value in headerPairs
+        )
+    except TypeError:
+        # error message from bytes() ("string argument without an encoding") is
+        # confusing in this context, so raise an exception with a more
+        # appropriate message.
+        raise TypeError("header name and value must be bytes")
+
+
+def mutableHeadersTartare(headerPairs):
+    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
+    try:
+        return [(bytes(name), bytes(value)) for name, value in headerPairs]
+    except TypeError:
+        # error message from bytes() ("string argument without an encoding") is
+        # confusing in this context, so raise an exception with a more
+        # appropriate message.
+        raise TypeError("header name and value must be bytes")
+
+
 def getFromHeadersTartare(headersTartare, name):
     # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
     """
@@ -209,6 +219,8 @@ def getFromHeadersTartare(headersTartare, name):
     raise TypeError("name must be text or bytes")
 
 
+
+# Simple implementation
 
 @implementer(IFrozenHTTPHeaders)
 @attrs(frozen=True)
@@ -234,7 +246,7 @@ class HTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=headersTartareMutable
+        convert=mutableHeadersTartare
     )  # type: List[RawHeader]
 
 

@@ -31,6 +31,7 @@ mypy "$@"      \
         -e ': error: Too many arguments for "FrozenHTTPHeaders"'                         \
         -e ': error: Too many arguments for "HTTPHeadersFromHeaders"'                    \
         -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeaders"'              \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequest"'              \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestFromIRequest"'  \
         -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                  \

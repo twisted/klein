@@ -6,12 +6,11 @@ Templating wrapper support for Klein.
 
 from json import dumps
 
-from six import text_type, integer_types
+from six import integer_types, text_type
 
 from twisted.internet.defer import inlineCallbacks, returnValue
-
-from twisted.web.template import TagLoader, Element
 from twisted.web.error import MissingRenderMethod
+from twisted.web.template import Element, TagLoader
 
 from .app import _call
 from ._decorators import bindable, modified, originalName
@@ -43,6 +42,7 @@ def _extra_types(input):
     if isinstance(input, (float,) + integer_types):
         return text_type(input)
     return input
+
 
 
 class PlatedElement(Element):
@@ -106,6 +106,7 @@ class PlatedElement(Element):
             raise MissingRenderMethod(self, name)
 
 
+
 class Plating(object):
     """
     A L{Plating} is a container which can be used to generate HTML from data.
@@ -118,7 +119,6 @@ class Plating(object):
     def __init__(self, defaults=None, tags=None,
                  presentationSlots=frozenset()):
         """
-        
         """
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
@@ -134,10 +134,10 @@ class Plating(object):
 
     def routed(self, routing, tags):
         """
-        
         """
         def mydecorator(method):
             loader = TagLoader(tags)
+
             @modified("plating route renderer", method, routing)
             @bindable
             @inlineCallbacks

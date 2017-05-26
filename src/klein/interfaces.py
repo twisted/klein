@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division
 
-from zope.interface import Interface, Attribute
+from zope.interface import Attribute, Interface
 
 from twisted.python.constants import Names, NamedConstant
 
@@ -9,7 +9,10 @@ class IKleinRequest(Interface):
     branch_segments = Attribute("Segments consumed by a branch route.")
     mapper = Attribute("L{werkzeug.routing.MapAdapter}")
 
-    def url_for(self, endpoint, values=None, method=None, force_external=False, append_unknown=True):
+    def url_for(
+        self, endpoint, values=None, method=None,
+        force_external=False, append_unknown=True,
+    ):
         """
         L{werkzeug.routing.MapAdapter.build}
         """

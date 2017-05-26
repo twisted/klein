@@ -78,5 +78,3 @@ def originalName(function):
         function = fnext
         fnext = getattr(function, "__original__", None)
     return function.__name__
-
-

@@ -28,10 +28,9 @@ mypy "$@"      \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'  \
         -e '^src/klein/_headers.py:.[0-9:]*: error: Incompatible types in assignment (expression has type "str", variable has type "bytes")'  \
         -e '^src/klein/test/test_headers.py:.[0-9:]*: error: '\''builtins.object'\'' object is not iterable'  \
-        -e ': error: Too many arguments for "FrozenHTTPHeaders"'                         \
-        -e ': error: Too many arguments for "HTTPHeadersFromHeaders"'                    \
         -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'        \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeaders"'              \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersFromHeaders"'   \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequest"'              \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestFromIRequest"'  \
         -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                  \

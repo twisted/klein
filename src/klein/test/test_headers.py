@@ -369,7 +369,7 @@ class FrozenHTTPHeadersTests(TestCase):
         L{FrozenHTTPHeaders.get} raises L{} when the given header name is of an
         unknown type.
         """
-        headers = FrozenHTTPHeaders(())
+        headers = FrozenHTTPHeaders(rawHeaders=())
         self.assertRaises(TypeError, headers.get, object())
 
 
@@ -401,7 +401,7 @@ class HTTPHeadersFromHeadersTests(TestCase):
         """
         L{HTTPHeadersFromHeaders} implements L{IFrozenHTTPHeaders}.
         """
-        headers = HTTPHeadersFromHeaders(Headers({}))
+        headers = HTTPHeadersFromHeaders(headers=Headers({}))
         self.assertProvides(IFrozenHTTPHeaders, headers)
 
     test_interface.todo = "unimplemented"

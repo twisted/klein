@@ -26,7 +26,12 @@ mypy "$@"      \
         -e '^src/klein/test/test_resource.py:.[0-9:]*: error: .* has no attribute'  \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'  \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'  \
-        -e ': error: Callable\[\[[^\]*\], None\] has no attribute "todo"'  \
+        -e ': error: Too many arguments for "HTTPHeadersFromHeaders"'                  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                \
+        -e ': error: Incompatible return value type (got "[^"]*", expected "I[^"]*")'  \
+        -e ': error: Method must have at least one argument'                           \
+        -e ': error: Callable\[\[[^\]*\], None\] has no attribute "todo"'              \
+        -e ': error: Generator has incompatible item type'                             \
         > "${tmp}" || true;
 
 sort < "${tmp}";

@@ -8,6 +8,8 @@ HTTP request.
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
+from typing import AnyStr, Iterable, List, Sequence, Text, Tuple, Union, cast
+from typing.io import BytesIO
 
 from hyperlink import URL
 
@@ -22,7 +24,9 @@ from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface, implementer
 
-from ._headers import FrozenHTTPHeaders, HTTPHeadersFromHeaders, IHTTPHeaders
+from ._headers import (
+    FrozenHTTPHeaders, HTTPHeadersFromHeaders, IFrozenHTTPHeaders, IHTTPHeaders
+)
 
 
 __all__ = ()
@@ -44,12 +48,13 @@ class IHTTPRequest(Interface):
     HTTP request.
     """
 
-    method  = Attribute("Request method.")
-    uri     = Attribute("Request URI.")
-    headers = Attribute("Request entity headers.")
+    method  = Attribute("Request method.")          # type: Text
+    uri     = Attribute("Request URI.")             # type: URL
+    headers = Attribute("Request entity headers.")  # type: IFrozenHTTPHeaders
 
 
     def bodyAsFount():
+        # type: () -> IFount
         """
         The request entity body, as a fount.
 
@@ -66,6 +71,7 @@ class IHTTPRequest(Interface):
 
 
     def bodyAsBytes():
+        # type: () -> bytes
         """
         The request entity body, as bytes.
 
@@ -95,16 +101,20 @@ class HTTPRequest(object):
     HTTP request.
     """
 
-    method  = attrib(validator=instance_of(str))
-    uri     = attrib(validator=instance_of(URL))
-    headers = attrib(validator=instance_of(FrozenHTTPHeaders))
+    method  = attrib(validator=instance_of(str))  # type: Text
+    uri     = attrib(validator=instance_of(URL))  # type: URL
+    headers = attrib(
+        validator=instance_of(FrozenHTTPHeaders)
+    )  # type: FrozenHTTPHeaders
 
 
     def bodyAsFount(self):
+        # type: () -> IFount
         raise NotImplementedError()
 
 
     def bodyAsBytes(self):
+        # type: () -> bytes
         raise NotImplementedError()
 
 
@@ -131,19 +141,21 @@ class HTTPRequestFromIRequest(object):
 
         _cachedBody = attrib(
             validator=optional(instance_of(bytes)), default=None, init=False
-        )
+        )  # type: bytes
 
-    _request = attrib(validator=provides(IRequest))
-    _state = attrib(default=Factory(_State), init=False)
+    _request = attrib(validator=provides(IRequest))       # type: IRequest
+    _state = attrib(default=Factory(_State), init=False)  # type: _State
 
 
     @property
     def method(self):
+        # type: () -> Text
         return self._request.method.decode("ascii")
 
 
     @property
     def uri(self):
+        # type: () -> URL
         request = self._request
 
         # This code borrows from t.w.server.Request._prePathURL.
@@ -172,10 +184,12 @@ class HTTPRequestFromIRequest(object):
 
     @property
     def headers(self):
+        # type: () -> IFrozenHTTPHeaders
         return HTTPHeadersFromHeaders(self._request.headers)
 
 
     def bodyAsFount(self):
+        # type: () -> IFount
         source = self._request.content
         if source is None:
             raise NoContentError()
@@ -188,6 +202,7 @@ class HTTPRequestFromIRequest(object):
 
 
     def bodyAsBytes(self):
+        # type: () -> bytes
         if self._state._cachedBody is not None:
             return succeed(self._state._cachedBody)
 
@@ -213,19 +228,21 @@ class IOFount(object):
 
     outputType = ISegment
 
-    _source = attrib()
+    _source = attrib()  # type: BytesIO
 
     drain = attrib(
         validator=optional(provides(IDrain)), default=None, init=False
-    )
+    )  # type: IDrain
     _paused = attrib(validator=instance_of(bool), default=False, init=False)
 
 
     def __attrs_post_init__(self):
+        # type: () -> None
         self._pauser = Pauser(self._pause, self._resume)
 
 
     def _flowToDrain(self):
+        # type: () -> None
         if self.drain is not None and not self._paused:
             data = self._source.read()
             if data:
@@ -234,23 +251,28 @@ class IOFount(object):
 
 
     def flowTo(self, drain):
+        # type: (IDrain) -> IFount
         result = beginFlowingTo(self, drain)
         self._flowToDrain()
         return result
 
 
     def pauseFlow(self):
+        # type: () -> None
         return self._pauser.pause()
 
 
     def stopFlow(self):
+        # type: () -> None
         return self._pauser.resume()
 
 
     def _pause(self):
+        # type: () -> None
         self._paused = True
 
 
     def _resume(self):
+        # type: () -> None
         self._paused = False
         self._flowToDrain()

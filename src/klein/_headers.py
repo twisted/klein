@@ -254,14 +254,19 @@ class HTTPHeaders(object):
     def add(self, name, value):
         # type: (AnyStr, AnyStr) -> None
         if type(name) is bytes:
-            rawName = name
-            rawValue = bytes(value)
+            if type(value) is not bytes:
+                raise TypeError("value must be bytes to match name")
+
+            rawName  = name   # type: String
+            rawValue = value  # type: String
+
         elif type(name) is Text:
             if type(value) is not Text:
                 raise TypeError("value must be text to match name")
 
             rawName  = headerNameAsBytes(name)
             rawValue = headerValueAsBytes(value)
+
         else:
             raise TypeError("name must be text or bytes")
 

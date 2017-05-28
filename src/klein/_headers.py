@@ -17,7 +17,7 @@ from twisted.web.http_headers import Headers
 
 from zope.interface import Attribute, Interface, implementer
 
-AnyStr, List  # Silence linter
+Any, AnyStr, Iterable, List  # Silence linter
 
 
 __all__ = ()
@@ -85,7 +85,7 @@ class IFrozenHTTPHeaders(Interface):
 
 
 
-class IHTTPHeaders(IFrozenHTTPHeaders):
+class IMutableHTTPHeaders(IFrozenHTTPHeaders):
     """
     Mutable HTTP entity headers.
     """
@@ -173,7 +173,11 @@ def validateHeadersTartare(instance, attribute, headerPairs):
         if not type(pair) is tuple:
             raise TypeError("header pair must be a tuple")
 
-        name, value = pair
+        try:
+            name, value = pair
+        except ValueError:
+            raise ValueError("header pair must be a 2-tuple")
+
         if type(name) is not bytes:
             raise TypeError("header name must be bytes")
         if type(value) is not bytes:
@@ -219,9 +223,9 @@ class FrozenHTTPHeaders(object):
 
 
 
-@implementer(IFrozenHTTPHeaders)
+@implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
-class HTTPHeaders(object):
+class MutableHTTPHeaders(object):
     """
     HTTP entity headers (mutable).
     """

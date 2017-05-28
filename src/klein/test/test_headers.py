@@ -17,10 +17,12 @@ from twisted.web.http_headers import Headers
 from ._strategies import ascii_text, latin1_text
 from ._trial import TestCase
 from .._headers import (
-    FrozenHTTPHeaders, HTTPHeaders, HTTPHeadersFromHeaders,
+    FrozenHTTPHeaders, HTTPHeadersFromHeaders,
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
-    IFrozenHTTPHeaders, IHTTPHeaders,
-    headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
+    IFrozenHTTPHeaders, IMutableHTTPHeaders,
+    MutableHTTPHeaders,
+    headerNameAsBytes, headerNameAsText,
+    headerValueAsBytes, headerValueAsText,
     validateHeadersTartare,
 )
 
@@ -151,9 +153,23 @@ class HeadersTartareValidationTests(TestCase):
         L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple L{tuple}s.
         """
-        self.assertRaises(
+        e = self.assertRaises(
             TypeError, validateHeadersTartare, None, None, ([b"k", b"v"],)
         )
+        self.assertEqual(str(e), "header pair must be a tuple")
+
+
+    def test_pairsWrongLength(self):
+        # type: () -> None
+        """
+        L{validateHeadersTartare} raises L{ValueError} if the C{headerPairs}
+        argument is not an tuple of 2-item L{tuple}s.
+        """
+        for pair in ((b"k",), (b"k", b"v", b"x")):
+            e = self.assertRaises(
+                ValueError, validateHeadersTartare, None, None, (pair,)
+            )
+            self.assertEqual(str(e), "header pair must be a 2-tuple")
 
 
     def test_pairsNameNotBytes(self):
@@ -163,9 +179,10 @@ class HeadersTartareValidationTests(TestCase):
         argument is not an tuple of 2-item L{tuple}s where the first item in
         the 2-item L{tuple} is L{bytes}.
         """
-        self.assertRaises(
+        e = self.assertRaises(
             TypeError, validateHeadersTartare, None, None, ((u"k", b"v"),)
         )
+        self.assertEqual(str(e), "header name must be bytes")
 
 
     def test_pairsValueNotBytes(self):
@@ -175,10 +192,11 @@ class HeadersTartareValidationTests(TestCase):
         argument is not an tuple of 2-item L{tuple}s where the second item
         in the 2-item L{tuple} is bytes.
         """
-        self.assertRaises(
+        e = self.assertRaises(
             TypeError,
             validateHeadersTartare, None, None, headerPairs=((b"k", u"v"),)
         )
+        self.assertEqual(str(e), "header value must be bytes")
 
 
 
@@ -202,15 +220,6 @@ class FrozenHTTPHeadersTests(TestCase):
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
         self.assertProvides(IFrozenHTTPHeaders, headers)
-
-
-    def test_rawHeadersTuplePairsWrongLength(self):
-        # type: () -> None
-        """
-        L{FrozenHTTPHeaders} raises L{ValueError} if the given C{rawHeaders}
-        data if it is a L{tuple} of iterables of the wrong size.
-        """
-        self.assertRaises(ValueError, FrozenHTTPHeaders, rawHeaders=((b"k",),))
 
 
     def test_getBytesName(self):
@@ -292,18 +301,18 @@ class FrozenHTTPHeadersTests(TestCase):
 
 
 
-class HTTPHeadersTests(TestCase):
+class MutableHTTPHeadersTests(TestCase):
     """
-    Tests for L{HTTPHeaders}.
+    Tests for L{MutableHTTPHeaders}.
     """
 
     def test_interface(self):
         # type: () -> None
         """
-        L{HTTPHeadersFromHeaders} implements L{IFrozenHTTPHeaders}.
+        L{MutableHTTPHeaders} implements L{IMutableHTTPHeaders}.
         """
-        headers = HTTPHeaders(rawHeaders=())
-        self.assertProvides(IHTTPHeaders, headers)
+        headers = MutableHTTPHeaders(rawHeaders=())
+        self.assertProvides(IMutableHTTPHeaders, headers)
 
     test_interface.todo = "unimplemented"
 

@@ -19,7 +19,7 @@ from ._trial import TestCase
 from .._headers import (
     FrozenHTTPHeaders, HTTPHeadersFromHeaders,
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
-    IFrozenHTTPHeaders, IMutableHTTPHeaders,
+    IHTTPHeaders, IMutableHTTPHeaders,
     MutableHTTPHeaders,
     headerNameAsBytes, headerNameAsText,
     headerValueAsBytes, headerValueAsText,
@@ -216,10 +216,10 @@ class FrozenHTTPHeadersTests(TestCase):
     def test_interface(self):
         # type: () -> None
         """
-        L{FrozenHTTPHeaders} implements L{IFrozenHTTPHeaders}.
+        L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertProvides(IFrozenHTTPHeaders, headers)
+        self.assertProvides(IHTTPHeaders, headers)
 
 
     def test_getBytesName(self):
@@ -326,9 +326,9 @@ class HTTPHeadersFromHeadersTests(TestCase):
     def test_interface(self):
         # type: () -> None
         """
-        L{HTTPHeadersFromHeaders} implements L{IFrozenHTTPHeaders}.
+        L{HTTPHeadersFromHeaders} implements L{IHTTPHeaders}.
         """
         headers = HTTPHeadersFromHeaders(headers=Headers({}))
-        self.assertProvides(IFrozenHTTPHeaders, headers)
+        self.assertProvides(IHTTPHeaders, headers)
 
     test_interface.todo = "unimplemented"

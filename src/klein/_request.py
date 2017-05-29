@@ -25,10 +25,10 @@ from twisted.web.iweb import IRequest
 from zope.interface import Attribute, Interface, implementer
 
 from ._headers import (
-    FrozenHTTPHeaders, HTTPHeadersFromHeaders, IFrozenHTTPHeaders
+    FrozenHTTPHeaders, HTTPHeadersFromHeaders, IHTTPHeaders
 )
 
-BinaryIO, IFrozenHTTPHeaders, Text  # Silence linter
+BinaryIO, IHTTPHeaders, Text  # Silence linter
 
 
 __all__ = ()
@@ -52,7 +52,7 @@ class IHTTPRequest(Interface):
 
     method  = Attribute("Request method.")          # type: Text
     uri     = Attribute("Request URI.")             # type: URL
-    headers = Attribute("Request entity headers.")  # type: IFrozenHTTPHeaders
+    headers = Attribute("Request entity headers.")  # type: IHTTPHeaders
 
 
     def bodyAsFount():
@@ -186,7 +186,7 @@ class HTTPRequestFromIRequest(object):
 
     @property
     def headers(self):
-        # type: () -> IFrozenHTTPHeaders
+        # type: () -> IHTTPHeaders
         return HTTPHeadersFromHeaders(self._request.headers)
 
 

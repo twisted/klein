@@ -32,9 +32,9 @@ RawHeaders = Sequence[RawHeader]
 MutableRawHeaders = MutableSequence[RawHeader]
 
 
-class IFrozenHTTPHeaders(Interface):
+class IHTTPHeaders(Interface):
     """
-    Immutable HTTP entity headers.
+    HTTP entity headers.
 
     HTTP headers names and values are sort-of-but-not-quite-specifically
     expected to be text.
@@ -85,7 +85,7 @@ class IFrozenHTTPHeaders(Interface):
 
 
 
-class IMutableHTTPHeaders(IFrozenHTTPHeaders):
+class IMutableHTTPHeaders(IHTTPHeaders):
     """
     Mutable HTTP entity headers.
     """
@@ -205,11 +205,11 @@ def getFromHeadersTartare(headersTartare, name):
 
 # Simple implementation
 
-@implementer(IFrozenHTTPHeaders)
+@implementer(IHTTPHeaders)
 @attrs(frozen=True)
 class FrozenHTTPHeaders(object):
     """
-    HTTP entity headers (immutable).
+    Immutable HTTP entity headers.
     """
 
     rawHeaders = attrib(
@@ -227,7 +227,7 @@ class FrozenHTTPHeaders(object):
 @attrs(frozen=True)
 class MutableHTTPHeaders(object):
     """
-    HTTP entity headers (mutable).
+    Mutable HTTP entity headers.
     """
 
     _rawHeaders = attrib(
@@ -283,13 +283,13 @@ class MutableHTTPHeaders(object):
 
 # Support for L{Headers}
 
-@implementer(IFrozenHTTPHeaders)
+@implementer(IHTTPHeaders)
 @attrs(frozen=True)
 class HTTPHeadersFromHeaders(object):
     """
     HTTP entity headers.
 
-    This is an L{IFrozenHTTPHeaders} implementation that wraps a L{Headers}
+    This is an L{IHTTPHeaders} implementation that wraps a L{Headers}
     object.
 
     This is used by Klein to expose objects from L{twisted.web} to clients

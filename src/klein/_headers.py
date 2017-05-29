@@ -66,8 +66,8 @@ class IHTTPHeaders(Interface):
     )  # type: RawHeaders
 
 
-    def get(name):
-        # type: (AnyStr) -> AnyStr
+    def getValues(name):
+        # type: (AnyStr) -> Iterable[AnyStr]
         """
         Get the values associated with the given header name.
 
@@ -102,7 +102,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         """
 
 
-    def add(self, name, value):
+    def addValue(name, value):
         # type: (AnyStr, AnyStr) -> None
         """
         Add the given header name/value pair.
@@ -217,7 +217,7 @@ class FrozenHTTPHeaders(object):
     )  # type: RawHeaders
 
 
-    def get(self, name):
+    def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
         return getFromHeadersTartare(self.rawHeaders, name)
 
@@ -241,7 +241,7 @@ class MutableHTTPHeaders(object):
         return tuple(self._rawHeaders)
 
 
-    def get(self, name):
+    def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
         return getFromHeadersTartare(self._rawHeaders, name)
 
@@ -258,7 +258,7 @@ class MutableHTTPHeaders(object):
         self._rawHeaders[:] = [p for p in self._rawHeaders if p[0] != rawName]
 
 
-    def add(self, name, value):
+    def addValue(self, name, value):
         # type: (AnyStr, AnyStr) -> None
         if type(name) is bytes:
             if type(value) is not bytes:

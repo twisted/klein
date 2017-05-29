@@ -232,7 +232,7 @@ class FrozenHTTPHeadersTests(TestCase):
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
 
         for name, value in rawHeaders:
-            self.assertEqual(tuple(headers.get(name)), (value,))
+            self.assertEqual(tuple(headers.getValues(name)), (value,))
 
 
     @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
@@ -257,7 +257,7 @@ class FrozenHTTPHeadersTests(TestCase):
         ))
 
         for name, _values in textValues.items():
-            self.assertEqual(list(headers.get(name)), _values)
+            self.assertEqual(list(headers.getValues(name)), _values)
 
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
@@ -285,7 +285,7 @@ class FrozenHTTPHeadersTests(TestCase):
 
         for textName, values in binaryValues.items():
             self.assertEqual(
-                tuple(headers.get(textName)),
+                tuple(headers.getValues(textName)),
                 tuple(headerValueAsText(value) for value in values)
             )
 
@@ -297,7 +297,8 @@ class FrozenHTTPHeadersTests(TestCase):
         unknown type.
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertRaises(TypeError, headers.get, object())
+        e = self.assertRaises(TypeError, headers.getValues, object())
+        self.assertEqual(str(e), "name must be text or bytes")
 
 
 
@@ -313,8 +314,6 @@ class MutableHTTPHeadersTests(TestCase):
         """
         headers = MutableHTTPHeaders(rawHeaders=())
         self.assertProvides(IMutableHTTPHeaders, headers)
-
-    test_interface.todo = "unimplemented"
 
 
 

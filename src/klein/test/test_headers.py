@@ -316,6 +316,17 @@ class MutableHTTPHeadersTests(TestCase):
         self.assertProvides(IMutableHTTPHeaders, headers)
 
 
+    def test_rawHeaders(self):
+        # type: () -> None
+        """
+        L{MutableHTTPHeaders.rawHeaders} returns the raw headers passed at init
+        time as a tuple.
+        """
+        rawHeaders = [(b"a", b"1"), (b"b", b"2"), (b"c", b"3")]
+        headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
+        self.assertEqual(headers.rawHeaders, tuple(rawHeaders))
+
+
 
 class HTTPHeadersFromHeadersTests(TestCase):
     """

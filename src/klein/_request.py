@@ -228,7 +228,7 @@ class HTTPRequestFromIRequest(object):
     @property
     def headers(self):
         # type: () -> IHTTPHeaders
-        return HTTPHeadersFromHeaders(self._request.headers)
+        return HTTPHeadersFromHeaders(self._request.requestHeaders)
 
 
     def bodyAsFount(self):

@@ -20,7 +20,7 @@ from twisted.web.iweb import IRequest
 from ._strategies import http_urls
 from ._trial import TestCase
 from .test_resource import requestMock
-from .._headers import FrozenHTTPHeaders
+from .._headers import FrozenHTTPHeaders, IHTTPHeaders
 from .._request import (
     HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest,
     bytesToFount, fountToBytes,
@@ -156,8 +156,6 @@ class HTTPRequestFromIRequestTests(TestCase):
         request = HTTPRequestFromIRequest(request=self.legacyRequest())
         self.assertProvides(IHTTPRequest, request)
 
-    test_interface.todo = "request.headers unimplemented"
-
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
     def test_method(self, methodText):
@@ -210,7 +208,7 @@ class HTTPRequestFromIRequestTests(TestCase):
         """
         legacyRequest = self.legacyRequest()
         request = HTTPRequestFromIRequest(request=legacyRequest)
-        self.assertIdentical(request._request, legacyRequest)
+        self.assertProvides(IHTTPHeaders, request.headers)
 
 
     @given(binary())

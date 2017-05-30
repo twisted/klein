@@ -21,7 +21,8 @@ from .._headers import (
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
     IHTTPHeaders, IMutableHTTPHeaders,
     MutableHTTPHeaders,
-    convertRawHeaders, convertRawHeadersFrozen, getFromRawHeaders,
+    getFromRawHeaders,
+    normalizeRawHeaders, normalizeRawHeadersFrozen,
     normalizeHeaderName,
     headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
 )
@@ -158,17 +159,17 @@ class HeaderNameNormalizationTests(TestCase):
 
 class RawHeadersConversionTests(TestCase):
     """
-    Tests for L{convertRawHeaders}.
+    Tests for L{normalizeRawHeaders}.
     """
 
     def test_pairNotTuple(self):
         # type: () -> None
         """
-        L{convertRawHeaders} raises L{TypeError} if the C{headerPairs}
+        L{normalizeRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple L{tuple}s.
         """
         e = self.assertRaises(
-            TypeError, tuple, convertRawHeaders(([b"k", b"v"],))
+            TypeError, tuple, normalizeRawHeaders(([b"k", b"v"],))
         )
         self.assertEqual(str(e), "header pair must be a tuple")
 
@@ -176,12 +177,12 @@ class RawHeadersConversionTests(TestCase):
     def test_pairsWrongLength(self):
         # type: () -> None
         """
-        L{convertRawHeaders} raises L{ValueError} if the C{headerPairs}
+        L{normalizeRawHeaders} raises L{ValueError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s.
         """
         for pair in ((b"k",), (b"k", b"v", b"x")):
             e = self.assertRaises(
-                ValueError, tuple, convertRawHeaders((pair,))
+                ValueError, tuple, normalizeRawHeaders((pair,))
             )
             self.assertEqual(str(e), "header pair must be a 2-tuple")
 
@@ -189,12 +190,12 @@ class RawHeadersConversionTests(TestCase):
     def test_pairsNameNotBytes(self):
         # type: () -> None
         """
-        L{convertRawHeaders} raises L{TypeError} if the C{headerPairs}
+        L{normalizeRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s where the first item in
         the 2-item L{tuple} is L{bytes}.
         """
         e = self.assertRaises(
-            TypeError, tuple, convertRawHeaders(((u"k", b"v"),))
+            TypeError, tuple, normalizeRawHeaders(((u"k", b"v"),))
         )
         self.assertEqual(str(e), "header name must be bytes")
 
@@ -202,13 +203,13 @@ class RawHeadersConversionTests(TestCase):
     def test_pairsValueNotBytes(self):
         # type: () -> None
         """
-        L{convertRawHeaders} raises L{TypeError} if the C{headerPairs}
+        L{normalizeRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s where the second item
         in the 2-item L{tuple} is bytes.
         """
         e = self.assertRaises(
             TypeError,
-            tuple, convertRawHeaders(headerPairs=((b"k", u"v"),))
+            tuple, normalizeRawHeaders(headerPairs=((b"k", u"v"),))
         )
         self.assertEqual(str(e), "header value must be bytes")
 
@@ -325,7 +326,7 @@ class RawHeadersReadTests(GetValuesTestsMixIn, TestCase):
 
     @staticmethod
     def getValues(rawHeaders, name):
-        return getFromRawHeaders(convertRawHeadersFrozen(rawHeaders), name)
+        return getFromRawHeaders(normalizeRawHeadersFrozen(rawHeaders), name)
 
 
 
@@ -527,7 +528,7 @@ class HTTPHeadersFromHeadersTests(GetValuesTestsMixIn, TestCase):
         # order, but it should give us back values in network order.
         # So we need to normalize our way around.
 
-        normalizedRawHeaders = convertRawHeadersFrozen(rawHeaders)
+        normalizedRawHeaders = normalizeRawHeadersFrozen(rawHeaders)
 
         self.assertEqual(
             sorted(headers.rawHeaders), sorted(normalizedRawHeaders)

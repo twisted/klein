@@ -175,7 +175,7 @@ def normalizeHeaderName(name):
 
 # Internal data representation
 
-def convertRawHeaders(headerPairs):
+def normalizeRawHeaders(headerPairs):
     # type: (Iterable[Iterable[bytes]]) -> Iterable[RawHeader]
     for pair in headerPairs:
         if not type(pair) is tuple:
@@ -194,14 +194,14 @@ def convertRawHeaders(headerPairs):
         yield (normalizeHeaderName(name), value)
 
 
-def convertRawHeadersFrozen(headerPairs):
+def normalizeRawHeadersFrozen(headerPairs):
     # type: (Iterable[Iterable[bytes]]) -> RawHeaders
-    return tuple(convertRawHeaders(headerPairs))
+    return tuple(normalizeRawHeaders(headerPairs))
 
 
-def convertRawHeadersMutable(headerPairs):
+def normalizeRawHeadersMutable(headerPairs):
     # type: (Iterable[Iterable[bytes]]) -> MutableRawHeaders
-    return list(convertRawHeaders(headerPairs))
+    return list(normalizeRawHeaders(headerPairs))
 
 
 def getFromRawHeaders(rawHeaders, name):
@@ -233,7 +233,7 @@ class FrozenHTTPHeaders(object):
     Immutable HTTP entity headers.
     """
 
-    rawHeaders = attrib(convert=convertRawHeadersFrozen)  # type: RawHeaders
+    rawHeaders = attrib(convert=normalizeRawHeadersFrozen)  # type: RawHeaders
 
 
     def getValues(self, name):
@@ -250,7 +250,7 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=convertRawHeadersMutable
+        convert=normalizeRawHeadersMutable
     )  # type: MutableRawHeaders
 
 

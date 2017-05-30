@@ -22,7 +22,7 @@ from ._trial import TestCase
 from .test_resource import requestMock
 from .._headers import FrozenHTTPHeaders, IHTTPHeaders
 from .._request import (
-    HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest,
+    HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest, NoContentError,
     bytesToFount, fountToBytes,
 )
 
@@ -50,6 +50,23 @@ class HTTPRequestTests(TestCase):
             body=b"",
         )
         self.assertProvides(IHTTPRequest, request)
+
+
+    def test_initInvalidBodyType(self):
+        # type: () -> None
+        """
+        L{HTTPRequest} raises L{TypeError} when given a body of an unknown
+        type.
+        """
+        e = self.assertRaises(
+            TypeError,
+            HTTPRequest,
+            method=u"GET",
+            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=object(),
+        )
+        self.assertEqual(str(e), "body must be bytes or IFount")
 
 
     @given(binary())
@@ -211,6 +228,18 @@ class HTTPRequestFromIRequestTests(TestCase):
         self.assertProvides(IHTTPHeaders, request.headers)
 
 
+    def test_bodyAsFountTwice(self):
+        # type: () -> None
+        """
+        L{HTTPRequestFromIRequest.bodyAsFount} raises L{NoContentError} if
+        called more than once.
+        """
+        legacyRequest = self.legacyRequest()
+        request = HTTPRequestFromIRequest(request=legacyRequest)
+        request.bodyAsFount()
+        self.assertRaises(NoContentError, request.bodyAsFount)
+
+
     @given(binary())
     def test_bodyAsBytes(self, data):
         # type: (bytes) -> None
@@ -223,3 +252,18 @@ class HTTPRequestFromIRequestTests(TestCase):
         body = self.successResultOf(request.bodyAsBytes())
 
         self.assertEqual(body, data)
+
+
+    def test_bodyAsBytesCached(self):
+        # type: (bytes) -> None
+        """
+        L{HTTPRequestFromIRequest.bodyAsBytes} matches the underlying legacy
+        request body.
+        """
+        data = b"some data"
+        legacyRequest = self.legacyRequest(body=data)
+        request = HTTPRequestFromIRequest(request=legacyRequest)
+        body1 = self.successResultOf(request.bodyAsBytes())
+        body2 = self.successResultOf(request.bodyAsBytes())
+
+        self.assertIdentical(body1, body2)

@@ -20,7 +20,11 @@ from twisted.web.iweb import IRequest
 from ._strategies import http_urls
 from ._trial import TestCase
 from .test_resource import requestMock
-from .._request import HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest
+from .._headers import FrozenHTTPHeaders
+from .._request import (
+    HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest,
+    bytesToFount, fountToBytes,
+)
 
 Dict, Headers, IRequest, List, Optional, Text, Tuple  # Silence linter
 
@@ -42,23 +46,83 @@ class HTTPRequestTests(TestCase):
         request = HTTPRequest(
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
-            headers=None,
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=b"",
         )
         self.assertProvides(IHTTPRequest, request)
 
-    test_interface.todo = "unimplemented"
+
+    @given(binary())
+    def test_bodyAsFountFromBytes(self, data):
+        # type: (bytes) -> None
+        """
+        L{HTTPRequestFromIRequest.bodyAsFount} returns a fount with the same
+        bytes given to C{__init__}.
+        """
+        request = HTTPRequest(
+            method=u"GET",
+            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=data,
+        )
+        fount = request.bodyAsFount()
+        body = self.successResultOf(fountToBytes(fount))
+
+        self.assertEqual(body, data)
 
 
     @given(binary())
-    def test_bodyAsBytes(self, data):
+    def test_bodyAsFountFromFount(self, data):
         # type: (bytes) -> None
         """
-        L{HTTPRequestFromIRequest.bodyAsBytes} matches the underlying legacy
-        request body.
+        L{HTTPRequestFromIRequest.bodyAsBytes} returns the bytes from the fount
+        given to C{__init__}.
         """
-        raise NotImplementedError()
+        request = HTTPRequest(
+            method=u"GET",
+            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=bytesToFount(data),
+        )
+        fount = request.bodyAsFount()
+        body = self.successResultOf(fountToBytes(fount))
 
-    test_bodyAsBytes.todo = "unimplemented"
+        self.assertEqual(body, data)
+
+
+    @given(binary())
+    def test_bodyAsBytesFromBytes(self, data):
+        # type: (bytes) -> None
+        """
+        L{HTTPRequestFromIRequest.bodyAsBytes} returns the same bytes given to
+        C{__init__}.
+        """
+        request = HTTPRequest(
+            method=u"GET",
+            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=data,
+        )
+        body = self.successResultOf(request.bodyAsBytes())
+
+        self.assertEqual(body, data)
+
+
+    @given(binary())
+    def test_bodyAsBytesFromFount(self, data):
+        # type: (bytes) -> None
+        """
+        L{HTTPRequestFromIRequest.bodyAsBytes} returns the bytes from the fount
+        given to C{__init__}.
+        """
+        request = HTTPRequest(
+            method=u"GET",
+            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=bytesToFount(data),
+        )
+        body = self.successResultOf(request.bodyAsBytes())
+        self.assertEqual(body, data)
 
 
 

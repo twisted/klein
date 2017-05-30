@@ -8,7 +8,8 @@ HTTP request.
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
-from typing import Text
+from io import BytesIO
+from typing import Awaitable, Text
 from typing.io import BinaryIO
 
 from hyperlink import URL
@@ -28,7 +29,7 @@ from ._headers import (
     FrozenHTTPHeaders, HTTPHeadersFromHeaders, IHTTPHeaders
 )
 
-BinaryIO, IHTTPHeaders, Text  # Silence linter
+Awaitable, BinaryIO, IHTTPHeaders, Text  # Silence linter
 
 
 __all__ = ()
@@ -73,7 +74,7 @@ class IHTTPRequest(Interface):
 
 
     def bodyAsBytes():
-        # type: () -> bytes
+        # type: () -> Awaitable[bytes]
         """
         The request entity body, as bytes.
 
@@ -96,6 +97,15 @@ class IHTTPRequest(Interface):
 
 # Simple implementation
 
+def validateBody(instance, attribute, body):
+    # type: (Any, Any, Union[bytes, IFount]) -> None
+    if (
+        type(body) is not bytes and
+        not IFount.providedBy(body)
+    ):
+        raise TypeError("body must be bytes or IFount")
+
+
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
 class HTTPRequest(object):
@@ -103,21 +113,51 @@ class HTTPRequest(object):
     HTTP request.
     """
 
+    @attrs(frozen=False)
+    class _State(object):
+        """
+        Internal mutable state for L{HTTPRequestFromIRequest}.
+        """
+
+        _cachedBody = attrib(
+            validator=optional(instance_of(bytes)), default=None, init=False
+        )  # type: bytes
+
     method  = attrib(validator=instance_of(str))  # type: Text
     uri     = attrib(validator=instance_of(URL))  # type: URL
     headers = attrib(
         validator=instance_of(FrozenHTTPHeaders)
     )  # type: FrozenHTTPHeaders
 
+    _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
+
+    _state = attrib(default=Factory(_State), init=False)  # type: _State
+
 
     def bodyAsFount(self):
         # type: () -> IFount
-        raise NotImplementedError()
+        if type(self._body) is bytes:
+            return bytesToFount(self._body)
+
+        # assuming: IFount.providedBy(self._body)
+
+        return self._body
 
 
     def bodyAsBytes(self):
         # type: () -> bytes
-        raise NotImplementedError()
+        if type(self._body) is bytes:
+            return succeed(self._body)
+
+        # assuming: IFount.providedBy(self._body)
+
+        def cache(bodyBytes):
+            self._state._cachedBody = bodyBytes
+            return bodyBytes
+
+        d = fountToBytes(self._body)
+        d.addCallback(cache)
+        return d
 
 
 
@@ -146,6 +186,7 @@ class HTTPRequestFromIRequest(object):
         )  # type: bytes
 
     _request = attrib(validator=provides(IRequest))       # type: IRequest
+
     _state = attrib(default=Factory(_State), init=False)  # type: _State
 
 
@@ -208,19 +249,33 @@ class HTTPRequestFromIRequest(object):
         if self._state._cachedBody is not None:
             return succeed(self._state._cachedBody)
 
-        def collect(chunks):
-            bodyBytes = b"".join(chunks)
+        def cache(bodyBytes):
             self._state._cachedBody = bodyBytes
             return bodyBytes
 
-        d = fountToDeferred(self.bodyAsFount())
-        d.addCallback(collect)
+        fount = self.bodyAsFount()
+        d = fountToBytes(fount)
+        d.addCallback(cache)
         return d
 
 
 
-# FIXME: move this to tubes.
-# FIXME: this should stream.
+# Fount-related utilities that probably should live in tubes.
+
+def fountToBytes(fount):
+    def collect(chunks):
+        return b"".join(chunks)
+
+    d = fountToDeferred(fount)
+    d.addCallback(collect)
+    return d
+
+
+def bytesToFount(bytes):
+    # FIXME: This seems rather round-about
+    return IOFount(source=BytesIO(bytes))
+
+
 @implementer(IFount)
 @attrs(frozen=False)
 class IOFount(object):
@@ -252,6 +307,7 @@ class IOFount(object):
             self.drain.flowStopped(Failure(StopIteration()))
 
 
+    # FIXME: this should stream.
     def flowTo(self, drain):
         # type: (IDrain) -> IFount
         result = beginFlowingTo(self, drain)

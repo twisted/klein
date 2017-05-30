@@ -285,7 +285,7 @@ class GetValuestestsMixIn(object):
     def test_getInvalidNameType(self):
         # type: () -> None
         """
-        C{getValues} raises L{} when the given header name is of an
+        C{getValues} raises L{TypeError} when the given header name is of an
         unknown type.
         """
         e = self.assertRaises(TypeError, self.getValues, (), object())
@@ -355,6 +355,44 @@ class MutableHTTPHeadersTests(GetValuestestsMixIn, TestCase):
         rawHeaders = [(b"a", b"1"), (b"b", b"2"), (b"c", b"3")]
         headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
         self.assertEqual(headers.rawHeaders, tuple(rawHeaders))
+
+
+    def test_removeBytesName(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.remove} removes all values for the given L{bytes}
+        header name.
+        """
+        rawHeaders = ((b"a", b"1"), (b"b", b"2a"), (b"c", b"3"), (b"b", b"2b"))
+        headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
+        headers.remove(b"b")
+
+        self.assertEqual(headers.rawHeaders, ((b"a", b"1"), (b"c", b"3")))
+
+
+    def test_removeTextName(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.remove} removes all values for the given L{Text}
+        header name.
+        """
+        rawHeaders = ((b"a", b"1"), (b"b", b"2a"), (b"c", b"3"), (b"b", b"2b"))
+        headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
+        headers.remove(u"b")
+
+        self.assertEqual(headers.rawHeaders, ((b"a", b"1"), (b"c", b"3")))
+
+
+    def test_removeInvalidNameType(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.remove} raises L{TypeError} when the given header
+        name is of an unknown type.
+        """
+        headers = MutableHTTPHeaders(rawHeaders=())
+
+        e = self.assertRaises(TypeError, headers.remove, object())
+        self.assertEqual(str(e), "name must be text or bytes")
 
 
 

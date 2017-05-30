@@ -165,10 +165,18 @@ def headerValueAsText(value):
         return cast(bytes, value).decode(HEADER_VALUE_ENCODING)
 
 
+def normalizeHeaderName(name):
+    # type: (AnyStr) -> AnyStr
+    """
+    Normalize a header name.
+    """
+    return name.lower()
+
+
 # Internal data representation
 
-def validateRawHeaders(instance, attribute, headerPairs):
-    # type: (Any, Any, Iterable[Iterable[bytes]]) -> None
+def convertRawHeaders(headerPairs):
+    # type: (Iterable[Iterable[bytes]]) -> Iterable[RawHeader]
     for pair in headerPairs:
         if not type(pair) is tuple:
             raise TypeError("header pair must be a tuple")
@@ -183,6 +191,18 @@ def validateRawHeaders(instance, attribute, headerPairs):
         if type(value) is not bytes:
             raise TypeError("header value must be bytes")
 
+        yield (normalizeHeaderName(name), value)
+
+
+def convertRawHeadersFrozen(headerPairs):
+    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
+    return tuple(convertRawHeaders(headerPairs))
+
+
+def convertRawHeadersMutable(headerPairs):
+    # type: (Iterable[Iterable[bytes]]) -> MutableRawHeaders
+    return list(convertRawHeaders(headerPairs))
+
 
 def getFromRawHeaders(rawHeaders, name):
     # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
@@ -190,10 +210,11 @@ def getFromRawHeaders(rawHeaders, name):
     Get a value from raw headers.
     """
     if type(name) is bytes:
+        name = normalizeHeaderName(name)
         return (v for n, v in rawHeaders if name == n)
 
     if type(name) is Text:
-        rawName = headerNameAsBytes(name)
+        rawName = headerNameAsBytes(normalizeHeaderName(name))
         return(
             headerValueAsText(v)
             for n, v in rawHeaders if rawName == n
@@ -212,9 +233,7 @@ class FrozenHTTPHeaders(object):
     Immutable HTTP entity headers.
     """
 
-    rawHeaders = attrib(
-        convert=tuple, validator=validateRawHeaders
-    )  # type: RawHeaders
+    rawHeaders = attrib(convert=convertRawHeadersFrozen)  # type: RawHeaders
 
 
     def getValues(self, name):
@@ -231,7 +250,7 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=list, validator=validateRawHeaders
+        convert=convertRawHeadersMutable
     )  # type: MutableRawHeaders
 
 
@@ -309,4 +328,4 @@ class HTTPHeadersFromHeaders(object):
     @property
     def rawHeaders(self):
         # type: () -> RawHeaders
-        raise NotImplementedError()
+        return tuple(self._headers.getAllRawHeaders())

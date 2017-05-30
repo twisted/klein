@@ -21,10 +21,9 @@ from .._headers import (
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
     IHTTPHeaders, IMutableHTTPHeaders,
     MutableHTTPHeaders,
-    getFromRawHeaders,
-    headerNameAsBytes, headerNameAsText,
-    headerValueAsBytes, headerValueAsText,
-    validateRawHeaders,
+    convertRawHeaders, convertRawHeadersFrozen, getFromRawHeaders,
+    normalizeHeaderName,
+    headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
 )
 
 Dict, List, Optional, Text, Tuple  # Silence linter
@@ -143,19 +142,33 @@ class EncodingTests(TestCase):
 
 
 
-class RawHeadersValidationTests(TestCase):
+class HeaderNameNormalizationTests(TestCase):
     """
-    Tests for L{validateRawHeaders}.
+    Tests for header name normalization.
+    """
+
+    def test_normalizeLowerCase(self):
+        # type: (Text) -> None
+        """
+        L{normalizeHeaderName} normalizes header names to lower case.
+        """
+        self.assertEqual(normalizeHeaderName("FooBar"), "foobar")
+
+
+
+class RawHeadersConversionTests(TestCase):
+    """
+    Tests for L{convertRawHeaders}.
     """
 
     def test_pairNotTuple(self):
         # type: () -> None
         """
-        L{validateRawHeaders} raises L{TypeError} if the C{headerPairs}
+        L{convertRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple L{tuple}s.
         """
         e = self.assertRaises(
-            TypeError, validateRawHeaders, None, None, ([b"k", b"v"],)
+            TypeError, tuple, convertRawHeaders(([b"k", b"v"],))
         )
         self.assertEqual(str(e), "header pair must be a tuple")
 
@@ -163,12 +176,12 @@ class RawHeadersValidationTests(TestCase):
     def test_pairsWrongLength(self):
         # type: () -> None
         """
-        L{validateRawHeaders} raises L{ValueError} if the C{headerPairs}
+        L{convertRawHeaders} raises L{ValueError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s.
         """
         for pair in ((b"k",), (b"k", b"v", b"x")):
             e = self.assertRaises(
-                ValueError, validateRawHeaders, None, None, (pair,)
+                ValueError, tuple, convertRawHeaders((pair,))
             )
             self.assertEqual(str(e), "header pair must be a 2-tuple")
 
@@ -176,12 +189,12 @@ class RawHeadersValidationTests(TestCase):
     def test_pairsNameNotBytes(self):
         # type: () -> None
         """
-        L{validateRawHeaders} raises L{TypeError} if the C{headerPairs}
+        L{convertRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s where the first item in
         the 2-item L{tuple} is L{bytes}.
         """
         e = self.assertRaises(
-            TypeError, validateRawHeaders, None, None, ((u"k", b"v"),)
+            TypeError, tuple, convertRawHeaders(((u"k", b"v"),))
         )
         self.assertEqual(str(e), "header name must be bytes")
 
@@ -189,19 +202,19 @@ class RawHeadersValidationTests(TestCase):
     def test_pairsValueNotBytes(self):
         # type: () -> None
         """
-        L{validateRawHeaders} raises L{TypeError} if the C{headerPairs}
+        L{convertRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s where the second item
         in the 2-item L{tuple} is bytes.
         """
         e = self.assertRaises(
             TypeError,
-            validateRawHeaders, None, None, headerPairs=((b"k", u"v"),)
+            tuple, convertRawHeaders(headerPairs=((b"k", u"v"),))
         )
         self.assertEqual(str(e), "header value must be bytes")
 
 
 
-class GetValuestestsMixIn(object):
+class GetValuesTestsMixIn(object):
     """
     Tests for utilities that access data from the "headers tartare" internal
     representation.
@@ -219,11 +232,18 @@ class GetValuestestsMixIn(object):
         C{getValues} returns an iterable of L{bytes} values for the
         given L{bytes} header name.
         """
-        rawHeaders = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"))
+        rawHeaders = (
+            (b"a", b"1"), (b"b", b"2"), (b"c", b"3"), (b"B", b"TWO")
+        )
 
+        normalized = defaultdict(list)  # type: Dict[bytes, List[bytes]]
         for name, value in rawHeaders:
+            normalized[normalizeHeaderName(name)].append(value)
+
+        for name, values in normalized.items():
             self.assertEqual(
-                tuple(self.getValues(rawHeaders, name)), (value,)
+                list(self.getValues(rawHeaders, name)), values,
+                "header name: {!r}".format(name)
             )
 
 
@@ -240,8 +260,8 @@ class GetValuestestsMixIn(object):
         textHeaders = tuple((name, value) for name, value in textPairs)
 
         textValues = defaultdict(list)  # type: Dict[Text, List[Text]]
-        for name, values in textHeaders:
-            textValues[name].append(values)
+        for name, value in textHeaders:
+            textValues[normalizeHeaderName(name)].append(value)
 
         rawHeaders = tuple(
             (headerNameAsBytes(name), headerValueAsBytes(value))
@@ -250,7 +270,10 @@ class GetValuestestsMixIn(object):
 
         for name, _values in textValues.items():
             self.assertEqual(
-                list(self.getValues(rawHeaders, name)), _values
+                list(self.getValues(rawHeaders, name)), _values,
+                "header name: {!r} :: {} :: {}".format(
+                    name, rawHeaders, textValues
+                )
             )
 
 
@@ -273,12 +296,15 @@ class GetValuestestsMixIn(object):
 
         binaryValues = defaultdict(list)  # type: Dict[Text, List[bytes]]
         for name, value in rawHeaders:
-            binaryValues[headerNameAsText(name)].append(value)
+            binaryValues[headerNameAsText(normalizeHeaderName(name))].append(
+                value
+            )
 
         for textName, values in binaryValues.items():
             self.assertEqual(
                 tuple(self.getValues(rawHeaders, textName)),
-                tuple(headerValueAsText(value) for value in values)
+                tuple(headerValueAsText(value) for value in values),
+                "header name: {!r}".format(textName)
             )
 
 
@@ -293,7 +319,7 @@ class GetValuestestsMixIn(object):
 
 
 
-class RawHeadersReadTests(GetValuestestsMixIn, TestCase):
+class RawHeadersReadTests(GetValuesTestsMixIn, TestCase):
     """
     Tests for utilities that access data from the "headers tartare" internal
     representation.
@@ -301,11 +327,11 @@ class RawHeadersReadTests(GetValuestestsMixIn, TestCase):
 
     @staticmethod
     def getValues(rawHeaders, name):
-        return getFromRawHeaders(rawHeaders, name)
+        return getFromRawHeaders(convertRawHeadersFrozen(rawHeaders), name)
 
 
 
-class FrozenHTTPHeadersTests(GetValuestestsMixIn, TestCase):
+class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
     """
     Tests for L{FrozenHTTPHeaders}.
     """
@@ -326,7 +352,7 @@ class FrozenHTTPHeadersTests(GetValuestestsMixIn, TestCase):
 
 
 
-class MutableHTTPHeadersTests(GetValuestestsMixIn, TestCase):
+class MutableHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
     """
     Tests for L{MutableHTTPHeaders}.
     """

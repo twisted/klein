@@ -21,9 +21,10 @@ from .._headers import (
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
     IHTTPHeaders, IMutableHTTPHeaders,
     MutableHTTPHeaders,
+    getFromRawHeaders,
     headerNameAsBytes, headerNameAsText,
     headerValueAsBytes, headerValueAsText,
-    validateHeadersTartare,
+    validateRawHeaders,
 )
 
 Dict, List, Optional, Text, Tuple  # Silence linter
@@ -142,19 +143,19 @@ class EncodingTests(TestCase):
 
 
 
-class HeadersTartareValidationTests(TestCase):
+class RawHeadersValidationTests(TestCase):
     """
-    Tests for L{validateHeadersTartare}.
+    Tests for L{validateRawHeaders}.
     """
 
     def test_pairNotTuple(self):
         # type: () -> None
         """
-        L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
+        L{validateRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple L{tuple}s.
         """
         e = self.assertRaises(
-            TypeError, validateHeadersTartare, None, None, ([b"k", b"v"],)
+            TypeError, validateRawHeaders, None, None, ([b"k", b"v"],)
         )
         self.assertEqual(str(e), "header pair must be a tuple")
 
@@ -162,12 +163,12 @@ class HeadersTartareValidationTests(TestCase):
     def test_pairsWrongLength(self):
         # type: () -> None
         """
-        L{validateHeadersTartare} raises L{ValueError} if the C{headerPairs}
+        L{validateRawHeaders} raises L{ValueError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s.
         """
         for pair in ((b"k",), (b"k", b"v", b"x")):
             e = self.assertRaises(
-                ValueError, validateHeadersTartare, None, None, (pair,)
+                ValueError, validateRawHeaders, None, None, (pair,)
             )
             self.assertEqual(str(e), "header pair must be a 2-tuple")
 
@@ -175,12 +176,12 @@ class HeadersTartareValidationTests(TestCase):
     def test_pairsNameNotBytes(self):
         # type: () -> None
         """
-        L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
+        L{validateRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s where the first item in
         the 2-item L{tuple} is L{bytes}.
         """
         e = self.assertRaises(
-            TypeError, validateHeadersTartare, None, None, ((u"k", b"v"),)
+            TypeError, validateRawHeaders, None, None, ((u"k", b"v"),)
         )
         self.assertEqual(str(e), "header name must be bytes")
 
@@ -188,58 +189,49 @@ class HeadersTartareValidationTests(TestCase):
     def test_pairsValueNotBytes(self):
         # type: () -> None
         """
-        L{validateHeadersTartare} raises L{TypeError} if the C{headerPairs}
+        L{validateRawHeaders} raises L{TypeError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s where the second item
         in the 2-item L{tuple} is bytes.
         """
         e = self.assertRaises(
             TypeError,
-            validateHeadersTartare, None, None, headerPairs=((b"k", u"v"),)
+            validateRawHeaders, None, None, headerPairs=((b"k", u"v"),)
         )
         self.assertEqual(str(e), "header value must be bytes")
 
 
 
-class HeadersTartareReadTests(TestCase):
+class GetValuestestsMixIn(object):
     """
     Tests for utilities that access data from the "headers tartare" internal
     representation.
     """
 
-
-
-class FrozenHTTPHeadersTests(TestCase):
-    """
-    Tests for L{FrozenHTTPHeaders}.
-    """
-
-    def test_interface(self):
-        # type: () -> None
-        """
-        L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
-        """
-        headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertProvides(IHTTPHeaders, headers)
+    def getValues(self, rawHeaders, name):
+        raise NotImplementedError(
+            "{} must implement getValues()".format(self.__class__)
+        )
 
 
     def test_getBytesName(self):
         # type: () -> None
         """
-        L{FrozenHTTPHeaders.get} returns an iterable of L{bytes} values for the
+        C{getValues} returns an iterable of L{bytes} values for the
         given L{bytes} header name.
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"))
-        headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
 
         for name, value in rawHeaders:
-            self.assertEqual(tuple(headers.getValues(name)), (value,))
+            self.assertEqual(
+                tuple(self.getValues(rawHeaders, name)), (value,)
+            )
 
 
     @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
     def test_getTextName(self, textPairs):
         # type: (Tuple[Text, Text]) -> None
         """
-        L{FrozenHTTPHeaders.get} returns an iterable of L{Text} values for
+        C{getValues} returns an iterable of L{Text} values for
         the given L{Text} header name.
 
         This test only inserts Latin1 text into the header values, which is
@@ -251,20 +243,22 @@ class FrozenHTTPHeadersTests(TestCase):
         for name, values in textHeaders:
             textValues[name].append(values)
 
-        headers = FrozenHTTPHeaders(rawHeaders=(
+        rawHeaders = tuple(
             (headerNameAsBytes(name), headerValueAsBytes(value))
             for name, value in textHeaders
-        ))
+        )
 
         for name, _values in textValues.items():
-            self.assertEqual(list(headers.getValues(name)), _values)
+            self.assertEqual(
+                list(self.getValues(rawHeaders, name)), _values
+            )
 
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
     def test_getTextNameBinaryValues(self, pairs):
         # type: (Tuple[Text, bytes]) -> None
         """
-        L{FrozenHTTPHeaders.get} returns an iterable of L{Text} values for
+        C{getValues} returns an iterable of L{Text} values for
         the given L{Text} header name.
 
         This test only inserts binary data into the header values, which
@@ -281,11 +275,9 @@ class FrozenHTTPHeadersTests(TestCase):
         for name, value in rawHeaders:
             binaryValues[headerNameAsText(name)].append(value)
 
-        headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
-
         for textName, values in binaryValues.items():
             self.assertEqual(
-                tuple(headers.getValues(textName)),
+                tuple(self.getValues(rawHeaders, textName)),
                 tuple(headerValueAsText(value) for value in values)
             )
 
@@ -293,19 +285,57 @@ class FrozenHTTPHeadersTests(TestCase):
     def test_getInvalidNameType(self):
         # type: () -> None
         """
-        L{FrozenHTTPHeaders.get} raises L{} when the given header name is of an
+        C{getValues} raises L{} when the given header name is of an
         unknown type.
         """
-        headers = FrozenHTTPHeaders(rawHeaders=())
-        e = self.assertRaises(TypeError, headers.getValues, object())
+        e = self.assertRaises(TypeError, self.getValues, (), object())
         self.assertEqual(str(e), "name must be text or bytes")
 
 
 
-class MutableHTTPHeadersTests(TestCase):
+class RawHeadersReadTests(GetValuestestsMixIn, TestCase):
+    """
+    Tests for utilities that access data from the "headers tartare" internal
+    representation.
+    """
+
+    @staticmethod
+    def getValues(rawHeaders, name):
+        return getFromRawHeaders(rawHeaders, name)
+
+
+
+class FrozenHTTPHeadersTests(GetValuestestsMixIn, TestCase):
+    """
+    Tests for L{FrozenHTTPHeaders}.
+    """
+
+    @staticmethod
+    def getValues(rawHeaders, name):
+        headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
+        return headers.getValues(name)
+
+
+    def test_interface(self):
+        # type: () -> None
+        """
+        L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
+        """
+        headers = FrozenHTTPHeaders(rawHeaders=())
+        self.assertProvides(IHTTPHeaders, headers)
+
+
+
+class MutableHTTPHeadersTests(GetValuestestsMixIn, TestCase):
     """
     Tests for L{MutableHTTPHeaders}.
     """
+
+    @staticmethod
+    def getValues(rawHeaders, name):
+        headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
+        return headers.getValues(name)
+
 
     def test_interface(self):
         # type: () -> None

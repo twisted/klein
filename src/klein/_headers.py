@@ -167,7 +167,7 @@ def headerValueAsText(value):
 
 # Internal data representation
 
-def validateHeadersTartare(instance, attribute, headerPairs):
+def validateRawHeaders(instance, attribute, headerPairs):
     # type: (Any, Any, Iterable[Iterable[bytes]]) -> None
     for pair in headerPairs:
         if not type(pair) is tuple:
@@ -184,19 +184,19 @@ def validateHeadersTartare(instance, attribute, headerPairs):
             raise TypeError("header value must be bytes")
 
 
-def getFromHeadersTartare(headersTartare, name):
+def getFromRawHeaders(rawHeaders, name):
     # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
     """
     Get a value from raw headers.
     """
     if type(name) is bytes:
-        return (v for n, v in headersTartare if name == n)
+        return (v for n, v in rawHeaders if name == n)
 
     if type(name) is Text:
         rawName = headerNameAsBytes(name)
         return(
             headerValueAsText(v)
-            for n, v in headersTartare if rawName == n
+            for n, v in rawHeaders if rawName == n
         )
 
     raise TypeError("name must be text or bytes")
@@ -213,13 +213,13 @@ class FrozenHTTPHeaders(object):
     """
 
     rawHeaders = attrib(
-        convert=tuple, validator=validateHeadersTartare
+        convert=tuple, validator=validateRawHeaders
     )  # type: RawHeaders
 
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
-        return getFromHeadersTartare(self.rawHeaders, name)
+        return getFromRawHeaders(self.rawHeaders, name)
 
 
 
@@ -231,7 +231,7 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=list, validator=validateHeadersTartare
+        convert=list, validator=validateRawHeaders
     )  # type: MutableRawHeaders
 
 
@@ -243,7 +243,7 @@ class MutableHTTPHeaders(object):
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
-        return getFromHeadersTartare(self._rawHeaders, name)
+        return getFromRawHeaders(self._rawHeaders, name)
 
 
     def remove(self, name):

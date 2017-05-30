@@ -501,4 +501,25 @@ class HTTPHeadersFromHeadersTests(TestCase):
         headers = HTTPHeadersFromHeaders(headers=Headers({}))
         self.assertProvides(IHTTPHeaders, headers)
 
-    test_interface.todo = "unimplemented"
+
+    def test_rawHeaders(self):
+        # type: () -> None
+        """
+        L{MutableHTTPHeaders.rawHeaders} returns raw headers matching the
+        L{Headers} given at init time.
+        """
+        rawHeaders = ((b"b", b"2a"), (b"a", b"1"), (b"B", b"2b"))
+        webHeaders = Headers()
+        for name, value in rawHeaders:
+            webHeaders.addRawHeader(name, value)
+        headers = HTTPHeadersFromHeaders(headers=webHeaders)
+
+        # Note that Headers does not give you back header names in network
+        # order, but it should give us back values in network order.
+        # So we need to normalize our way around.
+
+        normalizedRawHeaders = convertRawHeadersFrozen(rawHeaders)
+
+        self.assertEqual(
+            sorted(headers.rawHeaders), sorted(normalizedRawHeaders)
+        )

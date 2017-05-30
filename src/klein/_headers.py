@@ -328,4 +328,15 @@ class HTTPHeadersFromHeaders(object):
     @property
     def rawHeaders(self):
         # type: () -> RawHeaders
-        return tuple(self._headers.getAllRawHeaders())
+        def pairs():
+            for name, values in self._headers.getAllRawHeaders():
+                name = normalizeHeaderName(name)
+                for value in values:
+                    yield (name, value)
+
+        return tuple(pairs())
+
+
+    def getValues(self, name):
+        # type: (AnyStr) -> Iterable[AnyStr]
+        raise NotImplementedError()

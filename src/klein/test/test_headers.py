@@ -395,6 +395,72 @@ class MutableHTTPHeadersTests(GetValuestestsMixIn, TestCase):
         self.assertEqual(str(e), "name must be text or bytes")
 
 
+    def test_addValueBytesName(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.addValue} adds the given L{bytes} value for the
+        given L{bytes} header name.
+        """
+        rawHeaders = ((b"a", b"1"), (b"b", b"2a"))
+        headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
+        headers.addValue(b"b", b"2b")
+
+        self.assertEqual(
+            headers.rawHeaders, ((b"a", b"1"), (b"b", b"2a"), (b"b", b"2b"))
+        )
+
+
+    def test_addValueTextName(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.addValue} adds the given L{Text} value for the
+        given L{Text} header name.
+        """
+        rawHeaders = ((b"a", b"1"), (b"b", b"2a"))
+        headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
+        headers.addValue(u"b", u"2b")
+
+        self.assertEqual(
+            headers.rawHeaders, ((b"a", b"1"), (b"b", b"2a"), (b"b", b"2b"))
+        )
+
+
+    def test_addValueBytesNameTextValue(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.addValue} raises L{TypeError} when the given
+        header name is L{bytes} and the given value is L{Text}.
+        """
+        headers = MutableHTTPHeaders(rawHeaders=())
+
+        e = self.assertRaises(TypeError, headers.addValue, b"a", u"1")
+        self.assertEqual(str(e), "value must be bytes to match name")
+
+
+    def test_addValueTextNameBytesValue(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.addValue} raises L{TypeError} when the given
+        header name is L{Text} and the given value is L{bytes}.
+        """
+        headers = MutableHTTPHeaders(rawHeaders=())
+
+        e = self.assertRaises(TypeError, headers.addValue, u"a", b"1")
+        self.assertEqual(str(e), "value must be text to match name")
+
+
+    def test_addValueInvalidNameType(self):
+        # type: () -> None
+        """
+        C{MutableHTTPHeaders.addValue} raises L{TypeError} when the given
+        header name is of an unknown type.
+        """
+        headers = MutableHTTPHeaders(rawHeaders=())
+
+        e = self.assertRaises(TypeError, headers.addValue, object(), b"1")
+        self.assertEqual(str(e), "name must be text or bytes")
+
+
 
 class HTTPHeadersFromHeadersTests(TestCase):
     """

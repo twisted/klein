@@ -271,9 +271,7 @@ class GetValuesTestsMixIn(object):
         for name, _values in textValues.items():
             self.assertEqual(
                 list(self.getValues(rawHeaders, name)), _values,
-                "header name: {!r} :: {} :: {}".format(
-                    name, rawHeaders, textValues
-                )
+                "header name: {!r}".format(name)
             )
 
 
@@ -488,10 +486,21 @@ class MutableHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
 
 
 
-class HTTPHeadersFromHeadersTests(TestCase):
+class HTTPHeadersFromHeadersTests(GetValuesTestsMixIn, TestCase):
     """
     Tests for L{HTTPHeadersFromHeaders}.
     """
+
+    @staticmethod
+    def getValues(rawHeaders, name):
+        webHeaders = Headers()
+        for rawName, rawValue in rawHeaders:
+            webHeaders.addRawHeader(rawName, rawValue)
+
+        headers = HTTPHeadersFromHeaders(headers=webHeaders)
+
+        return headers.getValues(name)
+
 
     def test_interface(self):
         # type: () -> None

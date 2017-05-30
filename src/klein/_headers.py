@@ -339,4 +339,16 @@ class HTTPHeadersFromHeaders(object):
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
-        raise NotImplementedError()
+        if type(name) is bytes:
+            values = self._headers.getRawHeaders(name, default=())
+        elif type(name) is Text:
+            values = (
+                headerValueAsText(value)
+                for value in self._headers.getRawHeaders(
+                    headerNameAsBytes(name), default=()
+                )
+            )
+        else:
+            raise TypeError("name must be text or bytes")
+
+        return tuple(values)

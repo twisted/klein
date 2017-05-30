@@ -9,7 +9,7 @@ HTTP request.
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, optional, provides
 from io import BytesIO
-from typing import Awaitable, Text
+from typing import Any, Iterable, Text, Union
 from typing.io import BinaryIO
 
 from hyperlink import URL
@@ -18,7 +18,7 @@ from tubes.itube import IDrain, IFount, ISegment
 from tubes.kit import Pauser, beginFlowingTo
 from tubes.undefer import fountToDeferred
 
-from twisted.internet.defer import succeed
+from twisted.internet.defer import Deferred, succeed
 from twisted.python.compat import nativeString
 from twisted.python.failure import Failure
 from twisted.web.iweb import IRequest
@@ -29,7 +29,7 @@ from ._headers import (
     FrozenHTTPHeaders, HTTPHeadersFromHeaders, IHTTPHeaders
 )
 
-Awaitable, BinaryIO, IHTTPHeaders, Text  # Silence linter
+Any, BinaryIO, Deferred, IHTTPHeaders, Iterable, Text, Union  # Silence linter
 
 
 __all__ = ()
@@ -74,7 +74,7 @@ class IHTTPRequest(Interface):
 
 
     def bodyAsBytes():
-        # type: () -> Awaitable[bytes]
+        # type: () -> Deferred[bytes]
         """
         The request entity body, as bytes.
 
@@ -152,6 +152,7 @@ class HTTPRequest(object):
         # assuming: IFount.providedBy(self._body)
 
         def cache(bodyBytes):
+            # type: (bytes) -> bytes
             self._state._cachedBody = bodyBytes
             return bodyBytes
 
@@ -228,7 +229,7 @@ class HTTPRequestFromIRequest(object):
     @property
     def headers(self):
         # type: () -> IHTTPHeaders
-        return HTTPHeadersFromHeaders(self._request.requestHeaders)
+        return HTTPHeadersFromHeaders(headers=self._request.requestHeaders)
 
 
     def bodyAsFount(self):
@@ -263,7 +264,9 @@ class HTTPRequestFromIRequest(object):
 # Fount-related utilities that probably should live in tubes.
 
 def fountToBytes(fount):
+    # type: (IFount) -> Deferred[bytes]
     def collect(chunks):
+        # type: (Iterable[bytes]) -> bytes
         return b"".join(chunks)
 
     d = fountToDeferred(fount)
@@ -271,9 +274,10 @@ def fountToBytes(fount):
     return d
 
 
-def bytesToFount(bytes):
+def bytesToFount(data):
+    # type: (bytes) -> IFount
     # FIXME: This seems rather round-about
-    return IOFount(source=BytesIO(bytes))
+    return IOFount(source=BytesIO(data))
 
 
 @implementer(IFount)

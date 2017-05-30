@@ -329,6 +329,7 @@ class HTTPHeadersFromHeaders(object):
     def rawHeaders(self):
         # type: () -> RawHeaders
         def pairs():
+            # type: () -> Iterable[Tuple[bytes, bytes]]
             for name, values in self._headers.getAllRawHeaders():
                 name = normalizeHeaderName(name)
                 for value in values:

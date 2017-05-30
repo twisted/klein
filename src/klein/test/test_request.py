@@ -255,7 +255,7 @@ class HTTPRequestFromIRequestTests(TestCase):
 
 
     def test_bodyAsBytesCached(self):
-        # type: (bytes) -> None
+        # type: () -> None
         """
         L{HTTPRequestFromIRequest.bodyAsBytes} matches the underlying legacy
         request body.

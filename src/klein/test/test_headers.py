@@ -7,7 +7,7 @@ Tests for L{klein._headers}.
 """
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Text, Tuple
+from typing import AnyStr, Dict, Iterable, List, Optional, Text, Tuple, cast
 
 from hypothesis import assume, given
 from hypothesis.strategies import binary, iterables, text, tuples
@@ -21,13 +21,14 @@ from .._headers import (
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
     IHTTPHeaders, IMutableHTTPHeaders,
     MutableHTTPHeaders,
-    getFromRawHeaders,
+    RawHeaders, getFromRawHeaders,
     normalizeRawHeaders, normalizeRawHeadersFrozen,
     normalizeHeaderName,
     headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
 )
 
-Dict, List, Optional, Text, Tuple  # Silence linter
+# Silence linter
+AnyStr, Dict, Iterable, List, Optional, RawHeaders, Text, Tuple
 
 
 __all__ = ()
@@ -149,7 +150,7 @@ class HeaderNameNormalizationTests(TestCase):
     """
 
     def test_normalizeLowerCase(self):
-        # type: (Text) -> None
+        # type: () -> None
         """
         L{normalizeHeaderName} normalizes header names to lower case.
         """
@@ -182,7 +183,9 @@ class RawHeadersConversionTests(TestCase):
         """
         for pair in ((b"k",), (b"k", b"v", b"x")):
             e = self.assertRaises(
-                ValueError, tuple, normalizeRawHeaders((pair,))
+                ValueError,
+                tuple,
+                normalizeRawHeaders(cast(Iterable[Iterable[bytes]], (pair,))),
             )
             self.assertEqual(str(e), "header pair must be a 2-tuple")
 
@@ -195,7 +198,11 @@ class RawHeadersConversionTests(TestCase):
         the 2-item L{tuple} is L{bytes}.
         """
         e = self.assertRaises(
-            TypeError, tuple, normalizeRawHeaders(((u"k", b"v"),))
+            TypeError,
+            tuple,
+            normalizeRawHeaders(
+                cast(Iterable[Iterable[bytes]], ((u"k", b"v"),))
+            )
         )
         self.assertEqual(str(e), "header name must be bytes")
 
@@ -209,7 +216,10 @@ class RawHeadersConversionTests(TestCase):
         """
         e = self.assertRaises(
             TypeError,
-            tuple, normalizeRawHeaders(headerPairs=((b"k", u"v"),))
+            tuple,
+            normalizeRawHeaders(
+                cast(Iterable[Iterable[bytes]], ((b"k", u"v"),))
+            )
         )
         self.assertEqual(str(e), "header value must be bytes")
 
@@ -222,6 +232,7 @@ class GetValuesTestsMixIn(object):
     """
 
     def getValues(self, rawHeaders, name):
+        # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         raise NotImplementedError(
             "{} must implement getValues()".format(self.__class__)
         )
@@ -242,7 +253,7 @@ class GetValuesTestsMixIn(object):
             normalized[normalizeHeaderName(name)].append(value)
 
         for name, values in normalized.items():
-            self.assertEqual(
+            cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)), values,
                 "header name: {!r}".format(name)
             )
@@ -270,7 +281,7 @@ class GetValuesTestsMixIn(object):
         )
 
         for name, _values in textValues.items():
-            self.assertEqual(
+            cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)), _values,
                 "header name: {!r}".format(name)
             )
@@ -300,7 +311,7 @@ class GetValuesTestsMixIn(object):
             )
 
         for textName, values in binaryValues.items():
-            self.assertEqual(
+            cast(TestCase, self).assertEqual(
                 tuple(self.getValues(rawHeaders, textName)),
                 tuple(headerValueAsText(value) for value in values),
                 "header name: {!r}".format(textName)
@@ -313,8 +324,10 @@ class GetValuesTestsMixIn(object):
         C{getValues} raises L{TypeError} when the given header name is of an
         unknown type.
         """
-        e = self.assertRaises(TypeError, self.getValues, (), object())
-        self.assertEqual(str(e), "name must be text or bytes")
+        e = cast(TestCase, self).assertRaises(
+            TypeError, self.getValues, (), object()
+        )
+        cast(TestCase, self).assertEqual(str(e), "name must be text or bytes")
 
 
 
@@ -324,8 +337,8 @@ class RawHeadersReadTests(GetValuesTestsMixIn, TestCase):
     representation.
     """
 
-    @staticmethod
-    def getValues(rawHeaders, name):
+    def getValues(self, rawHeaders, name):
+        # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         return getFromRawHeaders(normalizeRawHeadersFrozen(rawHeaders), name)
 
 
@@ -335,8 +348,8 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
     Tests for L{FrozenHTTPHeaders}.
     """
 
-    @staticmethod
-    def getValues(rawHeaders, name):
+    def getValues(self, rawHeaders, name):
+        # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
         return headers.getValues(name)
 
@@ -356,8 +369,8 @@ class MutableHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
     Tests for L{MutableHTTPHeaders}.
     """
 
-    @staticmethod
-    def getValues(rawHeaders, name):
+    def getValues(self, rawHeaders, name):
+        # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         headers = MutableHTTPHeaders(rawHeaders=rawHeaders)
         return headers.getValues(name)
 
@@ -492,8 +505,8 @@ class HTTPHeadersFromHeadersTests(GetValuesTestsMixIn, TestCase):
     Tests for L{HTTPHeadersFromHeaders}.
     """
 
-    @staticmethod
-    def getValues(rawHeaders, name):
+    def getValues(self, rawHeaders, name):
+        # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         webHeaders = Headers()
         for rawName, rawValue in rawHeaders:
             webHeaders.addRawHeader(rawName, rawValue)

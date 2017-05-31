@@ -4,7 +4,7 @@ from klein import Klein
 from klein.resource import KleinResource
 from klein.test.util import TestCase
 
-from .test_resource import LeafResource, requestMock, _render
+from .test_resource import LeafResource, _render, requestMock
 
 
 class PY3KleinResourceTests(TestCase):

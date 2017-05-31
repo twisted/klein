@@ -8,4 +8,4 @@ Provides Klein version information.
 from incremental import Version
 
 __version__ = Version('Klein', 17, 2, 0)
-__all__ = ["__version__"]
+__all__ = ("__version__",)

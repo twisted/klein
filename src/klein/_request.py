@@ -3,7 +3,7 @@
 # See LICENSE for details.
 
 """
-HTTP request.
+HTTP request API.
 """
 
 from attr import Factory, attrib, attrs
@@ -263,6 +263,7 @@ class HTTPRequestFromIRequest(object):
 
 # Fount-related utilities that probably should live in tubes.
 
+# See https://github.com/twisted/tubes/issues/60
 def fountToBytes(fount):
     # type: (IFount) -> Deferred[bytes]
     def collect(chunks):
@@ -274,6 +275,7 @@ def fountToBytes(fount):
     return d
 
 
+# See https://github.com/twisted/tubes/issues/60
 def bytesToFount(data):
     # type: (bytes) -> IFount
     # FIXME: This seems rather round-about
@@ -281,6 +283,7 @@ def bytesToFount(data):
 
 
 
+# https://github.com/twisted/tubes/issues/61
 @implementer(IFount)
 @attrs(frozen=False)
 class IOFount(object):

@@ -3,7 +3,7 @@
 # See LICENSE for details.
 
 """
-HTTP headers.
+HTTP headers API.
 """
 
 from attr import Factory, attrib, attrs

@@ -123,7 +123,7 @@ class HTTPRequest(object):
             validator=optional(instance_of(bytes)), default=None, init=False
         )  # type: bytes
 
-    method  = attrib(validator=instance_of(str))  # type: Text
+    method  = attrib(validator=instance_of(Text))  # type: Text
     uri     = attrib(validator=instance_of(URL))  # type: URL
     headers = attrib(
         validator=instance_of(FrozenHTTPHeaders)

@@ -42,7 +42,8 @@ The following curl command can be used to test this behaviour::
 Accessing the request content
 =============================
 
-To read the content of the request use ``request.content.read()``
+To read the content of the request use the ``read`` method of
+:api:`twisted.web.iweb.IRequest.content <IRequest.content>`
 
 .. code-block:: python
 
@@ -55,7 +56,7 @@ To read the content of the request use ``request.content.read()``
         response = json.dumps(dict(the_data=content), indent=4)
         return response
     
-     run("localhost", 8080)
+    run("localhost", 8080)
  
  
 The following curl command can be used to test this behaviour::

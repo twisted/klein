@@ -108,9 +108,9 @@ def validateBody(instance, attribute, body):
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
-class HTTPRequest(object):
+class FrozenHTTPRequest(object):
     """
-    HTTP request.
+    Immutable HTTP request.
     """
 
     @attrs(frozen=False)

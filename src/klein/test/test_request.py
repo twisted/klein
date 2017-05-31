@@ -22,7 +22,7 @@ from ._trial import TestCase
 from .test_resource import requestMock
 from .._headers import FrozenHTTPHeaders, IHTTPHeaders
 from .._request import (
-    HTTPRequest, HTTPRequestFromIRequest, IHTTPRequest, NoContentError,
+    FrozenHTTPRequest, HTTPRequestFromIRequest, IHTTPRequest, NoContentError,
     bytesToFount, fountToBytes,
 )
 
@@ -33,17 +33,17 @@ __all__ = ()
 
 
 
-class HTTPRequestTests(TestCase):
+class FrozenHTTPRequestTests(TestCase):
     """
-    Tests for L{HTTPRequest}.
+    Tests for L{FrozenHTTPRequest}.
     """
 
     def test_interface(self):
         # type: () -> None
         """
-        L{HTTPRequest} implements L{IHTTPRequest}.
+        L{FrozenHTTPRequest} implements L{IHTTPRequest}.
         """
-        request = HTTPRequest(
+        request = FrozenHTTPRequest(
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
@@ -55,12 +55,12 @@ class HTTPRequestTests(TestCase):
     def test_initInvalidBodyType(self):
         # type: () -> None
         """
-        L{HTTPRequest} raises L{TypeError} when given a body of an unknown
-        type.
+        L{FrozenHTTPRequest} raises L{TypeError} when given a body of an
+        unknown type.
         """
         e = self.assertRaises(
             TypeError,
-            HTTPRequest,
+            FrozenHTTPRequest,
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
@@ -73,10 +73,10 @@ class HTTPRequestTests(TestCase):
     def test_bodyAsFountFromBytes(self, data):
         # type: (bytes) -> None
         """
-        L{HTTPRequestFromIRequest.bodyAsFount} returns a fount with the same
-        bytes given to C{__init__}.
+        L{FrozenHTTPRequest.bodyAsFount} returns a fount with the same bytes
+        given to C{__init__}.
         """
-        request = HTTPRequest(
+        request = FrozenHTTPRequest(
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
@@ -92,10 +92,10 @@ class HTTPRequestTests(TestCase):
     def test_bodyAsFountFromFount(self, data):
         # type: (bytes) -> None
         """
-        L{HTTPRequestFromIRequest.bodyAsBytes} returns the bytes from the fount
-        given to C{__init__}.
+        L{FrozenHTTPRequest.bodyAsBytes} returns the bytes from the fount given
+        to C{__init__}.
         """
-        request = HTTPRequest(
+        request = FrozenHTTPRequest(
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
@@ -111,10 +111,10 @@ class HTTPRequestTests(TestCase):
     def test_bodyAsBytesFromBytes(self, data):
         # type: (bytes) -> None
         """
-        L{HTTPRequestFromIRequest.bodyAsBytes} returns the same bytes given to
+        L{FrozenHTTPRequest.bodyAsBytes} returns the same bytes given to
         C{__init__}.
         """
-        request = HTTPRequest(
+        request = FrozenHTTPRequest(
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
@@ -129,10 +129,10 @@ class HTTPRequestTests(TestCase):
     def test_bodyAsBytesFromFount(self, data):
         # type: (bytes) -> None
         """
-        L{HTTPRequestFromIRequest.bodyAsBytes} returns the bytes from the fount
-        given to C{__init__}.
+        L{FrozenHTTPRequest.bodyAsBytes} returns the bytes from the fount given
+        to C{__init__}.
         """
-        request = HTTPRequest(
+        request = FrozenHTTPRequest(
             method=u"GET",
             uri=URL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),

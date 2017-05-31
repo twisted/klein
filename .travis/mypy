@@ -26,7 +26,18 @@ mypy "$@"      \
         -e '^src/klein/test/test_resource.py:.[0-9:]*: error: .* has no attribute'  \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'  \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'  \
-        -e ': error: Callable\[\[[^\]*\], None\] has no attribute "todo"'  \
+        -e '^src/klein/_headers.py:.[0-9:]*: error: Incompatible types in assignment (expression has type "str", variable has type "bytes")'  \
+        -e '^src/klein/test/test_headers.py:.[0-9:]*: error: '\''builtins.object'\'' object is not iterable'  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPRequest"'        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersFromHeaders"'   \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestFromIRequest"'  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "MutableHTTPHeaders"'       \
+        -e ': error: Incompatible return value type (got "[^"]*", expected "I[^"]*")'    \
+        -e ': error: Method must have at least one argument'                             \
+        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "todo"'               \
+        -e ': error: Generator has incompatible item type'                               \
         > "${tmp}" || true;
 
 sort < "${tmp}";

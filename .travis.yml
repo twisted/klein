@@ -25,52 +25,52 @@ branches:
 matrix:
   include:
     - python: 3.5
-      env: TOXENV=coverage-py35-twtrunk
+      env: TOXENV=coverage-py35-twtrunk,codecov
     - python: 3.5
-      env: TOXENV=coverage-py35-twcurrent
+      env: TOXENV=coverage-py35-twcurrent,codecov
     - python: 3.5
-      env: TOXENV=coverage-py35-tw160
+      env: TOXENV=coverage-py35-tw160,codecov
     - python: 3.5
-      env: TOXENV=coverage-py35-tw155
+      env: TOXENV=coverage-py35-tw155,codecov
 
     - python: 3.4
-      env: TOXENV=coverage-py34-twtrunk
+      env: TOXENV=coverage-py34-twtrunk,codecov
     - python: 3.4
-      env: TOXENV=coverage-py34-twcurrent
+      env: TOXENV=coverage-py34-twcurrent,codecov
     - python: 3.4
-      env: TOXENV=coverage-py34-tw160
+      env: TOXENV=coverage-py34-tw160,codecov
     - python: 3.4
-      env: TOXENV=coverage-py34-tw155
+      env: TOXENV=coverage-py34-tw155,codecov
 
     - python: 3.3
-      env: TOXENV=coverage-py33-twtrunk
+      env: TOXENV=coverage-py33-twtrunk,codecov
     - python: 3.3
-      env: TOXENV=coverage-py33-twcurrent
+      env: TOXENV=coverage-py33-twcurrent,codecov
     - python: 3.3
-      env: TOXENV=coverage-py33-tw160
+      env: TOXENV=coverage-py33-tw160,codecov
     - python: 3.3
-      env: TOXENV=coverage-py33-tw155
+      env: TOXENV=coverage-py33-tw155,codecov
 
     - python: 2.7
-      env: TOXENV=coverage-py27-twtrunk
+      env: TOXENV=coverage-py27-twtrunk,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-twcurrent
+      env: TOXENV=coverage-py27-twcurrent,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-tw160
+      env: TOXENV=coverage-py27-tw160,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-tw150
+      env: TOXENV=coverage-py27-tw150,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-tw140
+      env: TOXENV=coverage-py27-tw140,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-tw130
+      env: TOXENV=coverage-py27-tw130,codecov
 
     # PyPy (Python 2.7)
-    - env: TOXENV=coverage-pypy-twtrunk   PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-twcurrent PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw160     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw150     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw140     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw130     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw160,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw150,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw140,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw130,codecov     PYPY_VERSION=5.7.1
 
     - python: 3.5
       env: TOXENV=flake8
@@ -82,8 +82,6 @@ matrix:
       env: TOXENV=docs
     - python: 2.7
       env: TOXENV=docs-linkcheck
-    - python: 3.5
-      env: TOXENV=py35-coverage,codecov
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.

@@ -280,6 +280,7 @@ def bytesToFount(data):
     return IOFount(source=BytesIO(data))
 
 
+
 @implementer(IFount)
 @attrs(frozen=False)
 class IOFount(object):

@@ -213,7 +213,29 @@ class HTTPRequestFromIRequestTests(TestCase):
         note("_request.uri: {!r}".format(path))
         note("request.uri: {!r}".format(request.uri))
 
-        self.assertEqual(normalize(request.uri), normalize(uri))
+        uriNormalized = normalize(uri)
+        requestURINormalized = normalize(request.uri)
+
+        # Needed because non-equal URLs can render as the same strings
+        def strURL(url):
+            # type: (URL) -> Text
+            return (
+                u"URL(scheme={url.scheme!r}, "
+                u"userinfo={url.userinfo!r}, "
+                u"host={url.host!r}, "
+                u"port={url.port!r}, "
+                u"path={url.path!r}, "
+                u"query={url.query!r}, "
+                u"fragment={url.fragment!r}, "
+                u"rooted={url.rooted})"
+            ).format(url=url)
+
+        self.assertEqual(
+            requestURINormalized, uriNormalized,
+            "{} != {}".format(
+                strURL(requestURINormalized), strURL(uriNormalized)
+            )
+        )
 
 
     def test_headers(self):

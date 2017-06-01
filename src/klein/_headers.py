@@ -93,7 +93,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
     def remove(name):
         # type: (AnyStr) -> None
         """
-        Remove all header name/value pairs for the given name,
+        Remove all header name/value pairs for the given header name.
 
         If the given name is L{Text}, it will be encoded as ASCII before
         comparing to the (L{bytes}) header names.

@@ -17,14 +17,14 @@ from twisted.web.http_headers import Headers
 from ._strategies import ascii_text, latin1_text
 from ._trial import TestCase
 from .._headers import (
-    FrozenHTTPHeaders, HTTPHeadersFromHeaders,
+    FrozenHTTPHeaders,
     HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
+    HTTPHeadersFromHeaders,
     IHTTPHeaders, IMutableHTTPHeaders,
     MutableHTTPHeaders,
     RawHeaders, getFromRawHeaders,
-    normalizeRawHeaders, normalizeRawHeadersFrozen,
-    normalizeHeaderName,
     headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
+    normalizeHeaderName, normalizeRawHeaders, normalizeRawHeadersFrozen,
 )
 
 # Silence linter

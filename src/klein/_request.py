@@ -6,11 +6,12 @@
 HTTP request API.
 """
 
-from attr import Factory, attrib, attrs
-from attr.validators import instance_of, optional, provides
 from io import BytesIO
 from typing import Any, Iterable, Text, Union
 from typing.io import BinaryIO
+
+from attr import Factory, attrib, attrs
+from attr.validators import instance_of, optional, provides
 
 from hyperlink import URL
 

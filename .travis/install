@@ -13,6 +13,7 @@ case "${TOXENV}" in
 
         pyenv="${PYENV_ROOT}/bin/pyenv";
 
+        # Temporarily unset -e and -u because pyenv isn't clean
         set +e
         set +u
         eval "$("${pyenv}" init -)";
@@ -26,4 +27,4 @@ case "${TOXENV}" in
         ;;
 esac;
 
-pip install tox coverage codecov;
+pip install tox;

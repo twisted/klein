@@ -45,15 +45,6 @@ matrix:
     - python: 2.7
       env: TOXENV=trial-py27-twtrunk
 
-    - python: 3.3
-      env: TOXENV=trial-py33-tw155
-    - python: 3.3
-      env: TOXENV=trial-py33-tw160
-    - python: 3.3
-      env: TOXENV=trial-py33-twcurrent
-    - python: 3.3
-      env: TOXENV=trial-py33-twtrunk
-
     - python: 3.4
       env: TOXENV=trial-py34-tw155
     - python: 3.4

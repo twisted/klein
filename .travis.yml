@@ -24,56 +24,58 @@ branches:
 #
 matrix:
   include:
+    - python: 3.5
+      env: TOXENV=coverage-py35-twtrunk,codecov
+    - python: 3.5
+      env: TOXENV=coverage-py35-twcurrent,codecov
+    - python: 3.5
+      env: TOXENV=coverage-py35-tw160,codecov
+    - python: 3.5
+      env: TOXENV=coverage-py35-tw155,codecov
+
+    - python: 3.4
+      env: TOXENV=coverage-py34-twtrunk,codecov
+    - python: 3.4
+      env: TOXENV=coverage-py34-twcurrent,codecov
+    - python: 3.4
+      env: TOXENV=coverage-py34-tw160,codecov
+    - python: 3.4
+      env: TOXENV=coverage-py34-tw155,codecov
+
+    - python: 3.3
+      env: TOXENV=coverage-py33-twtrunk,codecov
+    - python: 3.3
+      env: TOXENV=coverage-py33-twcurrent,codecov
+    - python: 3.3
+      env: TOXENV=coverage-py33-tw160,codecov
+    - python: 3.3
+      env: TOXENV=coverage-py33-tw155,codecov
+
+    - python: 2.7
+      env: TOXENV=coverage-py27-twtrunk,codecov
+    - python: 2.7
+      env: TOXENV=coverage-py27-twcurrent,codecov
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw160,codecov
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw150,codecov
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw140,codecov
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw130,codecov
+
     # PyPy (Python 2.7)
-    - env: TOXENV=trial-pypy-tw130     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-tw140     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-tw150     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-tw160     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-twcurrent PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-twtrunk   PYPY_VERSION=5.7.1
-
-    - python: 2.7
-      env: TOXENV=trial-py27-tw130
-    - python: 2.7
-      env: TOXENV=trial-py27-tw140
-    - python: 2.7
-      env: TOXENV=trial-py27-tw150
-    - python: 2.7
-      env: TOXENV=trial-py27-tw160
-    - python: 2.7
-      env: TOXENV=trial-py27-twcurrent
-    - python: 2.7
-      env: TOXENV=trial-py27-twtrunk
-
-    - python: 3.3
-      env: TOXENV=trial-py33-tw155
-    - python: 3.3
-      env: TOXENV=trial-py33-tw160
-    - python: 3.3
-      env: TOXENV=trial-py33-twcurrent
-    - python: 3.3
-      env: TOXENV=trial-py33-twtrunk
-
-    - python: 3.4
-      env: TOXENV=trial-py34-tw155
-    - python: 3.4
-      env: TOXENV=trial-py34-tw160
-    - python: 3.4
-      env: TOXENV=trial-py34-twcurrent
-    - python: 3.4
-      env: TOXENV=trial-py34-twtrunk
-
-    - python: 3.5
-      env: TOXENV=trial-py35-tw155
-    - python: 3.5
-      env: TOXENV=trial-py35-tw160
-    - python: 3.5
-      env: TOXENV=trial-py35-twcurrent
-    - python: 3.5
-      env: TOXENV=trial-py35-twtrunk
+    - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw160,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw150,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw140,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw130,codecov     PYPY_VERSION=5.7.1
 
     - python: 3.5
       env: TOXENV=flake8
+    - python: 3.5
+      env: TOXENV=mypy
     - python: 2.7
       env: TOXENV=twistedchecker-diff
     - python: 2.7

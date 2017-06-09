@@ -56,15 +56,6 @@ matrix:
     - env: TOXENV=coverage-pypy-tw140,codecov     PYPY_VERSION=5.7.1
     - env: TOXENV=coverage-pypy-tw130,codecov     PYPY_VERSION=5.7.1
 
-    - python: 3.3
-      env: TOXENV=coverage-py33-tw155,codecov
-    - python: 3.3
-      env: TOXENV=coverage-py33-tw160,codecov
-    - python: 3.3
-      env: TOXENV=coverage-py33-twcurrent,codecov
-    - python: 3.3
-      env: TOXENV=coverage-py33-twtrunk,codecov
-
     - python: 3.4
       env: TOXENV=coverage-py34-tw155,codecov
     - python: 3.4

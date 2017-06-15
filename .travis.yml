@@ -16,11 +16,13 @@ branches:
 # For each supported version of Python, we will test with:
 #
 #  * The first minor version of Twisted for each major version that supports
-#    the tested version of Python, staring with Twisted 13.
+#    the tested version of Python, covering two years of releases.
 #
 #  * The current release of Twisted.
 #
 #  * Twisted trunk, at the time of the build.
+#    This is allowed to fail, as a failure in only this case indicates a likely
+#    compatibility bug in Twisted trunk.
 #
 matrix:
   include:
@@ -35,26 +37,20 @@ matrix:
     - python: 2.7
       env: TOXENV=docs-linkcheck
 
+    # PyPy (Python 2.7)
+    - env: TOXENV=trial-pypy-tw155,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=trial-pypy-tw160,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=trial-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
+    - env: TOXENV=trial-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
+
     - python: 2.7
-      env: TOXENV=coverage-py27-tw130,codecov
-    - python: 2.7
-      env: TOXENV=coverage-py27-tw140,codecov
-    - python: 2.7
-      env: TOXENV=coverage-py27-tw150,codecov
+      env: TOXENV=coverage-py27-tw155
     - python: 2.7
       env: TOXENV=coverage-py27-tw160,codecov
     - python: 2.7
       env: TOXENV=coverage-py27-twcurrent,codecov
     - python: 2.7
       env: TOXENV=coverage-py27-twtrunk,codecov
-
-    # PyPy (Python 2.7)
-    - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw160,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw150,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw140,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw130,codecov     PYPY_VERSION=5.7.1
 
     - python: 3.4
       env: TOXENV=coverage-py34-tw155,codecov
@@ -85,11 +81,10 @@ matrix:
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
-    - env: TOXENV=coverage-py35-twtrunk
-    - env: TOXENV=coverage-py34-twtrunk
-    - env: TOXENV=coverage-py33-twtrunk
-    - env: TOXENV=coverage-py27-twtrunk
     - env: TOXENV=coverage-pypy-twtrunk
+    - env: TOXENV=coverage-py27-twtrunk
+    - env: TOXENV=coverage-py34-twtrunk
+    - env: TOXENV=coverage-py35-twtrunk
 
     # This is not yet required.
     - env: TOXENV=twistedchecker-diff

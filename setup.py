@@ -26,7 +26,7 @@ if __name__ == "__main__":
         use_incremental=True,
         install_requires=[
             "six",
-            "Twisted>=13.2",
+            "Twisted>=15.5",
             "werkzeug",
             "incremental",
         ],

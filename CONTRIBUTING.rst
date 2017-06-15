@@ -13,14 +13,14 @@ Klein is an open source project that welcomes contributions of all kinds coming 
 Getting started
 ===============
 
-Here is a list of shell commands that will install the dependencies of Klein, run the test suite with Python 2.7 and the current version of Twisted, compile the documentation, and check for coding style issues with pyflakes.
+Here is a list of shell commands that will install the dependencies of Klein, run the test suite with Python 2.7 and the current version of Twisted, compile the documentation, and check for coding style issues with flake8.
 
 .. code-block:: shell
 
    pip install --user tox
    tox -e py27-twcurrent
    tox -e docs
-   tox -e pyflakes
+   tox -e flake8
 
 `Tox <https://tox.readthedocs.io/en/latest/>`_ makes a virtualenv, installs Klein's dependencies into the virtualenv, and then runs a set of commands based on the ``-e`` (environment) argument.
 This strategy allows one to make and test changes to Klein without needing to change system-level Python packages.
@@ -39,13 +39,13 @@ Code
   Similarly, if you change existing code, following the Twisted style guide is good, but is less important than not breaking public APIs.
 - Compatibility across versions is important: here are `Twisted's compatibility guidelines <https://twistedmatrix.com/trac/wiki/CompatibilityPolicy>`_, which Klein shares.
 - If you're adding a new feature, please add a file with an example and some explanation to the `examples directory <https://github.com/twisted/klein/tree/master/docs/examples>`_, then add your example to ``/docs/index.rst``.
-- Please run ``tox -e pyflakes`` to check for style issues in changed code.
-  PyFlakes and similar tools expose many small-but-common errors early enough that it's easy to remedy the problem.
+- Please run ``tox -e flake8`` to check for style issues in changed code.
+  Flake8 and similar tools expose many small-but-common errors early enough that it's easy to remedy the problem.
 - Code changes should have tests: untested code is buggy code.
   Klein uses `Twisted Trial <http://twistedmatrix.com/documents/current/api/twisted.trial.html>`_ and `tox <https://tox.readthedocs.io/en/latest/>`_ for its tests.
   The command to run the full test suite is ``tox`` with no arguments.
   This will run tests against several versions of Python and Twisted, which can be time-consuming.
-  To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py33-tw150`` will run tests with Python 3.3 and Twisted 15.0.
+  To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py35-twcurrent`` will run tests with Python 3.5 and the current released version of Twisted.
   To run only one or a few specific tests in the suite, add a filename or fully-qualified Python path to the end of the test invocation: for example, ``tox klein.test.test_app.KleinTestCase.test_foo`` will run only the ``test_foo()`` method of the ``KleinTestCase`` class in ``klein/test/test_app.py``.
   These two test shortcuts can be combined to give you a quick feedback cycle, but make sure to check on the full test suite from time to time to make sure changes haven't had unexpected side effects.
 - Show us your code changes through pull requests sent to `Klein's GitHub repo <https://github.com/twisted/klein>`_.

@@ -97,8 +97,6 @@ class KleinTestCase(unittest.TestCase):
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
 
-    if URL is None:
-        test_classBasedURLRoute.skip = "URL class not available"
 
     def test_submountedRoute(self):
         """

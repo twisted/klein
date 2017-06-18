@@ -213,11 +213,11 @@ class Klein(object):
 
             segment_count = len([item for item in url.path if item]) + self._subroute_segments
 
-        else:
-            # Compatibility hook for twisteds < 15.5
+        if isinstance(url, string_types + (binary_type, )):
+            url = URL.fromText(url)
 
-            if not url.startswith('/'):
-                url = '/' + url
+        if not url.rooted:
+            url = url.replace(rooted=True)
 
             segment_count = self._segments_in_url(url) + self._subroute_segments
 

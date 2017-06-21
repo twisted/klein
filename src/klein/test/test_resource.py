@@ -1239,11 +1239,11 @@ class GlobalAppTests(TestCase):
     def test_global_app(self):
         from klein import run, route, resource, handle_errors
 
-        global_app = run.__self__
+        globalApp = run.__self__
 
-        self.assertIs(route.__self__, global_app)
-        self.assertIs(resource.__self__, global_app)
-        self.assertIs(handle_errors.__self__, global_app)
+        self.assertIs(route.__self__, globalApp)
+        self.assertIs(resource.__self__, globalApp)
+        self.assertIs(handle_errors.__self__, globalApp)
 
         @route('/')
         def index(request):

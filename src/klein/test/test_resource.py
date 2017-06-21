@@ -1231,6 +1231,33 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(script_name, unicode)
 
 
+class GlobalAppTests(TestCase):
+    """
+    Tests for the global app object
+    """
+
+    def test_global_app(self):
+        from klein import run, route, resource, handle_errors
+
+        global_app = run.__self__
+
+        self.assertIs(route.__self__, global_app)
+        self.assertIs(resource.__self__, global_app)
+        self.assertIs(handle_errors.__self__, global_app)
+
+        @route('/')
+        def index(request):
+            1 // 0
+        @handle_errors(ZeroDivisionError)
+        def on_zero(request, failure):
+            return b'alive'
+
+        request = requestMock(b'/')
+        d = _render(resource(), request)
+        self.assertIsNone(self.successResultOf(d))
+        self.assertEqual(request.getWrittenData(), b'alive')
+
+
 if _PY3:
     import sys
     if sys.version_info >= (3, 5):

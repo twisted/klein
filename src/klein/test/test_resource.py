@@ -878,6 +878,7 @@ class KleinResourceTests(TestCase):
 
         class NotFoundResource(Resource):
             isLeaf = True
+
             def render(self, request):
                 request.setResponseCode(404)
                 return b'Nothing found'

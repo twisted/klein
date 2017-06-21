@@ -27,37 +27,37 @@ branches:
 matrix:
   include:
     # PyPy (Python 2.7)
-    - env: TOXENV=trial-pypy-tw155     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-tw160     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-twcurrent PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-twtrunk   PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw155,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw160,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
 
     - python: 2.7
-      env: TOXENV=trial-py27-tw155
+      env: TOXENV=coverage-py27-tw155
     - python: 2.7
-      env: TOXENV=trial-py27-tw160
+      env: TOXENV=coverage-py27-tw160,codecov
     - python: 2.7
-      env: TOXENV=trial-py27-twcurrent
+      env: TOXENV=coverage-py27-twcurrent,codecov
     - python: 2.7
-      env: TOXENV=trial-py27-twtrunk
+      env: TOXENV=coverage-py27-twtrunk,codecov
 
     - python: 3.4
-      env: TOXENV=trial-py34-tw155
+      env: TOXENV=coverage-py34-tw155,codecov
     - python: 3.4
-      env: TOXENV=trial-py34-tw160
+      env: TOXENV=coverage-py34-tw160,codecov
     - python: 3.4
-      env: TOXENV=trial-py34-twcurrent
+      env: TOXENV=coverage-py34-twcurrent,codecov
     - python: 3.4
-      env: TOXENV=trial-py34-twtrunk
+      env: TOXENV=coverage-py34-twtrunk,codecov
 
     - python: 3.5
-      env: TOXENV=trial-py35-tw155
+      env: TOXENV=coverage-py35-tw155,codecov
     - python: 3.5
-      env: TOXENV=trial-py35-tw160
+      env: TOXENV=coverage-py35-tw160,codecov
     - python: 3.5
-      env: TOXENV=trial-py35-twcurrent
+      env: TOXENV=coverage-py35-twcurrent,codecov
     - python: 3.5
-      env: TOXENV=trial-py35-twtrunk
+      env: TOXENV=coverage-py35-twtrunk,codecov
 
     - python: 3.5
       env: TOXENV=flake8
@@ -70,11 +70,10 @@ matrix:
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
-    - env: TOXENV=trial-py27-twtrunk
-    - env: TOXENV=trial-py33-twtrunk
-    - env: TOXENV=trial-py34-twtrunk
-    - env: TOXENV=trial-py35-twtrunk
-    - env: TOXENV=trial-pypy-twtrunk
+    - env: TOXENV=coverage-pypy-twtrunk
+    - env: TOXENV=coverage-py27-twtrunk
+    - env: TOXENV=coverage-py34-twtrunk
+    - env: TOXENV=coverage-py35-twtrunk
 
     # This is not yet required.
     - env: TOXENV=twistedchecker-diff
@@ -89,9 +88,3 @@ install:
 
 script:
   - ./.travis/run tox
-
-
-after_success:
-  - pip install coverage codecov
-  - coverage combine
-  - codecov

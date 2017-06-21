@@ -1,11 +1,8 @@
 [run]
-source =
-       klein
 branch = True
+source = klein
 
-
-[paths]
-source =
-   src/
-   .tox/*/lib/python*/site-packages/
-   .tox/pypy*/site-packages/
+[report]
+fail_under = 100
+precision = 2
+show_missing = True

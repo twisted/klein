@@ -1248,6 +1248,7 @@ class GlobalAppTests(TestCase):
         @route('/')
         def index(request):
             1 // 0
+
         @handle_errors(ZeroDivisionError)
         def on_zero(request, failure):
             return b'alive'

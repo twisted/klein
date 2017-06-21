@@ -38,10 +38,10 @@ matrix:
       env: TOXENV=docs-linkcheck
 
     # PyPy (Python 2.7)
-    - env: TOXENV=trial-pypy-tw155,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-tw160,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
-    - env: TOXENV=trial-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw155,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-tw160,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
 
     - python: 2.7
       env: TOXENV=coverage-py27-tw155

@@ -316,14 +316,7 @@ class HTTPHeadersFromHeaders(object):
     while presenting the Klein interface.
     """
 
-    @attrs(frozen=False)
-    class _State(object):
-        """
-        Internal mutable state for L{HTTPRequestFromIRequest}.
-        """
-
-    _headers = attrib(validator=instance_of(Headers))     # type: Headers
-    _state = attrib(default=Factory(_State), init=False)  # type: _State
+    _headers = attrib(validator=instance_of(Headers))  # type: Headers
 
 
     @property

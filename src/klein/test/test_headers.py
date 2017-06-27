@@ -181,11 +181,13 @@ class RawHeadersConversionTests(TestCase):
         L{normalizeRawHeaders} raises L{ValueError} if the C{headerPairs}
         argument is not an tuple of 2-item L{tuple}s.
         """
-        for pair in ((b"k",), (b"k", b"v", b"x")):
+        for invalidPair in ((b"k",), (b"k", b"v", b"x")):
             e = self.assertRaises(
                 ValueError,
                 tuple,
-                normalizeRawHeaders(cast(Iterable[Iterable[bytes]], (pair,))),
+                normalizeRawHeaders(
+                    cast(Iterable[Iterable[bytes]], (invalidPair,))
+                ),
             )
             self.assertEqual(str(e), "header pair must be a 2-tuple")
 

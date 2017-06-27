@@ -37,7 +37,7 @@ DrawCallable = Callable[[Callable[..., T]], T]
 
 
 # Note this may be incorrect (most likely: incomplete), but it's at least OK
-# for generating INDA test data.
+# for generating IDNA test data.
 IDNA_CHARACTER_CATEGORIES = (
     "Lu", "Ll", "Lt",                    # cased letters
     "Mn", "Mc", "Me",                    # marks

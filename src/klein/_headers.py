@@ -11,7 +11,7 @@ from typing import (
     Tuple, Union, cast,
 )
 
-from attr import Factory, attrib, attrs
+from attr import attrib, attrs
 from attr.validators import instance_of
 
 from twisted.web.http_headers import Headers

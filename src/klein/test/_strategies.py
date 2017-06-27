@@ -115,9 +115,15 @@ def is_idna_compatible(text, max_length):
     except ValueError:
         return False
 
-    # \u2105 decodes as 'c/o', which is not OK
+    # IDNA encoding is weird:
+    # "\N{CARE OF}" decodes as "c/o"
+    # "\N{DOUBLE QUESTION MARK}" decodes as "??"
 
-    for c in "#/?@:\u2105":
+    for c in (
+        "#/?@:"
+        "\N{CARE OF}"
+        "\N{DOUBLE QUESTION MARK}"
+    ):
         if c in text:
             return False
 

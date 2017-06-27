@@ -39,11 +39,11 @@ DrawCallable = Callable[[Callable[..., T]], T]
 # Note this may be incorrect (most likely: incomplete), but it's at least OK
 # for generating IDNA test data.
 IDNA_CHARACTER_CATEGORIES = (
-    "Lu", "Ll", "Lt",                    # cased letters
-    "Mn", "Mc", "Me",                    # marks
-    "Nd", "Nl", "No",                    # nubers
-    "Pc", "Pd", "Ps", "Pe", "Pe", "Pf",  # punctuation not Po
-    "Sm", "Sc", "Sk", "So",              # symbols not So
+    "Lu", "Ll", "Lt",                          # cased letters
+    "Mn", "Mc", "Me",                          # marks
+    "Nd", "Nl", "No",                          # numbers
+    "Pc", "Pd", "Ps", "Pe", "Pe", "Pf", "Po",  # punctuation
+    "Sm", "Sc", "Sk", "So",                    # symbols not So
 )
 
 
@@ -114,6 +114,12 @@ def is_idna_compatible(text, max_length):
         idna = text.encode("idna")
     except ValueError:
         return False
+
+    # \u2105 decodes as 'c/o', which is not OK
+
+    for c in "#/?@:\u2105":
+        if c in text:
+            return False
 
     return len(idna) <= max_length
 
@@ -188,7 +194,12 @@ def path_segments(draw):
     """
     A strategy which generates URL path segments.
     """
-    return draw(iterables(text(min_size=1), max_size=10, average_size=3))
+    segment = draw(iterables(text(min_size=1), max_size=10, average_size=3))
+
+    for c in "#/?":
+        assume(c not in segment)
+
+    return segment
 
 
 @composite

@@ -183,6 +183,18 @@ def hostnames(draw, allow_leading_digit=True, allow_idn=True):
 
 
 @composite
+def path_segments(draw):
+    # type: (DrawCallable) -> Text
+    """
+    A strategy which generates URL path segments.
+    """
+    path = draw(iterables(text(min_size=1), max_size=10, average_size=3))
+    for reserved in "/?#":
+        assume(reserved not in path)
+    return path
+
+
+@composite
 def http_urls(draw):
     # type: (DrawCallable) -> URL
     """
@@ -190,15 +202,11 @@ def http_urls(draw):
     Call the C{asURI} method on each URL to get a (network-friendly, ASCII)
     URI.
     """
-    host = draw(hostnames())
-
     port = draw(port_numbers(allow_zero=True))
     if port == 0:
         port = None
 
-    path = draw(iterables(text(min_size=1), max_size=10, average_size=3))
-
     return URL(
         scheme=draw(sampled_from((u"http", u"https"))),
-        host=host, port=port, path=path,
+        host=draw(hostnames()), port=port, path=draw(path_segments()),
     )

@@ -179,6 +179,9 @@ def hostnames(draw, allow_leading_digit=True, allow_idn=True):
     else:
         assume(len(name) <= 252)
 
+    for c in "/?#@":
+        assume(c not in name)
+
     return name
 
 
@@ -189,8 +192,10 @@ def path_segments(draw):
     A strategy which generates URL path segments.
     """
     path = draw(iterables(text(min_size=1), max_size=10, average_size=3))
-    for reserved in "/?#":
-        assume(reserved not in path)
+
+    for c in "/?#":
+        assume(c not in path)
+
     return path
 
 

@@ -871,7 +871,7 @@ class KleinResourceTests(TestCase):
 
     def test_errorHandlerReturnsResource(self):
         """
-        Resources returned by L{handle_errors} are rendered
+        Resources returned by L{Klein.handle_errors} are rendered
         """
         app = self.app
         request = requestMock(b"/")

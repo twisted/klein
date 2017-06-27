@@ -19,9 +19,7 @@ except ImportError:
 from twisted.internet import endpoints, reactor
 from twisted.python import log
 from twisted.python.components import registerAdapter
-from twisted.web.iweb import IRenderable
 from twisted.web.server import Request, Site
-from twisted.web.template import renderElement
 
 try:
     from twisted.internet.defer import ensureDeferred
@@ -344,10 +342,7 @@ class Klein(object):
         def deco(f):
             @modified("error handling wrapper", f)
             def _f(instance, request, failure):
-                r = _call(instance, f, request, failure)
-                if IRenderable.providedBy(r):
-                    return renderElement(request, r)
-                return r
+                return _call(instance, f, request, failure)
 
             self._error_handlers.append(
                 ([f_or_exception] + list(additional_exceptions), _f)

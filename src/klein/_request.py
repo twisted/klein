@@ -87,7 +87,7 @@ class IHTTPRequest(Interface):
             data.
 
         @note: This method accesses the fount (via C{self.bodyAsFount}), which
-            means the found will not be available afterwards, and that if
+            means the fount will not be available afterwards, and that if
             C{self.bodyAsFount} has previously been called directly, this
             method will raise L{NoContentError}.
 

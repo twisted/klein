@@ -1,7 +1,7 @@
 *.pyc
-*~
-.DS_Store
-/.tox/
-/docs/_build/
-/src/*.egg-info
 __pycache__
+/docs/_build/
+.DS_Store
+/src/*.egg-info
+/.tox/
+*~

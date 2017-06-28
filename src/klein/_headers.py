@@ -47,13 +47,19 @@ class IHTTPHeaders(Interface):
     value pairs so that they can be iterated in the same order as they were
     received on the network.
 
-    The C{rawHeaders} attribute provides this as a sequence of C{(name, value)}
-    L{tuple}s.
+    As such, the C{rawHeaders} attribute provides the header data as a sequence
+    of C{(name, value)} L{tuple}s.
 
     A dictionary-like interface that maps text names to an ordered sequence of
     text values.
-    This assumes that header name bytes are encoded as ASCII, and header value
-    bytes are encoded as ISO-8859-1.
+    This interface assumes that both header name bytes and header value bytes
+    are encoded as ISO-8859-1.
+
+    Note that header name bytes should be strictly encoded as ASCII; this
+    interface uses ISO-8859-1 to provide interoperability with (naughty) HTTP
+    implementations that send non-ASCII data.
+    Because ISO-8859-1 is a superset if ASCII, this will still work for
+    well-behaved implementations.
     """
 
     rawHeaders = Attribute(
@@ -72,12 +78,12 @@ class IHTTPHeaders(Interface):
         """
         Get the values associated with the given header name.
 
-        If the given name is L{bytes}, the value will be returned as the
-        raw header L{bytes}.
+        If the given name is L{bytes}, the value will be returned as the raw
+        header L{bytes}.
 
-        If the given name is L{Text}, the name will be encoded as ASCII and the
-        value will be returned as text, by decoding the raw header value bytes
-        with ISO-8859-1.
+        If the given name is L{Text}, the name will be encoded as ISO-8859-1
+        and the value will be returned as text, by decoding the raw header
+        value bytes with ISO-8859-1.
 
         @param name: The name of the header to look for.
 
@@ -96,7 +102,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         """
         Remove all header name/value pairs for the given header name.
 
-        If the given name is L{Text}, it will be encoded as ASCII before
+        If the given name is L{Text}, it will be encoded as ISO-8859-1 before
         comparing to the (L{bytes}) header names.
 
         @param name: The name of the header to remove.
@@ -110,7 +116,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
 
         If the given name is L{bytes}, the value must also be L{bytes}.
 
-        If the given name is L{Text}, it will be encoded as ASCII, and the
+        If the given name is L{Text}, it will be encoded as ISO-8859-1, and the
         value, which must also be L{Text}, will be encoded as ISO-8859-1.
         """
 

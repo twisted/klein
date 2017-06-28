@@ -101,7 +101,7 @@ class IHTTPRequest(Interface):
 def validateBody(instance, attribute, body):
     # type: (Any, Any, Union[bytes, IFount]) -> None
     if (
-        type(body) is not bytes and
+        not isinstance(body, bytes) and
         not IFount.providedBy(body)
     ):
         raise TypeError("body must be bytes or IFount")
@@ -137,7 +137,7 @@ class FrozenHTTPRequest(object):
 
     def bodyAsFount(self):
         # type: () -> IFount
-        if type(self._body) is bytes:
+        if isinstance(self._body, bytes):
             return bytesToFount(self._body)
 
         # assuming: IFount.providedBy(self._body)
@@ -147,7 +147,7 @@ class FrozenHTTPRequest(object):
 
     def bodyAsBytes(self):
         # type: () -> bytes
-        if type(self._body) is bytes:
+        if isinstance(self._body, bytes):
             return succeed(self._body)
 
         # assuming: IFount.providedBy(self._body)

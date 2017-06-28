@@ -133,7 +133,7 @@ def headerNameAsBytes(name):
     """
     Convert a header name to bytes if necessary.
     """
-    if type(name) is bytes:
+    if isinstance(name, bytes):
         return cast(bytes, name)
     else:
         return cast(Text, name).encode(HEADER_NAME_ENCODING)
@@ -144,7 +144,7 @@ def headerNameAsText(name):
     """
     Convert a header name to text if necessary.
     """
-    if type(name) is Text:
+    if isinstance(name, Text):
         return cast(Text, name)
     else:
         return cast(bytes, name).decode(HEADER_NAME_ENCODING)
@@ -155,7 +155,7 @@ def headerValueAsBytes(value):
     """
     Convert a header value to bytes if necessary.
     """
-    if type(value) is bytes:
+    if isinstance(value, bytes):
         return cast(bytes, value)
     else:
         return cast(Text, value).encode(HEADER_VALUE_ENCODING)
@@ -166,7 +166,7 @@ def headerValueAsText(value):
     """
     Convert a header value to text if necessary.
     """
-    if type(value) is Text:
+    if isinstance(value, Text):
         return cast(Text, value)
     else:
         return cast(bytes, value).decode(HEADER_VALUE_ENCODING)
@@ -185,7 +185,7 @@ def normalizeHeaderName(name):
 def normalizeRawHeaders(headerPairs):
     # type: (Iterable[Iterable[bytes]]) -> Iterable[RawHeader]
     for pair in headerPairs:
-        if not type(pair) is tuple:
+        if not isinstance(pair, tuple):
             raise TypeError("header pair must be a tuple")
 
         try:
@@ -193,9 +193,9 @@ def normalizeRawHeaders(headerPairs):
         except ValueError:
             raise ValueError("header pair must be a 2-tuple")
 
-        if type(name) is not bytes:
+        if not isinstance(name, bytes):
             raise TypeError("header name must be bytes")
-        if type(value) is not bytes:
+        if not isinstance(value, bytes):
             raise TypeError("header value must be bytes")
 
         yield (normalizeHeaderName(name), value)
@@ -216,11 +216,11 @@ def getFromRawHeaders(rawHeaders, name):
     """
     Get a value from raw headers.
     """
-    if type(name) is bytes:
+    if isinstance(name, bytes):
         name = normalizeHeaderName(name)
         return (v for n, v in rawHeaders if name == n)
 
-    if type(name) is Text:
+    if isinstance(name, Text):
         rawName = headerNameAsBytes(normalizeHeaderName(name))
         return(
             headerValueAsText(v)
@@ -274,9 +274,9 @@ class MutableHTTPHeaders(object):
 
     def remove(self, name):
         # type: (String) -> None
-        if type(name) is bytes:
+        if isinstance(name, bytes):
             rawName = name
-        elif type(name) is Text:
+        elif isinstance(name, Text):
             rawName = headerNameAsBytes(name)
         else:
             raise TypeError("name must be text or bytes")
@@ -286,15 +286,15 @@ class MutableHTTPHeaders(object):
 
     def addValue(self, name, value):
         # type: (AnyStr, AnyStr) -> None
-        if type(name) is bytes:
-            if type(value) is not bytes:
+        if isinstance(name, bytes):
+            if not isinstance(value, bytes):
                 raise TypeError("value must be bytes to match name")
 
             rawName  = name   # type: bytes
             rawValue = value  # type: bytes
 
-        elif type(name) is Text:
-            if type(value) is not Text:
+        elif isinstance(name, Text):
+            if not isinstance(value, Text):
                 raise TypeError("value must be text to match name")
 
             rawName  = headerNameAsBytes(name)
@@ -340,9 +340,9 @@ class HTTPHeadersFromHeaders(object):
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
-        if type(name) is bytes:
+        if isinstance(name, bytes):
             values = self._headers.getRawHeaders(name, default=())
-        elif type(name) is Text:
+        elif isinstance(name, Text):
             values = (
                 headerValueAsText(value)
                 for value in self._headers.getRawHeaders(

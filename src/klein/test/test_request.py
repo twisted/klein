@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Text, Tuple
 
 from hyperlink import URL
 
-from hypothesis import given, note
+from hypothesis import HealthCheck, given, note, settings
 from hypothesis.strategies import binary, text
 
 from twisted.web.http_headers import Headers
@@ -186,6 +186,9 @@ class HTTPRequestFromIRequestTests(TestCase):
         self.assertEqual(request.method, methodText)
 
 
+    @settings(suppress_health_check=[
+        HealthCheck.too_slow, HealthCheck.filter_too_much,
+    ])
     @given(http_urls())
     def test_uri(self, url):
         # type: (URL) -> None

@@ -17,6 +17,8 @@ from hypothesis.strategies import (
     characters, composite, integers, iterables, lists, sampled_from, text
 )
 
+from idna import IDNAError, encode as idnaEncode
+
 from twisted.python.compat import unicode
 
 Optional, Text  # Silence linter
@@ -111,21 +113,9 @@ def is_idna_compatible(text, max_length):
     @param max_length: The maximum allowed length for the encoded text.
     """
     try:
-        idna = text.encode("idna")
-    except ValueError:
+        idna = idnaEncode(text)
+    except IDNAError:
         return False
-
-    # IDNA encoding is weird:
-    # "\N{CARE OF}" decodes as "c/o"
-    # "\N{DOUBLE QUESTION MARK}" decodes as "??"
-
-    for c in (
-        "#/?@:"
-        "\N{CARE OF}"
-        "\N{DOUBLE QUESTION MARK}"
-    ):
-        if c in text:
-            return False
 
     return len(idna) <= max_length
 
@@ -220,7 +210,9 @@ def http_urls(draw):
     if port == 0:
         port = None
 
+    host = draw(hostnames())
+
     return URL(
         scheme=draw(sampled_from((u"http", u"https"))),
-        host=draw(hostnames()), port=port, path=draw(path_segments()),
+        host=host, port=port, path=draw(path_segments()),
     )

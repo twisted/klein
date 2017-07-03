@@ -70,10 +70,10 @@ matrix:
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
-    - env: TOXENV=coverage-pypy-twtrunk
     - env: TOXENV=coverage-py27-twtrunk
     - env: TOXENV=coverage-py34-twtrunk
     - env: TOXENV=coverage-py35-twtrunk
+    - env: TOXENV=coverage-pypy-twtrunk
 
     # This is not yet required.
     - env: TOXENV=twistedchecker-diff

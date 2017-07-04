@@ -17,6 +17,13 @@ Optional, Text  # Silence linter
 __all__ = ()
 
 
+settings.register_profile(
+    "ci", settings(suppress_health_check=[HealthCheck.too_slow])
+)
+if getenv("CI") == "true":
+    settings.load_profile("ci")
+
+
 T = TypeVar('T')
 DrawCallable = Callable[[Callable[..., T]], T]
 

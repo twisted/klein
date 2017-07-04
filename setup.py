@@ -26,10 +26,8 @@ if __name__ == "__main__":
         use_incremental=True,
         install_requires=[
             "attrs",
-            "hyperlink",
             "incremental",
             "six",
-            "tubes",
             "twisted>=15.5",
             "typing",
             "werkzeug",

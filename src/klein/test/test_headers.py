@@ -229,12 +229,20 @@ class RawHeadersConversionTests(TestCase):
 
 class GetValuesTestsMixIn(object):
     """
-    Tests for utilities that access data from the "headers tartare" internal
+    Tests for utilities that access data from the C{RawHeaders} internal
     representation.
     """
 
     def getValues(self, rawHeaders, name):
         # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
+        """
+        Look up the values for the given header name from the given raw
+        headers.
+
+        This is called by the other tests in this mix-in class to allow test
+        cases that use it to specify how to perform this look-up in the
+        implementation being tested.
+        """
         raise NotImplementedError(
             "{} must implement getValues()".format(self.__class__)
         )

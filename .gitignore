@@ -1,7 +1,9 @@
 *.pyc
-__pycache__
-/docs/_build/
-.DS_Store
+/_trial_temp/
+/build/
 /src/*.egg-info
 /.tox/
+/docs/_build/
+.DS_Store
+/dist/
 *~

@@ -1,11 +1,11 @@
 *.pyc
-_trial_temp
-build
+/_trial_temp/
+/build/
 htmlcov
 .coverage
 /src/*.egg-info
 /.tox/
 /docs/_build/
 .DS_Store
-dist/
+/dist/
 *~

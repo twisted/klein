@@ -3,11 +3,11 @@
 from __future__ import absolute_import, division
 
 from twisted.internet import defer
-from twisted.python import log, failure
-from twisted.python.compat import unicode, intToBytes
+from twisted.python import failure, log
+from twisted.python.compat import intToBytes, unicode
 from twisted.web import server
 from twisted.web.iweb import IRenderable
-from twisted.web.resource import Resource, IResource, getChildForRequest
+from twisted.web.resource import IResource, Resource, getChildForRequest
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
 
@@ -17,7 +17,10 @@ from klein.interfaces import IKleinRequest
 
 
 
-__all__ = ["KleinResource", "ensure_utf8_bytes"]
+__all__ = (
+    "KleinResource",
+    "ensure_utf8_bytes",
+)
 
 
 
@@ -150,8 +153,9 @@ class KleinResource(Resource):
     def render(self, request):
         # Stuff we need to know for the mapper.
         try:
-            url_scheme, server_name, server_port, path_info, script_name = \
+            url_scheme, server_name, server_port, path_info, script_name = (
                 _extractURLparts(request)
+            )
         except _URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, "Invalid encoding in {what}.".format(what=what))
@@ -243,26 +247,30 @@ class KleinResource(Resource):
                     resp = he.get_response({})
 
                     for header, value in resp.headers:
-                        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
+                        request.setHeader(
+                            ensure_utf8_bytes(header), ensure_utf8_bytes(value)
+                        )
 
-                    return ensure_utf8_bytes(he.get_body({}))
+                    return ensure_utf8_bytes(b''.join(resp.iter_encoded()))
                 else:
                     request.processingFailed(failure)
                     return
 
             error_handler = error_handlers[0]
 
-            # Each error handler is a tuple of (list_of_exception_types, handler_fn)
+            # Each error handler is a tuple of
+            # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
                 d = defer.maybeDeferred(self._app.execute_error_handler,
                                         error_handler[1],
                                         request,
                                         failure)
 
+                d.addCallback(process)
+
                 return d.addErrback(processing_failed, error_handlers[1:])
 
             return processing_failed(failure, error_handlers[1:])
-
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
@@ -277,6 +285,7 @@ class KleinResource(Resource):
                 if not request_finished[0]:
                     request.finish()
 
-        d.addCallback(write_response).addErrback(log.err, _why="Unhandled Error writing response")
+        d.addCallback(write_response)
+        d.addErrback(log.err, _why="Unhandled Error writing response")
 
         return server.NOT_DONE_YET

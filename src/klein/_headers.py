@@ -58,7 +58,7 @@ class IHTTPHeaders(Interface):
     Note that header name bytes should be strictly encoded as ASCII; this
     interface uses ISO-8859-1 to provide interoperability with (naughty) HTTP
     implementations that send non-ASCII data.
-    Because ISO-8859-1 is a superset if ASCII, this will still work for
+    Because ISO-8859-1 is a superset of ASCII, this will still work for
     well-behaved implementations.
     """
 

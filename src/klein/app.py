@@ -18,11 +18,11 @@ except ImportError:
 
 from six import string_types
 
-from twisted.internet import reactor, endpoints
+from twisted.internet import endpoints, reactor
 from twisted.python import log
 from twisted.python.components import registerAdapter
 from twisted.python.url import URL
-from twisted.web.server import Site, Request
+from twisted.web.server import Request, Site
 
 try:
     from twisted.internet.defer import ensureDeferred
@@ -210,7 +210,8 @@ class Klein(object):
         if not url.rooted:
             url = url.replace(rooted=True)
 
-        segment_count = self._segments_in_url(url.asText()) + self._subroute_segments
+        segment_count = self._segments_in_url(url.asText()
+                                              ) + self._subroute_segments
 
         @named("router for '" + url.asURI().asText() + "'")
         def deco(f):
@@ -218,6 +219,7 @@ class Klein(object):
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
+
                 @modified(
                     "branch route '{url}' executor".format(
                         url=url.asURI().asText()

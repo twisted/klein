@@ -6,8 +6,8 @@ import sys
 from mock import Mock, patch
 
 from twisted.python.components import registerAdapter
-from twisted.trial import unittest
 from twisted.python.url import URL
+from twisted.trial import unittest
 
 from klein import Klein
 from klein._decorators import bindable, modified, originalName
@@ -100,13 +100,15 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(c.match(u"/平和"), ("unicode_foo", {}))
         self.assertEqual(len(app.endpoints), 1)
 
-        self.assertEqual(app.execute_endpoint("unicode_foo", DummyRequest("1")), "foo")
+        self.assertEqual(
+            app.execute_endpoint("unicode_foo", DummyRequest("1")), "foo")
 
     def test_classBasedURLRoute(self):
         """
-        L{Klein.route} adds functions as routable endpoints, when L{twisted.python.url.URL}
-        instance is passed as argument. Note that rooting of URLs is not required, klein roots
-        these URLs for you.
+        L{Klein.route} adds functions as routable endpoints,
+        when L{twisted.python.url.URL} instance is passed as argument.
+        Note that rooting of URLs is not required,
+        klein roots these URLs for you.
         """
         app = Klein()
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import, division
 
 import sys
@@ -78,6 +79,28 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(len(app.endpoints), 1)
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
+
+    def test_route_bytes(self):
+        """
+        L{Klein.route} adds functions as routable endpoints, and also
+            allows to pass bytes as URL mapping rule keys,
+            decoding them as utf-8 before usage.
+            However, L{Klein.route} does not forcibly quote utf-8 strings,
+            received after conversion described above, leaving it up
+            to developer to construct URL object and call toURI() in case,
+            when quoting is needed.
+        """
+        app = Klein()
+
+        @app.route(b"/\xe5\xb9\xb3\xe5\x92\x8c")
+        def unicode_foo(request):
+            return "foo"
+
+        c = app.url_map.bind(u"平和")
+        self.assertEqual(c.match(u"/平和"), ("unicode_foo", {}))
+        self.assertEqual(len(app.endpoints), 1)
+
+        self.assertEqual(app.execute_endpoint("unicode_foo", DummyRequest("1")), "foo")
 
     def test_classBasedURLRoute(self):
         """

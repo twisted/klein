@@ -16,7 +16,7 @@ except ImportError:
     def iscoroutine(*args, **kwargs):
         return False
 
-from six import string_types, binary_type
+from six import string_types
 
 from twisted.internet import reactor, endpoints
 from twisted.python import log
@@ -200,26 +200,17 @@ class Klein(object):
         @returns: decorated handler function.
         """
 
-        def _urlToString(_url):
-            return _url.asText() if URL is not None else _url
-
-        if URL is not None:
-
-            if isinstance(url, string_types + (binary_type, )):
-                url = URL.fromText(url)
-
-            if not url.rooted:
-                url = url.replace(rooted=True)
-
-            segment_count = len([item for item in url.path if item]) + self._subroute_segments
-
-        if isinstance(url, string_types + (binary_type, )):
+        if isinstance(url, string_types + (bytes, )):
+            if isinstance(url, bytes):
+                url = url.decode('utf-8')
             url = URL.fromText(url)
+        else:
+            assert isinstance(url, URL), 'Non-string or hyperlink URL passed.'
 
         if not url.rooted:
             url = url.replace(rooted=True)
 
-            segment_count = self._segments_in_url(url) + self._subroute_segments
+        segment_count = self._segments_in_url(url.asText()) + self._subroute_segments
 
         @named("router for '" + url.asURI().asText() + "'")
         def deco(f):
@@ -227,9 +218,12 @@ class Klein(object):
             if kwargs.pop('branch', False):
                 branchKwargs = kwargs.copy()
                 branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
-
-                @modified("branch route '{url}' executor".format(
-                    url=url.asURI().asText()), f)
+                @modified(
+                    "branch route '{url}' executor".format(
+                        url=url.asURI().asText()
+                    ),
+                    f,
+                )
                 def branch_f(instance, request, *a, **kw):
                     IKleinRequest(request).branch_segments = (
                         kw.pop('__rest__', '').split('/')
@@ -240,18 +234,21 @@ class Klein(object):
 
                 self._endpoints[branchKwargs['endpoint']] = branch_f
                 self._url_map.add(
-                    Rule(_urlToString(url).rstrip('/') + '/' + '<path:__rest__>',
-                         *args, **branchKwargs))
+                    Rule(
+                        url.child(u'<path:__rest__>').asText(),
+                        *args, **branchKwargs
+                    )
+                )
 
-            @modified("route '{url}' executor".format(
-                url=url.asURI().asText()), f)
+            @modified("route '{url}' executor"
+                      .format(url=url.asURI().asText()), f)
             def _f(instance, request, *a, **kw):
                 return _call(instance, f, request, *a, **kw)
 
             _f.segment_count = segment_count
 
             self._endpoints[kwargs['endpoint']] = _f
-            self._url_map.add(Rule(_urlToString(url), *args, **kwargs))
+            self._url_map.add(Rule(url.asText(), *args, **kwargs))
             return f
         return deco
 

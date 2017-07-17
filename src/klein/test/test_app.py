@@ -11,8 +11,8 @@ from klein import Klein
 from klein._decorators import bindable, modified, originalName
 from klein.app import KleinRequest
 from klein.interfaces import IKleinRequest
-from klein.test.util import EqualityTestsMixin
 from klein.test.test_resource import requestMock
+from klein.test.util import EqualityTestsMixin
 
 
 

@@ -352,11 +352,13 @@ class Klein(object):
         return deco
 
 
-    def url_for(self, request, endpoint, values = None, method = None, force_external = False, append_unknown = True):
+    def url_for(self, request, endpoint, values=None, method=None,
+                force_external=False, append_unknown=True):
         host = request.getHeader(b'host')
         if host is None:
             host = b''
-        return self.url_map.bind(host).build(endpoint, values, method, force_external, append_unknown)
+        return self.url_map.bind(host).build(endpoint, values, method,
+                                             force_external, append_unknown)
 
 
     def run(self, host=None, port=None, logFile=None,

@@ -423,19 +423,24 @@ class KleinTestCase(unittest.TestCase):
             return str(postid)
 
         request = requestMock(b'/addr')
-        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}), '/user/john')
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}),
+                         '/user/john')
 
         request = requestMock(b'/addr')
-        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}, force_external=True),
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'},
+                                     force_external=True),
                          'http://localhost:8080/user/john')
 
         request = requestMock(b'/addr', host=b'example.com', port=4321)
-        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}, force_external=True),
+        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'},
+                                     force_external=True),
                          'http://example.com:4321/user/john')
 
         request = requestMock(b'/addr')
-        self.assertEqual(app.url_for(request, 'userpage', {'name': 'john', 'age': 29}, append_unknown=True),
-                         '/user/john?age=29')
+        url = app.url_for(request, 'userpage', {'name': 'john', 'age': 29},
+                          append_unknown=True)
+        self.assertEqual(url, '/user/john?age=29')
 
         request = requestMock(b'/addr')
-        self.assertEqual(app.url_for(request, 'bar', {'postid': 123}), '/post/123')
+        self.assertEqual(app.url_for(request, 'bar', {'postid': 123}),
+                         '/post/123')

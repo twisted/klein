@@ -869,6 +869,30 @@ class KleinResourceTests(TestCase):
         self.assertEqual(request.processingFailed.called, False)
         self.assertEqual(request.getWrittenData(), rendered)
 
+    def test_errorHandlerReturnsResource(self):
+        """
+        Resources returned by L{Klein.handle_errors} are rendered
+        """
+        app = self.app
+        request = requestMock(b"/")
+
+        class NotFoundResource(Resource):
+            isLeaf = True
+
+            def render(self, request):
+                request.setResponseCode(404)
+                return b'Nothing found'
+
+        @app.handle_errors(NotFound)
+        def handle_not_found(request, failure):
+            return NotFoundResource()
+
+        d = _render(self.kr, request)
+
+        self.assertFired(d)
+        self.assertEqual(request.code, 404)
+        self.assertEqual(request.getWrittenData(), b'Nothing found')
+
     def test_requestWriteAfterFinish(self):
         app = self.app
         request = requestMock(b"/")
@@ -1229,6 +1253,34 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(server_port, int)
         self.assertIsInstance(path_info, unicode)
         self.assertIsInstance(script_name, unicode)
+
+
+class GlobalAppTests(TestCase):
+    """
+    Tests for the global app object
+    """
+
+    def test_global_app(self):
+        from klein import run, route, resource, handle_errors
+
+        globalApp = run.__self__
+
+        self.assertIs(route.__self__, globalApp)
+        self.assertIs(resource.__self__, globalApp)
+        self.assertIs(handle_errors.__self__, globalApp)
+
+        @route('/')
+        def index(request):
+            1 // 0
+
+        @handle_errors(ZeroDivisionError)
+        def on_zero(request, failure):
+            return b'alive'
+
+        request = requestMock(b'/')
+        d = _render(resource(), request)
+        self.assertIsNone(self.successResultOf(d))
+        self.assertEqual(request.getWrittenData(), b'alive')
 
 
 if _PY3:

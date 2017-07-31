@@ -416,11 +416,11 @@ class KleinTestCase(unittest.TestCase):
 
         @app.route('/user/<name>')
         def userpage(req, name):
-            return name
+            pass
 
         @app.route('/post/<int:postid>', endpoint='bar')
         def foo(req, postid):
-            return str(postid)
+            pass
 
         request = requestMock(b'/addr')
         self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}),
@@ -444,3 +444,13 @@ class KleinTestCase(unittest.TestCase):
         request = requestMock(b'/addr')
         self.assertEqual(app.url_for(request, 'bar', {'postid': 123}),
                          '/post/123')
+
+        request = requestMock(b'/addr')
+        request.requestHeaders.removeHeader(b'host')
+        self.assertEqual(app.url_for(request, 'bar', {'postid': 123}),
+                         '/post/123')
+
+        request = requestMock(b'/addr')
+        request.requestHeaders.removeHeader(b'host')
+        with self.assertRaises(ValueError):
+            app.url_for(request, 'bar', {'postid': 123}, force_external=True)

@@ -416,11 +416,21 @@ class KleinTestCase(unittest.TestCase):
 
         @app.route('/user/<name>')
         def userpage(req, name):
-            pass
+            return name
 
         @app.route('/post/<int:postid>', endpoint='bar')
         def foo(req, postid):
-            pass
+            return str(postid)
+
+        request = requestMock(b'/user/john')
+        self.assertEqual(
+            app.execute_endpoint('userpage', request, 'john'),
+            'john'
+        )
+        self.assertEqual(
+            app.execute_endpoint('bar', requestMock(b'/post/123'), 123),
+            '123'
+        )
 
         request = requestMock(b'/addr')
         self.assertEqual(app.url_for(request, 'userpage', {'name': 'john'}),

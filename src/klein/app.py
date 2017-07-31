@@ -407,4 +407,5 @@ _globalKleinApp = Klein()
 route = _globalKleinApp.route
 run = _globalKleinApp.run
 resource = _globalKleinApp.resource
+handle_errors = _globalKleinApp.handle_errors
 url_for = _globalKleinApp.url_for

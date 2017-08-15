@@ -14,7 +14,7 @@ Here is a simple Google proxy, using `treq <https://github.com/twisted/treq>`_ (
 
     @app.route('/', branch=True)
     def google(request):
-        d = treq.get('https://www.google.com' + request.uri)
+        d = treq.get(b'https://www.google.com' + request.uri)
         d.addCallback(treq.content)
         return d
 

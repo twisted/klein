@@ -9,6 +9,8 @@ keywords that are available in Python 3.5+.
 
 Here is the same Google proxy, using `treq <https://github.com/twisted/treq>`_ and ``async`` and ``await``.
 
+.. code-block:: python
+
     import treq
     from klein import Klein
     app = Klein()

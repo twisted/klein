@@ -74,7 +74,7 @@ Klein uses `Epydoc <http://epydoc.sourceforge.net/manual-epytext.html>`_ for doc
 
     Header 4
     ~~~~~~~~
-- In prose, please use gender-neutral pronouns or structure sentences such that using pronouns is unecessary.
+- In prose, please use gender-neutral pronouns or structure sentences such that using pronouns is unnecessary.
 - It's best to put each sentence on a different line: this makes diffs much easier to read.
   Sentences that are part of list items need to be indented to be considered part of the same list item.
 

@@ -9,3 +9,4 @@ htmlcov
 .DS_Store
 /dist/
 *~
+/.hypothesis/

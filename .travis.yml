@@ -44,7 +44,7 @@ matrix:
     - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
 
     - python: 2.7
-      env: TOXENV=coverage-py27-tw155
+      env: TOXENV=coverage-py27-tw155,codecov
     - python: 2.7
       env: TOXENV=coverage-py27-tw160,codecov
     - python: 2.7

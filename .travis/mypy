@@ -1,0 +1,47 @@
+#!/bin/sh
+
+#
+# Work around bugs in mypy by filtering out false positive error messages.
+#
+
+set -e
+set -u
+
+tmp="$(mktemp -t mypy.XXXX)";
+
+mypy "$@"      \
+    | grep -v  \
+        -e '^src/klein/_decorators.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/_plating.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/app.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \
+        -e '^src/klein/app.py:.[0-9:]*: error: Need type annotation for variable'  \
+        -e '^src/klein/interfaces.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/resource.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/py3_test_resource.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/_trial.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_app.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_plating.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_resource.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_resource.py:.[0-9:]*: error: .* has no attribute'  \
+        -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'  \
+        -e '^src/klein/_headers.py:.[0-9:]*: error: Incompatible types in assignment (expression has type "str", variable has type "bytes")'  \
+        -e '^src/klein/test/test_headers.py:.[0-9:]*: error: '\''builtins.object'\'' object is not iterable'  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPRequest"'        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersFromHeaders"'   \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestFromIRequest"'  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                  \
+        -e ': error: Unexpected keyword argument "[^"]*" for "MutableHTTPHeaders"'       \
+        -e ': error: Incompatible return value type (got "[^"]*", expected "I[^"]*")'    \
+        -e ': error: Method must have at least one argument'                             \
+        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "todo"'               \
+        -e ': error: Generator has incompatible item type'                               \
+        > "${tmp}" || true;
+
+sort < "${tmp}";
+
+if grep -e ": error: " "${tmp}" > /dev/null; then
+  exit 1;
+fi;

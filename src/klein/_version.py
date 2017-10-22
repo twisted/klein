@@ -1,11 +1,11 @@
 """
-Provides Klein version information.
+Provides klein version information.
 """
 
 # This file is auto-generated! Do not edit!
-# Use `python -m incremental.update Klein` to change this file.
+# Use `python -m incremental.update klein` to change this file.
 
 from incremental import Version
 
-__version__ = Version('Klein', 17, 2, 0)
-__all__ = ("__version__",)
+__version__ = Version('klein', 17, 10, 0)
+__all__ = ["__version__"]

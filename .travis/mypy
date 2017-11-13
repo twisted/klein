@@ -14,22 +14,21 @@ tmp="$(mktemp -t mypy.XXXX)";
 #
 # Notes:
 #
-# * Mypy notices trial's use of a todo marker attribute on functions and
+# * mypy notices trial's use of a skip marker attribute on functions and
 #   complains that it's not part of a function object's interface, so we
-#   ignore: has no attribute "todo"
+#   ignore: has no attribute "skip"
 #
 # * Filters applied only to specific files are things to fix in either Klein or
-#   in Mypy.
+#   in mypy.
 #
-# * We run Mypy with disallow_untyped_defs=True to require that type
+# * We run mypy with disallow_untyped_defs=True to require that type
 #   annotations are used, but we ignore the errors for files that are not yet
 #   participating.
 #
 
 mypy "$@"      \
     | grep -v  \
-        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "todo"'  \
-        -e ': error: Callable\[\[[^]]*\], [^]]*\] has no attribute "skip"'  \
+        -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "skip"'  \
         -e '^src/klein/_decorators.py:.[0-9:]*: error: Function is missing a type annotation'  \
         -e '^src/klein/_plating.py:.[0-9:]*: error: Function is missing a type annotation'  \
         -e '^src/klein/app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \

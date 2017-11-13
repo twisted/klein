@@ -66,9 +66,20 @@ matrix:
     - python: 3.5
       env: TOXENV=coverage-py35-twtrunk,codecov
 
-    - python: 3.5
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw155,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw160,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw171,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-twcurrent,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-twtrunk,codecov
+
+    - python: 3.6
       env: TOXENV=flake8
-    - python: 3.5
+    - python: 3.6
       env: TOXENV=mypy
     - python: 2.7
       env: TOXENV=twistedchecker-diff
@@ -82,6 +93,7 @@ matrix:
     - env: TOXENV=coverage-py27-twtrunk
     - env: TOXENV=coverage-py34-twtrunk
     - env: TOXENV=coverage-py35-twtrunk
+    - env: TOXENV=coverage-py36-twtrunk
     - env: TOXENV=coverage-pypy-twtrunk
 
     # This is not yet required.

@@ -1,8 +1,9 @@
 *.pyc
 /_trial_temp/
 /build/
+/.hypothesis/
 htmlcov
-.coverage
+/.coverage.*
 /src/*.egg-info
 /.tox/
 /docs/_build/

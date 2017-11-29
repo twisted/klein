@@ -3,6 +3,7 @@
 /build/
 /.hypothesis/
 htmlcov
+/.coverage
 /.coverage.*
 /src/*.egg-info
 /.tox/

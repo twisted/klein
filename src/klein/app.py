@@ -10,14 +10,9 @@ from ._app import (
 
 __all__ = (
     "Klein",
-    "run",
-    "route",
+    "KleinRequest",
+    "handle_errors",
     "resource",
+    "route",
+    "run",
 )
-
-
-# Silence linter
-# Symbols below were not in __all__ in original app.py, but may be in use by
-# clients, and so are here for compatibility.
-KleinRequest
-handle_errors

@@ -1,8 +1,7 @@
 from __future__ import absolute_import, division
 
-from klein._plating import Plating
-from klein.app import Klein, handle_errors, resource, route, run
-
+from ._app import Klein, handle_errors, resource, route, run
+from ._plating import Plating
 from ._version import __version__ as _incremental_version
 
 
@@ -13,10 +12,10 @@ __all__ = (
     "__copyright__",
     "__license__",
     "__version__",
+    "handle_errors",
     "resource",
     "route",
     "run",
-    "handle_errors",
 )
 
 
@@ -25,4 +24,4 @@ __version__ = _incremental_version.base()
 
 __author__ = "The Klein contributors (see AUTHORS)"
 __license__ = "MIT"
-__copyright__ = "Copyright 2016 {0}".format(__author__)
+__copyright__ = "Copyright 2016-2017 {0}".format(__author__)

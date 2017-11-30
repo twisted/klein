@@ -12,6 +12,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
     """
 
     def test_klein(self):
+        # type: () -> None
         """
         Test exports from L{klein}.
         """
@@ -28,6 +29,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
 
     def test_app(self):
+        # type: () -> None
         """
         Test exports from L{klein.app}.
         """
@@ -42,6 +44,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
 
     def test_interfaces(self):
+        # type: () -> None
         """
         Test exports from L{klein.interfaces}.
         """
@@ -52,6 +55,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
 
     def test_resource(self):
+        # type: () -> None
         """
         Test exports from L{klein.resource}.
         """

@@ -6,7 +6,10 @@ set -u
 case "${TOXENV}" in
     *-py2*|*-pypy*)
         COVERAGE_OMIT="py3_*";
-        # Fall through
+        ;;
+esac;
+
+case "${TOXENV}" in
     *-pypy*)
         PYENV_ROOT="${HOME}/.pyenv";
         pyenv="${PYENV_ROOT}/bin/pyenv";

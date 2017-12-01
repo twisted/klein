@@ -372,6 +372,20 @@ class Klein(object):
         return deco
 
 
+    def urlFor(self, request, endpoint, values=None, method=None,
+               force_external=False, append_unknown=True):
+        host = request.getHeader(b'host')
+        if host is None:
+            if force_external:
+                raise ValueError("Cannot build external URL if request"
+                                 " doesn't contain Host header")
+            host = b''
+        return self.url_map.bind(host).build(endpoint, values, method,
+                                             force_external, append_unknown)
+
+    url_for = urlFor
+
+
     def run(self, host=None, port=None, logFile=None,
             endpoint_description=None):
         """
@@ -419,3 +433,4 @@ route = _globalKleinApp.route
 run = _globalKleinApp.run
 resource = _globalKleinApp.resource
 handle_errors = _globalKleinApp.handle_errors
+urlFor = url_for = _globalKleinApp.urlFor

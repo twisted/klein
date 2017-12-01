@@ -6,7 +6,6 @@ from __future__ import absolute_import, division
 
 import sys
 import weakref
-
 from collections import namedtuple
 from contextlib import contextmanager
 

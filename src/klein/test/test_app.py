@@ -3,7 +3,10 @@ from __future__ import absolute_import, division
 
 import sys
 
-from mock import Mock, patch
+try:
+    from unittest.mock import Mock, patch
+except Exception:
+    from mock import Mock, patch  # type:ignore
 
 from twisted.python.components import registerAdapter
 from twisted.python.url import URL

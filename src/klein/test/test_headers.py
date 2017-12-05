@@ -369,6 +369,15 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         self.assertProvides(IHTTPHeaders, headers)
 
 
+    def test_defaultHeaders(self):
+        # type: () -> None
+        """
+        L{FrozenHTTPHeaders.rawHeaders} is empty by default.
+        """
+        headers = FrozenHTTPHeaders()
+        self.assertEqual(headers.rawHeaders, ())
+
+
 
 class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
     """
@@ -542,3 +551,12 @@ class MutableHTTPHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     def headers(self, rawHeaders):
         # type: (RawHeaders) -> IMutableHTTPHeaders
         return MutableHTTPHeaders(rawHeaders=rawHeaders)
+
+
+    def test_defaultHeaders(self):
+        # type: () -> None
+        """
+        L{MutableHTTPHeaders.rawHeaders} is empty by default.
+        """
+        headers = MutableHTTPHeaders()
+        self.assertEqual(headers.rawHeaders, ())

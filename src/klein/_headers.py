@@ -267,7 +267,10 @@ class FrozenHTTPHeaders(object):
     Immutable HTTP entity headers.
     """
 
-    rawHeaders = attrib(convert=normalizeRawHeadersFrozen)  # type: RawHeaders
+    rawHeaders = attrib(
+        convert=normalizeRawHeadersFrozen,
+        default=(),
+    )  # type: RawHeaders
 
 
     def getValues(self, name):
@@ -284,7 +287,8 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=normalizeRawHeadersMutable
+        convert=normalizeRawHeadersMutable,
+        default=(),
     )  # type: MutableRawHeaders
 
 

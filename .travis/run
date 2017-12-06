@@ -4,9 +4,15 @@ set -e
 set -u
 
 case "${TOXENV}" in
+    *-py2*|*-pypy*)
+        export COVERAGE_OMIT="py3_*";
+        ;;
+esac;
+
+case "${TOXENV}" in
     *-pypy*)
-        PYENV_ROOT="${HOME}/.pyenv";
-        pyenv="${PYENV_ROOT}/bin/pyenv";
+        pyenv_root="${HOME}/.pyenv";
+        pyenv="${pyenv_root}/bin/pyenv";
         eval "$("${pyenv}" init -)";
         ;;
 esac;

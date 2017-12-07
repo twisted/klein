@@ -159,23 +159,11 @@ class RawHeadersConversionTests(TestCase):
     Tests for L{normalizeRawHeaders}.
     """
 
-    def test_pairNotTuple(self):
-        # type: () -> None
-        """
-        L{normalizeRawHeaders} raises L{TypeError} if the C{headerPairs}
-        argument is not an tuple L{tuple}s.
-        """
-        e = self.assertRaises(
-            TypeError, tuple, normalizeRawHeaders(([b"k", b"v"],))
-        )
-        self.assertEqual(str(e), "header pair must be a tuple")
-
-
-    def test_pairsWrongLength(self):
+    def test_pairWrongLength(self):
         # type: () -> None
         """
         L{normalizeRawHeaders} raises L{ValueError} if the C{headerPairs}
-        argument is not an tuple of 2-item L{tuple}s.
+        argument is not an iterable of 2-item iterables.
         """
         for invalidPair in ((b"k",), (b"k", b"v", b"x")):
             e = self.assertRaises(
@@ -185,41 +173,36 @@ class RawHeadersConversionTests(TestCase):
                     cast(Iterable[Iterable[bytes]], (invalidPair,))
                 ),
             )
-            self.assertEqual(str(e), "header pair must be a 2-tuple")
+            self.assertEqual(str(e), "header pair must be a 2-item iterable")
 
 
-    def test_pairsNameNotBytes(self):
-        # type: () -> None
+    @given(latin1_text())
+    def test_pairNameText(self, name):
+        # type: (Text) -> None
         """
-        L{normalizeRawHeaders} raises L{TypeError} if the C{headerPairs}
-        argument is not an tuple of 2-item L{tuple}s where the first item in
-        the 2-item L{tuple} is L{bytes}.
+        L{normalizeRawHeaders} converts ISO-8859-1-encodable text names into
+        bytes.
         """
-        e = self.assertRaises(
-            TypeError,
-            tuple,
-            normalizeRawHeaders(
-                cast(Iterable[Iterable[bytes]], ((u"k", b"v"),))
-            )
+        rawHeaders = ((name, b"value"),)
+        normalized = tuple(normalizeRawHeaders(rawHeaders))
+
+        self.assertEqual(
+            normalized,
+            ((normalizeHeaderName(headerNameAsBytes(name)), b"value"),),
         )
-        self.assertEqual(str(e), "header name must be bytes")
 
 
-    def test_pairsValueNotBytes(self):
-        # type: () -> None
+    @given(latin1_text())
+    def test_pairValueText(self, value):
+        # type: (Text) -> None
         """
-        L{normalizeRawHeaders} raises L{TypeError} if the C{headerPairs}
-        argument is not an tuple of 2-item L{tuple}s where the second item
-        in the 2-item L{tuple} is bytes.
+        L{normalizeRawHeaders} converts ISO-8859-1-encodable text values into
+        bytes.
         """
-        e = self.assertRaises(
-            TypeError,
-            tuple,
-            normalizeRawHeaders(
-                cast(Iterable[Iterable[bytes]], ((b"k", u"v"),))
-            )
-        )
-        self.assertEqual(str(e), "header value must be bytes")
+        rawHeaders = ((b"name", value),)
+        normalized = tuple(normalizeRawHeaders(rawHeaders))
+
+        self.assertEqual(normalized, ((b"name", headerValueAsBytes(value)),))
 
 
 

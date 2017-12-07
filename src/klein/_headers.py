@@ -178,20 +178,15 @@ def normalizeHeaderName(name):
 # Internal data representation
 
 def normalizeRawHeaders(headerPairs):
-    # type: (Iterable[Iterable[bytes]]) -> Iterable[RawHeader]
+    # type: (Iterable[Iterable[String]]) -> Iterable[RawHeader]
     for pair in headerPairs:
-        if not isinstance(pair, tuple):
-            raise TypeError("header pair must be a tuple")
-
         try:
             name, value = pair
         except ValueError:
-            raise ValueError("header pair must be a 2-tuple")
+            raise ValueError("header pair must be a 2-item iterable")
 
-        if not isinstance(name, bytes):
-            raise TypeError("header name must be bytes")
-        if not isinstance(value, bytes):
-            raise TypeError("header value must be bytes")
+        name = normalizeHeaderName(headerNameAsBytes(name))
+        value = headerValueAsBytes(value)
 
         yield (normalizeHeaderName(name), value)
 

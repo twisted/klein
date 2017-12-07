@@ -26,15 +26,6 @@ T = TypeVar('T')
 DrawCallable = Callable[[Callable[..., T]], T]
 
 
-# Note this may be incorrect (most likely: incomplete), but it's at least OK
-# for generating IDNA test data.
-IDNA_CHARACTER_CATEGORIES = (
-    "Lu", "Ll", "Lt",                          # cased letters
-    "Mn", "Mc", "Me",                          # marks
-    "Nd", "Nl", "No",                          # numbers
-    "Pc", "Pd", "Ps", "Pe", "Pe", "Pf", "Po",  # punctuation
-    "Sm", "Sc", "Sk", "So",                    # symbols
-)
 
 
 @composite

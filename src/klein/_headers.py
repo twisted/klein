@@ -217,7 +217,7 @@ def getFromRawHeaders(rawHeaders, name):
             for n, v in rawHeaders if rawName == n
         )
 
-    raise TypeError("name must be text or bytes")
+    raise TypeError("name {!r} must be text or bytes".format(name))
 
 
 def rawHeaderName(name):
@@ -227,29 +227,29 @@ def rawHeaderName(name):
     elif isinstance(name, Text):
         return headerNameAsBytes(name)
     else:
-        raise TypeError("name must be text or bytes")
+        raise TypeError("name {!r} must be text or bytes".format(name))
 
 
 def rawHeaderNameAndValue(name, value):
     # type: (String, String) -> Tuple[bytes, bytes]
     if isinstance(name, bytes):
         if not isinstance(value, bytes):
-            raise TypeError("value must be bytes to match name")
-
+            raise TypeError(
+                "value {!r} must be bytes to match name {!r}"
+                .format(value, name)
+            )
         return (name, value)
-        # rawName  = name   # type: bytes
-        # rawValue = value  # type: bytes
 
     elif isinstance(name, Text):
         if not isinstance(value, Text):
-            raise TypeError("value must be text to match name")
-
+            raise TypeError(
+                "value {!r} must be text to match name {!r}"
+                .format(value, name)
+            )
         return (headerNameAsBytes(name), headerValueAsBytes(value))
-        # rawName  = headerNameAsBytes(name)
-        # rawValue = headerValueAsBytes(value)
 
     else:
-        raise TypeError("name must be text or bytes")
+        raise TypeError("name {!r} must be text or bytes".format(name))
 
 
 

@@ -316,7 +316,9 @@ class GetValuesTestsMixIn(object):
         e = cast(TestCase, self).assertRaises(
             TypeError, self.getValues, (), object()
         )
-        cast(TestCase, self).assertEqual(str(e), "name must be text or bytes")
+        cast(TestCase, self).assertRegex(
+            str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
+        )
 
 
 
@@ -446,7 +448,9 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         e = cast(TestCase, self).assertRaises(
             TypeError, headers.remove, object()
         )
-        cast(TestCase, self).assertEqual(str(e), "name must be text or bytes")
+        cast(TestCase, self).assertRegex(
+            str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
+        )
 
 
     def test_addValueBytesName(self):
@@ -490,8 +494,8 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         e = cast(TestCase, self).assertRaises(
             TypeError, headers.addValue, b"a", u"1"
         )
-        cast(TestCase, self).assertEqual(
-            str(e), "value must be bytes to match name"
+        cast(TestCase, self).assertRegex(
+            str(e), "value u?'1' must be bytes to match name b?'a'"
         )
 
 
@@ -506,8 +510,8 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         e = cast(TestCase, self).assertRaises(
             TypeError, headers.addValue, u"a", b"1"
         )
-        cast(TestCase, self).assertEqual(
-            str(e), "value must be text to match name"
+        cast(TestCase, self).assertRegex(
+            str(e), "value b?'1' must be text to match name u?'a'"
         )
 
 
@@ -522,7 +526,9 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         e = cast(TestCase, self).assertRaises(
             TypeError, headers.addValue, object(), b"1"
         )
-        cast(TestCase, self).assertEqual(str(e), "name must be text or bytes")
+        cast(TestCase, self).assertRegex(
+            str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
+        )
 
 
 

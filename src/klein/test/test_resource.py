@@ -1264,7 +1264,7 @@ class GlobalAppTests(TestCase):
     """
 
     def test_global_app(self):
-        from klein import run, route, resource, handle_errors
+        from klein.app import run, route, resource, handle_errors
 
         globalApp = run.__self__
 

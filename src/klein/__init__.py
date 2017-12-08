@@ -1,8 +1,7 @@
 from __future__ import absolute_import, division
 
 from klein._plating import Plating
-from klein.app import Klein, handle_errors, resource, route, run, urlFor, \
-    url_for
+from klein.app import Klein, handle_errors, route, run, urlFor, url_for
 
 from ._version import __version__ as _incremental_version
 
@@ -14,10 +13,9 @@ __all__ = (
     "__copyright__",
     "__license__",
     "__version__",
-    "resource",
+    "handle_errors",
     "route",
     "run",
-    "handle_errors",
     "urlFor",
     "url_for",
 )

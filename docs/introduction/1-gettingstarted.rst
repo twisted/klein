@@ -110,8 +110,7 @@ distinct content.
 While just a little HTML might have been fine for the 90s, modern web apps
 quickly - sometimes immediately - outgrow HTML though; soon you'll want some
 way to get just the data from your backend out via a JSON API, often from a
-dynamic JavaScript or `Python <https://brython.info>`_ front-end in the
-browser.
+dynamic JavaScript front-end in the browser.
 
 Klein provides for this general pattern with ``klein.Plating``.
 

@@ -3,7 +3,8 @@ from __future__ import absolute_import, division
 from klein._plating import Plating
 from klein._form import form
 from klein._session import SessionProcurer
-from klein.app import Klein, resource, route, run
+from klein.app import Klein, handle_errors, resource, route, run, urlFor, \
+    url_for
 
 from ._version import __version__ as _incremental_version
 
@@ -20,6 +21,9 @@ __all__ = (
     "resource",
     "route",
     "run",
+    "handle_errors",
+    "urlFor",
+    "url_for",
 )
 
 

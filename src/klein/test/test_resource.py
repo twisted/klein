@@ -3,7 +3,10 @@ from __future__ import absolute_import, division
 import os
 from io import BytesIO
 
-from mock import Mock, call
+try:
+    from unittest.mock import Mock, call
+except Exception:
+    from mock import Mock, call  # type:ignore
 
 from six.moves.urllib.parse import parse_qs
 
@@ -1253,6 +1256,34 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(server_port, int)
         self.assertIsInstance(path_info, unicode)
         self.assertIsInstance(script_name, unicode)
+
+
+class GlobalAppTests(TestCase):
+    """
+    Tests for the global app object
+    """
+
+    def test_global_app(self):
+        from klein import run, route, resource, handle_errors
+
+        globalApp = run.__self__
+
+        self.assertIs(route.__self__, globalApp)
+        self.assertIs(resource.__self__, globalApp)
+        self.assertIs(handle_errors.__self__, globalApp)
+
+        @route('/')
+        def index(request):
+            1 // 0
+
+        @handle_errors(ZeroDivisionError)
+        def on_zero(request, failure):
+            return b'alive'
+
+        request = requestMock(b'/')
+        d = _render(resource(), request)
+        self.assertIsNone(self.successResultOf(d))
+        self.assertEqual(request.getWrittenData(), b'alive')
 
 
 if _PY3:

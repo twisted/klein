@@ -432,6 +432,42 @@ def signup_page(request, the_form):
         "signupActive": "active"
     }
 
+signup = form().authorized_using(authorized)
+
+def inSubprocess(router, poolFromSelf=lambda myself: myself.ampoulePool):
+    def decorator(decoratee):
+        # -> I want to run decoratee in subprocess.
+        @router
+        def doSubprocessStuff(self, request):
+            pool = poolFromSelf(self)  # -> self might be None.  decoratee is a
+            # function; somewhere there might be a class, but, we can
+            # qual/namedAny our way
+            return pool.callInProcess(decoratee, self, ProxyRequest(request))
+    return decorator
+
+@dependencies(
+    inSubprocess(
+        style.routed(
+            app.route("/signup", methods=["POST"]),
+            [tags.h1(slot("success")),
+             tags.p(
+                 "Now ", tags.a(href=slot("next_url"))(slot("link_message")), "."
+             )]
+        )
+    ),
+    username=signup.field(form.text()),
+    email=signup.field(form.text()),
+    password=signup.field(form.password()),
+    searchForm=search.renderer(),
+    binding=fromAuthorizedSession(ISimpleAccountBinding),
+)
+def doSignup(
+        request,
+        username, email, password,
+        binding,
+        searchForm,
+):
+    ...
 
 
 @authorized(

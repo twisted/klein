@@ -23,12 +23,12 @@ from twisted.web.test.test_web import DummyChannel
 
 from werkzeug.exceptions import NotFound
 
-from klein import Klein
-from klein.interfaces import IKleinRequest
-from klein.resource import (
+from .util import EqualityTestsMixin, TestCase
+from .. import Klein
+from .._interfaces import IKleinRequest
+from .._resource import (
     KleinResource, _URLDecodeError, _extractURLparts, ensure_utf8_bytes
 )
-from klein.test.util import EqualityTestsMixin, TestCase
 
 
 def requestMock(path, method=b"GET", host=b"localhost", port=8080,
@@ -1264,7 +1264,7 @@ class GlobalAppTests(TestCase):
     """
 
     def test_global_app(self):
-        from klein import run, route, resource, handle_errors
+        from klein.app import run, route, resource, handle_errors
 
         globalApp = run.__self__
 

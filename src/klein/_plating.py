@@ -12,8 +12,8 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader
 
+from ._app import _call
 from ._decorators import bindable, modified
-from .app import _call
 
 
 def _should_return_json(request):
@@ -109,7 +109,7 @@ class Plating(object):
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None,
-                 presentation_slots=frozenset()):
+                 presentation_slots=()):
         """
         """
         self._defaults = {} if defaults is None else defaults

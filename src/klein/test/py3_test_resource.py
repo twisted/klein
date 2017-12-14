@@ -1,10 +1,9 @@
 import twisted
 
-from klein import Klein
-from klein.resource import KleinResource
-from klein.test.util import TestCase
-
 from .test_resource import LeafResource, _render, requestMock
+from .util import TestCase
+from .. import Klein
+from .._resource import KleinResource
 
 
 class PY3KleinResourceTests(TestCase):

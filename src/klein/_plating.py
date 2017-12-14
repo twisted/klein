@@ -4,9 +4,9 @@
 Templating wrapper support for Klein.
 """
 
-import attr
-
 from json import dumps
+
+import attr
 
 from six import integer_types, text_type
 

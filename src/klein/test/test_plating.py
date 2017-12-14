@@ -43,9 +43,23 @@ element = Plating(
 @element.widgeted
 def enwidget(a, b):
     """
-    Provide some values for the L{widget} template.
+    Provide some values for the L{element} template.
     """
     return {"a": a, "b": b}
+
+
+class InstanceWidget(object):
+    """
+    A class with a method that's a L{Plating.widget}.
+    """
+
+    @element.widgeted
+    def enwidget(self, a, b):
+        """
+        Provide some values for the L{element} template.
+        """
+        return {"a": a, "b": b}
+
 
 
 class PlatingTests(TestCase):
@@ -175,14 +189,19 @@ class PlatingTests(TestCase):
         function with a modified return type that turns it into a renderable
         HTML sub-element that may fill a slot.
         """
-        @page.routed(self.app.route("/"), tags.div(slot("widget")))
+        @page.routed(self.app.route("/"),
+                     tags.div(tags.div(slot("widget")),
+                              tags.div(slot("instance-widget"))))
         def rsrc(request):
-            return {"widget": enwidget.widget(3, 4)}
+            return {"widget": enwidget.widget(a=3, b=4),
+                    "instance-widget": InstanceWidget().enwidget.widget(5, 6)}
 
         request, written = self.get(b"/")
 
         self.assertIn(b"<span>a: 3</span>", written)
         self.assertIn(b"<span>b: 4</span>", written)
+        self.assertIn(b"<span>a: 5</span>", written)
+        self.assertIn(b"<span>b: 6</span>", written)
 
     def test_widget_json(self):
         """
@@ -190,13 +209,17 @@ class PlatingTests(TestCase):
         serialized to JSON, it appears the same as the returned value despite
         the HTML-friendly wrapping described above.
         """
-        @page.routed(self.app.route("/"), tags.div(slot("widget")))
+        @page.routed(self.app.route("/"),
+                     tags.div(tags.div(slot("widget")),
+                              tags.div(slot("instance-widget"))))
         def rsrc(request):
-            return {"widget": enwidget.widget(3, 4)}
+            return {"widget": enwidget.widget(a=3, b=4),
+                    "instance-widget": InstanceWidget().enwidget.widget(5, 6)}
 
         request, written = self.get(b"/?json=1")
         self.assertEqual(json.loads(written.decode('utf-8')),
                          {"widget": {"a": 3, "b": 4},
+                          "instance-widget": {"a": 5, "b": 6},
                           "title": "default title unchanged"})
 
     def test_prime_directive_return(self):

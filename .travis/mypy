@@ -35,6 +35,7 @@ mypy "$@"      \
     | grep -v  \
         -e ': note: .* defined here'                                                                               \
         -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "skip"'                                       \
+        -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "todo"'                                       \
         -e ': error: Unexpected keyword argument "[^"]*" for "[^"]*" of "IHTTPHeaders"'                            \
         -e ': error: Unexpected keyword argument "[^"]*" for "[^"]*" of "IMutableHTTPHeaders"'                     \
         -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'                                  \

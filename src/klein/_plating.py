@@ -109,7 +109,7 @@ class Plating(object):
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None,
-                 presentation_slots=frozenset()):
+                 presentation_slots=()):
         """
         """
         self._defaults = {} if defaults is None else defaults

@@ -182,6 +182,14 @@ class PlatingTests(TestCase):
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
+    def test_widget_function(self):
+        """
+        A function decorated with L{Plating.wigeted} can be directly
+        invoked.
+        """
+        self.assertEqual(enwidget(5, 6), {"a": 5, "b": 6})
+        self.assertEqual(InstanceWidget().enwidget(7, 8), {"a": 7, "b": 8})
+
     def test_widget_html(self):
         """
         When L{Plating.widgeted} is applied as a decorator, it gives the

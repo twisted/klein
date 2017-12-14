@@ -4,6 +4,8 @@
 Templating wrapper support for Klein.
 """
 
+import attr
+
 from json import dumps
 
 from six import integer_types, text_type
@@ -161,11 +163,45 @@ class Plating(object):
                              boundInstance=instance,
                              presentationSlots=self._presentationSlots)
 
+    @attr.s
+    class _Widget(object):
+        """
+        Implementation of L{Plating.widgeted}.  This is a L{callable}
+        descriptor that records the instance to which its wrapped
+        function is bound, if any.  Its L{widget} method then passes
+        that instance or L{None} and the result of invoking the
+        function (or now bound method) to the creating L{Plating}
+        instance's L{Plating._elementify} to construct a
+        L{PlatedElement}.
+        """
+        _plating = attr.ib()
+        _function = attr.ib()
+        _instance = attr.ib()
+
+        def __call__(self, *args, **kwargs):
+            return self._function(*args, **kwargs)
+
+        def __get__(self, obj, type_=None):
+            return self.__class__(
+                self._plating,
+                self._function.__get__(obj, type_),
+                instance=obj,
+            )
+
+        def widget(self, *args, **kwargs):
+            """
+            Construct a L{PlatedElement} the rendering of this widget.
+            """
+            data = self._function(*args, **kwargs)
+            return self._plating._elementify(self._instance, data)
+
+        def __getattr__(self, attr):
+            return getattr(self._function, attr)
+
     def widgeted(self, function):
-        @modified("Plating.widget renderer", function)
-        @bindable
-        def wrapper(instance, *a, **k):
-            data = _call(instance, function, *a, **k)
-            return self._elementify(instance, data)
-        function.widget = wrapper
-        return function
+        """
+        A decorator that turns a function into a renderer for an
+        element without a L{Klein.route}.  Use this to create reusable
+        template elements.
+        """
+        return self._Widget(self, function, None)

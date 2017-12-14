@@ -22,6 +22,8 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
         self.assertIdentical(k.Klein, a.Klein)
         self.assertIdentical(k.handle_errors, a.handle_errors)
+        # Blocked on https://github.com/twisted/klein/issues/224
+        # self.assertIdentical(k.resource, a.resource)
         self.assertIdentical(k.route, a.route)
         self.assertIdentical(k.run, a.run)
 
@@ -54,13 +56,14 @@ class PublicSymbolsTestCase(unittest.TestCase):
         self.assertIdentical(i.IKleinRequest, _i.IKleinRequest)
 
 
-    def test_resource(self):
-        # type: () -> None
-        """
-        Test exports from L{klein.resource}.
-        """
-        import klein.resource as r
-        import klein._resource as _r
+    # Blocked on https://github.com/twisted/klein/issues/224
+    # def test_resource(self):
+    #     # type: () -> None
+    #     """
+    #     Test exports from L{klein.resource}.
+    #     """
+    #     import klein.resource as r
+    #     import klein._resource as _r
 
-        self.assertIdentical(r.KleinResource, _r.KleinResource)
-        self.assertIdentical(r.ensure_utf8_bytes, _r.ensure_utf8_bytes)
+    #     self.assertIdentical(r.KleinResource, _r.KleinResource)
+    #     self.assertIdentical(r.ensure_utf8_bytes, _r.ensure_utf8_bytes)

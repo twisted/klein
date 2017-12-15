@@ -11,9 +11,9 @@ import json
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
 
-from klein import Klein, Plating
-from klein.test.test_resource import _render, requestMock
-from klein.test.util import TestCase
+from .test_resource import _render, requestMock
+from .util import TestCase
+from .. import Klein, Plating
 
 page = Plating(
     defaults={

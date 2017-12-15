@@ -10,12 +10,12 @@ except Exception:
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
 
-from klein import Klein
-from klein._decorators import bindable, modified, originalName
-from klein.app import KleinRequest
-from klein.interfaces import IKleinRequest
-from klein.test.test_resource import requestMock
-from klein.test.util import EqualityTestsMixin
+from .test_resource import requestMock
+from .util import EqualityTestsMixin
+from .. import Klein
+from .._app import KleinRequest
+from .._decorators import bindable, modified, originalName
+from .._interfaces import IKleinRequest
 
 
 
@@ -315,10 +315,10 @@ class KleinTestCase(unittest.TestCase):
                          ("foo_branch", {"__rest__": "bar"}))
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.Site')
-    @patch('klein.app.log')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.Site')
+    @patch('klein._app.log')
+    @patch('klein._app.reactor')
     def test_run(self, reactor, mock_log, mock_site, mock_kr):
         """
         L{Klein.run} configures a L{KleinResource} and a L{Site}
@@ -339,10 +339,10 @@ class KleinTestCase(unittest.TestCase):
         mock_log.startLogging.assert_called_with(sys.stdout)
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.Site')
-    @patch('klein.app.log')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.Site')
+    @patch('klein._app.log')
+    @patch('klein._app.reactor')
     def test_runWithLogFile(self, reactor, mock_log, mock_site, mock_kr):
         """
         L{Klein.run} logs to the specified C{logFile}.
@@ -362,10 +362,10 @@ class KleinTestCase(unittest.TestCase):
         mock_log.startLogging.assert_called_with(logFile)
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.log')
-    @patch('klein.app.endpoints.serverFromString')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.log')
+    @patch('klein._app.endpoints.serverFromString')
+    @patch('klein._app.reactor')
     def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
         """
         L{Klein.run} called with tcp6 endpoint description.
@@ -380,10 +380,10 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.log')
-    @patch('klein.app.endpoints.serverFromString')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.log')
+    @patch('klein._app.endpoints.serverFromString')
+    @patch('klein._app.reactor')
     def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
         """
         L{Klein.run} called with SSL endpoint specification.
@@ -401,7 +401,7 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
 
 
-    @patch('klein.app.KleinResource')
+    @patch('klein._app.KleinResource')
     def test_resource(self, mock_kr):
         """
         L{Klien.resource} returns a L{KleinResource}.
@@ -411,6 +411,7 @@ class KleinTestCase(unittest.TestCase):
 
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
+
 
     def test_urlFor(self):
         """L{Klein.urlFor} builds an URL for an endpoint with parameters"""

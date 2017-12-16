@@ -14,8 +14,8 @@ from twisted.web.template import tags
 from twisted.web.iweb import IRenderable
 from twisted.web.error import MissingRenderMethod
 
-from .interfaces import SessionMechanism, ISession
-from .app import _call
+from ._interfaces import SessionMechanism, ISession
+from ._app import _call
 from ._decorators import bindable, modified
 
 class CrossSiteRequestForgery(Exception):

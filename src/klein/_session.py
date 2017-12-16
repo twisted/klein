@@ -2,12 +2,12 @@
 import attr
 
 from zope.interface import implementer
-from .interfaces import (
+from ._interfaces import (
     ISessionProcurer, SessionMechanism, NoSuchSession, ISession,
     TooLateForCookies
 )
 from ._decorators import modified, bindable
-from .app import _call
+from ._app import _call
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 

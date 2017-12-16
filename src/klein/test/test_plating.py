@@ -240,7 +240,7 @@ class PlatingTests(TestCase):
         """
         plating = Plating(
             tags=tags.span(slot("title")),
-            presentationSlots={"title"}
+            presentation_slots={"title"}
         )
 
         @plating.routed(self.app.route("/"), tags.span(slot("data")))

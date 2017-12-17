@@ -346,8 +346,7 @@ def one_session(session_info, form, current):
     return dict(
         id=session_info.id,
         ip=session_info.ip,
-        when=(session_info.when.strftime("%a, %d %b %Y %H:%M:%S +0000")
-              .decode("utf-8")),
+        when=(u"{:%a, %d %b %Y %H:%M:%S +0000}".format(session_info.when)),
         glue=form.glue(),
         highlight="background-color: rgb(200, 200, 255)" if current else ""
     )

@@ -338,7 +338,7 @@ widget = Plating(
                             name="sessionID"),
                  slot("glue")))
     ),
-    presentationSlots=["glue", "highlight"]
+    presentation_slots=["glue", "highlight"]
 )
 
 @widget.widgeted

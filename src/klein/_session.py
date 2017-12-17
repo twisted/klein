@@ -181,13 +181,14 @@ def requirer(procure_procurer):
 
 
 
-@attr.s
+@attr.s(frozen=True)
 class Optional(object):
     _interface = attr.ib()
     _required = False
     def retrieve(self, dict):
         return dict.get(self._interface, None)
-@attr.s
+
+@attr.s(frozen=True)
 class Required(object):
     _interface = attr.ib()
     _required = True

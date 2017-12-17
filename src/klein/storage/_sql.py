@@ -36,7 +36,7 @@ from twisted.internet.defer import (
 from twisted.python.compat import unicode
 from twisted.python.failure import Failure
 
-from .security import computeKeyText, checkAndReset
+from ._security import computeKeyText, checkAndReset
 
 @implementer(ISession)
 @attr.s

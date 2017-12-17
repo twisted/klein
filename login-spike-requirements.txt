@@ -7,6 +7,5 @@ scrypt==0.7.1
 six==1.10.0
 SQLAlchemy==1.0.15
 Twisted==16.4.1
-txscrypt==3.0.0
 Werkzeug==0.11.10
 zope.interface==4.2.0

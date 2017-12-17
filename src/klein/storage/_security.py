@@ -49,8 +49,8 @@ def checkAndReset(storedPasswordText, providedPasswordText, resetter):
     valid, newHash = yield _verifyAndUpdate(providedPasswordText,
                                             storedPasswordText)
     if valid:
-        # Password migration!  Does txscrypt have an awesome *new* hash it
-        # wants to give us?  Store it.
+        # Password migration!  Does our passlib context have an awesome *new*
+        # hash it wants to give us?  Store it.
         if newHash is not None:
             if isinstance(newHash, 'bytes'):
                 newHash = newHash.decode("charmap")

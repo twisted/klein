@@ -1,51 +1,77 @@
 
-from txscrypt import computeKey, checkPassword
 from unicodedata import normalize
+from functools import partial
+from passlib.context import CryptContext
 from twisted.internet.defer import returnValue, inlineCallbacks
+from twisted.internet.threads import deferToThread
+
+
+passlibContextWithGoodDefaults = partial(CryptContext, schemes=['bcrypt'])
+
+def _verifyAndUpdate(secret, hash, ctxFactory=passlibContextWithGoodDefaults):
+    """
+    Asynchronous wrapper for L{CryptContext.verify_and_update}.
+    """
+    @deferToThread
+    def theWork():
+        return ctxFactory().verify_and_update(secret, hash)
+    return theWork
+
+
+def _hashSecret(secret, ctxFactory=passlibContextWithGoodDefaults):
+    """
+    Asynchronous wrapper for L{CryptContext.hash}.
+    """
+    @deferToThread
+    def theWork():
+        return ctxFactory().hash(secret)
+    return theWork
+
 
 
 @inlineCallbacks
-def checkAndReset(stored_password_text, provided_password_text, resetter):
+def checkAndReset(storedPasswordText, providedPasswordText, resetter):
     """
     Check the given stored password text against the given provided password
     text.
 
-    @param stored_password_text: opaque (text) from the account database.
-    @type stored_password_text: L{unicode}
+    @param storedPasswordText: opaque (text) from the account database.
+    @type storedPasswordText: L{unicode}
 
-    @param provided_password_text: the plain-text password provided by the
+    @param providedPasswordText: the plain-text password provided by the
         user.
-    @type provided_password_text: L{unicode}
+    @type providedPasswordText: L{unicode}
+
+    @return: L{Deferred} firing with C{True} if the password matches and
+        C{False} if the password does not match.
     """
-    provided_password_bytes = _password_bytes(provided_password_text)
-    stored_password_bytes = stored_password_text.encode("charmap")
-    if (yield checkPassword(stored_password_bytes, provided_password_bytes)):
+    providedPasswordText = normalize('NFD', providedPasswordText)
+    valid, newHash = yield _verifyAndUpdate(providedPasswordText,
+                                            storedPasswordText)
+    if valid:
         # Password migration!  Does txscrypt have an awesome *new* hash it
         # wants to give us?  Store it.
-        new_password_bytes = yield computeKey(provided_password_bytes)
-        if new_password_bytes != provided_password_bytes:
-            yield resetter(new_password_bytes.decode("charmap"))
+        if newHash is not None:
+            if isinstance(newHash, 'bytes'):
+                newHash = newHash.decode("charmap")
+            yield resetter(newHash)
         returnValue(True)
-    returnValue(False)
+    else:
+        returnValue(False)
 
 
 
-def computeKeyText(password_text):
+@inlineCallbacks
+def computeKeyText(passwordText):
     """
     Compute some text to store for a given plain-text password.
 
-    @param password_text: The text of a new password, as entered by a user.
-    """
-    pwb = _password_bytes(password_text)
-    keyComputation = computeKey(pwb)
-    return (keyComputation
-            .addCallback(lambda x: x if not isinstance(x, bytes)
-                         else x.decode("charmap")))
+    @param passwordText: The text of a new password, as entered by a user.
 
-
-
-def _password_bytes(password_text):
+    @return: a L{Deferred} firing with L{unicode}.
     """
-    Convert a textual password into some bytes.
-    """
-    return normalize("NFKD", password_text).encode("utf-8")
+    normalized = normalize('NFD', passwordText)
+    hashed = yield _hashSecret(normalized)
+    if isinstance(hashed, bytes):
+        hashed = hashed.decode("charmap")
+    return hashed

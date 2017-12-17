@@ -38,7 +38,7 @@ class ValidationError(Exception):
         self.message = message
 
 
-@attr.s
+@attr.s(frozen=True)
 class Field(object):
     """
     A L{Field} is a static part of a L{Form}.

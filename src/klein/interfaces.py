@@ -7,7 +7,9 @@ from ._interfaces import (
     ISimpleAccountBinding,
     ISimpleAccount,
     ISQLSchemaComponent,
+    ISQLAuthorizer,
     ISessionProcurer,
+    SessionMechanism,
     ISession,
 )
 
@@ -22,6 +24,8 @@ __all__ = (
     "ISimpleAccount",
     "ISQLSchemaComponent",
     "ISessionProcurer",
+    "ISQLAuthorizer",
+    "SessionMechanism",
     "ISession",
 )
 

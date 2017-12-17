@@ -445,7 +445,7 @@ def signup_page(request, the_form):
 @inlineCallbacks
 def do_signup(request, username, email, password, binding):
     print("u", username, "e", email, "p", password, "b", binding)
-    acct = yield binding.create_account(username, email, password)
+    acct = yield binding.createAccount(username, email, password)
     result = {
         "signupActive": "active",
         "accountID": None

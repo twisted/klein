@@ -312,7 +312,7 @@ class AccountSessionBinding(object):
 
 
     @inlineCallbacks
-    def create_account(self, username, email, password):
+    def createAccount(self, username, email, password):
         """
         Create a new account with the given username, email and password.
 

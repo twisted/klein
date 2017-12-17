@@ -108,7 +108,7 @@ class ISimpleAccountBinding(Interface):
         logged in to.
         """
 
-    def create_account(username, email, password):
+    def createAccount(username, email, password):
         """
         Create a new account with the given username, email and password.
         """

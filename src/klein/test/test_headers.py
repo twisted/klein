@@ -1,8 +1,8 @@
-# -*- test-case-name: txrequest.test.test_headers -*-
+# -*- test-case-name: klein.test.test_headers -*-
 # Copyright (c) 2017-2018. See LICENSE for details.
 
 """
-Tests for L{txrequest._headers}.
+Tests for L{klein._headers}.
 """
 
 from collections import defaultdict
@@ -34,6 +34,11 @@ __all__ = ()
 def encodeName(name):
     # type: (Text) -> Optional[bytes]
     return name.encode(HEADER_NAME_ENCODING)
+
+
+def encodeValue(name):
+    # type: (Text) -> Optional[bytes]
+    return name.encode(HEADER_VALUE_ENCODING)
 
 
 def decodeName(name):
@@ -104,7 +109,7 @@ class EncodingTests(TestCase):
         """
         L{headerValueAsBytes} encodes L{Text} using L{HEADER_VALUE_ENCODING}.
         """
-        rawValue = encodeName(value)
+        rawValue = encodeValue(value)
         self.assertEqual(headerValueAsBytes(value), rawValue)
 
 

@@ -44,14 +44,6 @@ def decodeName(name):
     return name.decode(HEADER_NAME_ENCODING)
 
 
-def encodeValue(name):
-    # type: (Text) -> Optional[bytes]
-    try:
-        return name.encode(HEADER_VALUE_ENCODING)
-    except UnicodeEncodeError:
-        return None
-
-
 def decodeValue(name):
     # type: (bytes) -> Text
     return name.decode(HEADER_VALUE_ENCODING)

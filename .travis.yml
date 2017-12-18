@@ -26,12 +26,6 @@ branches:
 #
 matrix:
   include:
-    # PyPy (Python 2.7)
-    - env: TOXENV=coverage-pypy2-tw160,codecov     PYPY_VERSION=5.9.0
-    - env: TOXENV=coverage-pypy2-tw171,codecov     PYPY_VERSION=5.9.0
-    - env: TOXENV=coverage-pypy2-twcurrent,codecov PYPY_VERSION=5.9.0
-    - env: TOXENV=coverage-pypy2-twtrunk,codecov   PYPY_VERSION=5.9.0
-
     - python: 2.7
       env: TOXENV=coverage-py27-tw160,codecov
     - python: 2.7
@@ -79,9 +73,23 @@ matrix:
     - python: 2.7
       env: TOXENV=docs-linkcheck
 
+    - python: pypy
+      env: TOXENV=coverage-pypy2-tw160,codecov
+    - python: pypy
+      env: TOXENV=coverage-pypy2-tw171,codecov
+    - python: pypy
+      env: TOXENV=coverage-pypy2-twcurrent,codecov
+
+    - python: pypy3
+      env: TOXENV=coverage-pypy3-tw160,codecov
+    - python: pypy3
+      env: TOXENV=coverage-pypy3-tw171,codecov
+    - python: pypy3
+      env: TOXENV=coverage-pypy3-twcurrent,codecov
+
+
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
-    - env: TOXENV=coverage-pypy2-twtrunk
     - env: TOXENV=coverage-py27-twtrunk
     - env: TOXENV=coverage-py34-twtrunk
     - env: TOXENV=coverage-py35-twtrunk

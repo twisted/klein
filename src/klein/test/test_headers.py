@@ -1,14 +1,14 @@
-# -*- test-case-name: txrequest.test.test_headers -*-
+# -*- test-case-name: klein.test.test_headers -*-
 # Copyright (c) 2017-2018. See LICENSE for details.
 
 """
-Tests for L{txrequest._headers}.
+Tests for L{klein._headers}.
 """
 
 from collections import defaultdict
 from typing import AnyStr, Dict, Iterable, List, Optional, Text, Tuple, cast
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import binary, iterables, text, tuples
 
 from ._strategies import ascii_text, latin1_text
@@ -33,23 +33,17 @@ __all__ = ()
 
 def encodeName(name):
     # type: (Text) -> Optional[bytes]
-    try:
-        return name.encode(HEADER_NAME_ENCODING)
-    except UnicodeEncodeError:
-        return None
+    return name.encode(HEADER_NAME_ENCODING)
+
+
+def encodeValue(name):
+    # type: (Text) -> Optional[bytes]
+    return name.encode(HEADER_VALUE_ENCODING)
 
 
 def decodeName(name):
     # type: (bytes) -> Text
     return name.decode(HEADER_NAME_ENCODING)
-
-
-def encodeValue(name):
-    # type: (Text) -> Optional[bytes]
-    try:
-        return name.encode(HEADER_VALUE_ENCODING)
-    except UnicodeEncodeError:
-        return None
 
 
 def decodeValue(name):
@@ -72,14 +66,13 @@ class EncodingTests(TestCase):
         self.assertIdentical(headerNameAsBytes(name), name)
 
 
-    @given(text(min_size=1))
+    @given(latin1_text(min_size=1))
     def test_headerNameAsBytesWithText(self, name):
         # type: (Text) -> None
         """
         L{headerNameAsBytes} encodes L{Text} using L{HEADER_NAME_ENCODING}.
         """
         rawName = encodeName(name)
-        assume(rawName is not None)
         self.assertEqual(headerNameAsBytes(name), rawName)
 
 
@@ -110,14 +103,13 @@ class EncodingTests(TestCase):
         self.assertIdentical(headerValueAsBytes(value), value)
 
 
-    @given(text(min_size=1))
+    @given(latin1_text(min_size=1))
     def test_headerValueAsBytesWithText(self, value):
         # type: (Text) -> None
         """
         L{headerValueAsBytes} encodes L{Text} using L{HEADER_VALUE_ENCODING}.
         """
-        rawValue = encodeName(value)
-        assume(rawValue is not None)
+        rawValue = encodeValue(value)
         self.assertEqual(headerValueAsBytes(value), rawValue)
 
 

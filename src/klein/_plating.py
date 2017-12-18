@@ -181,11 +181,11 @@ class Plating(object):
         def __call__(self, *args, **kwargs):
             return self._function(*args, **kwargs)
 
-        def __get__(self, obj, type_=None):
+        def __get__(self, instance, owner=None):
             return self.__class__(
                 self._plating,
-                self._function.__get__(obj, type_),
-                instance=obj,
+                self._function.__get__(instance, owner),
+                instance=instance,
             )
 
         def widget(self, *args, **kwargs):
@@ -195,8 +195,10 @@ class Plating(object):
             data = self._function(*args, **kwargs)
             return self._plating._elementify(self._instance, data)
 
+
         def __getattr__(self, attr):
             return getattr(self._function, attr)
+
 
     def widgeted(self, function):
         """

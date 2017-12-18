@@ -26,6 +26,11 @@ branches:
 #
 matrix:
   include:
+    - python: 3.6
+      env: TOXENV=flake8
+    - python: 3.6
+      env: TOXENV=mypy
+
     - python: 2.7
       env: TOXENV=coverage-py27-tw160,codecov
     - python: 2.7
@@ -62,17 +67,6 @@ matrix:
     - python: 3.6
       env: TOXENV=coverage-py36-twtrunk,codecov
 
-    - python: 3.6
-      env: TOXENV=flake8
-    - python: 3.6
-      env: TOXENV=mypy
-    - python: 2.7
-      env: TOXENV=twistedchecker-diff
-    - python: 2.7
-      env: TOXENV=docs
-    - python: 2.7
-      env: TOXENV=docs-linkcheck
-
     - python: pypy
       env: TOXENV=coverage-pypy2-tw160,codecov
     - python: pypy
@@ -87,6 +81,12 @@ matrix:
     - python: pypy3
       env: TOXENV=coverage-pypy3-twcurrent,codecov
 
+    - python: 2.7
+      env: TOXENV=twistedchecker-diff
+    - python: 2.7
+      env: TOXENV=docs
+    - python: 2.7
+      env: TOXENV=docs-linkcheck
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.

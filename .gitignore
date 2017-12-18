@@ -5,6 +5,7 @@
 htmlcov
 /.coverage
 /.coverage.*
+/.mypy_cache
 /src/*.egg-info
 /.tox/
 /docs/_build/

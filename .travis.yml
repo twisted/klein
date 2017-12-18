@@ -27,11 +27,11 @@ branches:
 matrix:
   include:
     # PyPy (Python 2.7)
-    - env: TOXENV=coverage-pypy-tw155,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw160,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-tw171,codecov     PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-twcurrent,codecov PYPY_VERSION=5.7.1
-    - env: TOXENV=coverage-pypy-twtrunk,codecov   PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy2-tw155,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy2-tw160,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy2-tw171,codecov     PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy2-twcurrent,codecov PYPY_VERSION=5.7.1
+    - env: TOXENV=coverage-pypy2-twtrunk,codecov   PYPY_VERSION=5.7.1
 
     - python: 2.7
       env: TOXENV=coverage-py27-tw155,codecov
@@ -90,11 +90,11 @@ matrix:
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
+    - env: TOXENV=coverage-pypy2-twtrunk
     - env: TOXENV=coverage-py27-twtrunk
     - env: TOXENV=coverage-py34-twtrunk
     - env: TOXENV=coverage-py35-twtrunk
     - env: TOXENV=coverage-py36-twtrunk
-    - env: TOXENV=coverage-pypy-twtrunk
 
     # This is not yet required.
     - env: TOXENV=twistedchecker-diff

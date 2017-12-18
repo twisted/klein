@@ -8,7 +8,7 @@ Tests for L{txrequest._headers}.
 from collections import defaultdict
 from typing import AnyStr, Dict, Iterable, List, Optional, Text, Tuple, cast
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import binary, iterables, text, tuples
 
 from ._strategies import ascii_text, latin1_text
@@ -33,10 +33,7 @@ __all__ = ()
 
 def encodeName(name):
     # type: (Text) -> Optional[bytes]
-    try:
-        return name.encode(HEADER_NAME_ENCODING)
-    except UnicodeEncodeError:
-        return None
+    return name.encode(HEADER_NAME_ENCODING)
 
 
 def decodeName(name):
@@ -64,14 +61,13 @@ class EncodingTests(TestCase):
         self.assertIdentical(headerNameAsBytes(name), name)
 
 
-    @given(text(min_size=1))
+    @given(latin1_text(min_size=1))
     def test_headerNameAsBytesWithText(self, name):
         # type: (Text) -> None
         """
         L{headerNameAsBytes} encodes L{Text} using L{HEADER_NAME_ENCODING}.
         """
         rawName = encodeName(name)
-        assume(rawName is not None)
         self.assertEqual(headerNameAsBytes(name), rawName)
 
 
@@ -102,14 +98,13 @@ class EncodingTests(TestCase):
         self.assertIdentical(headerValueAsBytes(value), value)
 
 
-    @given(text(min_size=1))
+    @given(latin1_text(min_size=1))
     def test_headerValueAsBytesWithText(self, value):
         # type: (Text) -> None
         """
         L{headerValueAsBytes} encodes L{Text} using L{HEADER_VALUE_ENCODING}.
         """
         rawValue = encodeName(value)
-        assume(rawValue is not None)
         self.assertEqual(headerValueAsBytes(value), rawValue)
 
 

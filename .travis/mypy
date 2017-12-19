@@ -33,19 +33,12 @@ tmp="$(mktemp -t mypy.XXXX)";
 
 mypy "$@"      \
     | grep -v  \
-        -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "skip"'                                       \
-        -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "todo"'                                       \
+        -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "\(skip\|todo\)"'                             \
         -e ': error: Argument 2 to "[^"]*" of "IMutableHTTPHeaders" has incompatible type'                         \
-        -e ': error: Incompatible return value type (got "[^"]*", expected "IMutableHTTPHeaders")'                 \
-        -e ': error: Incompatible return value type (got "[^"]*HTTPRequest", expected "IHTTPMessage")'             \
-        -e ': error: Incompatible return value type (got "[^"]*HTTPResponse", expected "IHTTPMessage")'            \
+        -e ': error: Incompatible return value type (got "[^"]*HTTP[^"]*", expected "I[^"]*HTTP[^"]*")'            \
         -e ': error: Method must have at least one argument'                                                       \
-        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'                                  \
-        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPRequest"'                                  \
-        -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPResponse"'                                 \
-        -e ': error: Unexpected keyword argument "[^"]*" for "MutableHTTPHeaders"'                                 \
-        -e ': error: Unexpected keyword argument "[^"]*" for "[^"]*" of "IHTTPHeaders"'                            \
-        -e ': error: Unexpected keyword argument "[^"]*" for "[^"]*" of "IMutableHTTPHeaders"'                     \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                                            \
+        -e ': error: Unexpected keyword argument.* for .*"[^"]*HTTP\(Headers\|Request\|Response\)"'                \
         -e ': note: .* defined here'                                                                               \
         -e '^src/klein/_app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \
         -e '^src/klein/_app.py:.[0-9:]*: error: Function is missing a type annotation'                             \

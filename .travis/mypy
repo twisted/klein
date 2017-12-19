@@ -28,7 +28,7 @@ tmp="$(mktemp -t mypy.XXXX)";
 # * These are related to mypy not knowing about zope.interface:
 #   - Incompatible return value type
 #   - Method must have at least one argument
-#   - Unexpected keyword argument
+#   - Unexpected keyword argument (also effects attrs classes' __init__)
 #
 
 mypy "$@"      \
@@ -36,6 +36,7 @@ mypy "$@"      \
         -e ': note: .* defined here'                                                                               \
         -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "skip"'                                       \
         -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "todo"'                                       \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersWrappingHeaders"'                         \
         -e ': error: Unexpected keyword argument "[^"]*" for "[^"]*" of "IHTTPHeaders"'                            \
         -e ': error: Unexpected keyword argument "[^"]*" for "[^"]*" of "IMutableHTTPHeaders"'                     \
         -e ': error: Unexpected keyword argument "[^"]*" for "FrozenHTTPHeaders"'                                  \

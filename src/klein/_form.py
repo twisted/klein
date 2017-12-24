@@ -125,14 +125,24 @@ class RenderableForm(object):
 
     def _csrf_field(self):
         """
-        
+        @return: A hidden L{Field} containing the cross-site request forgery
+            protection token.
         """
         return hidden(CSRF_PROTECTION, self._session.identifier)
 
 
     def _fields_to_render(self):
         """
-        
+        @return: an interable of L{Field} objects to include in the HTML
+            representation of this form.  This includes:
+
+                - all the user-specified fields in the form
+
+                - the CSRF protection hidden field
+
+                - if no "submit" buttons are included in the form, one
+                  additional field for a default submit button so the form can
+                  be submitted.
         """
         any_submit = False
         for field in self._form._fields:

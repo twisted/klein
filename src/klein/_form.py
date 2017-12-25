@@ -74,9 +74,13 @@ class Field(object):
         )
 
 
-    def as_tags(self):
+    def asTags(self):
         """
-        
+        Convert this L{Field} into some stuff that can be rendered in a
+        L{twisted.web.template}.
+
+        @return: A new set of tags to include in a template.
+        @rtype: iterable of L{twisted.web.template.Tag}
         """
         input_tag = tags.input(type=self.formInputType,
                                name=self.formFieldName, value=self.value)
@@ -123,7 +127,7 @@ class RenderableForm(object):
     _enctype = attr.ib()
     _encoding = attr.ib()
 
-    def _csrf_field(self):
+    def _fieldForCSRF(self):
         """
         @return: A hidden L{Field} containing the cross-site request forgery
             protection token.
@@ -156,7 +160,7 @@ class RenderableForm(object):
                         value=u"submit",
                         pythonArgumentName="submit",
                         formFieldName="submit")
-        yield self._csrf_field()
+        yield self._fieldForCSRF()
 
     # Public interface below.
 
@@ -180,7 +184,7 @@ class RenderableForm(object):
                       enctype=self._enctype,
                       **{"accept-charset": self._encoding})
             (
-                field.as_tags() for field in self._fields_to_render()
+                field.asTags() for field in self._fields_to_render()
             )
         )
 
@@ -198,7 +202,7 @@ class RenderableForm(object):
             L{twisted.web.template}
         @rtype: L{twisted.web.template.Tag}, or L{list} thereof.
         """
-        return self._csrf_field().as_tags()
+        return self._fieldForCSRF().asTags()
 
 
 @bindable

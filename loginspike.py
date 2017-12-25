@@ -158,9 +158,9 @@ def set_procurer(opened_procurer):
 from klein._session import requirer, Optional
 authorized = requirer(lambda: procurer)
 
-logout = form().authorized_using(authorized)
+logout = form().authorizedUsing(authorized)
 
-chirp = form(value=form.text()).authorized_using(authorized)
+chirp = form(value=form.text()).authorizedUsing(authorized)
 
 @authorized(
     chirp.renderer(
@@ -247,7 +247,7 @@ def username(request, tag, account):
 login = form(
     username=form.text(),
     password=form.password(),
-).authorized_using(authorized)
+).authorizedUsing(authorized)
 
 
 
@@ -309,7 +309,7 @@ def dologin(request, username, password, binding):
 
 logout_other = form(
     sessionID=form.text(),
-).authorized_using(authorized)
+).authorizedUsing(authorized)
 
 @authorized(
     logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
@@ -385,7 +385,7 @@ signup = form(
     username=form.text(),
     email=form.text(),
     password=form.password(),
-).authorized_using(authorized)
+).authorizedUsing(authorized)
 
 @style.routed(
     signup.renderer(app.route("/signup", methods=["GET"]),

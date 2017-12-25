@@ -27,7 +27,7 @@ CSRF_PROTECTION = "__csrf_protection__"
 
 class ValidationError(Exception):
     """
-    A L{ValidationError} is raised by L{Field.extract_value}.
+    A L{ValidationError} is raised by L{Field.extractValue}.
     """
 
     def __init__(self, message):
@@ -92,7 +92,7 @@ class Field(object):
             yield tags.div(self.error.message)
 
 
-    def extract_value(self, request):
+    def extractValue(self, request):
         """
         extract some bytes value from the request
         """
@@ -100,7 +100,7 @@ class Field(object):
                 [b""])[0]
 
 
-    def validate_value(self, value):
+    def validateValue(self, value):
         """
         Validate the given text and return a converted Python object to use, or
         fail with L{ValidationError}.
@@ -222,17 +222,40 @@ URL_ENCODED = b'application/x-www-form-urlencoded'
 @attr.s(hash=False)
 class BindableForm(object):
     """
-    
+    A L{Form} object which includes an authorizer, and may therefore be bound
+    (via L{BindableForm.bind}) to an individual session, producing a
+    L{RenderableForm}.
     """
     _fields = attr.ib()
     _authorized = attr.ib()
 
-    def on_validation_failure_for(self, an_handler):
+    def onValidationFailureFor(self, handler):
         """
-        
+        Register a function to be run in the event of a validation failure for
+        the input to a particular form handler.
+
+        Generally used like so::
+
+            myBindableForm = form(...).authorizedUsing(...)
+            router = Klein()
+            @myBindableForm.handler(router.route("/", methods=['POST']))
+            def handleForm(request, ...):
+                ...
+
+            # Handle input validation failures for handleForm
+            @myBindableForm.onValidationFailureFor(handleForm)
+            def handleValidationFailures(request, formWithErrors):
+                return "Your inputs didn't validate."
+
+        @param handler: The form handler - i.e. function decorated by
+            L{BindableForm.handler} - for which the decorated function will
+            handle validation failures.
+
+        @return: a decorator that decorates a function with the signature
+            C{(request, form) -> thing klein can render}.
         """
         def decorate(decoratee):
-            an_handler.validation_failureHandlers[self] = decoratee
+            handler.validation_failureHandlers[self] = decoratee
             return decoratee
         return decorate
 
@@ -263,10 +286,10 @@ class BindableForm(object):
                 prevalidation_values = {}
                 arguments = {}
                 for field in self._fields:
-                    text = field.extract_value(request)
+                    text = field.extractValue(request)
                     prevalidation_values[field] = text
                     try:
-                        value = field.validate_value(text)
+                        value = field.validateValue(text)
                     except ValidationError as ve:
                         validation_errors[field] = ve
                     else:
@@ -331,7 +354,7 @@ class Form(object):
     """
     _fields = attr.ib()
 
-    def authorized_using(self, authorized):
+    def authorizedUsing(self, authorized):
         """
         
         """

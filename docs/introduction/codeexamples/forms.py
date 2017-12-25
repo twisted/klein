@@ -84,7 +84,7 @@ def form_renderer(request, the_form):
 def post_handler(request, foo, bar):
     return {"an-form-arg": foo}
 
-@style.routed(sample.on_validation_failure_for(post_handler),
+@style.routed(sample.onValidationFailureFor(post_handler),
               [tags.h1('invalid form'),
                tags.div(slot('the-invalid-form'))])
 def validation_failed(request, form):

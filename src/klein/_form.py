@@ -262,7 +262,23 @@ class BindableForm(object):
 
     def handler(self, route):
         """
-        
+        Declare a handler for a form.
+
+        This is a decorator that takes a route.
+
+        The function that it decorates should receive, as arguments, those
+        parameters that C{route} would give it, in addition to parameters with
+        the same names as all the L{Field}s in this L{BindableForm}.
+
+        For example::
+
+            router = Klein()
+            myBindableForm = form(value=form.integer(),
+                                  name=form.text()).authorizedUsing(...)
+
+            @myBindableForm.handler(router.route("/", methods=["POST"]))
+            def handleForm(request, value, name):
+                return "form handled"
         """
         def decorator(function):
             vfhc = "validation_failureHandlers"
@@ -282,7 +298,7 @@ class BindableForm(object):
                     if token != session.identifier:
                         raise CrossSiteRequestForgery(token,
                                                       session.identifier)
-                validation_errors = {}
+                validationErrors = {}
                 prevalidation_values = {}
                 arguments = {}
                 for field in self._fields:
@@ -291,17 +307,17 @@ class BindableForm(object):
                     try:
                         value = field.validateValue(text)
                     except ValidationError as ve:
-                        validation_errors[field] = ve
+                        validationErrors[field] = ve
                     else:
                         arguments[field.pythonArgumentName] = value
-                if validation_errors:
+                if validationErrors:
                     renderable = self.bind(
                         session, b"/".join(request.prepath),
                         request.method,
                         (request.getHeader('content-type')
                          .decode('utf-8').split(';')[0]),
                         prevalidation=prevalidation_values,
-                        errors=validation_errors,
+                        errors=validationErrors,
                     )
                     result = yield _call(instance, failureHandlers[self],
                                          request, renderable, *args, **kw)

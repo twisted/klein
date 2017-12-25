@@ -347,7 +347,10 @@ def form(*fields, **named_fields):
 
 def add(it):
     """
-    
+    expose the given decorated shorthand method as an attribute on L{form}.
+
+    (private implementation detail, but perhaps these should just be static
+    methods on a class for better visibility in IDEs and such?)
     """
     setattr(form, it.__name__, it)
     return it
@@ -356,7 +359,8 @@ def add(it):
 @add
 def text():
     """
-
+    Shorthand for a form field that contains a short string, and will be
+    rendered as a plain <input>.
     """
     return Field(converter=lambda x: unicode(x, "utf-8"),
                  formInputType="text")
@@ -364,7 +368,9 @@ def text():
 @add
 def password():
     """
-
+    Shorthand for a form field that, like L{text}, contains a short string, but
+    should be obscured when typed (and, to the extent possible, obscured in
+    other sensitive contexts, such as logging.)
     """
     return Field(converter=lambda x: unicode(x, "utf-8"),
                  formInputType="password")
@@ -372,7 +378,7 @@ def password():
 @add
 def hidden(name, value):
     """
-
+    Shorthand for a hidden field.
     """
     return Field(converter=lambda x: unicode(x, "utf-8"),
                  formInputType="hidden",

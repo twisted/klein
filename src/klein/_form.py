@@ -126,6 +126,8 @@ class RenderableForm(object):
     _method = attr.ib()
     _enctype = attr.ib()
     _encoding = attr.ib()
+    prevalidation = attr.ib(default=attr.Factory(dict))
+    errors = attr.ib(default=attr.Factory(dict))
 
     def _fieldForCSRF(self):
         """
@@ -163,9 +165,6 @@ class RenderableForm(object):
         yield self._fieldForCSRF()
 
     # Public interface below.
-
-    prevalidation = attr.ib(default=attr.Factory(dict))
-    errors = attr.ib(default=attr.Factory(dict))
 
     def lookupRenderMethod(self, name):
         """

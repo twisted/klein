@@ -350,28 +350,54 @@ class BindableForm(object):
     def bind(self, session, action, method="POST", enctype=FORM_DATA,
              prevalidation=None, errors=None, encoding="utf-8"):
         """
-        Bind this form to a session.
+        Create a L{RenderableForm} by associating all the data necessary for
+        rendering this form.
+
+        @param session: The session to bind the L{RenderableForm} to.
+        @type session: L{ISession}
+
+        @type action: The (relative) URL that the form will execute its method
+            on.
+        @type action: L{bytes}
+
+        @param method: The form method to use.  Defaults to "POST", can also be
+            "GET".
+        @type method: L{str}
+
+        @param enctype: The C{HTMLFormElement.enctype} used to instruct the
+            browser what content-type to send the POST body as, when rendering.
+        @type enctype: L{str}
+
+        @param prevalidation: The raw values supplied as input to the form
+            before being parsed and validated.
+        @type prevalidation: dict mapping {L{Field}: L{list} of L{unicode}}
+
+        @param errors: The errors discovered by validation.
+        @type errors: L{dict} mapping {L{Field} (the field with a validation
+            error): L{ValidationError} (an exception indicating the problem)}
         """
         if prevalidation is None:
             prevalidation = {}
         if errors is None:
             errors = {}
-        return RenderableForm(self, session, action, method, enctype,
-                              prevalidation=prevalidation,
-                              errors=errors, encoding=encoding)
+        return RenderableForm(self._form, session, action, method, enctype,
+                              prevalidation=prevalidation, errors=errors,
+                              encoding=encoding)
 
 
 
 @attr.s(hash=False)
 class Form(object):
     """
-    
+    A L{Form} is a collection of L{Field} objects.
+
+    @see: L{form}.
     """
     _fields = attr.ib()
 
     def authorizedUsing(self, authorized):
         """
-        
+        Associate a L{Form} with an authorizer
         """
         return BindableForm(self._fields, authorized)
 
@@ -379,7 +405,7 @@ class Form(object):
 
 def form(*fields, **named_fields):
     """
-    Create a form.
+    A shorthand for creating a L{Form}.
     """
     return Form(list(fields) + [
         field.maybeNamed(name) for name, field

@@ -418,7 +418,12 @@ class Form(object):
 
     def authorizedUsing(self, authorized):
         """
-        Associate a L{Form} with an authorizer
+        Associate a L{Form} with an authorizer.
+
+        @param authorized: A function that can require a session based on a
+            request, like that returned by L{klein._session.requirer}.
+        @type authorized: A callable with the signature (routeLikeDecorator,
+            **kw) -> decorator.
         """
         return BindableForm(self._fields, authorized)
 

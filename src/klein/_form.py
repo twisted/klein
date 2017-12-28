@@ -264,6 +264,9 @@ class BindableForm(object):
             def handleValidationFailures(request, formWithErrors):
                 return "Your inputs didn't validate."
 
+        @see: L{defaultValidationFailureHandler} for a more detailed
+            description of the decorated function's expected signature.
+
         @param handler: The form handler - i.e. function decorated by
             L{BindableForm.handler} - for which the decorated function will
             handle validation failures.

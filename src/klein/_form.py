@@ -207,7 +207,25 @@ class RenderableForm(object):
 @bindable
 def defaultValidationFailureHandler(instance, request, renderable):
     """
-    
+    This is the default validation failure handler, which will be used by
+    L{BindableForm.handler} in the case of any input validation failure when no
+    other validation failure handler is registered via
+    L{BindableForm.onValidationFailureFor}.
+
+    Its behavior is to simply return an HTML rendering of the form object,
+    which includes inline information about fields which failed to validate.
+
+    @param instance: The instance associated with the router that the form
+        handler was handled on.
+    @type instance: L{object}
+
+    @param request: The request including the form submission.
+    @type request: L{twisted.web.iweb.IRequest}
+
+    @param renderable: The form, including any unrendered fields.
+    @type renderable: L{RenderableForm}
+
+    @return: Any object acceptable from a Klein route.
     """
     from twisted.web.template import Element, TagLoader
     return Element(TagLoader(renderable))

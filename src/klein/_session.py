@@ -90,7 +90,7 @@ class SessionProcurer(object):
             )
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
-            yield self._store.sent_insecurely(all_possible_sent_tokens)
+            yield self._store.sentInsecurely(all_possible_sent_tokens)
             token_header = self._insecureTokenHeader
             cookie_name = self._insecureCookie
             sentSecurely = False

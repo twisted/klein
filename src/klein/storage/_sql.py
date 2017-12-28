@@ -222,7 +222,7 @@ class AlchimiaSessionStore(object):
             Column("confidential", Boolean(), nullable=False),
         )
 
-    def sent_insecurely(self, tokens):
+    def sentInsecurely(self, tokens):
         """
         Tokens have been sent insecurely; delete any tokens expected to be
         confidential.

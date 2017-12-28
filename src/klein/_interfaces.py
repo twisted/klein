@@ -69,7 +69,7 @@ class ISessionStore(Interface):
         """
 
 
-    def sent_insecurely(identifiers):
+    def sentInsecurely(identifiers):
         """
         The transport layer has detected that the given identifiers have been
         sent over an unauthenticated transport.

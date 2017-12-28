@@ -54,7 +54,7 @@ class MemorySessionStore(object):
         else:
             return fail(NoSuchSession())
 
-    def sent_insecurely(self, tokens):
+    def sentInsecurely(self, tokens):
         return
 
 sessions = MemorySessionStore()

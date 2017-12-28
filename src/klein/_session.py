@@ -62,8 +62,7 @@ class SessionProcurer(object):
 
 
     @inlineCallbacks
-    def procureSession(self, request, forceInsecure=False,
-                        alwaysCreate=True):
+    def procureSession(self, request, forceInsecure=False, alwaysCreate=True):
         alreadyProcured = ISession(request, None)
         if alreadyProcured is not None:
             returnValue(alreadyProcured)

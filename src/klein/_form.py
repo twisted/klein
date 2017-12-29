@@ -243,7 +243,7 @@ class BindableForm(object):
     (via L{BindableForm.bind}) to an individual session, producing a
     L{RenderableForm}.
     """
-    _fields = attr.ib()
+    _form = attr.ib()
     _authorized = attr.ib()
 
     def onValidationFailureFor(self, handler):
@@ -321,7 +321,7 @@ class BindableForm(object):
                 validationErrors = {}
                 prevalidation_values = {}
                 arguments = {}
-                for field in self._fields:
+                for field in self._form._fields:
                     text = field.extractValue(request)
                     prevalidation_values[field] = text
                     try:
@@ -425,7 +425,7 @@ class Form(object):
         @type authorized: A callable with the signature (routeLikeDecorator,
             **kw) -> decorator.
         """
-        return BindableForm(self._fields, authorized)
+        return BindableForm(self, authorized)
 
 
 

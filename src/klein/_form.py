@@ -334,8 +334,7 @@ class BindableForm(object):
                     renderable = self.bind(
                         session, b"/".join(request.prepath),
                         request.method,
-                        (request.getHeader('content-type')
-                         .decode('utf-8').split(';')[0]),
+                        request.getHeader(u'content-type').split(u';')[0],
                         prevalidation=prevalidation_values,
                         errors=validationErrors,
                     )

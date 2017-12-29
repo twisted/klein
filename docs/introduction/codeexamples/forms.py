@@ -16,7 +16,7 @@ def authorizer():
 sample = form(
     foo=form.integer(minimum=3, maximum=10),
     bar=form.text(),
-).authorizedUsing(requirer)
+).authorizedUsing(authorizer)
 
 style = Plating(tags=tags.html(
     tags.head(tags.title("yay")),

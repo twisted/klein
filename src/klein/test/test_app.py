@@ -65,6 +65,31 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
 
 
 
+class DuplicateHasher(object):
+    """
+    Every L{DuplicateHasher} has the same hash value and compares equal to
+    every other L{DuplicateHasher}.
+    """
+
+    __slots__ = ('_identifier',)
+
+    def __init__(self, identifier):
+        self._identifier = identifier
+
+    myRouter = Klein()
+
+    @myRouter.route("/")
+    def root(self, request):
+        return self._identifier
+
+    def __hash__(self):
+        return 1
+
+    def __eq__(self, other):
+        return True
+
+
+
 class KleinTestCase(unittest.TestCase):
     def test_route(self):
         """
@@ -81,6 +106,38 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(len(app.endpoints), 1)
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
+
+
+    def test_mapByIdentity(self):
+        """
+        Routes are routed to the proper object regardless of its C{__hash__}
+        implementation.
+        """
+        a = DuplicateHasher("a")
+        b = DuplicateHasher("b")
+        self.assertEqual(a.myRouter.execute_endpoint("root", DummyRequest(1)),
+                         "a")
+        self.assertEqual(b.myRouter.execute_endpoint("root", DummyRequest(1)),
+                         "b")
+
+
+    def test_preserveIdentityWhenPossible(self):
+        """
+        Repeated accesses of the same L{Klein} attribute on the same instance
+        should result in an identically bound instance, when possible.
+        "Possible" is defined by a writable instance-level attribute named
+        C{__klein_bound_<the name of the Klein attribute on the class>__}.
+        """
+        # This is the desirable property.
+        class DuplicateHasherWithWritableAttribute(DuplicateHasher):
+            __slots__ = ('__klein_bound_myRouter__',)
+        a = DuplicateHasherWithWritableAttribute("a")
+        self.assertIdentical(a.myRouter, a.myRouter)
+
+        # The latter is an unfortunate consequence of the implementation choice
+        # here, and could be changed.
+        b = DuplicateHasher("b")
+        self.assertNotIdentical(b.myRouter, b.myRouter)
 
 
     def test_submountedRoute(self):

@@ -147,12 +147,14 @@ class Klein(object):
             return self
 
         if self._boundAs is None:
-            for name, obj in owner.__dict__.items():
+            for name in dir(owner):
+                obj = getattr(owner, name)
                 if obj is self:
                     self._boundAs = name
                     break
             else:
-                self._boundAs = 'UNKNOWN'
+                self._boundAs = 'unknown_' + str(id(self))
+
         boundName = "__klein_bound_{}__".format(self._boundAs)
         k = getattr(instance, boundName, lambda: None)()
 
@@ -162,8 +164,9 @@ class Klein(object):
             k._endpoints = self._endpoints
             k._error_handlers = self._error_handlers
             k._instance = instance
+            kref = ref(k)
             try:
-                setattr(instance, boundName, ref(k))
+                setattr(instance, boundName, kref)
             except AttributeError:
                 pass
 

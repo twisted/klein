@@ -6,15 +6,14 @@ Applications are great.  Lets have more of them.
 from __future__ import absolute_import, division
 
 import sys
-from weakref import ref
 from collections import namedtuple
 from contextlib import contextmanager
-
 try:
     from inspect import iscoroutine
 except ImportError:
     def iscoroutine(*args, **kwargs):
         return False
+from weakref import ref
 
 from twisted.internet import endpoints, reactor
 from twisted.python import log

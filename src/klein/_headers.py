@@ -1,4 +1,4 @@
-# -*- test-case-name: txrequest.test.test_request -*-
+# -*- test-case-name: klein.test.test_request -*-
 # Copyright (c) 2017-2018. See LICENSE for details.
 
 """

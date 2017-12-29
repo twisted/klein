@@ -132,12 +132,12 @@ class KleinTestCase(unittest.TestCase):
         class DuplicateHasherWithWritableAttribute(DuplicateHasher):
             __slots__ = ('__klein_bound_myRouter__',)
         a = DuplicateHasherWithWritableAttribute("a")
-        self.assertIdentical(a.myRouter, a.myRouter)
+        self.assertIs(a.myRouter, a.myRouter)
 
         # The latter is an unfortunate consequence of the implementation choice
         # here, and could be changed.
         b = DuplicateHasher("b")
-        self.assertNotIdentical(b.myRouter, b.myRouter)
+        self.assertIsNot(b.myRouter, b.myRouter)
 
 
     def test_submountedRoute(self):

@@ -69,17 +69,17 @@ class SessionProcurer(object):
 
         if request.isSecure():
             if forceInsecure:
-                token_header = self._insecureTokenHeader
-                cookie_name = self._insecureCookie
+                tokenHeader = self._insecureTokenHeader
+                cookieName = self._insecureCookie
                 sentSecurely = False
             else:
-                token_header = self._secureTokenHeader
-                cookie_name = self._secureCookie
+                tokenHeader = self._secureTokenHeader
+                cookieName = self._secureCookie
                 sentSecurely = True
         else:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
-            all_possible_sent_tokens = (
+            allPossibleSentTokens = (
                 sum([request.requestHeaders.getRawHeaders(header, [])
                      for header in [self._secureTokenHeader,
                                     self._insecureTokenHeader]], []) +
@@ -89,20 +89,20 @@ class SessionProcurer(object):
             )
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
-            yield self._store.sentInsecurely(all_possible_sent_tokens)
-            token_header = self._insecureTokenHeader
-            cookie_name = self._insecureCookie
+            yield self._store.sentInsecurely(allPossibleSentTokens)
+            tokenHeader = self._insecureTokenHeader
+            cookieName = self._insecureCookie
             sentSecurely = False
             # Fun future feature: honeypot that does this over HTTPS, but sets
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        sessionID = request.getHeader(token_header)
+        sessionID = request.getHeader(tokenHeader)
         if sessionID is not None:
             mechanism = SessionMechanism.Header
         else:
             mechanism = SessionMechanism.Cookie
-            sessionID = request.getCookie(cookie_name)
+            sessionID = request.getCookie(cookieName)
         if sessionID is not None:
             sessionID = sessionID.decode('ascii')
             try:
@@ -135,7 +135,7 @@ class SessionProcurer(object):
                     " sent."
                 )
             request.addCookie(
-                cookie_name, session.identifier, max_age=self._maxAge,
+                cookieName, session.identifier, max_age=self._maxAge,
                 domain=self._cookieDomain, path=self._cookiePath,
                 secure=sentSecurely, httpOnly=True,
             )

@@ -1,3 +1,4 @@
+# -*- test-case-name: klein.test.test_app -*-
 """
 Applications are great.  Lets have more of them.
 """
@@ -5,7 +6,7 @@ Applications are great.  Lets have more of them.
 from __future__ import absolute_import, division
 
 import sys
-import weakref
+from weakref import ref
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -71,8 +72,6 @@ class Klein(object):
     @ivar _endpoints: A C{dict} mapping endpoint names to handler functions.
     """
 
-    _bound_klein_instances = weakref.WeakKeyDictionary()
-
     _subroute_segments = 0
 
     def __init__(self):
@@ -80,6 +79,7 @@ class Klein(object):
         self._endpoints = {}
         self._error_handlers = []
         self._instance = None
+        self._boundAs = None
 
 
     def __eq__(self, other):
@@ -146,7 +146,15 @@ class Klein(object):
         if instance is None:
             return self
 
-        k = self._bound_klein_instances.get(instance)
+        if self._boundAs is None:
+            for name, obj in owner.__dict__.items():
+                if obj is self:
+                    self._boundAs = name
+                    break
+            else:
+                self._boundAs = 'UNKNOWN'
+        boundName = "__klein_bound_{}__".format(self._boundAs)
+        k = getattr(instance, boundName, lambda: None)()
 
         if k is None:
             k = self.__class__()
@@ -154,7 +162,10 @@ class Klein(object):
             k._endpoints = self._endpoints
             k._error_handlers = self._error_handlers
             k._instance = instance
-            self._bound_klein_instances[instance] = k
+            try:
+                setattr(instance, boundName, ref(k))
+            except AttributeError:
+                pass
 
         return k
 

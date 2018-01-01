@@ -115,6 +115,12 @@ class KleinTestCase(unittest.TestCase):
         """
         a = DuplicateHasher("a")
         b = DuplicateHasher("b")
+
+        # Sanity check
+        d = {}
+        d[a] = "test"
+        self.assertEqual(d.get(b), "test")
+
         self.assertEqual(a.myRouter.execute_endpoint("root", DummyRequest(1)),
                          "a")
         self.assertEqual(b.myRouter.execute_endpoint("root", DummyRequest(1)),
@@ -138,6 +144,31 @@ class KleinTestCase(unittest.TestCase):
         # here, and could be changed.
         b = DuplicateHasher("b")
         self.assertIsNot(b.myRouter, b.myRouter)
+
+
+    def test_kleinNotFoundOnClass(self):
+        """
+        When the Klein object can't find itself on the class it still preserves
+        identity.
+        """
+
+        class Wrap(object):
+            def __init__(self, wrapped):
+                self._wrapped = wrapped
+            def __get__(self, instance, owner):
+                if owner is not None:
+                    return self
+                return self._wrapped.__get__(instance, owner)
+
+        class TwoRouters(object):
+
+            app1 = Wrap(Klein())
+            app2 = Wrap(Klein())
+
+        tr = TwoRouters()
+
+        self.assertIs(tr.app1, tr.app1)
+        self.assertIs(tr.app2, tr.app2)
 
 
     def test_submountedRoute(self):

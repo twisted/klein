@@ -132,7 +132,8 @@ class KleinTestCase(unittest.TestCase):
         Repeated accesses of the same L{Klein} attribute on the same instance
         should result in an identically bound instance, when possible.
         "Possible" is defined by a writable instance-level attribute named
-        C{__klein_bound_<the name of the Klein attribute on the class>__}.
+        C{__klein_bound_<the name of the Klein attribute on the class>__}, and
+        something is maintaining a strong reference to the L{Klein} instance.
         """
         # This is the desirable property.
         class DuplicateHasherWithWritableAttribute(DuplicateHasher):

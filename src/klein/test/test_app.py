@@ -156,6 +156,7 @@ class KleinTestCase(unittest.TestCase):
         class Wrap(object):
             def __init__(self, wrapped):
                 self._wrapped = wrapped
+
             def __get__(self, instance, owner):
                 if owner is not None:
                     return self

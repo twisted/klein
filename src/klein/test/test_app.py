@@ -163,7 +163,7 @@ class KleinTestCase(unittest.TestCase):
                 self._wrapped = wrapped
 
             def __get__(self, instance, owner):
-                if owner is not None:
+                if owner is None:
                     return self
                 return self._wrapped.__get__(instance, owner)
 

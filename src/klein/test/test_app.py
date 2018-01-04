@@ -141,9 +141,14 @@ class KleinTestCase(unittest.TestCase):
         a = DuplicateHasherWithWritableAttribute("a")
         self.assertIs(a.myRouter, a.myRouter)
 
-        # The latter is an unfortunate consequence of the implementation choice
-        # here, and could be changed.
         b = DuplicateHasher("b")
+        # The following is simply an unfortunate consequence of the
+        # implementation choice here (i.e.: to insist on a specific writable
+        # attribute), and could be changed (for example, by doing something
+        # more elaborate with the identity of the object containing the
+        # router).  However, checking this also sets a sort of bounded "worst
+        # case" scenario"; it still works, nobody raises an exception, it's
+        # just not identical.
         self.assertIsNot(b.myRouter, b.myRouter)
 
 

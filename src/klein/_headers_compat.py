@@ -70,7 +70,7 @@ class HTTPHeadersWrappingHeaders(object):
         else:
             raise TypeError("name {!r} must be text or bytes".format(name))
 
-        return tuple(values)
+        return values
 
 
     def remove(self, name):

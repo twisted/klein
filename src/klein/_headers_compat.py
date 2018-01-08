@@ -37,6 +37,9 @@ class HTTPHeadersWrappingHeaders(object):
     object.
     """
 
+    # NOTE: In case Headers has different ideas about encoding text than we do,
+    # always interact with it using bytes, not text.
+
     _headers = attrib(validator=instance_of(Headers))  # type: Headers
 
 
@@ -68,10 +71,6 @@ class HTTPHeadersWrappingHeaders(object):
             raise TypeError("name {!r} must be text or bytes".format(name))
 
         return tuple(values)
-
-
-    # NOTE: In case Headers has different ideas about encoding text than we do,
-    # always interact with it using bytes.
 
 
     def remove(self, name):

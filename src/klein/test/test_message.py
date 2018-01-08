@@ -11,7 +11,9 @@ from hypothesis import given
 from hypothesis.strategies import binary
 
 from ._trial import TestCase
-from .._message import IHTTPMessage, NoFountError, bytesToFount, fountToBytes
+from .._message import (
+    FountAlreadyAccessedError, IHTTPMessage, bytesToFount, fountToBytes
+)
 
 
 __all__ = ()
@@ -72,12 +74,14 @@ class FrozenHTTPMessageTestsMixIn(object):
     def test_bodyAsFountFromBytesTwice(self, data):
         # type: (bytes) -> None
         """
-        C{bodyAsFount} raises L{NoFountError} if called more than once, when
-        created from bytes.
+        C{bodyAsFount} raises L{FountAlreadyAccessedError} if called more than
+        once, when created from bytes.
         """
         message = self.messageFromBytes(data)
         message.bodyAsFount()
-        cast(TestCase, self).assertRaises(NoFountError, message.bodyAsFount)
+        cast(TestCase, self).assertRaises(
+            FountAlreadyAccessedError, message.bodyAsFount
+        )
 
 
     @given(binary())
@@ -97,12 +101,14 @@ class FrozenHTTPMessageTestsMixIn(object):
     def test_bodyAsFountFromFountTwice(self, data):
         # type: (bytes) -> None
         """
-        C{bodyAsFount} raises L{NoFountError} if called more than once, when
-        created from a fount.
+        C{bodyAsFount} raises L{FountAlreadyAccessedError} if called more than
+        once, when created from a fount.
         """
         message = self.messageFromFountFromBytes(data)
         message.bodyAsFount()
-        cast(TestCase, self).assertRaises(NoFountError, message.bodyAsFount)
+        cast(TestCase, self).assertRaises(
+            FountAlreadyAccessedError, message.bodyAsFount
+        )
 
 
     @given(binary())

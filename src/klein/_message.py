@@ -28,10 +28,10 @@ __all__ = ()
 
 # Interfaces
 
-class NoFountError(Exception):
+class FountAlreadyAccessedError(Exception):
     """
-    Request has no fount.
-    This implies someone already accessed the body fount.
+    The HTTP message's fount has already been accessed and is no longer
+    available.
     """
 
 
@@ -55,9 +55,10 @@ class IHTTPMessage(Interface):
             the entire body, which may be large.
             Because there is no caching, it is not possible to "start over" by
             accessing the fount a second time.
-            Attempting to do so will raise L{NoFountError}.
+            Attempting to do so will raise L{FountAlreadyAccessedError}.
 
-        @raise NoFountError: If the fount has previously been accessed.
+        @raise FountAlreadyAccessedError: If the fount has previously been
+            accessed.
         """
 
 
@@ -76,9 +77,10 @@ class IHTTPMessage(Interface):
         @note: This method accesses the fount (via C{self.bodyAsFount}), which
             means the fount will not be available afterwards, and that if
             C{self.bodyAsFount} has previously been called directly, this
-            method will raise L{NoFountError}.
+            method will raise L{FountAlreadyAccessedError}.
 
-        @raise NoFountError: If the fount has previously been accessed.
+        @raise FountAlreadyAccessedError: If the fount has previously been
+            accessed.
         """
 
 
@@ -125,7 +127,7 @@ def bodyAsFount(body, state):
     """
 
     if state.fountExhausted:
-        raise NoFountError()
+        raise FountAlreadyAccessedError()
     state.fountExhausted = True
 
     if isinstance(body, bytes):

@@ -65,6 +65,31 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
 
 
 
+class DuplicateHasher(object):
+    """
+    Every L{DuplicateHasher} has the same hash value and compares equal to
+    every other L{DuplicateHasher}.
+    """
+
+    __slots__ = ('_identifier',)
+
+    def __init__(self, identifier):
+        self._identifier = identifier
+
+    myRouter = Klein()
+
+    @myRouter.route("/")
+    def root(self, request):
+        return self._identifier
+
+    def __hash__(self):
+        return 1
+
+    def __eq__(self, other):
+        return True
+
+
+
 class KleinTestCase(unittest.TestCase):
     def test_route(self):
         """
@@ -81,6 +106,76 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(len(app.endpoints), 1)
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
+
+
+    def test_mapByIdentity(self):
+        """
+        Routes are routed to the proper object regardless of its C{__hash__}
+        implementation.
+        """
+        a = DuplicateHasher("a")
+        b = DuplicateHasher("b")
+
+        # Sanity check
+        d = {}
+        d[a] = "test"
+        self.assertEqual(d.get(b), "test")
+
+        self.assertEqual(a.myRouter.execute_endpoint("root", DummyRequest(1)),
+                         "a")
+        self.assertEqual(b.myRouter.execute_endpoint("root", DummyRequest(1)),
+                         "b")
+
+
+    def test_preserveIdentityWhenPossible(self):
+        """
+        Repeated accesses of the same L{Klein} attribute on the same instance
+        should result in an identically bound instance, when possible.
+        "Possible" is defined by a writable instance-level attribute named
+        C{__klein_bound_<the name of the Klein attribute on the class>__}, and
+        something is maintaining a strong reference to the L{Klein} instance.
+        """
+        # This is the desirable property.
+        class DuplicateHasherWithWritableAttribute(DuplicateHasher):
+            __slots__ = ('__klein_bound_myRouter__',)
+        a = DuplicateHasherWithWritableAttribute("a")
+        self.assertIs(a.myRouter, a.myRouter)
+
+        b = DuplicateHasher("b")
+        # The following is simply an unfortunate consequence of the
+        # implementation choice here (i.e.: to insist on a specific writable
+        # attribute), and could be changed (for example, by doing something
+        # more elaborate with the identity of the object containing the
+        # router).  However, checking this also sets a sort of bounded "worst
+        # case" scenario"; it still works, nobody raises an exception, it's
+        # just not identical.
+        self.assertIsNot(b.myRouter, b.myRouter)
+
+
+    def test_kleinNotFoundOnClass(self):
+        """
+        When the Klein object can't find itself on the class it still preserves
+        identity.
+        """
+
+        class Wrap(object):
+            def __init__(self, wrapped):
+                self._wrapped = wrapped
+
+            def __get__(self, instance, owner):
+                if instance is None:
+                    return self
+                return self._wrapped.__get__(instance, owner)
+
+        class TwoRouters(object):
+
+            app1 = Wrap(Klein())
+            app2 = Wrap(Klein())
+
+        tr = TwoRouters()
+
+        self.assertIs(tr.app1, tr.app1)
+        self.assertIs(tr.app2, tr.app2)
 
 
     def test_submountedRoute(self):

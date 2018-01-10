@@ -2,16 +2,20 @@ from __future__ import absolute_import, division
 
 import sys
 
-from mock import Mock, patch
+try:
+    from unittest.mock import Mock, patch
+except Exception:
+    from mock import Mock, patch  # type:ignore
 
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
 
-from klein import Klein
-from klein._decorators import bindable, modified, originalName
-from klein.app import KleinRequest
-from klein.interfaces import IKleinRequest
-from klein.test.util import EqualityTestsMixin
+from .test_resource import requestMock
+from .util import EqualityTestsMixin
+from .. import Klein
+from .._app import KleinRequest
+from .._decorators import bindable, modified, originalName
+from .._interfaces import IKleinRequest
 
 
 
@@ -61,6 +65,31 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
 
 
 
+class DuplicateHasher(object):
+    """
+    Every L{DuplicateHasher} has the same hash value and compares equal to
+    every other L{DuplicateHasher}.
+    """
+
+    __slots__ = ('_identifier',)
+
+    def __init__(self, identifier):
+        self._identifier = identifier
+
+    myRouter = Klein()
+
+    @myRouter.route("/")
+    def root(self, request):
+        return self._identifier
+
+    def __hash__(self):
+        return 1
+
+    def __eq__(self, other):
+        return True
+
+
+
 class KleinTestCase(unittest.TestCase):
     def test_route(self):
         """
@@ -77,6 +106,76 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(len(app.endpoints), 1)
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
+
+
+    def test_mapByIdentity(self):
+        """
+        Routes are routed to the proper object regardless of its C{__hash__}
+        implementation.
+        """
+        a = DuplicateHasher("a")
+        b = DuplicateHasher("b")
+
+        # Sanity check
+        d = {}
+        d[a] = "test"
+        self.assertEqual(d.get(b), "test")
+
+        self.assertEqual(a.myRouter.execute_endpoint("root", DummyRequest(1)),
+                         "a")
+        self.assertEqual(b.myRouter.execute_endpoint("root", DummyRequest(1)),
+                         "b")
+
+
+    def test_preserveIdentityWhenPossible(self):
+        """
+        Repeated accesses of the same L{Klein} attribute on the same instance
+        should result in an identically bound instance, when possible.
+        "Possible" is defined by a writable instance-level attribute named
+        C{__klein_bound_<the name of the Klein attribute on the class>__}, and
+        something is maintaining a strong reference to the L{Klein} instance.
+        """
+        # This is the desirable property.
+        class DuplicateHasherWithWritableAttribute(DuplicateHasher):
+            __slots__ = ('__klein_bound_myRouter__',)
+        a = DuplicateHasherWithWritableAttribute("a")
+        self.assertIs(a.myRouter, a.myRouter)
+
+        b = DuplicateHasher("b")
+        # The following is simply an unfortunate consequence of the
+        # implementation choice here (i.e.: to insist on a specific writable
+        # attribute), and could be changed (for example, by doing something
+        # more elaborate with the identity of the object containing the
+        # router).  However, checking this also sets a sort of bounded "worst
+        # case" scenario"; it still works, nobody raises an exception, it's
+        # just not identical.
+        self.assertIsNot(b.myRouter, b.myRouter)
+
+
+    def test_kleinNotFoundOnClass(self):
+        """
+        When the Klein object can't find itself on the class it still preserves
+        identity.
+        """
+
+        class Wrap(object):
+            def __init__(self, wrapped):
+                self._wrapped = wrapped
+
+            def __get__(self, instance, owner):
+                if instance is None:
+                    return self
+                return self._wrapped.__get__(instance, owner)
+
+        class TwoRouters(object):
+
+            app1 = Wrap(Klein())
+            app2 = Wrap(Klein())
+
+        tr = TwoRouters()
+
+        self.assertIs(tr.app1, tr.app1)
+        self.assertIs(tr.app2, tr.app2)
 
 
     def test_submountedRoute(self):
@@ -311,10 +410,10 @@ class KleinTestCase(unittest.TestCase):
                          ("foo_branch", {"__rest__": "bar"}))
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.Site')
-    @patch('klein.app.log')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.Site')
+    @patch('klein._app.log')
+    @patch('klein._app.reactor')
     def test_run(self, reactor, mock_log, mock_site, mock_kr):
         """
         L{Klein.run} configures a L{KleinResource} and a L{Site}
@@ -335,10 +434,10 @@ class KleinTestCase(unittest.TestCase):
         mock_log.startLogging.assert_called_with(sys.stdout)
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.Site')
-    @patch('klein.app.log')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.Site')
+    @patch('klein._app.log')
+    @patch('klein._app.reactor')
     def test_runWithLogFile(self, reactor, mock_log, mock_site, mock_kr):
         """
         L{Klein.run} logs to the specified C{logFile}.
@@ -358,10 +457,10 @@ class KleinTestCase(unittest.TestCase):
         mock_log.startLogging.assert_called_with(logFile)
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.log')
-    @patch('klein.app.endpoints.serverFromString')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.log')
+    @patch('klein._app.endpoints.serverFromString')
+    @patch('klein._app.reactor')
     def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
         """
         L{Klein.run} called with tcp6 endpoint description.
@@ -376,10 +475,10 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
 
 
-    @patch('klein.app.KleinResource')
-    @patch('klein.app.log')
-    @patch('klein.app.endpoints.serverFromString')
-    @patch('klein.app.reactor')
+    @patch('klein._app.KleinResource')
+    @patch('klein._app.log')
+    @patch('klein._app.endpoints.serverFromString')
+    @patch('klein._app.reactor')
     def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
         """
         L{Klein.run} called with SSL endpoint specification.
@@ -397,7 +496,7 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
 
 
-    @patch('klein.app.KleinResource')
+    @patch('klein._app.KleinResource')
     def test_resource(self, mock_kr):
         """
         L{Klien.resource} returns a L{KleinResource}.
@@ -407,3 +506,60 @@ class KleinTestCase(unittest.TestCase):
 
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
+
+
+    def test_urlFor(self):
+        """L{Klein.urlFor} builds an URL for an endpoint with parameters"""
+
+        app = Klein()
+
+        @app.route('/user/<name>')
+        def userpage(req, name):
+            return name
+
+        @app.route('/post/<int:postid>', endpoint='bar')
+        def foo(req, postid):
+            return str(postid)
+
+        request = requestMock(b'/user/john')
+        self.assertEqual(
+            app.execute_endpoint('userpage', request, 'john'),
+            'john'
+        )
+        self.assertEqual(
+            app.execute_endpoint('bar', requestMock(b'/post/123'), 123),
+            '123'
+        )
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.urlFor(request, 'userpage', {'name': 'john'}),
+                         '/user/john')
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.urlFor(request, 'userpage', {'name': 'john'},
+                                    force_external=True),
+                         'http://localhost:8080/user/john')
+
+        request = requestMock(b'/addr', host=b'example.com', port=4321)
+        self.assertEqual(app.urlFor(request, 'userpage', {'name': 'john'},
+                                    force_external=True),
+                         'http://example.com:4321/user/john')
+
+        request = requestMock(b'/addr')
+        url = app.urlFor(request, 'userpage', {'name': 'john', 'age': 29},
+                         append_unknown=True)
+        self.assertEqual(url, '/user/john?age=29')
+
+        request = requestMock(b'/addr')
+        self.assertEqual(app.urlFor(request, 'bar', {'postid': 123}),
+                         '/post/123')
+
+        request = requestMock(b'/addr')
+        request.requestHeaders.removeHeader(b'host')
+        self.assertEqual(app.urlFor(request, 'bar', {'postid': 123}),
+                         '/post/123')
+
+        request = requestMock(b'/addr')
+        request.requestHeaders.removeHeader(b'host')
+        with self.assertRaises(ValueError):
+            app.urlFor(request, 'bar', {'postid': 123}, force_external=True)

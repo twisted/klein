@@ -3,28 +3,4 @@
 set -e
 set -u
 
-case "${TOXENV}" in
-    *-pypy*)
-        echo "Installing pyenv..."
-
-        PYENV_ROOT="${HOME}/.pyenv";
-        rm -rf "${PYENV_ROOT}";
-        git clone "https://github.com/pyenv/pyenv" "${PYENV_ROOT}";
-
-        pyenv="${PYENV_ROOT}/bin/pyenv";
-
-        # Temporarily unset -e and -u because pyenv isn't clean
-        set +e
-        set +u
-        eval "$("${pyenv}" init -)";
-        set -e
-        set -u
-
-        echo "Installing PyPy..."
-
-        "${pyenv}" install "pypy-${PYPY_VERSION}";
-        "${pyenv}" global "pypy-${PYPY_VERSION}";
-        ;;
-esac;
-
 pip install tox;

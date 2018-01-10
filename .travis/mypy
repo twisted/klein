@@ -1,0 +1,65 @@
+#!/bin/sh
+
+#
+# Work around bugs in mypy by filtering out false positive error messages.
+#
+
+set -e
+set -u
+
+tmp="$(mktemp -t mypy.XXXX)";
+
+#
+# Filter out messages from mypy that are not actual errors.
+#
+# Notes:
+#
+# * mypy notices trial's use of a skip marker attribute on functions and
+#   complains that it's not part of a function object's interface, so we
+#   ignore: has no attribute "skip"
+#
+# * Filters applied only to specific files are things to fix in either Klein or
+#   in mypy.
+#
+# * We run mypy with disallow_untyped_defs=True to require that type
+#   annotations are used, but we ignore the errors for files that are not yet
+#   participating.
+#
+# * These are related to mypy not knowing about zope.interface:
+#   - Incompatible return value type
+#   - Method must have at least one argument
+#   - Unexpected keyword argument (also effects attrs classes' __init__)
+#
+
+mypy "$@"      \
+    | grep -v  \
+        -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "\(skip\|todo\)"'                             \
+        -e ': error: Argument 2 to "[^"]*" of "IMutableHTTPHeaders" has incompatible type'                         \
+        -e ': error: Incompatible return value type (got "[^"]*HTTP[^"]*", expected "I[^"]*HTTP[^"]*")'            \
+        -e ': error: Method must have at least one argument'                                                       \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersWrappingHeaders"'                         \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestWrappingIRequest"'                        \
+        -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                                            \
+        -e ': error: Unexpected keyword argument.* for .*"[^"]*HTTP\(Headers\|Request\|Response\)"'                \
+        -e ': note: .* defined here'                                                                               \
+        -e '^src/klein/_app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \
+        -e '^src/klein/_app.py:.[0-9:]*: error: Function is missing a type annotation'                             \
+        -e '^src/klein/_app.py:.[0-9:]*: error: Need type annotation for variable'                                 \
+        -e '^src/klein/_decorators.py:.[0-9:]*: error: Function is missing a type annotation'                      \
+        -e '^src/klein/_interfaces.py:.[0-9:]*: error: Function is missing a type annotation'                      \
+        -e '^src/klein/_plating.py:.[0-9:]*: error: Function is missing a type annotation'                         \
+        -e '^src/klein/_resource.py:.[0-9:]*: error: Function is missing a type annotation'                        \
+        -e '^src/klein/test/_trial.py:.[0-9:]*: error: Function is missing a type annotation'                      \
+        -e '^src/klein/test/py3_test_resource.py:.[0-9:]*: error: Function is missing a type annotation'           \
+        -e '^src/klein/test/test_app.py:.[0-9:]*: error: Function is missing a type annotation'                    \
+        -e '^src/klein/test/test_plating.py:.[0-9:]*: error: Function is missing a type annotation'                \
+        -e '^src/klein/test/test_resource.py:.[0-9:]*: error: Function is missing a type annotation'               \
+        -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'                        \
+        -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'                                      \
+        > "${tmp}" || true;
+
+sort < "${tmp}";
+
+if grep -e ": error: " "${tmp}" > /dev/null; then
+  exit 1;
+fi;

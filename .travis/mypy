@@ -38,6 +38,7 @@ mypy "$@"      \
         -e ': error: Incompatible return value type (got "[^"]*HTTP[^"]*", expected "I[^"]*HTTP[^"]*")'            \
         -e ': error: Method must have at least one argument'                                                       \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersWrappingHeaders"'                         \
+        -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestWrappingIRequest"'                        \
         -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                                            \
         -e ': error: Unexpected keyword argument.* for .*"[^"]*HTTP\(Headers\|Request\|Response\)"'                \
         -e ': note: .* defined here'                                                                               \

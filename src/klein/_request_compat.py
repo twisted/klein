@@ -5,6 +5,7 @@
 Support for interoperability with L{twisted.web.iweb.IRequest}.
 """
 
+from io import BytesIO
 from typing import Text
 
 from attr import Factory, attrib, attrs
@@ -31,6 +32,9 @@ Deferred, IFount, IHTTPHeaders, Text
 
 
 __all__ = ()
+
+
+noneIO = BytesIO()
 
 
 
@@ -94,12 +98,12 @@ class HTTPRequestWrappingIRequest(object):
     def bodyAsFount(self):
         # type: () -> IFount
         source = self._request.content
-        if source is None:
+        if source is noneIO:
             raise FountAlreadyAccessedError()
 
         fount = IOFount(source=source)
 
-        self._request.content = None
+        self._request.content = noneIO
 
         return fount
 

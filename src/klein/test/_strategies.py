@@ -39,7 +39,7 @@ if _PY3:
     unichr = chr
 
 
-def idna_characters():
+def idna_characters():  # pragma: no cover
     # type: () -> str
     """
     Returns a string containing IDNA characters.
@@ -84,7 +84,7 @@ _idnaCharacters = None  # type: Optional[str]
 
 
 @composite
-def ascii_text(draw, min_size=None, max_size=None):
+def ascii_text(draw, min_size=None, max_size=None):  # pragma: no cover
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ASCII-encodable text.
@@ -100,7 +100,7 @@ def ascii_text(draw, min_size=None, max_size=None):
     ))
 
 
-@composite
+@composite  # pragma: no cover
 def latin1_text(draw, min_size=None, max_size=None):
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
@@ -119,7 +119,7 @@ def latin1_text(draw, min_size=None, max_size=None):
 
 
 @composite
-def idna_text(draw, min_size=None, max_size=None):
+def idna_text(draw, min_size=None, max_size=None):  # pragma: no cover
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates IDNA-encodable text.
@@ -136,7 +136,7 @@ def idna_text(draw, min_size=None, max_size=None):
 
 
 @composite
-def port_numbers(draw, allow_zero=False):
+def port_numbers(draw, allow_zero=False):  # pragma: no cover
     # type: (DrawCallable, bool) -> int
     """
     A strategy which generates port numbers.
@@ -152,7 +152,7 @@ def port_numbers(draw, allow_zero=False):
 
 
 @composite
-def hostname_labels(draw, allow_idn=True):
+def hostname_labels(draw, allow_idn=True):  # pragma: no cover
     # type: (DrawCallable, bool) -> Text
     """
     A strategy which generates host name labels.
@@ -172,7 +172,9 @@ def hostname_labels(draw, allow_idn=True):
 
 
 @composite
-def hostnames(draw, allow_leading_digit=True, allow_idn=True):
+def hostnames(
+    draw, allow_leading_digit=True, allow_idn=True
+):  # pragma: no cover
     # type: (DrawCallable, bool, bool) -> Text
     """
     A strategy which generates host names.
@@ -202,7 +204,7 @@ _path_characters = tuple(
 )
 
 @composite
-def path_segments(draw):
+def path_segments(draw):  # pragma: no cover
     # type: (DrawCallable) -> Text
     """
     A strategy which generates URL path segments.
@@ -216,7 +218,7 @@ def path_segments(draw):
 
 
 @composite
-def http_urls(draw):
+def http_urls(draw):  # pragma: no cover
     # type: (DrawCallable) -> URL
     """
     A strategy which generates (human-friendly, unicode) IRI-form L{URL}s.

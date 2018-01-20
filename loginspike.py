@@ -4,7 +4,7 @@ from __future__ import print_function, unicode_literals, absolute_import
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from klein import Klein, Plating, form
+from klein import Klein, Plating, Form, Field
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount
 )
@@ -158,9 +158,8 @@ def set_procurer(opened_procurer):
 from klein._session import requirer, Optional
 authorized = requirer(lambda: procurer)
 
-logout = form().authorizedUsing(authorized)
-
-chirp = form(value=form.text()).authorizedUsing(authorized)
+logout = Form(authorized)
+chirp = Form(authorized).withFields(value=Field.text())
 
 @authorized(
     chirp.renderer(
@@ -183,7 +182,7 @@ def root(request, chirp_form, account):
 
 @authorized(
     style.routed(app.route("/u/<user>"),
-                 [tags.h1("chirps for", slot("user")),
+                 [tags.h1("chirps for ", slot("user")),
                   tags.div(Class="chirp", render="chirps:list")(
                       slot("item"),
                   )]),
@@ -244,12 +243,10 @@ def username(request, tag, account):
     return account.username
 
 
-login = form(
-    username=form.text(),
-    password=form.password(),
-).authorizedUsing(authorized)
-
-
+login = Form(authorized).withFields(
+    username=Field.text(),
+    password=Field.password(),
+)
 
 @style.routed(
     login.renderer(app.route("/login", methods=["GET"]), action="/login",
@@ -307,9 +304,9 @@ def dologin(request, username, password, binding):
 
 
 
-logout_other = form(
-    sessionID=form.text(),
-).authorizedUsing(authorized)
+logout_other = Form(authorized).withFields(
+    sessionID=Field.text(),
+)
 
 @authorized(
     logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
@@ -381,11 +378,11 @@ def sessions(request, binding, form):
 
 
 
-signup = form(
-    username=form.text(),
-    email=form.text(),
-    password=form.password(),
-).authorizedUsing(authorized)
+signup = Form(authorized).withFields(
+    username=Field.text(),
+    email=Field.text(),
+    password=Field.password(),
+)
 
 @style.routed(
     signup.renderer(app.route("/signup", methods=["GET"]),

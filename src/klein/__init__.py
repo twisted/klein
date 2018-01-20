@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division
 
-from ._form import form
+from ._form import Form, Field
 from ._session import SessionProcurer
 
 from ._app import Klein, handle_errors, resource, route, run, urlFor, url_for
@@ -11,7 +11,8 @@ from ._version import __version__ as _incremental_version
 __all__ = (
     "Klein",
     "Plating",
-    'form',
+    'Field',
+    'Form',
     'SessionProcurer',
     "__author__",
     "__copyright__",

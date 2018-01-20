@@ -10,7 +10,7 @@ from zope.interface import implementer
 
 from twisted.python.compat import unicode
 from twisted.internet.defer import inlineCallbacks, returnValue
-from twisted.web.template import tags
+from twisted.web.template import tags, Element, TagLoader
 from twisted.web.iweb import IRenderable
 from twisted.web.error import MissingRenderMethod
 
@@ -108,6 +108,55 @@ class Field(object):
         return self.converter(value)
 
 
+    @classmethod
+    def text(cls):
+        """
+        Shorthand for a form field that contains a short string, and will be
+        rendered as a plain <input>.
+        """
+        return cls(converter=lambda x: unicode(x, "utf-8"),
+                   formInputType="text")
+
+    @classmethod
+    def password(cls):
+        """
+        Shorthand for a form field that, like L{text}, contains a short string,
+        but should be obscured when typed (and, to the extent possible,
+        obscured in other sensitive contexts, such as logging.)
+        """
+        return cls(converter=lambda x: unicode(x, "utf-8"),
+                   formInputType="password")
+
+    @classmethod
+    def hidden(cls, name, value):
+        """
+        Shorthand for a hidden field.
+        """
+        return cls(converter=lambda x: unicode(x, "utf-8"),
+                   formInputType="hidden",
+                   noLabel=True,
+                   value=value).maybeNamed(name)
+
+
+    @classmethod
+    def integer(cls, minimum=None, maximum=None):
+        """
+        An integer within the range [minimum, maximum].
+        """
+        def bounded_int(text):
+            try:
+                value = int(text)
+            except ValueError:
+                raise ValidationError("must be an integer")
+            else:
+                if minimum is not None and value < minimum:
+                    raise ValidationError("value must be >=" + repr(minimum))
+                if maximum is not None and value > maximum:
+                    raise ValidationError("value must be <=" + repr(maximum))
+                return value
+        return cls(converter=bounded_int, formInputType="number")
+
+
 
 @implementer(IRenderable)
 @attr.s
@@ -134,7 +183,7 @@ class RenderableForm(object):
         @return: A hidden L{Field} containing the cross-site request forgery
             protection token.
         """
-        return hidden(CSRF_PROTECTION, self._session.identifier)
+        return Field.hidden(CSRF_PROTECTION, self._session.identifier)
 
 
     def _fieldsToRender(self):
@@ -204,13 +253,14 @@ class RenderableForm(object):
         return self._fieldForCSRF().asTags()
 
 
+
 @bindable
 def defaultValidationFailureHandler(instance, request, renderable):
     """
     This is the default validation failure handler, which will be used by
-    L{BindableForm.handler} in the case of any input validation failure when no
-    other validation failure handler is registered via
-    L{BindableForm.onValidationFailureFor}.
+    L{Form.handler} in the case of any input validation failure when no other
+    validation failure handler is registered via
+    L{Form.onValidationFailureFor}.
 
     Its behavior is to simply return an HTML rendering of the form object,
     which includes inline information about fields which failed to validate.
@@ -227,24 +277,34 @@ def defaultValidationFailureHandler(instance, request, renderable):
 
     @return: Any object acceptable from a Klein route.
     """
-    from twisted.web.template import Element, TagLoader
     return Element(TagLoader(renderable))
 
 
 
-FORM_DATA = b'multipart/form-data'
-URL_ENCODED = b'application/x-www-form-urlencoded'
-
-
 @attr.s(hash=False)
-class BindableForm(object):
+class Form(object):
     """
     A L{Form} object which includes an authorizer, and may therefore be bound
-    (via L{BindableForm.bind}) to an individual session, producing a
-    L{RenderableForm}.
+    (via L{Form.bind}) to an individual session, producing a L{RenderableForm}.
     """
-    _form = attr.ib()
     _authorized = attr.ib()
+    _fields = attr.ib(default=attr.Factory(list))
+
+    def withFields(self, **fields):
+        """
+        Create a derived form with a series of fields.
+        """
+        return attr.evolve(
+            self,
+            fields=[
+                field.maybeNamed(name) for name, field
+                in sorted(fields.items(), key=lambda x: x[1].order)
+            ]
+        )
+
+
+    ENCTYPE_FORM_DATA = b'multipart/form-data'
+    ENCTYPE_URL_ENCODED = b'application/x-www-form-urlencoded'
 
     def onValidationFailureFor(self, handler):
         """
@@ -253,14 +313,14 @@ class BindableForm(object):
 
         Generally used like so::
 
-            myBindableForm = form(...).authorizedUsing(...)
+            myForm = Form(...).authorizedUsing(...)
             router = Klein()
-            @myBindableForm.handler(router.route("/", methods=['POST']))
+            @myForm.handler(router.route("/", methods=['POST']))
             def handleForm(request, ...):
                 ...
 
             # Handle input validation failures for handleForm
-            @myBindableForm.onValidationFailureFor(handleForm)
+            @myForm.onValidationFailureFor(handleForm)
             def handleValidationFailures(request, formWithErrors):
                 return "Your inputs didn't validate."
 
@@ -268,8 +328,8 @@ class BindableForm(object):
             description of the decorated function's expected signature.
 
         @param handler: The form handler - i.e. function decorated by
-            L{BindableForm.handler} - for which the decorated function will
-            handle validation failures.
+            L{Form.handler} - for which the decorated function will handle
+            validation failures.
 
         @return: a decorator that decorates a function with the signature
             C{(request, form) -> thing klein can render}.
@@ -288,15 +348,15 @@ class BindableForm(object):
 
         The function that it decorates should receive, as arguments, those
         parameters that C{route} would give it, in addition to parameters with
-        the same names as all the L{Field}s in this L{BindableForm}.
+        the same names as all the L{Field}s in this L{Form}.
 
         For example::
 
             router = Klein()
-            myBindableForm = form(value=form.integer(),
-                                  name=form.text()).authorizedUsing(...)
+            myForm = Form(authorized).withFields(value=Field.integer(),
+                                                 name=Field.text())
 
-            @myBindableForm.handler(router.route("/", methods=["POST"]))
+            @myForm.handler(router.route("/", methods=["POST"]))
             def handleForm(request, value, name):
                 return "form handled"
         """
@@ -321,7 +381,7 @@ class BindableForm(object):
                 validationErrors = {}
                 prevalidation_values = {}
                 arguments = {}
-                for field in self._form._fields:
+                for field in self._fields:
                     text = field.extractValue(request)
                     prevalidation_values[field] = text
                     try:
@@ -331,8 +391,8 @@ class BindableForm(object):
                     else:
                         arguments[field.pythonArgumentName] = value
                 if validationErrors:
-                    renderable = self.bind(
-                        session, b"/".join(request.prepath),
+                    renderable = RenderableForm(
+                        self, session, b"/".join(request.prepath),
                         request.method,
                         request.getHeader(u'content-type').split(u';')[0],
                         prevalidation=prevalidation_values,
@@ -349,7 +409,7 @@ class BindableForm(object):
         return decorator
 
 
-    def renderer(self, route, action, method="POST", enctype=FORM_DATA,
+    def renderer(self, route, action, method="POST", enctype=ENCTYPE_FORM_DATA,
                  argument="form", encoding="utf-8"):
         def decorator(function):
             @modified("form renderer", function,
@@ -358,141 +418,11 @@ class BindableForm(object):
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
                 session = kw.pop("__session__")
-                form = self.bind(session, action, method, enctype,
-                                 encoding=encoding)
+                form = RenderableForm(self, session, action, method, enctype,
+                                      prevalidation={},
+                                      errors={}, encoding=encoding)
                 kw[argument] = form
                 result = yield _call(instance, function, request, *args, **kw)
                 returnValue(result)
             return function
         return decorator
-
-
-    def bind(self, session, action, method="POST", enctype=FORM_DATA,
-             prevalidation=None, errors=None, encoding="utf-8"):
-        """
-        Create a L{RenderableForm} by associating all the data necessary for
-        rendering this form.
-
-        @param session: The session to bind the L{RenderableForm} to.
-        @type session: L{ISession}
-
-        @type action: The (relative) URL that the form will execute its method
-            on.
-        @type action: L{bytes}
-
-        @param method: The form method to use.  Defaults to "POST", can also be
-            "GET".
-        @type method: L{str}
-
-        @param enctype: The C{HTMLFormElement.enctype} used to instruct the
-            browser what content-type to send the POST body as, when rendering.
-        @type enctype: L{str}
-
-        @param prevalidation: The raw values supplied as input to the form
-            before being parsed and validated.
-        @type prevalidation: dict mapping {L{Field}: L{list} of L{unicode}}
-
-        @param errors: The errors discovered by validation.
-        @type errors: L{dict} mapping {L{Field} (the field with a validation
-            error): L{ValidationError} (an exception indicating the problem)}
-        """
-        if prevalidation is None:
-            prevalidation = {}
-        if errors is None:
-            errors = {}
-        return RenderableForm(self._form, session, action, method, enctype,
-                              prevalidation=prevalidation, errors=errors,
-                              encoding=encoding)
-
-
-
-@attr.s(hash=False)
-class Form(object):
-    """
-    A L{Form} is a collection of L{Field} objects.
-
-    @see: L{form}.
-    """
-    _fields = attr.ib()
-
-    def authorizedUsing(self, authorized):
-        """
-        Associate a L{Form} with an authorizer.
-
-        @param authorized: A function that can require a session based on a
-            request, like that returned by L{klein._session.requirer}.
-        @type authorized: A callable with the signature (routeLikeDecorator,
-            **kw) -> decorator.
-        """
-        return BindableForm(self, authorized)
-
-
-
-def form(*fields, **named_fields):
-    """
-    A shorthand for creating a L{Form}.
-    """
-    return Form(list(fields) + [
-        field.maybeNamed(name) for name, field
-        in sorted(named_fields.items(), key=lambda x: x[1].order)
-    ])
-
-
-def add(it):
-    """
-    expose the given decorated shorthand method as an attribute on L{form}.
-
-    (private implementation detail, but perhaps these should just be static
-    methods on a class for better visibility in IDEs and such?)
-    """
-    setattr(form, it.__name__, it)
-    return it
-
-
-@add
-def text():
-    """
-    Shorthand for a form field that contains a short string, and will be
-    rendered as a plain <input>.
-    """
-    return Field(converter=lambda x: unicode(x, "utf-8"),
-                 formInputType="text")
-
-@add
-def password():
-    """
-    Shorthand for a form field that, like L{text}, contains a short string, but
-    should be obscured when typed (and, to the extent possible, obscured in
-    other sensitive contexts, such as logging.)
-    """
-    return Field(converter=lambda x: unicode(x, "utf-8"),
-                 formInputType="password")
-
-@add
-def hidden(name, value):
-    """
-    Shorthand for a hidden field.
-    """
-    return Field(converter=lambda x: unicode(x, "utf-8"),
-                 formInputType="hidden",
-                 noLabel=True,
-                 value=value).maybeNamed(name)
-
-
-@add
-def integer(minimum=None, maximum=None):
-    """
-    An integer within the range [minimum, maximum].
-    """
-    def bounded_int(text):
-        try:
-            value = int(text)
-        except ValueError:
-            raise ValidationError("must be an integer")
-        else:
-            if minimum is not None and value < minimum:
-                raise ValidationError("value must be >=" + repr(minimum))
-            if maximum is not None and value > maximum:
-                raise ValidationError("value must be <=" + repr(maximum))
-            return value
-    return Field(converter=bounded_int, formInputType="number")

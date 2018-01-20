@@ -1,6 +1,6 @@
 import attr
 from twisted.trial.unittest import SynchronousTestCase
-from klein import Klein, form, SessionProcurer
+from klein import Klein, Form, SessionProcurer
 from klein._session import requirer # XXX not public because the interface
                                     # needs to be better!
 from klein._interfaces import SessionMechanism
@@ -17,9 +17,9 @@ class TestObject(object):
     def authorizor(self):
         return SessionProcurer(self.sessionStore,
                                secureTokenHeader=b'X-Test-Session')
-    x = form(
-        name=form.text(),
-        value=form.integer(),
+    x = Form(
+        name=Form.text(),
+        value=Form.integer(),
     )
     x = x.authorizedUsing(authorizor)
     @x.handler(router.route("/handle", methods=['POST']))
@@ -36,12 +36,12 @@ class TestObject(object):
 
 class TestForms(SynchronousTestCase):
     """
-    Tests for L{klein.form} and associated tools.
+    Tests for L{klein.Form} and associated tools.
     """
 
     def test_rendering(self):
         """
-        Render the given form.
+        Render the given Form.
         """
         mem = MemorySessionStore()
 
@@ -61,7 +61,7 @@ class TestForms(SynchronousTestCase):
 
     def test_handling(self):
         """
-        A handler for a form with fields receives those fields as input, as
+        A handler for a Form with Fields receives those fields as input, as
         passed by an HTTP client.
         """
         mem = MemorySessionStore()

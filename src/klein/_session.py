@@ -1,15 +1,17 @@
 
 import attr
 
+from twisted.internet.defer import inlineCallbacks, returnValue
+
 from zope.interface import implementer
+
+from ._app import _call
+from ._decorators import bindable, modified
 from ._interfaces import (
-    ISessionProcurer, SessionMechanism, NoSuchSession, ISession,
+    ISession, ISessionProcurer, NoSuchSession, SessionMechanism,
     TooLateForCookies
 )
-from ._decorators import modified, bindable
-from ._app import _call
 
-from twisted.internet.defer import inlineCallbacks, returnValue
 
 @implementer(ISessionProcurer)
 @attr.s
@@ -157,6 +159,7 @@ def requirer(procure_procurer):
             session_set = set([Optional(ISession), Required(ISession)])
             to_authorize = set(x._interface for x in
                                (set(optified.values()) - session_set))
+
             @modified("requirer", thunk, route)
             @bindable
             @inlineCallbacks
@@ -184,6 +187,7 @@ def requirer(procure_procurer):
 class Optional(object):
     _interface = attr.ib()
     _required = False
+
     def retrieve(self, dict):
         return dict.get(self._interface, None)
 

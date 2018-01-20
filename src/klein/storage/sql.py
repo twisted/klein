@@ -1,5 +1,5 @@
 
-from ._sql import openSessionStore, authorizerFor, tables
+from ._sql import authorizerFor, openSessionStore, tables
 
 __all__ = [
     "openSessionStore",

@@ -1,13 +1,17 @@
 # -*- test-case-name: klein.test.test_memory -*-
-from klein.interfaces import ISession, ISessionStore, NoSuchSession
-from klein import SessionProcurer
-import attr
-from attr import Factory
-from zope.interface import implementer
 from binascii import hexlify
 from os import urandom
-from twisted.internet.defer import succeed, fail
+
+import attr
+from attr import Factory
+
+from twisted.internet.defer import fail, succeed
 from twisted.python.components import Componentized
+
+from zope.interface import implementer
+
+from klein import SessionProcurer
+from klein.interfaces import ISession, ISessionStore, NoSuchSession
 
 @implementer(ISession)
 @attr.s
@@ -63,6 +67,7 @@ class MemorySessionStore(object):
         for authorizer in authorizers:
             specifiedInterface = authorizer.__memoryAuthInterface__
             interfaceToCallable[specifiedInterface] = authorizer
+
         def authorizationCallback(interface, session, data):
             return interfaceToCallable[interface](interface, session, data)
         return cls(authorizationCallback)

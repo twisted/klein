@@ -1,18 +1,21 @@
 import attr
-from twisted.trial.unittest import SynchronousTestCase
-from klein import Klein, Form, Field, SessionProcurer
-from klein._session import requirer # XXX not public because the interface
-                                    # needs to be better!
-from klein._interfaces import SessionMechanism
-from klein.storage.memory import MemorySessionStore
-from treq.testing import StubTreq
+
 from treq import content
+from treq.testing import StubTreq
+
+from twisted.trial.unittest import SynchronousTestCase
+
+from klein import Field, Form, Klein, SessionProcurer
+from klein._interfaces import SessionMechanism
+from klein._session import requirer
+from klein.storage.memory import MemorySessionStore
 
 @attr.s(hash=False)
 class TestObject(object):
     sessionStore = attr.ib()
     calls = attr.ib(attr.Factory(list))
     router = Klein()
+
     @requirer
     def authorizor(self):
         return SessionProcurer(self.sessionStore,
@@ -21,6 +24,7 @@ class TestObject(object):
         name=Field.text(),
         value=Field.integer(),
     )
+
     @x.handler(router.route("/handle", methods=['POST']))
     def handler(self, request, name, value):
         self.calls.append((name, value))

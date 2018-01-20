@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division
 
-from zope.interface import Attribute, Interface
-from twisted.python.constants import Names, NamedConstant
+from twisted.python.constants import NamedConstant, Names
 
+from zope.interface import Attribute, Interface
 
 class IKleinRequest(Interface):
     branch_segments = Attribute("Segments consumed by a branch route.")
@@ -199,7 +199,7 @@ class ISessionProcurer(Interface):
     """
 
     def procureSession(self, request, forceInsecure=False,
-                        alwaysCreate=True):
+                       alwaysCreate=True):
         """
         Retrieve a session using whatever technique is necessary.
 

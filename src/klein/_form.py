@@ -1,22 +1,22 @@
 
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
+
+from itertools import count
+from weakref import WeakKeyDictionary
 
 import attr
 
-from weakref import WeakKeyDictionary
-from itertools import count
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.python.compat import unicode
+from twisted.web.error import MissingRenderMethod
+from twisted.web.iweb import IRenderable
+from twisted.web.template import Element, TagLoader, tags
 
 from zope.interface import implementer
 
-from twisted.python.compat import unicode
-from twisted.internet.defer import inlineCallbacks, returnValue
-from twisted.web.template import tags, Element, TagLoader
-from twisted.web.iweb import IRenderable
-from twisted.web.error import MissingRenderMethod
-
-from ._interfaces import SessionMechanism, ISession
 from ._app import _call
 from ._decorators import bindable, modified
+from ._interfaces import ISession, SessionMechanism
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -64,13 +64,14 @@ class Field(object):
         @param name: the name.
         @type name: a native L{str}
         """
-        maybe = lambda it, that=name: that if it is None else it
+        def maybe(it, that=name):
+            return that if it is None else it
         return attr.assoc(
             self,
             pythonArgumentName=maybe(self.pythonArgumentName),
             formFieldName=maybe(self.formFieldName),
             formLabel=maybe(self.formLabel,
-                             name.capitalize() if not self.noLabel else None),
+                            name.capitalize() if not self.noLabel else None),
         )
 
 
@@ -365,6 +366,7 @@ class Form(object):
             failureHandlers = getattr(function, vfhc, WeakKeyDictionary())
             setattr(function, vfhc, failureHandlers)
             failureHandlers[self] = defaultValidationFailureHandler
+
             @modified("form handler", function,
                       self._authorized(route, __session__=ISession))
             @bindable

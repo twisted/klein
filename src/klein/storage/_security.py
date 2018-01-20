@@ -1,8 +1,10 @@
 
-from unicodedata import normalize
 from functools import partial
+from unicodedata import normalize
+
 from passlib.context import CryptContext
-from twisted.internet.defer import returnValue, inlineCallbacks
+
+from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.threads import deferToThread
 
 

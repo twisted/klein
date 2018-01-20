@@ -87,6 +87,7 @@ class PlatedElement(Element):
         """
         if name in self._renderers:
             wrapped = self._renderers[name]
+
             @modified("plated render wrapper", wrapped)
             def renderWrapper(request, tag, *args, **kw):
                 return _call(self._boundInstance, wrapped,
@@ -127,12 +128,15 @@ class Plating(object):
         self._presentationSlots = {self.CONTENT} | set(presentation_slots)
         self._renderers = {}
 
+
     def render(self, renderer):
         """
-        
+        Add a renderer to this L{Plating} object that can be used in the
+        top-level template.
         """
         self._renderers[text_type(originalName(renderer))] = renderer
         return renderer
+
 
     def routed(self, routing, tags):
         """

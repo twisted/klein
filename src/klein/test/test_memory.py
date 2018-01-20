@@ -1,9 +1,11 @@
 
 from twisted.trial.unittest import SynchronousTestCase
-from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
-from klein.interfaces import ISession, ISessionStore, SessionMechanism
-from zope.interface.verify import verifyObject
+
 from zope.interface import Interface
+from zope.interface.verify import verifyObject
+
+from klein.interfaces import ISession, ISessionStore, SessionMechanism
+from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
 
 class MemoryTests(SynchronousTestCase):
@@ -31,6 +33,7 @@ class MemoryTests(SynchronousTestCase):
         """
         class IFoo(Interface):
             pass
+
         class IBar(Interface):
             pass
 

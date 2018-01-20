@@ -17,7 +17,7 @@ from twisted.web.util import Redirect
 app = Klein()
 
 def bootstrap(x):
-    return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/" + x
+    return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/" + x
 
 style = Plating(
     tags=tags.html(
@@ -32,7 +32,7 @@ style = Plating(
             tags.title("hooray")
         ),
         tags.body(
-            tags.nav(Class="navbar navbar-light bg-faded")(
+            tags.nav(Class="navbar navbar-expand-lg navbar-light bg-light")(
                 tags.a("Navbar", Class="navbar-brand",
                        href="/"),
                 tags.ul(Class="nav navbar-nav")(
@@ -46,7 +46,17 @@ style = Plating(
                                href="/login")),
                     tags.li(Class=["nav-item ", slot("signupActive")])(
                         tags.a("Signup", Class="nav-link", href="/signup")),
+                ),
+                tags.ul(Class="nav navbar-nav ml-auto")(
                     tags.transparent(render="if_logged_in")(
+                        tags.li(Class="nav-item")(
+                            tags.a(Class="nav-link active",
+                                   href=[
+                                       "/u/",
+                                       tags.transparent(render="username")
+                                   ],
+                                   render="username")
+                        ),
                         tags.li(Class=["nav-item ", slot("sessionsActive")])(
                             tags.a("Sessions", Class="nav-link",
                                    href="/sessions")),
@@ -56,21 +66,19 @@ style = Plating(
                                       method="POST")(
                                           tags.button("Logout", Class="btn"),
                                       )
-                        ),
-                        tags.li(Class="nav-item pull-xs-right",
-                        )(
-                            tags.span(Class="nav-link active",
-                                      render="username")
-                        ),
+                        )
                     ),
                     tags.li(
-                        tags.form(Class="form-inline pull-xs-right")(
-                        tags.input(Class="form-control", type="text",
-                                   placeholder="Search"),
-                        tags.button("Search", Class="btn btn-outline-success",
-                                    type="submit"))
+                        tags.form(Class="form-inline")(
+                            tags.input(Class="form-control", type="text",
+                                       placeholder="Search"),
+                            tags.button("Search",
+                                        Class="btn btn-outline-success",
+                                        type="submit")
+                        )
                     )
-                )),
+                ),
+            ),
             tags.div(Class="container")(
                 slot(Plating.CONTENT)
             )
@@ -240,7 +248,7 @@ def logout_glue(request, tag, form):
 
 @authorized(style.render, account=ISimpleAccount)
 def username(request, tag, account):
-    return account.username
+    return tag(account.username)
 
 
 login = Form(authorized).withFields(

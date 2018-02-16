@@ -40,6 +40,7 @@ mypy "$@"      \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPHeadersWrappingHeaders"'                         \
         -e ': error: Unexpected keyword argument "[^"]*" for "HTTPRequestWrappingIRequest"'                        \
         -e ': error: Unexpected keyword argument "[^"]*" for "IOFount"'                                            \
+        -e ': error: Unexpected keyword argument "[^"]*" for "Field"'                                              \
         -e ': error: Unexpected keyword argument.* for .*"[^"]*HTTP\(Headers\|Request\|Response\)"'                \
         -e ': note: .* defined here'                                                                               \
         -e '^src/klein/_app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \

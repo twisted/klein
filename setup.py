@@ -15,6 +15,7 @@ if __name__ == "__main__":
             'Programming Language :: Python :: 2.7',
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
@@ -47,6 +48,11 @@ if __name__ == "__main__":
         name="klein",
         packages=["klein", "klein.storage", "klein.test"],
         package_dir={"": "src"},
+        package_data=dict(
+            klein=[
+                "test/idna-tables-properties.csv",
+            ],
+        ),
         url="https://github.com/twisted/klein",
         maintainer='Amber Brown (HawkOwl)',
         maintainer_email='hawkowl@twistedmatrix.com',

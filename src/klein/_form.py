@@ -18,6 +18,9 @@ from ._app import _call
 from ._decorators import bindable, modified
 from ._interfaces import ISession, SessionMechanism
 
+from typing import Any, Optional, AnyStr
+Any, Optional, AnyStr
+
 class CrossSiteRequestForgery(Exception):
     """
     Cross site request forgery detected.  Request aborted.
@@ -101,7 +104,7 @@ class Field(object):
                 [b""])[0]
 
 
-    def validateValue(self, value):
+    def validateValue(self, value): # type: (AnyStr) -> Any
         """
         Validate the given text and return a converted Python object to use, or
         fail with L{ValidationError}.
@@ -110,7 +113,7 @@ class Field(object):
 
 
     @classmethod
-    def text(cls):
+    def text(cls):              # type: () -> Field
         """
         Shorthand for a form field that contains a short string, and will be
         rendered as a plain <input>.
@@ -119,7 +122,7 @@ class Field(object):
                    formInputType="text")
 
     @classmethod
-    def password(cls):
+    def password(cls):          # type: () -> Field
         """
         Shorthand for a form field that, like L{text}, contains a short string,
         but should be obscured when typed (and, to the extent possible,
@@ -129,7 +132,7 @@ class Field(object):
                    formInputType="password")
 
     @classmethod
-    def hidden(cls, name, value):
+    def hidden(cls, name, value): # type: (AnyStr, AnyStr) -> Field
         """
         Shorthand for a hidden field.
         """
@@ -141,6 +144,7 @@ class Field(object):
 
     @classmethod
     def integer(cls, minimum=None, maximum=None):
+        # type: (Optional[int], Optional[int]) -> Field
         """
         An integer within the range [minimum, maximum].
         """

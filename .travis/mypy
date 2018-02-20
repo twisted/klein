@@ -57,6 +57,7 @@ mypy "$@"      \
         -e '^src/klein/test/test_resource.py:.[0-9:]*: error: Function is missing a type annotation'               \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Function is missing a type annotation'                        \
         -e '^src/klein/test/util.py:.[0-9:]*: error: Name .* already defined'                                      \
+        -e '^loginspike.py:.[0-9:]*: error: Function is missing a type annotation'                                 \
         > "${tmp}" || true;
 
 sort < "${tmp}";

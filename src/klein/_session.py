@@ -182,16 +182,19 @@ _procureProcurerType = Union[
     Callable[[], ISessionProcurer]
 ]
 
+_kleinRenderable = Any
+_kleinCallable = Callable[..., _kleinRenderable]
+
 def requirer(procure_procurer):
-    # type: (_procureProcurerType) -> Callable[[Arg(_routeCallable, 'route'), KwArg(Any)], Callable[[Callable[[IRequest, VarArg(Any), KwArg(Any)], None]], None]]
-    def requires(route, **kw):
-        # type: (_routeCallable, **Any) -> Callable[[Callable[[IRequest, VarArg(Any), KwArg(Any)], None]], None]
+    # type: (_procureProcurerType) -> Callable[[Arg(_routeCallable, 'route'), KwArg(Any)], Callable[[_kleinCallable], _kleinCallable]]
+    def requires(route, **requestedRequirements):
+        # type: (_routeCallable, **Any) -> Callable[[_kleinCallable], _kleinCallable]
         def toroute(thunk):
-            # type: (Callable[[IRequest, VarArg(Any), KwArg(Any)], None]) -> None
+            # type: (_kleinCallable) -> _kleinCallable
             # FIXME: this should probably inspect the signature of 'thunk' to
             # see if it has default arguments, rather than relying upon people
             # to pass in Optional instances
-            optified = dict([(k, Required.maybe(v)) for k, v in kw.items()])
+            optified = dict([(k, Required.maybe(v)) for k, v in requestedRequirements.items()])
             any_required = any(v._required for v in optified.values())
             session_set = set([Optional(ISession), Required(ISession)])
             to_authorize = set(x._interface for x in
@@ -216,6 +219,7 @@ def requirer(procure_procurer):
                 returnValue(
                     (yield _call(instance, thunk, request, *args, **newkw))
                 )
+            return thunk
         return toroute
     return requires
 

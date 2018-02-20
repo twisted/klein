@@ -6,7 +6,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 
 from klein import Klein, Plating, Form, Field
 from klein.interfaces import (
-    ISimpleAccountBinding, SessionMechanism, ISimpleAccount
+    ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer
 )
 
 
@@ -160,11 +160,16 @@ getproc = openSessionStore(reactor, "sqlite:///sessions.sqlite",
                               auth_for_reading.authorizer])
 @getproc.addCallback
 def set_procurer(opened_procurer):
+    # type: (ISessionProcurer) -> None
     global procurer
     procurer = opened_procurer
-
+procurer = None                 # type: Optional[ISessionProcurer]
 from klein._session import requirer, Optional
-authorized = requirer(lambda: procurer)
+
+@requirer
+def authorized():
+    # type: () -> ISessionProcurer
+    return procurer
 
 logout = Form(authorized)
 chirp = Form(authorized).withFields(value=Field.text())
@@ -211,7 +216,7 @@ def read_some_chirps(request, user, reader):
 @authorized(chirp.handler(app.route("/chirp", methods=["POST"])),
             chirper=Chirper)
 @inlineCallbacks
-def chirp(request, chirper, value):
+def addChirp(request, chirper, value):
     print("CHIRPING", repr(value))
     yield chirper.chirp(value)
     returnValue(Redirect(b"/"))

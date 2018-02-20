@@ -20,12 +20,14 @@ from ._interfaces import ISession, SessionMechanism
 
 from typing import (
     Any, Callable, Dict, Optional, AnyStr, Iterable, NoReturn, TYPE_CHECKING,
-    List
+    List, Text, Union
 )
+
+from mypy_extensions import DefaultNamedArg
 
 if TYPE_CHECKING:
     (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, NoReturn, IRequest,
-     List)
+     List, Text, DefaultNamedArg, Union)
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -199,7 +201,7 @@ class RenderableForm(object):
     if TYPE_CHECKING:
         def __init__(self, form, session, action, method, enctype, encoding,
                      prevalidation=None, errors=None):
-            # type: (Form, ISession, bytes, bytes, bytes, str, Dict, Dict) -> None
+            # type: (Form, ISession, Text, Text, Text, AnyStr, Dict, Dict) -> None
             ...
 
     def _fieldForCSRF(self):
@@ -337,7 +339,7 @@ class Form(object):
 
     if TYPE_CHECKING:
         def __init__(self, authorized, fields=[]):
-            # type: (Callable[[_routeCallable, ISession], _routeCallable], List[Field]) -> None
+            # type: (Callable[[_routeCallable, DefaultNamedArg(ISession, '__session__')], _routeCallable], List[Field]) -> None
             pass
 
     def withFields(self, **fields):
@@ -354,8 +356,8 @@ class Form(object):
         )
 
 
-    ENCTYPE_FORM_DATA = b'multipart/form-data'
-    ENCTYPE_URL_ENCODED = b'application/x-www-form-urlencoded'
+    ENCTYPE_FORM_DATA = 'multipart/form-data'
+    ENCTYPE_URL_ENCODED = 'application/x-www-form-urlencoded'
 
     def onValidationFailureFor(self, handler):
         # type: (_HandlerTypeStub) -> Callable[[Callable], Callable]
@@ -449,12 +451,14 @@ class Form(object):
                         arguments[field.pythonArgumentName] = value
                 if validationErrors:
                     renderable = RenderableForm(
-                        self, session, b"/".join(request.prepath),
+                        self, session, u"/".join(
+                            segment.decode("utf-8", errors='replace')
+                            for segment in request.prepath
+                        ),
                         request.method,
-                        request.getHeader(u'content-type').split(u';')[0],
-                        "utf-8",
-                        prevalidation_values,
-                        validationErrors,
+                        request.getHeader(b'content-type').split(b';')[0]
+                        .decode("charmap"),
+                        "utf-8", prevalidation_values, validationErrors,
                     )
                     result = yield _call(instance, failureHandlers[self],
                                          request, renderable, *args, **kw)
@@ -467,9 +471,17 @@ class Form(object):
         return decorator
 
 
-    def renderer(self, route, action, method=b"POST", enctype=ENCTYPE_FORM_DATA,
+    def renderer(self, route, action, method=u"POST", enctype=ENCTYPE_FORM_DATA,
                  argument="form", encoding="utf-8"):
-        # type: (_routeCallable, bytes, bytes, bytes, str, str) -> Callable[[Callable], Callable]
+        # type: (_routeCallable, Union[Text, bytes], Union[Text, bytes], Text, str, str) -> Callable[[Callable], Callable]
+        if isinstance(action, bytes):
+            taction = action.decode("charmap")
+        else:
+            taction = action
+        if isinstance(method, bytes):
+            tmethod = method.decode("charmap")
+        else:
+            tmethod = method
         def decorator(function):
             # type: (Callable) -> Callable
             @modified("form renderer", function,
@@ -479,7 +491,7 @@ class Form(object):
             def renderer_decorated(instance, request, *args, **kw):
                 # type: (object, IRequest, *Any, **Any) -> Any
                 session = kw.pop("__session__")
-                form = RenderableForm(self, session, action, method, enctype,
+                form = RenderableForm(self, session, taction, tmethod, enctype,
                                       encoding="utf-8",
                                       prevalidation={},
                                       errors={})

@@ -6,7 +6,7 @@ from functools import reduce
 from os import urandom
 from uuid import uuid4
 
-from typing import Any, Callable, Type, TypeVar, TYPE_CHECKING, Iterable, Text, List, Dict
+from typing import Any, Callable, Type, TypeVar, TYPE_CHECKING, Iterable, Text, List, Dict, cast
 if TYPE_CHECKING:
     import sqlalchemy
     from twisted.internet.defer import Deferred
@@ -37,11 +37,11 @@ from twisted.internet.defer import (
 from twisted.python.compat import unicode
 from twisted.python.failure import Failure
 
-from zope.interface import implementedBy, implementer, IInterface
+from zope.interface import IInterface, implementedBy, implementer
 
 from ._security import checkAndReset, computeKeyText
 from .. import SessionProcurer
-from klein._zitype import zcast
+
 from ..interfaces import (
     ISQLAuthorizer, ISQLSchemaComponent, ISession,
     ISessionProcurer, ISessionStore, ISimpleAccount, ISimpleAccountBinding,
@@ -187,12 +187,13 @@ class AlchimiaDataStore(object):
 
 
     def componentsProviding(self, interface):
-        # type: (Type[I]) -> Iterable[I]
+        # type: (Any) -> Iterable[Any]
+        # one day: (Type[I]) -> Iterable[I]
         """
         Get all the components providing the given interface.
         """
         for component in self._components:
-            if zcast(IInterface, interface).providedBy(component):
+            if interface.providedBy(component):
                 # Adaptation-by-call doesn't work with implementedBy() objects
                 # so we can't query for classes
                 yield component
@@ -851,9 +852,19 @@ def tables(**kw):
     return callme
 
 
+class _FunctionWithAuthorizer(object):
+
+    authorizer = None           # type: Any
+
+    def __call__(self, metadata, datastore, sessionStore, transaction, session):
+        # type: (sqlalchemy.schema.MetaData, AlchimiaDataStore, AlchimiaSessionStore, Transaction, ISession) -> Any
+        """
+        
+        """
+
 
 def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
-    # type: (Type, Callable[[Transaction, sqlalchemy.schema.MetaData], Deferred]) -> Callable[[Callable], Any]
+    # type: (Type, Callable[[Transaction, sqlalchemy.schema.MetaData], Deferred]) -> Callable[[Callable], _FunctionWithAuthorizer]
     """
     Declare an SQL authorizer, implemented by a given function.  Used like so::
 
@@ -875,7 +886,7 @@ def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
     an_authzn = authzn_for
 
     def decorator(decorated):
-        # type: (Callable) -> Callable
+        # type: (Callable[[sqlalchemy.schema.MetaData, AlchimiaDataStore, AlchimiaSessionStore, Transaction, ISession], Any]) -> _FunctionWithAuthorizer
         @implementer(ISQLAuthorizer, ISQLSchemaComponent)
         @attr.s
         class AnAuthorizer(object):
@@ -893,6 +904,7 @@ def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
                 return decorated(self.metadata, self.datastore, session_store,
                                  transaction, session)
 
+        decorated = cast(_FunctionWithAuthorizer, decorated)
         decorated.authorizer = AnAuthorizer
         return decorated
     return decorator

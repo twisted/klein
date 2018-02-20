@@ -19,15 +19,14 @@ from ._decorators import bindable, modified
 from ._interfaces import ISession, SessionMechanism
 
 from typing import (
-    Any, Callable, Dict, Optional, AnyStr, Iterable, NoReturn, TYPE_CHECKING,
+    Any, Callable, Dict, Optional, AnyStr, Iterable, TYPE_CHECKING,
     List, Text, Union
 )
 
-from mypy_extensions import DefaultNamedArg
-
 if TYPE_CHECKING:
-    (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, NoReturn, IRequest,
-     List, Text, DefaultNamedArg, Union)
+    from mypy_extensions import DefaultNamedArg, NoReturn
+    (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
+     Text, DefaultNamedArg, Union, NoReturn)
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -202,7 +201,7 @@ class RenderableForm(object):
         def __init__(self, form, session, action, method, enctype, encoding,
                      prevalidation=None, errors=None):
             # type: (Form, ISession, Text, Text, Text, AnyStr, Dict, Dict) -> None
-            ...
+            pass
 
     def _fieldForCSRF(self):
         # type: () -> Field

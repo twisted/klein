@@ -4,28 +4,36 @@ from unicodedata import normalize
 
 from passlib.context import CryptContext
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
 from twisted.internet.threads import deferToThread
+
+from typing import Callable, Text, Optional, TYPE_CHECKING, Tuple, Any
+if TYPE_CHECKING:
+    Text, Callable, Deferred, Optional, Tuple, Any
 
 
 passlibContextWithGoodDefaults = partial(CryptContext, schemes=['bcrypt'])
 
 def _verifyAndUpdate(secret, hash, ctxFactory=passlibContextWithGoodDefaults):
+    # type: (Text, Text, Callable[[], CryptContext]) -> Deferred
     """
     Asynchronous wrapper for L{CryptContext.verify_and_update}.
     """
     @deferToThread
     def theWork():
+        # type: () -> Tuple[bool, Optional[str]]
         return ctxFactory().verify_and_update(secret, hash)
     return theWork
 
 
 def _hashSecret(secret, ctxFactory=passlibContextWithGoodDefaults):
+    # type: (Text, Callable[[], CryptContext]) -> Deferred
     """
     Asynchronous wrapper for L{CryptContext.hash}.
     """
     @deferToThread
     def theWork():
+        # type: () -> str
         return ctxFactory().hash(secret)
     return theWork
 
@@ -33,6 +41,7 @@ def _hashSecret(secret, ctxFactory=passlibContextWithGoodDefaults):
 
 @inlineCallbacks
 def checkAndReset(storedPasswordText, providedPasswordText, resetter):
+    # type: (Text, Text, Callable[[str], Any]) -> Any
     """
     Check the given stored password text against the given provided password
     text.
@@ -54,7 +63,7 @@ def checkAndReset(storedPasswordText, providedPasswordText, resetter):
         # Password migration!  Does our passlib context have an awesome *new*
         # hash it wants to give us?  Store it.
         if newHash is not None:
-            if isinstance(newHash, 'bytes'):
+            if isinstance(newHash, bytes):
                 newHash = newHash.decode("charmap")
             yield resetter(newHash)
         returnValue(True)
@@ -65,6 +74,7 @@ def checkAndReset(storedPasswordText, providedPasswordText, resetter):
 
 @inlineCallbacks
 def computeKeyText(passwordText):
+    # type: (Text) -> Any
     """
     Compute some text to store for a given plain-text password.
 

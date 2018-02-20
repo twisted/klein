@@ -10,14 +10,28 @@ from klein._interfaces import SessionMechanism
 from klein._session import requirer
 from klein.storage.memory import MemorySessionStore
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from twisted.web.iweb import IRequest
+    from typing import Text
+    from klein._interfaces import ISessionStore
+
+    IRequest, Text
+
 @attr.s(hash=False)
 class TestObject(object):
     sessionStore = attr.ib()
     calls = attr.ib(attr.Factory(list))
+
+    if TYPE_CHECKING:
+        def __init__(self, sessionStore):
+            # type: (ISessionStore) -> None
+            pass
     router = Klein()
 
     @requirer
     def authorizor(self):
+        # type: () -> SessionProcurer
         return SessionProcurer(self.sessionStore,
                                secureTokenHeader=b'X-Test-Session')
     x = Form(authorizor).withFields(
@@ -27,12 +41,14 @@ class TestObject(object):
 
     @x.handler(router.route("/handle", methods=['POST']))
     def handler(self, request, name, value):
+        # type: (IRequest, Text, Text) -> bytes
         self.calls.append((name, value))
         return b'yay'
 
     @x.renderer(router.route("/render", methods=['GET']),
                 action=b'/handle')
     def renderer(self, request, form):
+        # type: (IRequest, Form) -> Form
         return form
 
 
@@ -43,6 +59,7 @@ class TestForms(SynchronousTestCase):
     """
 
     def test_rendering(self):
+        # type: () -> None
         """
         Render the given Form.
         """
@@ -63,6 +80,7 @@ class TestForms(SynchronousTestCase):
 
 
     def test_handling(self):
+        # type: () -> None
         """
         A handler for a Form with Fields receives those fields as input, as
         passed by an HTTP client.

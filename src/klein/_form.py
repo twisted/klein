@@ -9,8 +9,8 @@ import attr
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.python.compat import unicode
 from twisted.web.error import MissingRenderMethod
-from twisted.web.iweb import IRenderable
-from twisted.web.template import Element, TagLoader, tags
+from twisted.web.iweb import IRenderable, IRequest
+from twisted.web.template import Element, TagLoader, tags, Tag
 
 from zope.interface import implementer
 
@@ -18,8 +18,14 @@ from ._app import _call
 from ._decorators import bindable, modified
 from ._interfaces import ISession, SessionMechanism
 
-from typing import Any, Optional, AnyStr
-Any, Optional, AnyStr
+from typing import (
+    Any, Callable, Dict, Optional, AnyStr, Iterable, NoReturn, TYPE_CHECKING,
+    List
+)
+
+if TYPE_CHECKING:
+    (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, NoReturn, IRequest,
+     List)
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -34,6 +40,7 @@ class ValidationError(Exception):
     """
 
     def __init__(self, message):
+        # type: (str) -> None
         """
         Initialize a L{ValidationError} with a message to show to the user.
         """
@@ -60,6 +67,7 @@ class Field(object):
     order = attr.ib(default=attr.Factory(lambda: next(count())))
 
     def maybeNamed(self, name):
+        # type: (str) -> Field
         """
         Create a new L{Field} like this one, but with all the name default
         values filled in.
@@ -68,6 +76,7 @@ class Field(object):
         @type name: a native L{str}
         """
         def maybe(it, that=name):
+            # type: (Optional[str], Optional[str]) -> Optional[str]
             return that if it is None else it
         return attr.assoc(
             self,
@@ -79,6 +88,7 @@ class Field(object):
 
 
     def asTags(self):
+        # type: () -> Iterable[Tag]
         """
         Convert this L{Field} into some stuff that can be rendered in a
         L{twisted.web.template}.
@@ -97,6 +107,7 @@ class Field(object):
 
 
     def extractValue(self, request):
+        # type: (IRequest) -> List[bytes]
         """
         extract some bytes value from the request
         """
@@ -132,7 +143,7 @@ class Field(object):
                    formInputType="password")
 
     @classmethod
-    def hidden(cls, name, value): # type: (AnyStr, AnyStr) -> Field
+    def hidden(cls, name, value): # type: (str, AnyStr) -> Field
         """
         Shorthand for a hidden field.
         """
@@ -149,6 +160,7 @@ class Field(object):
         An integer within the range [minimum, maximum].
         """
         def bounded_int(text):
+            # type: (str) -> Any
             try:
                 value = int(text)
             except ValueError:
@@ -180,10 +192,18 @@ class RenderableForm(object):
     _method = attr.ib()
     _enctype = attr.ib()
     _encoding = attr.ib()
+
     prevalidation = attr.ib(default=attr.Factory(dict))
     errors = attr.ib(default=attr.Factory(dict))
 
+    if TYPE_CHECKING:
+        def __init__(self, form, session, action, method, enctype, encoding,
+                     prevalidation=None, errors=None):
+            # type: (Form, ISession, bytes, bytes, bytes, str, Dict, Dict) -> None
+            ...
+
     def _fieldForCSRF(self):
+        # type: () -> Field
         """
         @return: A hidden L{Field} containing the cross-site request forgery
             protection token.
@@ -192,6 +212,7 @@ class RenderableForm(object):
 
 
     def _fieldsToRender(self):
+        # type: () -> Iterable[Field]
         """
         @return: an interable of L{Field} objects to include in the HTML
             representation of this form.  This includes:
@@ -212,15 +233,14 @@ class RenderableForm(object):
             if field.formInputType == "submit":
                 any_submit = True
         if not any_submit:
-            yield Field(str, formInputType="submit",
-                        value=u"submit",
-                        pythonArgumentName="submit",
-                        formFieldName="submit")
+            yield Field(converter=str, formInputType="submit", value=u"submit",
+                        pythonArgumentName="submit", formFieldName="submit")
         yield self._fieldForCSRF()
 
     # Public interface below.
 
     def lookupRenderMethod(self, name):
+        # type: (str) -> NoReturn
         """
         Form renderers don't supply any render methods, so this just always
         raises L{MissingRenderMethod}.
@@ -229,6 +249,7 @@ class RenderableForm(object):
 
 
     def render(self, request):
+        # type: (IRequest) -> Tag
         """
         Render this form to the given request.
         """
@@ -243,6 +264,7 @@ class RenderableForm(object):
 
 
     def glue(self):
+        # type: () -> Iterable[Tag]
         """
         Provide any glue necessary to render this form; this must be dropped
         into the template within the C{<form>} tag.
@@ -261,6 +283,7 @@ class RenderableForm(object):
 
 @bindable
 def defaultValidationFailureHandler(instance, request, renderable):
+    # type: (object, IRequest, IRenderable) -> Element
     """
     This is the default validation failure handler, which will be used by
     L{Form.handler} in the case of any input validation failure when no other
@@ -284,6 +307,23 @@ def defaultValidationFailureHandler(instance, request, renderable):
     """
     return Element(TagLoader(renderable))
 
+_failureHandler = Callable[[object, IRequest, IRenderable], Element]
+
+class _HandlerTypeStub(object):
+    """
+    A type stub for a form handler (not to be confused with a validation error
+    handler).
+    """
+    validation_failureHandlers = None # type: Dict[Form, _failureHandler]
+
+    def __call__(self, request, *a, **kw):
+        # type: (IRequest, *Any, **Any) -> Any
+        """
+        Takes a request, and other arguments that are defined at a higher
+        level.
+        """
+
+_routeCallable = Any
 
 
 @attr.s(hash=False)
@@ -295,7 +335,13 @@ class Form(object):
     _authorized = attr.ib()
     _fields = attr.ib(default=attr.Factory(list))
 
+    if TYPE_CHECKING:
+        def __init__(self, authorized, fields=[]):
+            # type: (Callable[[_routeCallable, ISession], _routeCallable], List[Field]) -> None
+            pass
+
     def withFields(self, **fields):
+        # type: (**Field) -> Form
         """
         Create a derived form with a series of fields.
         """
@@ -312,6 +358,7 @@ class Form(object):
     ENCTYPE_URL_ENCODED = b'application/x-www-form-urlencoded'
 
     def onValidationFailureFor(self, handler):
+        # type: (_HandlerTypeStub) -> Callable[[Callable], Callable]
         """
         Register a function to be run in the event of a validation failure for
         the input to a particular form handler.
@@ -340,12 +387,14 @@ class Form(object):
             C{(request, form) -> thing klein can render}.
         """
         def decorate(decoratee):
+            # type: (Callable) -> Callable
             handler.validation_failureHandlers[self] = decoratee
             return decoratee
         return decorate
 
 
     def handler(self, route):
+        # type: (_routeCallable) -> Callable[[Callable], Callable]
         """
         Declare a handler for a form.
 
@@ -366,6 +415,7 @@ class Form(object):
                 return "form handled"
         """
         def decorator(function):
+            # type: (Callable) -> Callable
             vfhc = "validation_failureHandlers"
             failureHandlers = getattr(function, vfhc, WeakKeyDictionary())
             setattr(function, vfhc, failureHandlers)
@@ -376,6 +426,7 @@ class Form(object):
             @bindable
             @inlineCallbacks
             def decoratedHandler(instance, request, *args, **kw):
+                # type: (object, IRequest, *Any, **Any) -> Any
                 session = kw.pop("__session__")
                 if session.authenticatedBy == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION.encode("ascii"),
@@ -401,8 +452,9 @@ class Form(object):
                         self, session, b"/".join(request.prepath),
                         request.method,
                         request.getHeader(u'content-type').split(u';')[0],
-                        prevalidation=prevalidation_values,
-                        errors=validationErrors,
+                        "utf-8",
+                        prevalidation_values,
+                        validationErrors,
                     )
                     result = yield _call(instance, failureHandlers[self],
                                          request, renderable, *args, **kw)
@@ -415,18 +467,22 @@ class Form(object):
         return decorator
 
 
-    def renderer(self, route, action, method="POST", enctype=ENCTYPE_FORM_DATA,
+    def renderer(self, route, action, method=b"POST", enctype=ENCTYPE_FORM_DATA,
                  argument="form", encoding="utf-8"):
+        # type: (_routeCallable, bytes, bytes, bytes, str, str) -> Callable[[Callable], Callable]
         def decorator(function):
+            # type: (Callable) -> Callable
             @modified("form renderer", function,
                       self._authorized(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):
+                # type: (object, IRequest, *Any, **Any) -> Any
                 session = kw.pop("__session__")
                 form = RenderableForm(self, session, action, method, enctype,
+                                      encoding="utf-8",
                                       prevalidation={},
-                                      errors={}, encoding=encoding)
+                                      errors={})
                 kw[argument] = form
                 result = yield _call(instance, function, request, *args, **kw)
                 returnValue(result)

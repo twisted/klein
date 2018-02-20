@@ -4,6 +4,14 @@ from twisted.python.constants import NamedConstant, Names
 
 from zope.interface import Attribute, Interface
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    ifmethod = staticmethod
+else:
+    def ifmethod(method):
+        return method
+
 class IKleinRequest(Interface):
     branch_segments = Attribute("Segments consumed by a branch route.")
     mapper = Attribute("L{werkzeug.routing.MapAdapter}")
@@ -35,7 +43,7 @@ class TransactionEnded(Exception):
 
 
 
-class ISessionStore(Interface):
+class _ISessionStore(Interface):
     """
     Backing storage for sessions.
     """
@@ -150,6 +158,7 @@ class ISQLSchemaComponent(Interface):
     A component of an SQL schema.
     """
 
+    @ifmethod
     def initialize_schema(transaction):
         """
         Add the relevant tables to the database.
@@ -192,7 +201,7 @@ class ISQLAuthorizer(Interface):
 
 
 
-class ISessionProcurer(Interface):
+class _ISessionProcurer(Interface):
     """
     An L{ISessionProcurer} wraps an L{ISessionStore} and can procure sessions
     that store, given HTTP request objects.
@@ -309,3 +318,15 @@ class ISession(Interface):
             L{zope.interface.interfaces.IInterface} to providers of each
             interface.
         """
+
+if TYPE_CHECKING:
+    from ._storage.memory import MemorySessionStore
+    from ._storage.sql import AlchimiaSessionStore
+    from ._session import SessionProcurer
+    from typing import Union
+
+    ISessionStore = Union[_ISessionStore, MemorySessionStore, AlchimiaSessionStore]
+    ISessionProcurer = Union[_ISessionProcurer, SessionProcurer]
+else:
+    ISessionStore = _ISessionStore
+    ISessionProcurer = _ISessionProcurer

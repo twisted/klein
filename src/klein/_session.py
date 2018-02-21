@@ -174,12 +174,10 @@ if TYPE_CHECKING:
     from zope.interface.interfaces import IInterface
     from typing import TypeVar, Optional as _Optional, Dict, Awaitable
     T = TypeVar('T')
-    (IRequest, Arg, KwArg, VarArg, Callable, Any, IInterface, _Optional, Dict,
+    (IRequest, Arg, KwArg, VarArg, Callable, IInterface, _Optional, Dict,
      Awaitable)
-    _routeCallable = Any
 else:
-    def KwArg(t):
-        return t
+    Arg = KwArg = lambda t, *x: t
 
 _procureProcurerType = Union[
     Callable[[Any], ISessionProcurer],
@@ -187,6 +185,7 @@ _procureProcurerType = Union[
 ]
 
 _kleinRenderable = Any
+_routeCallable = Any
 _kleinCallable = Callable[..., _kleinRenderable]
 _kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
 _requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],

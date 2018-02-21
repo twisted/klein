@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Text
+
 import attr
 
 from treq import content
@@ -10,13 +12,10 @@ from klein._interfaces import SessionMechanism
 from klein._session import requirer
 from klein.storage.memory import MemorySessionStore
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from twisted.web.iweb import IRequest
-    from typing import Text
     from klein._interfaces import ISessionStore
-
-    IRequest, Text
+    IRequest, Text, ISessionStore
 
 @attr.s(hash=False)
 class TestObject(object):

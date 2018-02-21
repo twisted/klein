@@ -1,10 +1,10 @@
 from __future__ import absolute_import, division
 
+from typing import TYPE_CHECKING
+
 from twisted.python.constants import NamedConstant, Names
 
 from zope.interface import Attribute, Interface
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     ifmethod = staticmethod
@@ -325,7 +325,8 @@ if TYPE_CHECKING:
     from ._session import SessionProcurer
     from typing import Union
 
-    ISessionStore = Union[_ISessionStore, MemorySessionStore, AlchimiaSessionStore]
+    ISessionStore = Union[_ISessionStore, MemorySessionStore,
+                          AlchimiaSessionStore]
     ISessionProcurer = Union[_ISessionProcurer, SessionProcurer]
 else:
     ISessionStore = _ISessionStore

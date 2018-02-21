@@ -1,22 +1,26 @@
 # -*- test-case-name: klein.test.test_memory -*-
 from binascii import hexlify
 from os import urandom
+from typing import Any, Callable, Dict, List, TYPE_CHECKING, cast
 
 import attr
 from attr import Factory
 
-from twisted.internet.defer import fail, succeed, Deferred
+from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python.components import Componentized
 
-from zope.interface import implementer, IInterface
+from zope.interface import implementer
+from zope.interface.interfaces import IInterface
 
 from klein import SessionProcurer
-from klein.interfaces import ISession, ISessionStore, NoSuchSession, SessionMechanism
-SessionMechanism
-from typing import List, TYPE_CHECKING, Any, Callable, cast, Dict
-if TYPE_CHECKING:
-    List, Deferred, IInterface, Any, Callable, Dict
+from klein.interfaces import (
+    ISession, ISessionStore, NoSuchSession, SessionMechanism
+)
 
+if TYPE_CHECKING:
+    List, Deferred, IInterface, Any, Callable, Dict, SessionMechanism
+
+_authCB = Callable[[IInterface, ISession, Componentized], Any]
 
 @implementer(ISession)
 @attr.s
@@ -32,9 +36,15 @@ class MemorySession(object):
     _components = attr.ib(default=Factory(Componentized))
 
     if TYPE_CHECKING:
-        def __init__(self, identifier, isConfidential, authenticatedBy,
-                     authorizationCallback, components=Componentized()):
-            # type: (str, bool, SessionMechanism, Callable[[IInterface, ISession, Componentized], Any], Componentized) -> None
+        def __init__(
+                self,
+                identifier,      # type: str
+                isConfidential,  # type: bool
+                authenticatedBy,  # type: SessionMechanism
+                authorizationCallback,  # type: _authCB
+                components=None         # type: Componentized
+        ):
+            # type: (...) -> None
             pass
 
     def authorize(self, interfaces):
@@ -55,7 +65,7 @@ class _MemoryAuthorizerFunction(object):
     """
     Type shadow for function with the given attribute.
     """
-    __memoryAuthInterface__ = None # type: IInterface
+    __memoryAuthInterface__ = None  # type: IInterface
 
     def __call__(self, interface, session, data):
         # type: (IInterface, ISession, Componentized) -> Any
@@ -63,6 +73,7 @@ class _MemoryAuthorizerFunction(object):
         Return a provider of the given interface.
         """
 
+_authFn = Callable[[IInterface, ISession, Componentized], Any]
 
 def declareMemoryAuthorizer(forInterface):
     # type: (IInterface) -> Callable[[Callable], _MemoryAuthorizerFunction]
@@ -71,7 +82,7 @@ def declareMemoryAuthorizer(forInterface):
     session store.
     """
     def decorate(decoratee):
-        # type: (Callable[[IInterface, ISession, Componentized], Any]) -> _MemoryAuthorizerFunction
+        # type: (_authFn) -> _MemoryAuthorizerFunction
         decoratee = cast(_MemoryAuthorizerFunction, decoratee)
         decoratee.__memoryAuthInterface__ = forInterface
         return decoratee
@@ -87,9 +98,13 @@ class MemorySessionStore(object):
     _insecureStorage = attr.ib(default=Factory(dict))
 
     if TYPE_CHECKING:
-        def __init__(self, authorizationCallback=lambda interface, session, data: None,
-                     secureStorage={}, insecureStorage={}):
-            # type: (Callable[[IInterface, ISession, Componentized], Any], Dict, Dict) -> None
+        def __init__(
+                self,
+                authorizationCallback=None,  # type: _authFn
+                secureStorage=None,          # type: Dict
+                insecureStorage=None         # type: Dict
+        ):
+            # type: (...) -> None
             pass
 
     @classmethod

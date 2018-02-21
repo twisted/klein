@@ -2,6 +2,10 @@
 from __future__ import print_function, unicode_literals
 
 from itertools import count
+from typing import (
+    Any, AnyStr, Callable, Dict, Iterable, List, Optional,
+    TYPE_CHECKING, Text, Union
+)
 from weakref import WeakKeyDictionary
 
 import attr
@@ -10,7 +14,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.python.compat import unicode
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRenderable, IRequest
-from twisted.web.template import Element, TagLoader, tags, Tag
+from twisted.web.template import Element, Tag, TagLoader, tags
 
 from zope.interface import implementer
 
@@ -18,15 +22,14 @@ from ._app import _call
 from ._decorators import bindable, modified
 from ._interfaces import ISession, SessionMechanism
 
-from typing import (
-    Any, Callable, Dict, Optional, AnyStr, Iterable, TYPE_CHECKING,
-    List, Text, Union
-)
 
 if TYPE_CHECKING:
     from mypy_extensions import DefaultNamedArg, NoReturn
     (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
      Text, DefaultNamedArg, Union, NoReturn)
+else:
+    def DefaultNamedArg(*ignore):
+        pass
 
 class CrossSiteRequestForgery(Exception):
     """
@@ -116,7 +119,8 @@ class Field(object):
                 [b""])[0]
 
 
-    def validateValue(self, value): # type: (AnyStr) -> Any
+    def validateValue(self, value):
+        # type: (AnyStr) -> Any
         """
         Validate the given text and return a converted Python object to use, or
         fail with L{ValidationError}.
@@ -144,7 +148,8 @@ class Field(object):
                    formInputType="password")
 
     @classmethod
-    def hidden(cls, name, value): # type: (str, AnyStr) -> Field
+    def hidden(cls, name, value):
+        # type: (str, AnyStr) -> Field
         """
         Shorthand for a hidden field.
         """
@@ -198,9 +203,18 @@ class RenderableForm(object):
     errors = attr.ib(default=attr.Factory(dict))
 
     if TYPE_CHECKING:
-        def __init__(self, form, session, action, method, enctype, encoding,
-                     prevalidation=None, errors=None):
-            # type: (Form, ISession, Text, Text, Text, AnyStr, Dict, Dict) -> None
+        def __init__(
+                self,
+                form,           # type: Form
+                session,        # type: ISession
+                action,         # type: Text
+                method,         # type: Text
+                enctype,        # type: Text
+                encoding,       # type: Union[Text, bytes]
+                prevalidation=None,  # type: Dict
+                errors=None          # type: Dict
+        ):
+            # type: (...) -> None
             pass
 
     def _fieldForCSRF(self):
@@ -315,7 +329,7 @@ class _HandlerTypeStub(object):
     A type stub for a form handler (not to be confused with a validation error
     handler).
     """
-    validation_failureHandlers = None # type: Dict[Form, _failureHandler]
+    validation_failureHandlers = None  # type: Dict[Form, _failureHandler]
 
     def __call__(self, request, *a, **kw):
         # type: (IRequest, *Any, **Any) -> Any
@@ -325,6 +339,10 @@ class _HandlerTypeStub(object):
         """
 
 _routeCallable = Any
+_routeDecorator = Callable[
+    [_routeCallable, DefaultNamedArg(ISession, '__session__')],
+    _routeCallable
+]
 
 
 @attr.s(hash=False)
@@ -337,8 +355,8 @@ class Form(object):
     _fields = attr.ib(default=attr.Factory(list))
 
     if TYPE_CHECKING:
-        def __init__(self, authorized, fields=[]):
-            # type: (Callable[[_routeCallable, DefaultNamedArg(ISession, '__session__')], _routeCallable], List[Field]) -> None
+        def __init__(self, authorized, fields=None):
+            # type: (_routeDecorator, List[Field]) -> None
             pass
 
     def withFields(self, **fields):
@@ -470,9 +488,15 @@ class Form(object):
         return decorator
 
 
-    def renderer(self, route, action, method=u"POST", enctype=ENCTYPE_FORM_DATA,
-                 argument="form", encoding="utf-8"):
-        # type: (_routeCallable, Union[Text, bytes], Union[Text, bytes], Text, str, str) -> Callable[[Callable], Callable]
+    def renderer(
+            self,
+            route,              # type: _routeCallable
+            action,             # type: Union[Text, bytes]
+            method=u"POST",     # type: Union[Text, bytes]
+            enctype=ENCTYPE_FORM_DATA,  # type: Text
+            argument="form",            # type: str
+            encoding="utf-8"            # type: str
+    ):                          # type: (...) -> Callable[[Callable], Callable]
         if isinstance(action, bytes):
             taction = action.decode("charmap")
         else:
@@ -481,6 +505,7 @@ class Form(object):
             tmethod = method.decode("charmap")
         else:
             tmethod = method
+
         def decorator(function):
             # type: (Callable) -> Callable
             @modified("form renderer", function,

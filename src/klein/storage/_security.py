@@ -1,13 +1,13 @@
 
 from functools import partial
+from typing import Any, Callable, Optional, TYPE_CHECKING, Text, Tuple
 from unicodedata import normalize
 
 from passlib.context import CryptContext
 
-from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
+from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.internet.threads import deferToThread
 
-from typing import Callable, Text, Optional, TYPE_CHECKING, Tuple, Any
 if TYPE_CHECKING:
     Text, Callable, Deferred, Optional, Tuple, Any
 

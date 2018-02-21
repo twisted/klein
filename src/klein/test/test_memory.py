@@ -1,4 +1,6 @@
 
+from typing import Any
+
 from twisted.trial.unittest import SynchronousTestCase
 
 from zope.interface import Interface
@@ -7,7 +9,6 @@ from zope.interface.verify import verifyObject
 from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
-from typing import Any
 Any
 
 

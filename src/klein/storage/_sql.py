@@ -4,17 +4,11 @@ from collections import deque
 from datetime import datetime
 from functools import reduce
 from os import urandom
+from typing import (
+    Any, Callable, Dict, Iterable, List, TYPE_CHECKING, Text,
+    Type, TypeVar, cast
+)
 from uuid import uuid4
-
-from typing import Any, Callable, Type, TypeVar, TYPE_CHECKING, Iterable, Text, List, Dict, cast
-if TYPE_CHECKING:
-    import sqlalchemy
-    from twisted.internet.defer import Deferred
-    from twisted.internet.interfaces import IReactorThreads
-    from twisted.web.iweb import IRequest
-    from .._interfaces import SessionMechanism
-    Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text, List, sqlalchemy, SessionMechanism, Dict, IRequest
-    I = TypeVar('I')
 
 from alchimia import TWISTED_STRATEGY
 
@@ -37,16 +31,26 @@ from twisted.internet.defer import (
 from twisted.python.compat import unicode
 from twisted.python.failure import Failure
 
-from zope.interface import IInterface, implementedBy, implementer
+from zope.interface import implementedBy, implementer
+from zope.interface.interfaces import IInterface
 
 from ._security import checkAndReset, computeKeyText
 from .. import SessionProcurer
-
 from ..interfaces import (
     ISQLAuthorizer, ISQLSchemaComponent, ISession,
     ISessionProcurer, ISessionStore, ISimpleAccount, ISimpleAccountBinding,
     NoSuchSession, TransactionEnded
 )
+
+if TYPE_CHECKING:
+    import sqlalchemy
+    from twisted.internet.defer import Deferred
+    from twisted.internet.interfaces import IReactorThreads
+    from twisted.web.iweb import IRequest
+    from .._interfaces import SessionMechanism
+    (Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text, List,
+     sqlalchemy, SessionMechanism, Dict, IRequest, IInterface)
+    T = TypeVar('T')
 
 @implementer(ISession)
 @attr.s
@@ -57,8 +61,14 @@ class SQLSession(object):
     authenticatedBy = attr.ib()
 
     if TYPE_CHECKING:
-        def __init__(self, sessionStore, identifier, isConfidential, authenticatedBy):
-            # type: (AlchimiaSessionStore, Text, bool, SessionMechanism) -> None
+        def __init__(
+                self,
+                sessionStore,    # type: AlchimiaSessionStore
+                identifier,      # type: Text
+                isConfidential,  # type: bool
+                authenticatedBy  # type: SessionMechanism
+        ):
+            # type: (...) -> None
             pass
 
     def authorize(self, interfaces):
@@ -86,7 +96,7 @@ class SQLSession(object):
                     )
 
             def r(ignored):
-                # type: (I) -> Dict[str, Any]
+                # type: (T) -> Dict[str, Any]
                 return result
             return (gatherResults(ds).addCallback(r))
         return authzn
@@ -354,8 +364,13 @@ class AccountSessionBinding(object):
     _datastore = attr.ib()
 
     if TYPE_CHECKING:
-        def __init__(self, plugin, session, datastore):
-            # type: (AccountBindingStorePlugin, ISession, AlchimiaDataStore) -> None
+        def __init__(
+                self,
+                plugin,    # type: AccountBindingStorePlugin
+                session,   # type: ISession
+                datastore  # type: AlchimiaDataStore
+        ):
+            # type: (...) -> None
             pass
 
     def _account(self, accountID, username, email):
@@ -553,8 +568,15 @@ class SQLAccount(object):
     email = attr.ib()
 
     if TYPE_CHECKING:
-        def __init__(self, plugin, datastore, accountID, username, email):
-            # type: (ISQLSchemaComponent, AlchimiaDataStore, Text, Text, Text) -> None
+        def __init__(
+                self,
+                plugin,         # type: ISQLSchemaComponent
+                datastore,      # type: AlchimiaDataStore
+                accountID,      # type: Text
+                username,       # type: Text
+                email           # type: Text
+        ):
+            # type: (...) -> None
             pass
 
     def add_session(self, session):
@@ -639,8 +661,13 @@ class AccountBindingStorePlugin(object):
             yield transaction.execute(CreateTable(table))
 
 
-    def authzn_for_session(self, session_store, transaction, session):
-        # type: (AlchimiaSessionStore, Transaction, ISession) -> AccountSessionBinding
+    def authzn_for_session(
+            self,
+            session_store,      # type: AlchimiaSessionStore
+            transaction,        # type: Transaction
+            session             # type: ISession
+    ):
+        # type: (...) -> AccountSessionBinding
         return AccountSessionBinding(self, session, self._datastore)
 
 
@@ -675,8 +702,13 @@ class AccountLoginAuthorizer(object):
 
 
 @inlineCallbacks
-def upsert(engine, table, to_query, to_change):
-    # type: (Transaction, sqlalchemy.schema.Table, Dict[str, Any], Dict[str, Any]) -> Any
+def upsert(
+        engine,                 # type: Transaction
+        table,                  # type: sqlalchemy.schema.Table
+        to_query,               # type: Dict[str, Any]
+        to_change               # type: Dict[str, Any]
+):
+    # type: (...) -> Any
     """
     Try inserting, if inserting fails, then update.
     """
@@ -704,8 +736,13 @@ class IPTrackingProcurer(object):
     of the originating session.
     """
 
-    def __init__(self, metadata, datastore, procurer):
-        # type: (sqlalchemy.schema.MetaData, AlchimiaDataStore, ISessionProcurer) -> None
+    def __init__(
+            self,
+            metadata,           # type: sqlalchemy.schema.MetaData
+            datastore,          # type: AlchimiaDataStore
+            procurer            # type: ISessionProcurer
+    ):
+        # type: (...) -> None
         """
         Create an L{IPTrackingProcurer} from SQLAlchemy metadata, an alchimia
         data store, and an existing L{ISessionProcurer}.
@@ -780,7 +817,7 @@ class IPTrackingProcurer(object):
 
         @_.addCallback
         def showMe(result):
-            # type: (I) -> I
+            # type: (T) -> T
             return result
         return _
 
@@ -809,10 +846,7 @@ def openSessionStore(reactor, db_uri, component_creators=(),
             lambda metadata, store:
             IPTrackingProcurer(
                 metadata, store, procurer_from_store(
-                    next(iter(
-                        store.componentsProviding(
-                            ISessionStore)
-                )))),
+                    next(iter(store.componentsProviding(ISessionStore))))),
             AccountLoginAuthorizer,
         ] + list(component_creators)
     ).addCallback
@@ -856,15 +890,31 @@ class _FunctionWithAuthorizer(object):
 
     authorizer = None           # type: Any
 
-    def __call__(self, metadata, datastore, sessionStore, transaction, session):
-        # type: (sqlalchemy.schema.MetaData, AlchimiaDataStore, AlchimiaSessionStore, Transaction, ISession) -> Any
+    def __call__(
+            self,
+            metadata,           # type: sqlalchemy.schema.MetaData
+            datastore,          # type: AlchimiaDataStore
+            sessionStore,       # type: AlchimiaSessionStore
+            transaction,        # type: Transaction
+            session             # type: ISession
+    ):
+        # type: (...) -> Any
         """
-        
+        Signature for a function that can have an authorizer attached to it.
         """
 
+_authorizerFunction = Callable[
+    [sqlalchemy.schema.MetaData, AlchimiaDataStore, AlchimiaSessionStore,
+     Transaction, ISession],
+    Any
+]
 
-def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
-    # type: (Type, Callable[[Transaction, sqlalchemy.schema.MetaData], Deferred]) -> Callable[[Callable], _FunctionWithAuthorizer]
+_schemaFunction = Callable[[Transaction, sqlalchemy.schema.MetaData], Deferred]
+def authorizerFor(
+        authzn_for,                        # type: Type
+        schema=lambda txn, metadata: None  # type: _schemaFunction
+):
+    # type: (...) -> Callable[[Callable], _FunctionWithAuthorizer]
     """
     Declare an SQL authorizer, implemented by a given function.  Used like so::
 
@@ -886,7 +936,7 @@ def authorizerFor(authzn_for, schema=lambda txn, metadata: None):
     an_authzn = authzn_for
 
     def decorator(decorated):
-        # type: (Callable[[sqlalchemy.schema.MetaData, AlchimiaDataStore, AlchimiaSessionStore, Transaction, ISession], Any]) -> _FunctionWithAuthorizer
+        # type: (_authorizerFunction) -> _FunctionWithAuthorizer
         @implementer(ISQLAuthorizer, ISQLSchemaComponent)
         @attr.s
         class AnAuthorizer(object):

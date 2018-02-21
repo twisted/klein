@@ -1,4 +1,6 @@
 
+from typing import Any, Callable, TYPE_CHECKING, Union
+
 import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -8,11 +10,10 @@ from zope.interface import implementer
 from ._app import _call
 from ._decorators import bindable, modified
 from ._interfaces import (
-    ISession, ISessionProcurer, NoSuchSession, SessionMechanism,
-    TooLateForCookies, ISessionStore
+    ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
+    TooLateForCookies
 )
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     ISessionStore
 
@@ -70,14 +71,14 @@ class SessionProcurer(object):
 
         def __init__(
                 self,
-                store,                                # type: ISessionStore
-                maxAge=3600,                          # type: int
-                secureCookie=b"Klein-Secure-Session", # type: bytes
-                insecureCookie=b"Klein-INSECURE-Session", # type: bytes
-                cookieDomain=None,                        # type: _Optional[bytes]
-                cookiePath=b'/',                          # type: bytes
-                secureTokenHeader=b"X-Auth-Token",        # type: bytes
-                insecureTokenHeader=b"X-INSECURE-Auth-Token" # type: bytes
+                store,                                    # type: ISessionStore
+                maxAge=3600,                              # type: int
+                secureCookie=b"Klein-Secure-Session",      # type: bytes
+                insecureCookie=b"Klein-INSECURE-Session",  # type: bytes
+                cookieDomain=None,                 # type: _Optional[bytes]
+                cookiePath=b'/',                   # type: bytes
+                secureTokenHeader=b"X-Auth-Token",  # type: bytes
+                insecureTokenHeader=b"X-INSECURE-Auth-Token"  # type: bytes
         ):
             # type: (...) -> None
             pass
@@ -167,15 +168,18 @@ class SessionProcurer(object):
         returnValue(session)
 
 
-from typing import Union, Callable, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from twisted.web.iweb import IRequest
     from mypy_extensions import KwArg, VarArg, Arg
-    from zope.interface import IInterface
+    from zope.interface.interfaces import IInterface
     from typing import TypeVar, Optional as _Optional, Dict, Awaitable
     T = TypeVar('T')
-    IRequest, Arg, KwArg, VarArg, Callable, Any, IInterface, _Optional, Dict, Awaitable
+    (IRequest, Arg, KwArg, VarArg, Callable, Any, IInterface, _Optional, Dict,
+     Awaitable)
     _routeCallable = Any
+else:
+    def KwArg(t):
+        return t
 
 _procureProcurerType = Union[
     Callable[[Any], ISessionProcurer],
@@ -184,46 +188,9 @@ _procureProcurerType = Union[
 
 _kleinRenderable = Any
 _kleinCallable = Callable[..., _kleinRenderable]
-
-def requirer(procure_procurer):
-    # type: (_procureProcurerType) -> Callable[[Arg(_routeCallable, 'route'), KwArg(Any)], Callable[[_kleinCallable], _kleinCallable]]
-    def requires(route, **requestedRequirements):
-        # type: (_routeCallable, **Any) -> Callable[[_kleinCallable], _kleinCallable]
-        def toroute(thunk):
-            # type: (_kleinCallable) -> _kleinCallable
-            # FIXME: this should probably inspect the signature of 'thunk' to
-            # see if it has default arguments, rather than relying upon people
-            # to pass in Optional instances
-            optified = dict([(k, Required.maybe(v)) for k, v in requestedRequirements.items()])
-            any_required = any(v._required for v in optified.values())
-            session_set = set([Optional(ISession), Required(ISession)])
-            to_authorize = set(x._interface for x in
-                               (set(optified.values()) - session_set))
-
-            @modified("requirer", thunk, route)
-            @bindable
-            @inlineCallbacks
-            def routed(instance, request, *args, **kwargs):
-                # type: (object, IRequest, *Any, **Any) -> Any
-                newkw = kwargs.copy()
-                procu = _call(instance, procure_procurer)
-                session = yield (
-                    procu.procureSession(request, alwaysCreate=any_required)
-                )
-                values = ({} if session is None else
-                          (yield session.authorize(to_authorize)))
-                values[ISession] = session
-                for k, v in optified.items():
-                    oneval = v.retrieve(values)
-                    newkw[k] = oneval
-                returnValue(
-                    (yield _call(instance, thunk, request, *args, **newkw))
-                )
-            return thunk
-        return toroute
-    return requires
-
-
+_kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
+_requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
+                           Callable[[_kleinCallable], _kleinCallable]]
 
 @attr.s(frozen=True)
 class Optional(object):
@@ -251,7 +218,7 @@ class Required(object):
 
     @classmethod
     def maybe(cls, it):
-        # type: (Union[Optional, Required, object]) -> Union[Optional, Required]
+        # type: (Union[_Either, object]) -> _Either
         if isinstance(it, (Optional, Required)):
             return it
         return cls(it)
@@ -259,3 +226,47 @@ class Required(object):
     def retrieve(self, dict):
         # type: (Dict[IInterface, T]) -> T
         return dict[self._interface]
+
+_Either = Union[Optional, Required]
+
+
+def requirer(procure_procurer):
+    # type: (_procureProcurerType) -> _requirerResult
+    def requires(route, **requestedRequirements):
+        # type: (_routeCallable, **Any) -> _kleinDecorator
+        def toroute(thunk):
+            # type: (_kleinCallable) -> _kleinCallable
+            # FIXME: this should probably inspect the signature of 'thunk' to
+            # see if it has default arguments, rather than relying upon people
+            # to pass in Optional instances
+            optified = dict([
+                (k, Required.maybe(v))
+                for k, v in requestedRequirements.items()
+            ])
+            any_required = any(v._required for v in optified.values())
+            session_set = set([Optional(ISession), Required(ISession)])
+            to_authorize = set(x._interface for x in
+                               (set(optified.values()) - session_set))
+
+            @modified("requirer", thunk, route)
+            @bindable
+            @inlineCallbacks
+            def routed(instance, request, *args, **kwargs):
+                # type: (object, IRequest, *Any, **Any) -> Any
+                newkw = kwargs.copy()
+                procu = _call(instance, procure_procurer)
+                session = yield (
+                    procu.procureSession(request, alwaysCreate=any_required)
+                )
+                values = ({} if session is None else
+                          (yield session.authorize(to_authorize)))
+                values[ISession] = session
+                for k, v in optified.items():
+                    oneval = v.retrieve(values)
+                    newkw[k] = oneval
+                returnValue(
+                    (yield _call(instance, thunk, request, *args, **newkw))
+                )
+            return thunk
+        return toroute
+    return requires

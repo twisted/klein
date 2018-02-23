@@ -1,3 +1,4 @@
+# -*- test-case-name: klein.test.test_form -*-
 
 from __future__ import print_function, unicode_literals
 
@@ -187,10 +188,11 @@ class RenderableForm(object):
     """
     An L{IRenderable} representing a renderable form.
 
-    @ivar errors: a L{dict} mapping {L{Field}: L{ValidationError}}
+    @ivar prevalidationValues: a L{dict} mapping {L{Field}: L{list} of
+        L{unicode}}, representing the value that each field received as part of
+        the request.
 
-    @ivar prevalidation: a L{dict} mapping {L{Field}: L{list} of L{unicode}},
-        representing the value that each field received as part of the request.
+    @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
     _form = attr.ib()
     _session = attr.ib()
@@ -199,8 +201,8 @@ class RenderableForm(object):
     _enctype = attr.ib()
     _encoding = attr.ib()
 
-    prevalidation = attr.ib(default=attr.Factory(dict))
-    errors = attr.ib(default=attr.Factory(dict))
+    prevalidationValues = attr.ib(default=attr.Factory(dict))
+    validationErrors = attr.ib(default=attr.Factory(dict))
 
     if TYPE_CHECKING:
         def __init__(
@@ -211,11 +213,14 @@ class RenderableForm(object):
                 method,         # type: Text
                 enctype,        # type: Text
                 encoding,       # type: Union[Text, bytes]
-                prevalidation=None,  # type: Dict
-                errors=None          # type: Dict
+                prevalidationValues=None,  # type: Dict[Field, List[Text]]
+                validationErrors=None      # type: Dict[Field, ValidationError]
         ):
             # type: (...) -> None
             pass
+
+    ENCTYPE_FORM_DATA = 'multipart/form-data'
+    ENCTYPE_URL_ENCODED = 'application/x-www-form-urlencoded'
 
     def _fieldForCSRF(self):
         # type: () -> Field
@@ -243,8 +248,10 @@ class RenderableForm(object):
         any_submit = False
         for field in self._form._fields:
             yield attr.assoc(field,
-                             value=self.prevalidation.get(field, field.value),
-                             error=self.errors.get(field, None))
+                             value=self.prevalidationValues.get(
+                                 field, field.value
+                             ),
+                             error=self.validationErrors.get(field, None))
             if field.formInputType == "submit":
                 any_submit = True
         if not any_submit:
@@ -297,8 +304,14 @@ class RenderableForm(object):
 
 
 @bindable
-def defaultValidationFailureHandler(instance, request, renderable):
-    # type: (object, IRequest, IRenderable) -> Element
+def defaultValidationFailureHandler(
+        instance,               # type: Optional[object]
+        request,                # type: IRequest
+        form,                   # type: Form
+        prevalidationValues,    # type: Dict[Field, List[str]]
+        validationErrors        # type: Dict[Field, ValidationError]
+):
+    # type: (...) -> Element
     """
     This is the default validation failure handler, which will be used by
     L{Form.handler} in the case of any input validation failure when no other
@@ -320,16 +333,28 @@ def defaultValidationFailureHandler(instance, request, renderable):
 
     @return: Any object acceptable from a Klein route.
     """
-    return Element(TagLoader(renderable))
+    session = ISession(request)
+    renderable = RenderableForm(
+        form, session, u"/".join(
+            segment.decode("utf-8", errors='replace')
+            for segment in request.prepath
+        ),
+        request.method,
+        request.getHeader(b'content-type').split(b';')[0]
+        .decode("charmap"),
+        "utf-8", prevalidationValues, validationErrors,
+    )
 
-_failureHandler = Callable[[object, IRequest, IRenderable], Element]
+    return Element(TagLoader(renderable))
 
 class _HandlerTypeStub(object):
     """
     A type stub for a form handler (not to be confused with a validation error
     handler).
     """
-    validation_failureHandlers = None  # type: Dict[Form, _failureHandler]
+    __kleinFormValidationFailureHandlers__ = (
+        None
+    )                           # type: Dict[Form, _validationFailureHandler]
 
     def __call__(self, request, *a, **kw):
         # type: (IRequest, *Any, **Any) -> Any
@@ -343,7 +368,11 @@ _routeDecorator = Callable[
     [_routeCallable, DefaultNamedArg(ISession, '__session__')],
     _routeCallable
 ]
+_validationFailureHandler = Callable[
+    [Optional[object], IRequest, 'Form', Dict[str, str]], Element
+]
 
+validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
 
 @attr.s(hash=False)
 class Form(object):
@@ -353,11 +382,18 @@ class Form(object):
     """
     _authorized = attr.ib()
     _fields = attr.ib(default=attr.Factory(list))
+    _onValidationFailure = attr.ib(default=defaultValidationFailureHandler)
 
     if TYPE_CHECKING:
-        def __init__(self, authorized, fields=None):
-            # type: (_routeDecorator, List[Field]) -> None
+        def __init__(
+                self,
+                authorized,                   # type: _routeDecorator
+                fields=None,                  # type: List[Field]
+                onValidationFailure=None      # type: _validationFailureHandler
+        ):
+            # type: (...) -> None
             pass
+
 
     def withFields(self, **fields):
         # type: (**Field) -> Form
@@ -372,9 +408,6 @@ class Form(object):
             ]
         )
 
-
-    ENCTYPE_FORM_DATA = 'multipart/form-data'
-    ENCTYPE_URL_ENCODED = 'application/x-www-form-urlencoded'
 
     def onValidationFailureFor(self, handler):
         # type: (_HandlerTypeStub) -> Callable[[Callable], Callable]
@@ -407,7 +440,7 @@ class Form(object):
         """
         def decorate(decoratee):
             # type: (Callable) -> Callable
-            handler.validation_failureHandlers[self] = decoratee
+            handler.__kleinFormValidationFailureHandlers__[self] = decoratee
             return decoratee
         return decorate
 
@@ -435,10 +468,13 @@ class Form(object):
         """
         def decorator(function):
             # type: (Callable) -> Callable
-            vfhc = "validation_failureHandlers"
-            failureHandlers = getattr(function, vfhc, WeakKeyDictionary())
-            setattr(function, vfhc, failureHandlers)
-            failureHandlers[self] = defaultValidationFailureHandler
+            failureHandlers = getattr(
+                function, validationFailureHandlerAttribute, None
+            )                   # type: Dict[Form, _validationFailureHandler]
+            if failureHandlers is None:
+                failureHandlers = WeakKeyDictionary()
+                setattr(function, validationFailureHandlerAttribute,
+                        failureHandlers)
 
             @modified("form handler", function,
                       self._authorized(route, __session__=ISession))
@@ -455,11 +491,11 @@ class Form(object):
                         raise CrossSiteRequestForgery(token,
                                                       session.identifier)
                 validationErrors = {}
-                prevalidation_values = {}
+                prevalidationValues = {}
                 arguments = {}
                 for field in self._fields:
                     text = field.extractValue(request)
-                    prevalidation_values[field] = text
+                    prevalidationValues[field] = text
                     try:
                         value = field.validateValue(text)
                     except ValidationError as ve:
@@ -467,18 +503,12 @@ class Form(object):
                     else:
                         arguments[field.pythonArgumentName] = value
                 if validationErrors:
-                    renderable = RenderableForm(
-                        self, session, u"/".join(
-                            segment.decode("utf-8", errors='replace')
-                            for segment in request.prepath
-                        ),
-                        request.method,
-                        request.getHeader(b'content-type').split(b';')[0]
-                        .decode("charmap"),
-                        "utf-8", prevalidation_values, validationErrors,
+                    result = yield _call(
+                        instance,
+                        failureHandlers.get(self, self._onValidationFailure),
+                        request, self, prevalidationValues, validationErrors,
+                        *args, **kw
                     )
-                    result = yield _call(instance, failureHandlers[self],
-                                         request, renderable, *args, **kw)
                 else:
                     kw.update(arguments)
                     result = yield _call(instance, function, request,
@@ -493,7 +523,7 @@ class Form(object):
             route,              # type: _routeCallable
             action,             # type: Union[Text, bytes]
             method=u"POST",     # type: Union[Text, bytes]
-            enctype=ENCTYPE_FORM_DATA,  # type: Text
+            enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
             argument="form",            # type: str
             encoding="utf-8"            # type: str
     ):                          # type: (...) -> Callable[[Callable], Callable]
@@ -517,8 +547,8 @@ class Form(object):
                 session = kw.pop("__session__")
                 form = RenderableForm(self, session, taction, tmethod, enctype,
                                       encoding="utf-8",
-                                      prevalidation={},
-                                      errors={})
+                                      prevalidationValues={},
+                                      validationErrors={})
                 kw[argument] = form
                 result = yield _call(instance, function, request, *args, **kw)
                 returnValue(result)

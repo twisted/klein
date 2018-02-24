@@ -48,6 +48,7 @@ class _ISessionStore(Interface):
     Backing storage for sessions.
     """
 
+    @ifmethod
     def newSession(isConfidential, authenticatedBy):
         """
         Create a new L{ISession}.
@@ -57,6 +58,7 @@ class _ISessionStore(Interface):
         """
 
 
+    @ifmethod
     def loadSession(identifier, isConfidential, authenticatedBy):
         """
         Load a session given the given identifier and security properties.
@@ -77,6 +79,7 @@ class _ISessionStore(Interface):
         """
 
 
+    @ifmethod
     def sentInsecurely(identifiers):
         """
         The transport layer has detected that the given identifiers have been
@@ -261,7 +264,7 @@ class SessionMechanism(Names):
 
 
 
-class ISession(Interface):
+class _ISession(Interface):
     """
     An L{ISession} provider contains an identifier for the session, information
     about how the session was negotiated with the client software, and
@@ -320,7 +323,7 @@ class ISession(Interface):
         """
 
 if TYPE_CHECKING:
-    from ._storage.memory import MemorySessionStore
+    from ._storage.memory import MemorySessionStore, MemorySession
     from ._storage.sql import AlchimiaSessionStore
     from ._session import SessionProcurer
     from typing import Union
@@ -328,6 +331,8 @@ if TYPE_CHECKING:
     ISessionStore = Union[_ISessionStore, MemorySessionStore,
                           AlchimiaSessionStore]
     ISessionProcurer = Union[_ISessionProcurer, SessionProcurer]
+    ISession = Union[_ISession, MemorySession]
 else:
     ISessionStore = _ISessionStore
     ISessionProcurer = _ISessionProcurer
+    ISession = _ISession

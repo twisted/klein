@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_memory -*-
 from binascii import hexlify
 from os import urandom
-from typing import Any, Callable, Dict, List, TYPE_CHECKING, cast
+from typing import Any, Callable, Dict, List, TYPE_CHECKING, Text, cast
 
 import attr
 from attr import Factory
@@ -29,23 +29,12 @@ class MemorySession(object):
     An in-memory session.
     """
 
-    identifier = attr.ib()
-    isConfidential = attr.ib()
-    authenticatedBy = attr.ib()
-    _authorizationCallback = attr.ib()
-    _components = attr.ib(default=Factory(Componentized))
-
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                identifier,      # type: str
-                isConfidential,  # type: bool
-                authenticatedBy,  # type: SessionMechanism
-                authorizationCallback,  # type: _authCB
-                components=None         # type: Componentized
-        ):
-            # type: (...) -> None
-            pass
+    identifier = attr.ib(type=Text)
+    isConfidential = attr.ib(type=bool)
+    authenticatedBy = attr.ib(type=SessionMechanism)
+    _authorizationCallback = attr.ib(type=_authCB)
+    _components = attr.ib(default=Factory(Componentized),
+                          type=Componentized)
 
     def authorize(self, interfaces):
         # type: (List[IInterface]) -> Deferred
@@ -55,9 +44,8 @@ class MemorySession(object):
         """
         result = {}
         for interface in interfaces:
-            result[interface] = self._authorizationCallback(
-                interface, self, self._components
-            )
+            authCB = cast(_authCB, self._authorizationCallback)
+            result[interface] = authCB(interface, self, self._components)
         return succeed(result)
 
 
@@ -92,20 +80,13 @@ def declareMemoryAuthorizer(forInterface):
 @attr.s
 class MemorySessionStore(object):
     authorizationCallback = attr.ib(
+        type=_authFn,
         default=lambda interface, session, data: None
     )
-    _secureStorage = attr.ib(default=Factory(dict))
-    _insecureStorage = attr.ib(default=Factory(dict))
-
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                authorizationCallback=None,  # type: _authFn
-                secureStorage=None,          # type: Dict
-                insecureStorage=None         # type: Dict
-        ):
-            # type: (...) -> None
-            pass
+    _secureStorage = attr.ib(type=Dict[str, Any],
+                             default=cast(Dict[str, Any], Factory(dict)))
+    _insecureStorage = attr.ib(type=Dict[str, Any],
+                               default=cast(Dict[str, Any], Factory(dict)))
 
     @classmethod
     def fromAuthorizers(cls, authorizers):
@@ -145,7 +126,7 @@ class MemorySessionStore(object):
         storage = self._storage(isConfidential)
         identifier = hexlify(urandom(32)).decode('ascii')
         session = MemorySession(identifier, isConfidential, authenticatedBy,
-                                self.authorizationCallback)
+                                cast(_authFn, self.authorizationCallback))
         storage[identifier] = session
         return succeed(session)
 

@@ -1,6 +1,8 @@
 
 from __future__ import print_function, unicode_literals, absolute_import
 
+
+from sqlalchemy import Table
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
@@ -8,9 +10,10 @@ from klein import Klein, Plating, Form, Field
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer
 )
-
-
-from klein.storage.sql import openSessionStore, authorizerFor, tables
+from klein.storage.sql import (
+    openSessionStore, authorizerFor, tables
+)
+from klein.storage._sql import AlchimiaDataStore
 
 from twisted.web.util import Redirect
 
@@ -98,9 +101,9 @@ import attr
 
 @attr.s
 class Chirper(object):
-    datastore = attr.ib()
-    account = attr.ib()
-    chirpTable = attr.ib()
+    datastore = attr.ib(type=AlchimiaDataStore)
+    account = attr.ib(type=ISimpleAccount)
+    chirpTable = attr.ib(type=Table)
 
     def chirp(self, value):
         chirpTable = self.chirpTable
@@ -129,9 +132,9 @@ def authorize_chirper(metadata, datastore, session_store, transaction,
 
 @attr.s
 class ChirpReader(object):
-    datastore = attr.ib()
-    chirpTable = attr.ib()
-    accountTable = attr.ib()
+    datastore = attr.ib(type=AlchimiaDataStore)
+    chirpTable = attr.ib(type=Table)
+    accountTable = attr.ib(type=Table)
 
     def read_chirps(self, username):
         @self.datastore.sql

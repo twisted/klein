@@ -1,11 +1,12 @@
 
-from typing import Any, Callable, TYPE_CHECKING, Union
+from typing import Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
 
 import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from zope.interface import implementer
+from zope.interface.interfaces import IInterface
 
 from ._app import _call
 from ._decorators import bindable, modified
@@ -15,7 +16,15 @@ from ._interfaces import (
 )
 
 if TYPE_CHECKING:
-    ISessionStore
+    from twisted.web.iweb import IRequest
+    from mypy_extensions import KwArg, VarArg, Arg
+    from typing import TypeVar, Awaitable, Dict
+    T = TypeVar('T')
+    (IRequest, Arg, KwArg, VarArg, Callable, Dict, IInterface, Awaitable)
+else:
+    Arg = KwArg = lambda t, *x: t
+
+
 
 
 @implementer(ISessionProcurer)
@@ -56,16 +65,17 @@ class SessionProcurer(object):
     @type _insecureTokenHeader: L{bytes}
     """
 
-    _store = attr.ib()
+    _store = attr.ib(type=ISessionStore)
 
-    _maxAge = attr.ib(default=3600)
-    _secureCookie = attr.ib(default=b"Klein-Secure-Session")
-    _insecureCookie = attr.ib(default=b"Klein-INSECURE-Session")
-    _cookieDomain = attr.ib(default=None)
-    _cookiePath = attr.ib(default=b"/")
+    _maxAge = attr.ib(type=int, default=3600)
+    _secureCookie = attr.ib(type=bytes, default=b"Klein-Secure-Session")
+    _insecureCookie = attr.ib(type=bytes, default=b"Klein-INSECURE-Session")
+    _cookieDomain = attr.ib(type=_Optional[bytes], default=None)
+    _cookiePath = attr.ib(type=bytes, default=b"/")
 
-    _secureTokenHeader = attr.ib(default=b"X-Auth-Token")
-    _insecureTokenHeader = attr.ib(default=b"X-INSECURE-Auth-Token")
+    _secureTokenHeader = attr.ib(type=bytes, default=b"X-Auth-Token")
+    _insecureTokenHeader = attr.ib(type=bytes,
+                                   default=b"X-INSECURE-Auth-Token")
 
     if TYPE_CHECKING:
 
@@ -85,8 +95,8 @@ class SessionProcurer(object):
 
     @inlineCallbacks
     def procureSession(self, request, forceInsecure=False, alwaysCreate=True):
-        # type: (IRequest, bool, bool) -> Awaitable[ISession]
-        alreadyProcured = ISession(request, None)
+        # type: (IRequest, bool, bool) -> Any
+        alreadyProcured = request.getComponent(ISession)
         if alreadyProcured is not None:
             returnValue(alreadyProcured)
 
@@ -168,17 +178,6 @@ class SessionProcurer(object):
         returnValue(session)
 
 
-if TYPE_CHECKING:
-    from twisted.web.iweb import IRequest
-    from mypy_extensions import KwArg, VarArg, Arg
-    from zope.interface.interfaces import IInterface
-    from typing import TypeVar, Optional as _Optional, Dict, Awaitable
-    T = TypeVar('T')
-    (IRequest, Arg, KwArg, VarArg, Callable, IInterface, _Optional, Dict,
-     Awaitable)
-else:
-    Arg = KwArg = lambda t, *x: t
-
 _procureProcurerType = Union[
     Callable[[Any], ISessionProcurer],
     Callable[[], ISessionProcurer]
@@ -193,13 +192,8 @@ _requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
 
 @attr.s(frozen=True)
 class Optional(object):
-    _interface = attr.ib()
+    _interface = attr.ib(type=IInterface)
     _required = False
-
-    if TYPE_CHECKING:
-        def __init__(self, interface):
-            # type: (IInterface) -> None
-            pass
 
     def retrieve(self, dict):
         # type: (Dict[IInterface, T]) -> _Optional[T]
@@ -207,7 +201,7 @@ class Optional(object):
 
 @attr.s(frozen=True)
 class Required(object):
-    _interface = attr.ib()
+    _interface = attr.ib(type=IInterface)
     _required = True
 
     if TYPE_CHECKING:

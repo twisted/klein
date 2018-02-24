@@ -6,14 +6,22 @@ HTTP headers API.
 """
 
 from typing import (
-    AnyStr, Iterable, List, MutableSequence, Sequence, Text, Tuple, Union
+    AnyStr, Iterable, List, MutableSequence, Sequence, TYPE_CHECKING, Text,
+    Tuple, Union, cast
 )
 
-from attr import attrib, attrs
+from attr import Factory, attrib, attrs
 
 from zope.interface import Attribute, Interface, implementer
 
 AnyStr, Iterable, List  # Silence linter
+
+if TYPE_CHECKING:
+    ifmethod = staticmethod
+else:
+    def ifmethod(x):
+        # type: (T) -> T
+        return x
 
 
 __all__ = ()
@@ -28,7 +36,7 @@ RawHeaders = Sequence[RawHeader]
 MutableRawHeaders = MutableSequence[RawHeader]
 
 
-class IHTTPHeaders(Interface):
+class _IHTTPHeaders(Interface):
     """
     HTTP entity headers.
 
@@ -87,7 +95,7 @@ class IHTTPHeaders(Interface):
 
 
 
-class IMutableHTTPHeaders(IHTTPHeaders):
+class IMutableHTTPHeaders(_IHTTPHeaders):
     """
     Mutable HTTP entity headers.
     """
@@ -104,6 +112,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         """
 
 
+    @ifmethod
     def addValue(name, value):
         # type: (AnyStr, AnyStr) -> None
         """
@@ -255,7 +264,7 @@ def rawHeaderNameAndValue(name, value):
 
 # Implementation
 
-@implementer(IHTTPHeaders)
+@implementer(_IHTTPHeaders)
 @attrs(frozen=True)
 class FrozenHTTPHeaders(object):
     """
@@ -263,7 +272,7 @@ class FrozenHTTPHeaders(object):
     """
 
     rawHeaders = attrib(
-        convert=normalizeRawHeadersFrozen,
+        converter=normalizeRawHeadersFrozen,
         default=(),
     )  # type: RawHeaders
 
@@ -282,8 +291,8 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=normalizeRawHeadersMutable,
-        default=(),
+        converter=normalizeRawHeadersMutable,
+        default=cast(MutableRawHeaders, Factory(list)),
     )  # type: MutableRawHeaders
 
 
@@ -308,3 +317,11 @@ class MutableHTTPHeaders(object):
     def addValue(self, name, value):
         # type: (AnyStr, AnyStr) -> None
         self._rawHeaders.append(rawHeaderNameAndValue(name, value))
+
+
+if TYPE_CHECKING:
+    from ._headers_compat import HTTPHeadersWrappingHeaders
+    IHTTPHeaders = Union[FrozenHTTPHeaders, _IHTTPHeaders,
+                         HTTPHeadersWrappingHeaders]
+else:
+    IHTTPHeaders = _IHTTPHeaders

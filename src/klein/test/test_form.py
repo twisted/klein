@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Text
+from typing import List, TYPE_CHECKING, Text
 
 import attr
 
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 @attr.s(hash=False)
 class TestObject(object):
-    sessionStore = attr.ib()
-    calls = attr.ib(attr.Factory(list))
+    sessionStore = attr.ib(type=ISessionStore)
+    calls = attr.ib(attr.Factory(list), type=List)
 
     if TYPE_CHECKING:
         def __init__(self, sessionStore):

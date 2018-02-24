@@ -55,10 +55,10 @@ if TYPE_CHECKING:
 @implementer(ISession)
 @attr.s
 class SQLSession(object):
-    _sessionStore = attr.ib()
-    identifier = attr.ib()
-    isConfidential = attr.ib()
-    authenticatedBy = attr.ib()
+    _sessionStore = attr.ib(type='AlchimiaSessionStore')
+    identifier = attr.ib(type=Text)
+    isConfidential = attr.ib(type=bool)
+    authenticatedBy = attr.ib(type=SessionMechanism)
 
     if TYPE_CHECKING:
         def __init__(
@@ -79,8 +79,8 @@ class SQLSession(object):
         @datastore.sql
         def authzn(txn):
             # type: (Transaction) -> Deferred
-            result = {}
-            ds = []
+            result = {}         # type: Dict[IInterface, Deferred]
+            ds = []             # type: List[Deferred]
             authorizers = datastore.componentsProviding(ISQLAuthorizer)
             for a in authorizers:
                 # This should probably do something smart with interface
@@ -108,16 +108,11 @@ class SessionIPInformation(object):
     """
     Information about a session being used from a given IP address.
     """
-    id = attr.ib(validator=an(text_type))
-    ip = attr.ib(validator=an(text_type))
-    when = attr.ib(validator=an(datetime))
+    id = attr.ib(validator=an(text_type), type=Text)
+    ip = attr.ib(validator=an(text_type), type=Text)
+    when = attr.ib(validator=an(datetime), type=datetime)
 
-    if TYPE_CHECKING:
-        def __init__(self, id, ip, when):
-            # type: (Text, Text, datetime) -> None
-            pass
-
-
+_sqlAlchemyConnection = Any
 
 @attr.s
 class Transaction(object):
@@ -125,12 +120,8 @@ class Transaction(object):
     Wrapper around a SQLAlchemy connection which is invalidated when the
     transaction is committed or rolled back.
     """
-    _connection = attr.ib()
-    _stopped = attr.ib(default=False)
-    if TYPE_CHECKING:
-        def __init__(self, connection):
-            # type: (Any) -> None
-            pass
+    _connection = attr.ib(type=_sqlAlchemyConnection)
+    _stopped = attr.ib(type=Text, default=u"")
 
     def execute(self, statement, *multiparams, **params):
         # type: (Any, *Any, **Any) -> Deferred
@@ -151,14 +142,9 @@ class AlchimiaDataStore(object):
     database, run transactions, and manage schema metadata.
     """
 
-    _engine = attr.ib()
-    _components = attr.ib()
-    _free_connections = attr.ib(default=Factory(deque))
-
-    if TYPE_CHECKING:
-        def __init__(self, engine, components):
-            # type: (sqlalchemy.engine.Engine, List[Any]) -> None
-            pass
+    _engine = attr.ib(type=_sqlAlchemyConnection)
+    _components = attr.ib(type=List[Any])
+    _freeConnections = attr.ib(default=Factory(deque), type=deque)
 
     @inlineCallbacks
     def sql(self, callable):
@@ -176,7 +162,7 @@ class AlchimiaDataStore(object):
             fails when the transaction is rolled back.
         """
         try:
-            cxn = (self._free_connections.popleft() if self._free_connections
+            cxn = (self._freeConnections.popleft() if self._freeConnections
                    else (yield self._engine.connect()))
             sqla_txn = yield cxn.begin()
             txn = Transaction(cxn)
@@ -193,7 +179,7 @@ class AlchimiaDataStore(object):
                 yield sqla_txn.commit()
                 returnValue(result)
         finally:
-            self._free_connections.append(cxn)
+            self._freeConnections.append(cxn)
 
 
     def componentsProviding(self, interface):
@@ -359,19 +345,10 @@ class AccountSessionBinding(object):
     (Stateless) binding between an account and a session, so that sessions can
     attach to, detach from, .
     """
-    _plugin = attr.ib()
-    _session = attr.ib()
-    _datastore = attr.ib()
 
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                plugin,    # type: AccountBindingStorePlugin
-                session,   # type: ISession
-                datastore  # type: AlchimiaDataStore
-        ):
-            # type: (...) -> None
-            pass
+    _plugin = attr.ib(type='AccountBindingStorePlugin')
+    _session = attr.ib(type=ISession)
+    _datastore = attr.ib(type=AlchimiaDataStore)
 
     def _account(self, accountID, username, email):
         # type: (Text, Text, Text) -> SQLAccount
@@ -507,9 +484,9 @@ class AccountSessionBinding(object):
         acs = self._plugin.account_session_table
         # XXX FIXME this is a bad way to access the table, since the table
         # is not actually part of the interface passed here
-        sipt = (next(self._datastore.componentsProviding(
+        sipt = (next(iter(self._datastore.componentsProviding(
             implementedBy(IPTrackingProcurer)
-        ))._session_ip_table)
+        )))._session_ip_table)
 
         @self._datastore.sql
         @inlineCallbacks
@@ -561,23 +538,12 @@ class SQLAccount(object):
     An implementation of L{ISimpleAccount} backed by an Alchimia data store.
     """
 
-    _plugin = attr.ib()
-    _datastore = attr.ib()
-    accountID = attr.ib()
-    username = attr.ib()
-    email = attr.ib()
+    _plugin = attr.ib(type='AccountBindingStorePlugin')
+    _datastore = attr.ib(type=AlchimiaDataStore)
+    accountID = attr.ib(type=Text)
+    username = attr.ib(type=Text)
+    email = attr.ib(type=Text)
 
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                plugin,         # type: ISQLSchemaComponent
-                datastore,      # type: AlchimiaDataStore
-                accountID,      # type: Text
-                username,       # type: Text
-                email           # type: Text
-        ):
-            # type: (...) -> None
-            pass
 
     def add_session(self, session):
         # type: (ISession) -> Deferred
@@ -940,8 +906,8 @@ def authorizerFor(
         @implementer(ISQLAuthorizer, ISQLSchemaComponent)
         @attr.s
         class AnAuthorizer(object):
-            metadata = attr.ib()
-            datastore = attr.ib()
+            metadata = attr.ib(type=sqlalchemy.schema.MetaData)
+            datastore = attr.ib(type=AlchimiaDataStore)
 
             authzn_for = an_authzn
 

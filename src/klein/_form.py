@@ -4,8 +4,8 @@ from __future__ import print_function, unicode_literals
 
 from itertools import count
 from typing import (
-    Any, AnyStr, Callable, Dict, Iterable, List, Optional,
-    TYPE_CHECKING, Text, Union
+    Any, AnyStr, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Text,
+    Union, cast
 )
 from weakref import WeakKeyDictionary
 
@@ -61,15 +61,15 @@ class Field(object):
     @ivar converter: The converter.
     """
 
-    converter = attr.ib()
-    formInputType = attr.ib()
-    pythonArgumentName = attr.ib(default=None)
-    formFieldName = attr.ib(default=None)
-    formLabel = attr.ib(default=None)
-    noLabel = attr.ib(default=False)
-    value = attr.ib(default=u"")
-    error = attr.ib(default=None)
-    order = attr.ib(default=attr.Factory(lambda: next(count())))
+    converter = attr.ib(type=Callable[[AnyStr], Any])
+    formInputType = attr.ib(type=str)
+    pythonArgumentName = attr.ib(type=Optional[str], default=None)
+    formFieldName = attr.ib(type=Optional[str], default=None)
+    formLabel = attr.ib(type=Optional[str], default=None)
+    noLabel = attr.ib(type=bool, default=False)
+    value = attr.ib(type=Text, default=u"")
+    error = attr.ib(type=ValidationError, default=None)
+    order = attr.ib(type=int, default=attr.Factory(lambda: next(count())))
 
     def maybeNamed(self, name):
         # type: (str) -> Field
@@ -112,12 +112,17 @@ class Field(object):
 
 
     def extractValue(self, request):
-        # type: (IRequest) -> List[bytes]
+        # type: (IRequest) -> Text
         """
-        extract some bytes value from the request
+        Extract a text value from the request.
         """
-        return (request.args.get(self.formFieldName.encode("utf-8")) or
-                [b""])[0]
+        fieldName = self.formFieldName
+        if fieldName is None:
+            raise ValueError("Cannot extract unnamed form field.")
+        return (
+            (request.args.get(fieldName.encode("utf-8")) or [b""])[0]
+            .decode("utf-8")
+        )
 
 
     def validateValue(self, value):
@@ -150,7 +155,7 @@ class Field(object):
 
     @classmethod
     def hidden(cls, name, value):
-        # type: (str, AnyStr) -> Field
+        # type: (str, Text) -> Field
         """
         Shorthand for a hidden field.
         """
@@ -167,7 +172,7 @@ class Field(object):
         An integer within the range [minimum, maximum].
         """
         def bounded_int(text):
-            # type: (str) -> Any
+            # type: (AnyStr) -> Any
             try:
                 value = int(text)
             except ValueError:
@@ -179,7 +184,6 @@ class Field(object):
                     raise ValidationError("value must be <=" + repr(maximum))
                 return value
         return cls(converter=bounded_int, formInputType="number")
-
 
 
 @implementer(IRenderable)
@@ -194,30 +198,20 @@ class RenderableForm(object):
 
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
-    _form = attr.ib()
-    _session = attr.ib()
-    _action = attr.ib()
-    _method = attr.ib()
-    _enctype = attr.ib()
-    _encoding = attr.ib()
-
-    prevalidationValues = attr.ib(default=attr.Factory(dict))
-    validationErrors = attr.ib(default=attr.Factory(dict))
-
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                form,           # type: Form
-                session,        # type: ISession
-                action,         # type: Text
-                method,         # type: Text
-                enctype,        # type: Text
-                encoding,       # type: Union[Text, bytes]
-                prevalidationValues=None,  # type: Dict[Field, List[Text]]
-                validationErrors=None      # type: Dict[Field, ValidationError]
-        ):
-            # type: (...) -> None
-            pass
+    _form = attr.ib(type='Form')
+    _session = attr.ib(type=ISession)
+    _action = attr.ib(type=str)
+    _method = attr.ib(type=str)
+    _enctype = attr.ib(type=str)
+    _encoding = attr.ib(type=str)
+    prevalidationValues = attr.ib(
+        type=Dict[Field, List[Text]],
+        default=cast(Dict[Field, List[Text]], attr.Factory(dict))
+    )
+    validationErrors = attr.ib(
+        type=Dict[Field, ValidationError],
+        default=cast(Dict[Field, ValidationError], attr.Factory(dict))
+    )
 
     ENCTYPE_FORM_DATA = 'multipart/form-data'
     ENCTYPE_URL_ENCODED = 'application/x-www-form-urlencoded'
@@ -333,7 +327,7 @@ def defaultValidationFailureHandler(
 
     @return: Any object acceptable from a Klein route.
     """
-    session = ISession(request)
+    session = request.getComponent(ISession)
     renderable = RenderableForm(
         form, session, u"/".join(
             segment.decode("utf-8", errors='replace')
@@ -365,7 +359,7 @@ class _HandlerTypeStub(object):
 
 _routeCallable = Any
 _routeDecorator = Callable[
-    [_routeCallable, DefaultNamedArg(ISession, '__session__')],
+    [_routeCallable, DefaultNamedArg(Any, '__session__')],
     _routeCallable
 ]
 _validationFailureHandler = Callable[
@@ -380,20 +374,14 @@ class Form(object):
     A L{Form} object which includes an authorizer, and may therefore be bound
     (via L{Form.bind}) to an individual session, producing a L{RenderableForm}.
     """
-    _authorized = attr.ib()
-    _fields = attr.ib(default=attr.Factory(list))
-    _onValidationFailure = attr.ib(default=defaultValidationFailureHandler)
-
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                authorized,                   # type: _routeDecorator
-                fields=None,                  # type: List[Field]
-                onValidationFailure=None      # type: _validationFailureHandler
-        ):
-            # type: (...) -> None
-            pass
-
+    _authorized = attr.ib(type=_routeDecorator)
+    _fields = attr.ib(default=cast(List[Field], attr.Factory(list)),
+                      type=List[Field])
+    _onValidationFailure = attr.ib(
+        default=defaultValidationFailureHandler,
+        # Untyped because of https://github.com/python/mypy/issues/708
+        type=Any
+    )
 
     def withFields(self, **fields):
         # type: (**Field) -> Form
@@ -476,8 +464,10 @@ class Form(object):
                 setattr(function, validationFailureHandlerAttribute,
                         failureHandlers)
 
+            authorized = cast(_routeDecorator, self._authorized)
+
             @modified("form handler", function,
-                      self._authorized(route, __session__=ISession))
+                      authorized(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def decoratedHandler(instance, request, *args, **kw):
@@ -498,10 +488,15 @@ class Form(object):
                     prevalidationValues[field] = text
                     try:
                         value = field.validateValue(text)
+                        argName = field.pythonArgumentName
+                        if argName is None:
+                            raise ValidationError(
+                                "Form fields must all have names."
+                            )
                     except ValidationError as ve:
                         validationErrors[field] = ve
                     else:
-                        arguments[field.pythonArgumentName] = value
+                        arguments[argName] = value
                 if validationErrors:
                     result = yield _call(
                         instance,
@@ -538,8 +533,10 @@ class Form(object):
 
         def decorator(function):
             # type: (Callable) -> Callable
+            authorized = cast(_routeDecorator, self._authorized)
+
             @modified("form renderer", function,
-                      self._authorized(route, __session__=ISession))
+                      authorized(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):

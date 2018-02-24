@@ -5,6 +5,7 @@ Templating wrapper support for Klein.
 """
 
 from json import dumps
+from typing import Any, Callable
 
 import attr
 
@@ -195,9 +196,9 @@ class Plating(object):
         instance's L{Plating._elementify} to construct a
         L{PlatedElement}.
         """
-        _plating = attr.ib()
-        _function = attr.ib()
-        _instance = attr.ib()
+        _plating = attr.ib(type='Plating')
+        _function = attr.ib(type=Callable[..., Any])
+        _instance = attr.ib(type=object)
 
         def __call__(self, *args, **kwargs):
             return self._function(*args, **kwargs)

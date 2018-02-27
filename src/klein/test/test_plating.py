@@ -6,34 +6,32 @@ from __future__ import (
     absolute_import, division, print_function, unicode_literals
 )
 
+import json
+from functools import partial
+from string import printable
+
 import attr
 
-from constantly import Names, NamedConstant
+from constantly import NamedConstant, Names
 
-from functools import partial
-
-import json
-
-from hypothesis import given, strategies as st, settings
-
-from string import printable
+from hypothesis import given, settings, strategies as st
 
 from twisted.internet.defer import Deferred, succeed
 from twisted.internet.task import Clock, Cooperator, TaskStopped
-from twisted.web.error import FlattenerError, MissingRenderMethod
-from twisted.web.template import slot, tags
 from twisted.test.proto_helpers import StringTransport
 from twisted.trial import unittest
+from twisted.web.error import FlattenerError, MissingRenderMethod
+from twisted.web.template import slot, tags
 
 from .test_resource import _render, requestMock
 from .util import TestCase
+from .. import Klein, Plating
 from .._plating import (
     ATOM_TYPES,
     PlatedElement,
     ProduceJSON,
     resolveDeferredObjects
 )
-from .. import Klein, Plating
 
 page = Plating(
     defaults={
@@ -248,8 +246,9 @@ class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
         resolves to an object that contains no L{Deferred}s.
         """
         deferredValues = []
+        choose = st.booleans()
 
-        def maybeWrapInDeferred(value, choose=st.booleans()):
+        def maybeWrapInDeferred(value):
             if data.draw(choose):
                 deferredValues.append(DeferredValue(value))
                 return deferredValues[-1].deferred
@@ -278,7 +277,9 @@ class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
         A L{PlatedElement} within a JSON serializable object replaced
         by its JSON representation.
         """
-        def injectPlatingElements(value, choose=st.booleans()):
+        choose = st.booleans()
+
+        def injectPlatingElements(value):
             if data.draw(choose) and isinstance(value, dict):
                 return PlatedElement(slot_data=value,
                                      preloaded=tags.html(),

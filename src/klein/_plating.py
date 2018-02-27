@@ -4,29 +4,34 @@
 Templating wrapper support for Klein.
 """
 
+from functools import partial
 from json import JSONEncoder
+from operator import setitem
+from typing import Any, Tuple, cast
 
 import attr
-from functools import partial
-from operator import setitem
 
 from six import integer_types, string_types, text_type
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.interfaces import IPushProducer
 from twisted.internet.task import cooperate
-from twisted.web.server import NOT_DONE_YET
 from twisted.web.error import MissingRenderMethod
+from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import Element, TagLoader
+
+from zope.interface import implementer
 
 from ._app import _call
 from ._decorators import bindable, modified
 
-from zope.interface import implementer
 
-
-ATOM_TYPES = integer_types + string_types + (float, None.__class__)
-
+# https://github.com/python/mypy/issues/224
+ATOM_TYPES = (
+    cast(Tuple[Any, ...], integer_types) +
+    cast(Tuple[Any, ...], string_types) +
+    cast(Tuple[Any, ...], (float, None.__class__))
+)
 
 def _should_return_json(request):
     """

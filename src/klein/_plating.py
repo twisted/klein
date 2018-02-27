@@ -4,7 +4,7 @@
 Templating wrapper support for Klein.
 """
 
-from json import dumps
+from json import JSONEncoder
 
 import attr
 from functools import partial
@@ -12,12 +12,17 @@ from operator import setitem
 
 from six import integer_types, string_types, text_type
 
-from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.interfaces import IPushProducer
+from twisted.internet.task import cooperate
+from twisted.web.server import NOT_DONE_YET
 from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader
 
 from ._app import _call
 from ._decorators import bindable, modified
+
+from zope.interface import implementer
 
 
 ATOM_TYPES = integer_types + string_types + (float, None.__class__)
@@ -162,6 +167,81 @@ class PlatedElement(Element):
             raise MissingRenderMethod(self, name)
 
 
+@implementer(IPushProducer)
+@attr.s
+class ProduceJSON(object):
+    """
+    A push producer that accepts a JSON-serializable value and
+    iteratively encodes it it to a consumer.
+
+    @ivar _value: The value to serialize to JSON.
+
+    @ivar _encoding: The encoding of the serialized JSON.
+
+    @ivar _cooperate: A callable that cooperativel schedules an
+        iterator.  See L{cooperate}.
+
+    @see: U{http://as.ynchrono.us/2010/06/asynchronous-json_18.html}
+    """
+
+    _value = attr.ib()
+    _encoding = attr.ib()
+    _cooperate = attr.ib()
+
+
+    def beginProducing(self, consumer):
+        """
+        Begin writing encoded JSON to a consumer.
+
+        @return: A L{Deferred} that fires when all JSON has been written.
+        """
+        self._consumer = consumer
+        self._jsonEncodingIterable = JSONEncoder().iterencode(self._value)
+        self._task = self._cooperate(self._produce())
+        done = self._task.whenDone()
+        done.addBoth(self._unregister)
+        self._consumer.registerProducer(self, True)
+        return done
+
+
+    def pauseProducing(self):
+        """
+        Suspend JSON encoding.
+        """
+        self._task.pause()
+
+
+    def resumeProducing(self):
+        """
+        Resume JSON encoding.
+        """
+        self._task.resume()
+
+
+    def stopProducing(self):
+        """
+        Stop JSON encoding.
+        """
+        self._task.stop()
+
+    def _produce(self):
+        """
+        Iterate over the JSON encoder's encoding iterable and write
+        the encoded results to the consumer.
+        """
+        for textChunk in self._jsonEncodingIterable:
+            binaryChunk = textChunk.encode(self._encoding)
+            self._consumer.write(binaryChunk)
+            yield None
+
+    def _unregister(self, passthrough):
+        """
+        Unregister this producer from its consumer.
+        """
+        self._consumer.unregisterProducer()
+        return passthrough
+
+
 
 class Plating(object):
     """
@@ -171,6 +251,9 @@ class Plating(object):
     """
 
     CONTENT = "klein:plating:content"
+
+    _cooperate = staticmethod(cooperate)
+
 
     def __init__(self, defaults=None, tags=None,
                  presentation_slots=()):
@@ -183,6 +266,15 @@ class Plating(object):
     def routed(self, routing, tags):
         """
         """
+        encoding = u'utf-8'
+
+        def setContentType(request, text_type):
+            request.setHeader(
+                b'content-type', (u'text/{format}; charset={encoding}'
+                                  .format(format=text_type, encoding=encoding)
+                                  .encode("ascii"))
+            )
+
         def mydecorator(method):
             loader = TagLoader(tags)
 
@@ -196,19 +288,15 @@ class Plating(object):
                     json_data.update(data)
                     for ignored in self._presentationSlots:
                         json_data.pop(ignored, None)
-                    text_type = u'json'
                     ready = yield resolveDeferredObjects(json_data)
-                    result = dumps(ready)
+                    setContentType(request, u'json')
+                    producer = ProduceJSON(ready, encoding, self._cooperate)
+                    yield producer.beginProducing(request)
+                    returnValue(NOT_DONE_YET)
                 else:
                     data[self.CONTENT] = loader.load()
-                    text_type = u'html'
-                    result = self._elementify(instance, data)
-                request.setHeader(
-                    b'content-type', (u'text/{format}; charset=utf-8'
-                                      .format(format=text_type)
-                                      .encode("charmap"))
-                )
-                returnValue(result)
+                    setContentType(request, u'html')
+                    returnValue(self._elementify(instance, data))
             return method
         return mydecorator
 

@@ -7,15 +7,20 @@ Templating wrapper support for Klein.
 from json import dumps
 
 import attr
+from functools import partial
+from operator import setitem
 
-from six import integer_types, text_type
+from six import integer_types, string_types, text_type
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader
 
 from ._app import _call
 from ._decorators import bindable, modified
+
+
+ATOM_TYPES = integer_types + string_types + (float, None.__class__)
 
 
 def _should_return_json(request):
@@ -25,17 +30,74 @@ def _should_return_json(request):
     return bool(request.args.get(b"json"))
 
 
-def json_serialize(item):
+@inlineCallbacks
+def resolveDeferredObjects(root):
     """
-    A function similar to L{dumps}.
+    Wait on possibly nested L{Deferred}s that represent a JSON
+    serializable object.
+
+    @param root: A JSON-serializable object that may contain
+        L{Deferred}s, or a Deferred that will resolve to a
+        JSON-serializable object
+
+    @return: A L{Deferred} that fires with a L{Deferred}-free version
+        of C{root}, or that fails with the first exception
+        encountered.
     """
-    def helper(unknown):
-        if isinstance(unknown, PlatedElement):
-            return unknown._asJSON()
+
+    result = [None]
+    setResult = partial(setitem, result, 0)
+    stack = [(root, setResult)]
+
+    while stack:
+        mightBeDeferred, setter = stack.pop()
+        obj = yield mightBeDeferred
+        if isinstance(obj, ATOM_TYPES):
+            setter(obj)
+        elif isinstance(obj, list):
+            parent = [None] * len(obj)
+            setter(parent)
+            stack.extend(
+                reversed([
+                    (child, partial(setitem, parent, i))
+                    for i, child in enumerate(obj)
+                ])
+            )
+        elif isinstance(obj, tuple):
+            parent = [None] * len(obj)
+            setter(tuple(parent))
+
+            def setTupleItem(i, value, parent=parent, setter=setter):
+                parent[i] = value
+                setter(tuple(parent))
+
+            stack.extend(
+                reversed([
+                    (child, partial(setTupleItem, i))
+                    for i, child in enumerate(obj)
+                ])
+            )
+        elif isinstance(obj, dict):
+            parent = {}
+            setter(parent)
+            for key, value in reversed(list(obj.items())):
+                pair = [None, None]
+                setKey = partial(setitem, pair, 0)
+
+                def setValue(value, pair=pair, parent=parent):
+                    pair[1] = value
+                    parent.update([pair])
+
+                stack.append((value, setValue))
+                stack.append((key, setKey))
+        elif isinstance(obj, PlatedElement):
+            stack.append((obj._asJSON(), setter))
         else:
             raise TypeError("{input} not JSON serializable"
-                            .format(input=unknown))
-    return dumps(item, default=helper)
+                            .format(input=obj))
+
+    returnValue(result[0])
+
 
 
 def _extra_types(input):
@@ -135,7 +197,8 @@ class Plating(object):
                     for ignored in self._presentationSlots:
                         json_data.pop(ignored, None)
                     text_type = u'json'
-                    result = json_serialize(json_data)
+                    ready = yield resolveDeferredObjects(json_data)
+                    result = dumps(ready)
                 else:
                     data[self.CONTENT] = loader.load()
                     text_type = u'html'

@@ -226,7 +226,7 @@ class TransformJSONObjectTests(unittest.SynchronousTestCase):
         """
         self.assertRaises(AssertionError,
                           transformJSONObject,
-                          set(), lambda: None)
+                          set(), list.append)
 
 
 class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):

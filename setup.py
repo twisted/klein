@@ -27,6 +27,7 @@ if __name__ == "__main__":
         use_incremental=True,
         install_requires=[
             "attrs",
+            "constantly",
             "hyperlink",
             "incremental",
             "six",

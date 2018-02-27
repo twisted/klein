@@ -304,11 +304,19 @@ class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
         fail with an informative L{TypeError}.
 
         """
+
+        @attr.s
+        class ConsistentRepr(object):
+            """
+            Objects with a predictable repr
+            """
+
         exception = self.failureResultOf(
-            resolveDeferredObjects(frozenset())
+            resolveDeferredObjects(ConsistentRepr())
         ).value
         self.assertIsInstance(exception, TypeError)
-        self.assertIn("frozenset([]) not JSON serializable", str(exception))
+        self.assertIn("ConsistentRepr() not JSON serializable",
+                      str(exception))
 
 
 class ProduceJSONTests(unittest.SynchronousTestCase):

@@ -27,7 +27,7 @@ if __name__ == "__main__":
         use_incremental=True,
         install_requires=[
             "attrs",
-            "constantly",
+            'enum34 ; python_version<"3.4"',
             "hyperlink",
             "incremental",
             "six",

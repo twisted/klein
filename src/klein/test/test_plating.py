@@ -12,7 +12,7 @@ from string import printable
 
 import attr
 
-from constantly import NamedConstant, Names
+import enum
 
 from hypothesis import given, settings, strategies as st
 
@@ -408,15 +408,12 @@ class ProduceJSONTests(unittest.SynchronousTestCase):
         self.assertIs(self.failureResultOf(done).type, TaskStopped)
 
 
-    class ACTIONS(Names):
-        PAUSE = NamedConstant()
-        RESUME = NamedConstant()
-        WRITE = NamedConstant()
+    ACTIONS = enum.Enum("ACTIONS", ["PAUSE", "RESUME", "WRITE"])
 
     @given(
         jsonObject=jsonObjectsWithoutTuples,
         actions=st.lists(
-            st.sampled_from(list(ACTIONS.iterconstants())),
+            st.sampled_from(list(ACTIONS)),
             min_size=32,
             max_size=128,
         ),

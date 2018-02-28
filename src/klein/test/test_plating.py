@@ -1,18 +1,16 @@
 """
 Tests for L{klein.plating}.
 """
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-from __future__ import (
-    absolute_import, division, print_function, unicode_literals
-)
-
+import enum
 import json
 from functools import partial
 from string import printable
+from typing import Any, cast
 
 import attr
-
-import enum
 
 from hypothesis import given, settings, strategies as st
 
@@ -26,12 +24,8 @@ from twisted.web.template import slot, tags
 from .test_resource import _render, requestMock
 from .util import TestCase
 from .. import Klein, Plating
-from .._plating import (
-    ATOM_TYPES,
-    PlatedElement,
-    ProduceJSON,
-    resolveDeferredObjects
-)
+from .._plating import (ATOM_TYPES, PlatedElement, ProduceJSON,
+                        resolveDeferredObjects)
 
 page = Plating(
     defaults={
@@ -407,8 +401,9 @@ class ProduceJSONTests(unittest.SynchronousTestCase):
         self.assertFalse(self.consumer.value())
         self.assertIs(self.failureResultOf(done).type, TaskStopped)
 
-
-    ACTIONS = enum.Enum("ACTIONS", ["PAUSE", "RESUME", "WRITE"])
+    # https://github.com/python/mypy/issues/2305
+    # Fixed but as-yet unreleased.
+    ACTIONS = cast(Any, enum.Enum("ACTIONS", ["PAUSE", "RESUME", "WRITE"]))
 
     @given(
         jsonObject=jsonObjectsWithoutTuples,

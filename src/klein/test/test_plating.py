@@ -471,8 +471,8 @@ class PlatingTests(TestCase):
         self.cooperate = Cooperator(
             scheduler=partial(self.clock.callLater, self.interval),
         ).cooperate
-        self.patch(page, "_cooperate", self.cooperate)
-        self.patch(element, "_cooperate", self.cooperate)
+        self.patch(page, "cooperate", self.cooperate)
+        self.patch(element, "cooperate", self.cooperate)
 
     def get(self, uri):
         """
@@ -717,7 +717,7 @@ class PlatingTests(TestCase):
             tags=tags.span(slot("title")),
             presentation_slots={"title"}
         )
-        plating._cooperate = self.cooperate
+        plating.cooperate = self.cooperate
 
         @plating.routed(self.app.route("/"), tags.span(slot("data")))
         def justJson(request):

@@ -6,14 +6,14 @@ Templating wrapper support for Klein.
 
 from functools import partial
 from json import JSONEncoder
-from operator import setitem
+from operator import getitem, setitem
 from typing import Any, Tuple, cast
 
 import attr
 
 from six import integer_types, string_types, text_type
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks, maybeDeferred, returnValue
 from twisted.internet.interfaces import IPushProducer
 from twisted.internet.task import cooperate
 from twisted.web.error import MissingRenderMethod
@@ -160,9 +160,13 @@ class PlatedElement(Element):
             raise MissingRenderMethod(self, name)
         slot, type = name.split(":", 1)
 
+        @inlineCallbacks
         def renderList(request, tag):
-            for item in self.slot_data[slot]:
-                yield tag.fillSlots(item=_extra_types(item))
+            data = yield maybeDeferred(getitem, self.slot_data, slot)
+            returnValue(
+                (tag.fillSlots(item=_extra_types(item)) for item in data)
+            )
+
         types = {
             "list": renderList,
         }
@@ -257,7 +261,7 @@ class Plating(object):
 
     CONTENT = "klein:plating:content"
 
-    _cooperate = staticmethod(cooperate)
+    cooperate = staticmethod(cooperate)
 
 
     def __init__(self, defaults=None, tags=None,
@@ -295,7 +299,7 @@ class Plating(object):
                         json_data.pop(ignored, None)
                     ready = yield resolveDeferredObjects(json_data)
                     setContentType(request, u'json')
-                    producer = ProduceJSON(ready, encoding, self._cooperate)
+                    producer = ProduceJSON(ready, encoding, self.cooperate)
                     yield producer.beginProducing(request)
                     returnValue(NOT_DONE_YET)
                 else:

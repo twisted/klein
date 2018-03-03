@@ -8,14 +8,13 @@ from treq.testing import StubTreq
 from twisted.trial.unittest import SynchronousTestCase
 
 from klein import Field, Form, Klein, SessionProcurer
-from klein._interfaces import SessionMechanism
+from klein.interfaces import SessionMechanism, ISessionStore
 from klein._session import requirer
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:
     from twisted.web.iweb import IRequest
-    from klein._interfaces import ISessionStore
-    IRequest, Text, ISessionStore
+    IRequest, Text
 
 @attr.s(hash=False)
 class TestObject(object):

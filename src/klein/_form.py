@@ -140,8 +140,9 @@ class Field(object):
         Shorthand for a form field that contains a short string, and will be
         rendered as a plain <input>.
         """
-        return cls(converter=lambda x: unicode(x, "utf-8"),
-                   formInputType="text")
+        return cls(converter=lambda x: (
+            x if isinstance(x, unicode) else unicode(x, "utf-8")
+        ), formInputType="text")
 
     @classmethod
     def password(cls):          # type: () -> Field

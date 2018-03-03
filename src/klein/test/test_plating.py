@@ -1,22 +1,19 @@
 """
 Tests for L{klein.plating}.
 """
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
-import enum
+from __future__ import (
+    absolute_import, division, print_function, unicode_literals
+)
+
 import json
-from functools import partial
 from string import printable
-from typing import Any, cast
 
 import attr
 
 from hypothesis import given, settings, strategies as st
 
 from twisted.internet.defer import Deferred, succeed
-from twisted.internet.task import Clock, Cooperator, TaskStopped
-from twisted.test.proto_helpers import StringTransport
 from twisted.trial import unittest
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
@@ -24,8 +21,8 @@ from twisted.web.template import slot, tags
 from .test_resource import _render, requestMock
 from .util import TestCase
 from .. import Klein, Plating
-from .._plating import (ATOM_TYPES, PlatedElement, ProduceJSON,
-                        resolveDeferredObjects)
+from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
+
 
 page = Plating(
     defaults={
@@ -115,7 +112,7 @@ jsonAtoms = (st.none() |
              st.text(printable))
 
 
-def jsonComposites(children, withTuples=True):
+def jsonComposites(children):
     """
     Creates a Hypothesis strategy that constructs composite
     JSON-serializable objects (e.g., lists).
@@ -125,18 +122,12 @@ def jsonComposites(children, withTuples=True):
 
     @return: The composite objects strategy.
     """
-    composites = (st.lists(children) |
-                  st.dictionaries(st.text(printable), children))
-    if withTuples:
-        return composites | st.tuples(children)
-    else:
-        return composites
+    return (st.lists(children) |
+            st.dictionaries(st.text(printable), children) |
+            st.tuples(children))
+
 
 jsonObjects = st.recursive(jsonAtoms, jsonComposites, max_leaves=200)
-jsonObjectsWithoutTuples = st.recursive(
-    jsonAtoms,
-    partial(jsonComposites, withTuples=False),
-)
 
 
 def transformJSONObject(jsonObject, transformer):
@@ -313,147 +304,6 @@ class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
                       str(exception))
 
 
-class ProduceJSONTests(unittest.SynchronousTestCase):
-    """
-    Tests for L{ProduceJSON}.
-    """
-
-    def setUp(self):
-        self.clock = Clock()
-        self.interval = 1
-        self.cooperate = Cooperator(
-            scheduler=partial(self.clock.callLater, self.interval),
-        ).cooperate
-        self.consumer = StringTransport()
-
-    def writeAllPending(self, maxTicks=16384):
-        """
-        Schedule all pending producer writes.
-        """
-        for _ in range(16384):
-            self.clock.advance(self.interval)
-        self.assertFalse(self.clock.getDelayedCalls())
-
-    @given(jsonObject=jsonObjectsWithoutTuples)
-    def test_writeValidJSON(self, jsonObject):
-        """
-        The producer writes valid JSON to its consumer, stopping and
-        unregistering itself on completion.
-        """
-        self.setUp()
-        producer = ProduceJSON(jsonObject, "utf-8", cooperate=self.cooperate)
-        done = producer.beginProducing(self.consumer)
-
-        self.writeAllPending()
-        self.successResultOf(done)
-
-        written = self.consumer.value()
-        self.assertEqual(json.loads(written.decode("utf-8")), jsonObject)
-        self.assertIsNone(self.consumer.producer)
-
-    def test_stopOnEncodingFailure(self):
-        """
-        An encoding failure stops and unregisters the producer.
-        """
-        unserializable = {"a": [1, 2, set()]}
-        producer = ProduceJSON(
-            unserializable, "utf-8", cooperate=self.cooperate
-        )
-        done = producer.beginProducing(self.consumer)
-
-        self.writeAllPending()
-
-        self.assertIsInstance(self.failureResultOf(done).value, TypeError)
-        self.assertIsNone(self.consumer.producer)
-
-
-    def test_pauseProducing(self):
-        """
-        A paused producer makes no progress but remains registered
-        with its consumer.
-        """
-        producer = ProduceJSON(
-            {"some": "data"}, "utf-8", cooperate=self.cooperate
-        )
-        done = producer.beginProducing(self.consumer)
-        producer.pauseProducing()
-
-        self.writeAllPending()
-
-        self.assertFalse(self.consumer.value())
-        self.assertNoResult(done)
-        self.assertIsNotNone(self.consumer.producer)
-
-
-    def test_stopProducing(self):
-        """
-        A stopped producer writes no data and terminates the
-        L{Deferred} returned by L{ProduceJSON.beginProducing}.
-        """
-        producer = ProduceJSON(
-            {"some": "data"}, "utf-8", cooperate=self.cooperate
-        )
-        done = producer.beginProducing(self.consumer)
-        producer.stopProducing()
-
-        self.writeAllPending()
-
-        self.assertFalse(self.consumer.value())
-        self.assertIs(self.failureResultOf(done).type, TaskStopped)
-
-    # https://github.com/python/mypy/issues/2305
-    # Fixed but as-yet unreleased.
-    ACTIONS = cast(Any, enum.Enum("ACTIONS", ["PAUSE", "RESUME", "WRITE"]))
-
-    @given(
-        jsonObject=jsonObjectsWithoutTuples,
-        actions=st.lists(
-            st.sampled_from(list(ACTIONS)),
-            min_size=32,
-            max_size=128,
-        ),
-    )
-    def test_flowControl(self, jsonObject, actions):
-        """
-        The consumer can pause and resume the producer to control the
-        flow of data.
-        """
-        self.setUp()
-        producer = ProduceJSON(
-            jsonObject, "utf-8", cooperate=self.cooperate
-        )
-        done = producer.beginProducing(self.consumer)
-
-        def isExhausted():
-            # The iterator has been exhausted so the producer
-            # unregistered itself.
-            return self.consumer.producer is None
-
-        paused = False
-        for action in actions:
-            if isExhausted():
-                break
-            elif action is self.ACTIONS.PAUSE and not paused:
-                paused = True
-                producer.pauseProducing()
-            elif action is self.ACTIONS.RESUME and paused:
-                paused = False
-                producer.resumeProducing()
-            elif action is self.ACTIONS.WRITE:
-                self.clock.advance(self.interval)
-
-        if paused:
-            producer.resumeProducing()
-
-        if not isExhausted():
-            self.writeAllPending()
-
-        written = self.consumer.value()
-        self.assertEqual(json.loads(written.decode("utf-8")), jsonObject)
-        self.successResultOf(done)
-        self.assertIsNone(self.consumer.producer)
-
-
 class PlatingTests(TestCase):
     """
     Tests for L{Plating}.
@@ -466,14 +316,6 @@ class PlatingTests(TestCase):
         self.app = Klein()
         self.kr = self.app.resource()
 
-        self.clock = Clock()
-        self.interval = 1
-        self.cooperate = Cooperator(
-            scheduler=partial(self.clock.callLater, self.interval),
-        ).cooperate
-        self.patch(page, "cooperate", self.cooperate)
-        self.patch(element, "cooperate", self.cooperate)
-
     def get(self, uri):
         """
         Issue a virtual GET request to the given path that is expected to
@@ -482,8 +324,6 @@ class PlatingTests(TestCase):
         """
         request = requestMock(uri)
         d = _render(self.kr, request)
-        # Sufficient to write at least 16k of JSON.
-        self.clock.advance(self.interval * 16384)
         self.successResultOf(d)
         return request, request.getWrittenData()
 
@@ -717,7 +557,6 @@ class PlatingTests(TestCase):
             tags=tags.span(slot("title")),
             presentation_slots={"title"}
         )
-        plating.cooperate = self.cooperate
 
         @plating.routed(self.app.route("/"), tags.span(slot("data")))
         def justJson(request):

@@ -98,13 +98,14 @@ class MessageState(object):
     """
 
     cachedBody = attrib(
+        type=Optional[bytes],
         validator=optional(instance_of(bytes)), default=None, init=False
-    )  # type: Optional[bytes]
+    )
 
     fountExhausted = attrib(
+        type=bool,
         validator=instance_of(bool), default=False, init=False
-    )  # type: bool
-
+    )
 
 
 def validateBody(instance, attribute, body):

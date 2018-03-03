@@ -8,8 +8,8 @@ from treq.testing import StubTreq
 from twisted.trial.unittest import SynchronousTestCase
 
 from klein import Field, Form, Klein, SessionProcurer
-from klein.interfaces import SessionMechanism, ISessionStore
 from klein._session import requirer
+from klein.interfaces import ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:

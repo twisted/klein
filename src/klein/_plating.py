@@ -100,8 +100,10 @@ def resolveDeferredObjects(root):
         elif isinstance(obj, PlatedElement):
             stack.append((obj._asJSON(), setter))
         else:
-            raise TypeError("{input} not JSON serializable"
-                            .format(input=obj))
+            raise TypeError(
+                obj,
+                "{input} not JSON serializable".format(input=obj),
+            )
 
     returnValue(result[0])
 

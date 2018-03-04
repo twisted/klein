@@ -40,9 +40,9 @@ def resolveDeferredObjects(root):
     Wait on possibly nested L{Deferred}s that represent a JSON
     serializable object.
 
-    @param root: A JSON-serializable object that may contain
-        L{Deferred}s, or a Deferred that will resolve to a
-        JSON-serializable object
+    @param root: JSON-serializable object that may contain
+        L{Deferred}s that resolve to JSON-serializable objects, or a
+        L{Deferred} that resolves to one.
 
     @return: A L{Deferred} that fires with a L{Deferred}-free version
         of C{root}, or that fails with the first exception

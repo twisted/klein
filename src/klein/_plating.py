@@ -55,6 +55,9 @@ def resolveDeferredObjects(root):
 
     while stack:
         mightBeDeferred, setter = stack.pop()
+        # inlineCallbacks pauses the generator only on yielded
+        # Deferreds. It's resumed immediately with any other object.
+        # Consequently coroutines must be wrapped in ensureDeferred.
         obj = yield mightBeDeferred
         if isinstance(obj, ATOM_TYPES):
             setter(obj)

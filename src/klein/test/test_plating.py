@@ -94,8 +94,8 @@ class DeferredValue(object):
 
     @param deferred: The L{Deferred} representing the value.
     """
-    value = attr.ib()
-    deferred = attr.ib(attr.Factory(Deferred))
+    value = attr.ib() # type: object
+    deferred = attr.ib(attr.Factory(Deferred))  # type: Deferred
 
     def resolve(self):
         """

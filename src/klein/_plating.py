@@ -10,7 +10,9 @@ from operator import setitem
 from typing import Any, Callable, Tuple, cast
 
 import attr
+
 from six import integer_types, string_types, text_type
+
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader

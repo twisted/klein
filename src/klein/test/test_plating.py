@@ -269,7 +269,8 @@ class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
                 return PlatedElement(slot_data=value,
                                      preloaded=tags.html(),
                                      boundInstance=None,
-                                     presentationSlots={})
+                                     presentationSlots={},
+                                     renderers={})
             else:
                 return value
 

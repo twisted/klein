@@ -22,7 +22,7 @@ from sqlalchemy import (
     Boolean, Column, DateTime, ForeignKey, MetaData, Table, Unicode,
     UniqueConstraint, create_engine, true
 )
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.schema import CreateTable
 
 from twisted.internet.defer import (
@@ -37,9 +37,8 @@ from zope.interface.interfaces import IInterface
 from ._security import checkAndReset, computeKeyText
 from .. import SessionProcurer
 from ..interfaces import (
-    ISQLAuthorizer, ISQLSchemaComponent, ISession,
-    ISessionProcurer, ISessionStore, ISimpleAccount, ISimpleAccountBinding,
-    NoSuchSession, TransactionEnded
+    ISQLAuthorizer, ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
+    ISimpleAccountBinding, NoSuchSession, TransactionEnded, SessionMechanism
 )
 
 if TYPE_CHECKING:
@@ -47,9 +46,8 @@ if TYPE_CHECKING:
     from twisted.internet.defer import Deferred
     from twisted.internet.interfaces import IReactorThreads
     from twisted.web.iweb import IRequest
-    from .._interfaces import SessionMechanism
     (Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text, List,
-     sqlalchemy, SessionMechanism, Dict, IRequest, IInterface)
+     sqlalchemy, Dict, IRequest, IInterface)
     T = TypeVar('T')
 
 @implementer(ISession)
@@ -74,14 +72,14 @@ class SQLSession(object):
     def authorize(self, interfaces):
         # type: (Iterable[IInterface]) -> Any
         interfaces = set(interfaces)
-        datastore = self._sessionStore._datastore
+        dataStore = self._sessionStore._dataStore
 
-        @datastore.sql
+        @dataStore.sql
         def authzn(txn):
             # type: (Transaction) -> Deferred
             result = {}         # type: Dict[IInterface, Deferred]
             ds = []             # type: List[Deferred]
-            authorizers = datastore.componentsProviding(ISQLAuthorizer)
+            authorizers = dataStore.componentsProviding(ISQLAuthorizer)
             for a in authorizers:
                 # This should probably do something smart with interface
                 # priority, checking isOrExtends or something similar.
@@ -136,9 +134,9 @@ class Transaction(object):
 
 
 @attr.s
-class AlchimiaDataStore(object):
+class DataStore(object):
     """
-    L{AlchimiaDataStore} is a generic storage object that connect to an SQL
+    L{DataStore} is a generic storage object that connect to an SQL
     database, run transactions, and manage schema metadata.
     """
 
@@ -197,9 +195,9 @@ class AlchimiaDataStore(object):
 
     @classmethod
     def open(cls, reactor, dbURL, componentCreators):
-        # type: (IReactorThreads, Text, Iterable[Callable]) -> Deferred
+        # type: (IReactorThreads, Text, Iterable[Callable]) -> DataStore
         """
-        Open an L{AlchimiaDataStore}.
+        Open an L{DataStore}.
 
         @param reactor: the reactor that this store should be opened on.
         @type reactor: L{IReactorThreads}
@@ -209,57 +207,27 @@ class AlchimiaDataStore(object):
 
         @param componentCreators: callables which can create components.
         @type componentCreators: C{iterable} of L{callable} taking 2
-            arguments; (L{MetaData}, L{AlchimiaDataStore}), and returning a
+            arguments; (L{MetaData}, L{DataStore}), and returning a
             non-C{None} value.
         """
-        metadata = MetaData()
         components = []         # type: List[Any]
         self = cls(
             create_engine(dbURL, reactor=reactor, strategy=TWISTED_STRATEGY),
             components,
         )
-        components.extend(creator(metadata, self)
-                          for creator in componentCreators)
-        return self._populateSchema().addCallback(lambda ignored: self)
+        components.extend(creator(self) for creator in componentCreators)
+        return self
 
 
-    def _populateSchema(self):
-        # type: () -> Deferred
-        """
-        Populate the schema.
-        """
-        @self.sql
-        @inlineCallbacks
-        def do(transaction):
-            # type: (Transaction) -> Any
-            for component in self.componentsProviding(ISQLSchemaComponent):
-                try:
-                    yield component.initialize_schema(transaction)
-                except OperationalError as oe:
-                    # Table creation failure.  TODO: log this error.
-                    print("OE:", oe)
-        return do
-
-
-@implementer(ISessionStore, ISQLSchemaComponent)
-@attr.s(init=False)
+@implementer(ISessionStore)
+@attr.s()
 class AlchimiaSessionStore(object):
     """
     An implementation of L{ISessionStore} based on an L{AlchimiaStore}, that
     stores sessions in a SQLAlchemy database.
     """
 
-    def __init__(self, metadata, datastore):
-        # type: (sqlalchemy.schema.MetaData, AlchimiaDataStore) -> None
-        """
-        Create an L{AlchimiaSessionStore} from a L{AlchimiaStore}.
-        """
-        self._datastore = datastore
-        self.session_table = Table(
-            "session", metadata,
-            Column("sessionID", Unicode(), primary_key=True, nullable=False),
-            Column("confidential", Boolean(), nullable=False),
-        )
+    _dataStore = attr.ib(type=DataStore)
 
     def sentInsecurely(self, tokens):
         # type: (List[str]) -> Deferred
@@ -272,10 +240,10 @@ class AlchimiaSessionStore(object):
         @return: a L{Deferred} that fires when the tokens have been
             invalidated.
         """
-        @self._datastore.sql
+        @self._dataStore.sql
         def invalidate(txn):
             # type: (Transaction) -> Deferred
-            s = self.session_table
+            s = sessionSchema.session
             return gatherResults([
                 txn.execute(
                     s.delete().where((s.c.sessionID == token) &
@@ -285,26 +253,14 @@ class AlchimiaSessionStore(object):
         return invalidate
 
 
-    @inlineCallbacks
-    def initialize_schema(self, transaction):
-        # type: (Transaction) -> Any
-        """
-        Initialize session-specific schema.
-        """
-        try:
-            yield transaction.execute(CreateTable(self.session_table))
-        except OperationalError as oe:
-            print("sessions-table", oe)
-
-
     def newSession(self, isConfidential, authenticatedBy):
         # type: (bool, SessionMechanism) -> Any
-        @self._datastore.sql
+        @self._dataStore.sql
         @inlineCallbacks
         def created(txn):
             # type: (Transaction) -> Any
             identifier = hexlify(urandom(32)).decode('ascii')
-            s = self.session_table
+            s = sessionSchema.session
             yield txn.execute(s.insert().values(
                 sessionID=identifier,
                 confidential=isConfidential,
@@ -318,11 +274,11 @@ class AlchimiaSessionStore(object):
 
     def loadSession(self, identifier, isConfidential, authenticatedBy):
         # type: (Text, bool, SessionMechanism) -> Any
-        @self._datastore.sql
+        @self._dataStore.sql
         @inlineCallbacks
         def loaded(engine):
             # type: (Transaction) -> Any
-            s = self.session_table
+            s = sessionSchema.session
             result = yield engine.execute(
                 s.select((s.c.sessionID == identifier) &
                          (s.c.confidential == isConfidential)))
@@ -348,14 +304,14 @@ class AccountSessionBinding(object):
 
     _plugin = attr.ib(type='AccountBindingStorePlugin')
     _session = attr.ib(type=ISession)
-    _datastore = attr.ib(type=AlchimiaDataStore)
+    _dataStore = attr.ib(type=DataStore)
 
     def _account(self, accountID, username, email):
         # type: (Text, Text, Text) -> SQLAccount
         """
-        Construct an L{SQLAccount} bound to this plugin & datastore.
+        Construct an L{SQLAccount} bound to this plugin & dataStore.
         """
-        return SQLAccount(self._plugin, self._datastore, accountID, username,
+        return SQLAccount(self._plugin, self._dataStore, accountID, username,
                           email)
 
 
@@ -370,12 +326,12 @@ class AccountSessionBinding(object):
         """
         computedHash = yield computeKeyText(password)
 
-        @self._datastore.sql
+        @self._dataStore.sql
         @inlineCallbacks
         def store(engine):
             # type: (Transaction) -> Any
             newAccountID = unicode(uuid4())
-            insert = (self._plugin.accountTable.insert()
+            insert = (sessionSchema.account.insert()
                       .values(accountID=newAccountID,
                               username=username, email=email,
                               passwordBlob=computedHash))
@@ -408,9 +364,9 @@ class AccountSessionBinding(object):
         @rtype: L{Deferred} firing with L{IAccount} if we succeeded and L{None}
             if we failed.
         """
-        acc = self._plugin.accountTable
+        acc = sessionSchema.account
 
-        @self._datastore.sql
+        @self._dataStore.sql
         @inlineCallbacks
         def retrieve(engine):
             # type: (Transaction) -> Any
@@ -428,10 +384,10 @@ class AccountSessionBinding(object):
 
         def reset_password(newPWText):
             # type: (Text) -> Any
-            @self._datastore.sql
+            @self._dataStore.sql
             def storenew(engine):
                 # type: (Transaction) -> Any
-                a = self._plugin.accountTable
+                a = sessionSchema.account
                 return engine.execute(
                     a.update(a.c.accountID == accountID)
                     .values(passwordBlob=newPWText)
@@ -454,12 +410,12 @@ class AccountSessionBinding(object):
 
         @return: L{Deferred} firing with a L{list} of accounts.
         """
-        @self._datastore.sql
+        @self._dataStore.sql
         @inlineCallbacks
         def retrieve(engine):
             # type: (Transaction) -> Any
-            ast = self._plugin.account_session_table
-            acc = self._plugin.accountTable
+            ast = sessionSchema.sessionAccount
+            acc = sessionSchema.account
             result = (yield (yield engine.execute(
                 ast.join(acc, ast.c.accountID == acc.c.accountID)
                 .select(ast.c.sessionID == self._session.identifier,
@@ -481,14 +437,14 @@ class AccountSessionBinding(object):
 
         @return: L{Deferred} firing a L{list} of L{SessionIPInformation}
         """
-        acs = self._plugin.account_session_table
+        acs = sessionSchema.sessionAccount
         # XXX FIXME this is a bad way to access the table, since the table
         # is not actually part of the interface passed here
-        sipt = (next(iter(self._datastore.componentsProviding(
+        sipt = (next(iter(self._dataStore.componentsProviding(
             implementedBy(IPTrackingProcurer)
         )))._session_ip_table)
 
-        @self._datastore.sql
+        @self._dataStore.sql
         @inlineCallbacks
         def query(conn):
             # type: (Transaction) -> Any
@@ -519,10 +475,10 @@ class AccountSessionBinding(object):
 
         @return: a L{Deferred} that fires when the account is logged out.
         """
-        @self._datastore.sql
+        @self._dataStore.sql
         def retrieve(engine):
             # type: (Transaction) -> Deferred
-            ast = self._plugin.account_session_table
+            ast = sessionSchema.sessionAccount
             return engine.execute(ast.delete(
                 ast.c.sessionID == self._session.identifier
             ))
@@ -539,7 +495,7 @@ class SQLAccount(object):
     """
 
     _plugin = attr.ib(type='AccountBindingStorePlugin')
-    _datastore = attr.ib(type=AlchimiaDataStore)
+    _dataStore = attr.ib(type=DataStore)
     accountID = attr.ib(type=Text)
     username = attr.ib(type=Text)
     email = attr.ib(type=Text)
@@ -550,11 +506,11 @@ class SQLAccount(object):
         """
         Add a session to the database.
         """
-        @self._datastore.sql
+        @self._dataStore.sql
         def createrow(engine):
             # type: (Transaction) -> Deferred
             return engine.execute(
-                self._plugin.account_session_table
+                sessionSchema.sessionAccount
                 .insert().values(accountID=self.accountID,
                                  sessionID=session.identifier)
             )
@@ -570,11 +526,11 @@ class SQLAccount(object):
         """
         computed_hash = yield computeKeyText(new_password)
 
-        @self._datastore.sql
+        @self._dataStore.sql
         def change(engine):
             # type: (Transaction) -> Deferred
             return engine.execute(
-                self._plugin.accountTable.update()
+                sessionSchema.account.update()
                 .where(accountID=self.accountID)
                 .values(passwordBlob=computed_hash)
             )
@@ -582,62 +538,29 @@ class SQLAccount(object):
 
 
 
-@implementer(ISQLAuthorizer, ISQLSchemaComponent)
+@implementer(ISQLAuthorizer)
+@attr.s()
 class AccountBindingStorePlugin(object):
     """
-    An authorizer for L{ISimpleAccountBinding} based on an alchimia datastore.
+    An authorizer for L{ISimpleAccountBinding} based on an alchimia dataStore.
     """
+
+    _dataStore = attr.ib(type=DataStore)
 
     authzn_for = ISimpleAccountBinding
 
-    def __init__(self, metadata, store):
-        # type: (sqlalchemy.schema.MetaData, AlchimiaDataStore) -> None
-        """
-        Create an account binding authorizor from some SQLAlchemy metadata and
-        an L{AlchimiaDataStore}.
-        """
-        self._datastore = store
-
-        self.accountTable = Table(
-            "account", metadata,
-            Column("accountID", Unicode(), primary_key=True,
-                   nullable=False),
-            Column("username", Unicode(), unique=True, nullable=False),
-            Column("email", Unicode(), nullable=False),
-            Column("passwordBlob", Unicode(), nullable=False),
-        )
-
-        self.account_session_table = Table(
-            "account_session", metadata,
-            Column("accountID", Unicode(),
-                   ForeignKey("account.accountID", ondelete="CASCADE")),
-            Column("sessionID", Unicode(),
-                   ForeignKey("session.sessionID", ondelete="CASCADE")),
-            UniqueConstraint("accountID", "sessionID"),
-        )
-
-
-    @inlineCallbacks
-    def initialize_schema(self, transaction):
-        # type: (Transaction) -> Any
-        """
-        Initialize this plugin's schema.
-        """
-        for table in [self.accountTable, self.account_session_table]:
-            yield transaction.execute(CreateTable(table))
-
-
     def authzn_for_session(
             self,
-            session_store,      # type: AlchimiaSessionStore
+            sessionStore,      # type: AlchimiaSessionStore
             transaction,        # type: Transaction
             session             # type: ISession
     ):
         # type: (...) -> AccountSessionBinding
-        return AccountSessionBinding(self, session, self._datastore)
+        return AccountSessionBinding(self, session, self._dataStore)
 
 
 @implementer(ISQLAuthorizer)
+@attr.s()
 class AccountLoginAuthorizer(object):
     """
     An authorizor for an L{ISimpleAccount} based on an alchimia data store.
@@ -645,16 +568,10 @@ class AccountLoginAuthorizer(object):
 
     authzn_for = ISimpleAccount
 
-    def __init__(self, metadata, store):
-        # type: (sqlalchemy.schema.MetaData, AlchimiaDataStore) -> None
-        """
-        Create an L{AccountLoginAuthorizer} from SQLAlchemy metadata and an
-        alchimia data store.
-        """
-        self.datastore = store
+    _dataStore = attr.ib(type=DataStore)
 
     @inlineCallbacks
-    def authzn_for_session(self, session_store, transaction, session):
+    def authzn_for_session(self, sessionStore, transaction, session):
         # type: (AlchimiaSessionStore, Transaction, SQLSession) -> Any
         """
         Authorize a given session for having a simple account logged in to it,
@@ -694,18 +611,67 @@ def upsert(
     returnValue(result)
 
 
+@attr.s
+class SessionSchema(object):
+    """
+    Schema for SQL session features.
+    """
 
-@implementer(ISessionProcurer, ISQLSchemaComponent)
+    session = attr.ib(type=Table)
+    account = attr.ib(type=Table)
+    sessionAccount = attr.ib(type=Table)
+    sessionIP = attr.ib(type=Table)
+
+    @classmethod
+    def withMetadata(cls, metadata: MetaData) -> 'SessionSchema':
+        """
+        Create a new L{SQLSessionSchema} with the given metadata.
+        """
+        session = Table(
+                "session", metadata,
+                Column("session_id", Unicode(), primary_key=True,
+                       nullable=False),
+                Column("confidential", Boolean(), nullable=False),
+        )
+        account = Table(
+            "account", metadata,
+            Column("account_id", Unicode(), primary_key=True,
+                   nullable=False),
+            Column("username", Unicode(), unique=True, nullable=False),
+            Column("email", Unicode(), nullable=False),
+            Column("password_blob", Unicode(), nullable=False),
+        )
+        sessionAccount = Table(
+            "session_account", metadata,
+            Column("account_id", Unicode(),
+                   ForeignKey(account.c.account_id, ondelete="CASCADE")),
+            Column("session_id", Unicode(),
+                   ForeignKey(session.c.session_id, ondelete="CASCADE")),
+            UniqueConstraint("account_id", "session_id"),
+        )
+        sessionIP = Table(
+            "session_ip", metadata,
+            Column("session_id", Unicode(),
+                   ForeignKey(session.c.session_id, ondelete="CASCADE")),
+            Column("ip_address", Unicode(), nullable=False),
+            Column("address_family", Unicode(), nullable=False),
+            Column("last_used", DateTime(), nullable=False),
+            UniqueConstraint("session_id", "ip_address", "address_family"),
+        )
+        return cls(session, account, sessionAccount, sessionIP)
+
+sessionSchema = SessionSchema.withMetadata(MetaData())
+
+@implementer(ISessionProcurer)
 class IPTrackingProcurer(object):
     """
-    An implementatino of L{ISessionProcurer} that keeps track of the source IP
+    An implementation of L{ISessionProcurer} that keeps track of the source IP
     of the originating session.
     """
 
     def __init__(
             self,
-            metadata,           # type: sqlalchemy.schema.MetaData
-            datastore,          # type: AlchimiaDataStore
+            dataStore,          # type: DataStore
             procurer            # type: ISessionProcurer
     ):
         # type: (...) -> None
@@ -713,31 +679,8 @@ class IPTrackingProcurer(object):
         Create an L{IPTrackingProcurer} from SQLAlchemy metadata, an alchimia
         data store, and an existing L{ISessionProcurer}.
         """
-        self._session_ip_table = Table(
-            "session_ip", metadata,
-            Column("sessionID", Unicode(),
-                   ForeignKey("session.sessionID", ondelete="CASCADE"),
-                   nullable=False),
-            Column("ip_address", Unicode(), nullable=False),
-            Column("address_family", Unicode(), nullable=False),
-            Column("last_used", DateTime(), nullable=False),
-            UniqueConstraint("sessionID", "ip_address", "address_family"),
-        )
-        self._datastore = datastore
+        self._dataStore = dataStore
         self._procurer = procurer
-
-
-    @inlineCallbacks
-    def initialize_schema(self, transaction):
-        # type: (Transaction) -> Any
-        """
-        Create the requisite table for storing IP addresses for this
-        L{IPTrackingProcurer}.
-        """
-        try:
-            yield transaction.execute(CreateTable(self._session_ip_table))
-        except OperationalError as oe:
-            print("ip-schema", oe)
 
 
     def procureSession(self, request, forceInsecure=False,
@@ -762,13 +705,13 @@ class IPTrackingProcurer(object):
             except BaseException:
                 ip_address = u""
 
-            @self._datastore.sql
+            @self._dataStore.sql
             def touch(engine):
                 # type: (Transaction) -> Deferred
                 address_family = (u"AF_INET6" if u":" in ip_address
                                   else u"AF_INET")
                 last_used = datetime.utcnow()
-                sip = self._session_ip_table
+                sip = sessionSchema.sessionIP
                 return upsert(engine, sip,
                               dict(sessionID=sessionID,
                                    ip_address=ip_address,
@@ -789,15 +732,19 @@ class IPTrackingProcurer(object):
 
 
 
-def openSessionStore(reactor, db_uri, component_creators=(),
-                     procurer_from_store=SessionProcurer):
-    # type: (IReactorThreads, Text, Iterable[Callable], Callable) -> Deferred
+def openSessionStore(
+        reactor,                # type: IReactorThreads
+        databaseURL,            # type: Text
+        componentCreators=(),   # type: Iterable[Callable]
+        procurer_from_store=SessionProcurer  # type: Callable
+):
+    # type: (...) -> ISessionProcurer
     """
     Open a session store, returning a procurer that can procure sessions from
     it.
 
-    @param db_uri: an SQLAlchemy database URI.
-    @type db_uri: L{str}
+    @param databaseURL: an SQLAlchemy database URL.
+    @type databaseURL: L{str}
 
     @param procurer_from_store: A callable that takes an L{ISessionStore} and
         returns an L{ISessionProcurer}.
@@ -805,51 +752,19 @@ def openSessionStore(reactor, db_uri, component_creators=(),
 
     @return: L{Deferred} firing with L{ISessionProcurer}
     """
-    opened = AlchimiaDataStore.open(
-        reactor, db_uri, [
-            lambda metadata, store: AlchimiaSessionStore(metadata, store),
+    dataStore = DataStore.open(
+        reactor, databaseURL, [
+            lambda dataStore: AlchimiaSessionStore(dataStore),
             AccountBindingStorePlugin,
-            lambda metadata, store:
+            lambda dataStore:
             IPTrackingProcurer(
-                metadata, store, procurer_from_store(
-                    next(iter(store.componentsProviding(ISessionStore))))),
+                dataStore, procurer_from_store(
+                    next(iter(dataStore.componentsProviding(ISessionStore))))),
             AccountLoginAuthorizer,
-        ] + list(component_creators)
-    ).addCallback
+        ] + list(componentCreators)
+    )
+    return next(iter(dataStore.componentsProviding(ISessionProcurer)))
 
-    @opened
-    def procurify(datastore):
-        # type: (AlchimiaDataStore) -> ISessionProcurer
-        return next(iter(datastore.componentsProviding(ISessionProcurer)))
-    return procurify
-
-
-
-def tables(**kw):
-    # type: (**Any) -> Any
-    """
-    Take a mapping of table names to columns and return a callable that takes a
-    transaction and metadata and then ensures those tables with those columns
-    exist.
-
-    This is a quick-start way to initialize your schema; any kind of
-    application that has a longer maintenance cycle will need a more
-    sophisticated schema-migration approach.
-    """
-    @inlineCallbacks
-    def callme(transaction, metadata):
-        # type: (Transaction, sqlalchemy.schema.MetaData) -> Any
-        # TODO: inspect information schema, verify tables exist, don't try to
-        # create them otherwise.
-        for k, v in kw.items():
-            print("creating table", k)
-            try:
-                yield transaction.execute(
-                    CreateTable(Table(k, metadata, *v))
-                )
-            except OperationalError as oe:
-                print("failure initializing table", k, oe)
-    return callme
 
 
 class _FunctionWithAuthorizer(object):
@@ -858,8 +773,8 @@ class _FunctionWithAuthorizer(object):
 
     def __call__(
             self,
-            metadata,           # type: sqlalchemy.schema.MetaData
-            datastore,          # type: AlchimiaDataStore
+            metadata,           # type: MetaData
+            dataStore,          # type: DataStore
             sessionStore,       # type: AlchimiaSessionStore
             transaction,        # type: Transaction
             session             # type: ISession
@@ -870,57 +785,45 @@ class _FunctionWithAuthorizer(object):
         """
 
 _authorizerFunction = Callable[
-    [sqlalchemy.schema.MetaData, AlchimiaDataStore, AlchimiaSessionStore,
-     Transaction, ISession],
+    [DataStore, AlchimiaSessionStore, Transaction, ISession],
     Any
 ]
 
-_schemaFunction = Callable[[Transaction, sqlalchemy.schema.MetaData], Deferred]
+@implementer(ISQLAuthorizer)
+@attr.s
+class AnAuthorizer(object):
+    dataStore = attr.ib(type=DataStore)
+    authzn_for = attr.ib(type=Type)
+    _decorated = attr.ib(type=_authorizerFunction)
+
+    def authzn_for_session(self, sessionStore, transaction, session):
+        # type: (AlchimiaSessionStore, Transaction, ISession) -> Any
+        cb = cast(_authorizerFunction, self._decorated)  # type: ignore
+        return cb(self.dataStore, sessionStore, transaction, session)
+
 def authorizerFor(
         authzn_for,                        # type: Type
-        schema=lambda txn, metadata: None  # type: _schemaFunction
 ):
     # type: (...) -> Callable[[Callable], _FunctionWithAuthorizer]
     """
     Declare an SQL authorizer, implemented by a given function.  Used like so::
 
         @authorizerFor(Foo, tables(foo=[Column("bar", Unicode())]))
-        def authorize_foo(metadata, datastore, session_store, transaction,
-                          session):
+        def authorizeFoo(dataStore, sessionStore, transaction, session):
             return Foo(metadata, metadata.tables["foo"])
 
     @param authzn_for: The type we are creating an authorizer for.
 
-    @param schema: a callable that takes a transaction and metadata, and
-        returns a L{Deferred} which fires when it's done initializing the
-        schema on that transaction.  See L{tables} for a convenient way to
-        specify that.
-
     @return: a decorator that can decorate a function with the signature
-        C{(metadata, datastore, session_store, transaction, session)}
+        C{(metadata, dataStore, sessionStore, transaction, session)}
     """
-    an_authzn = authzn_for
-
     def decorator(decorated):
         # type: (_authorizerFunction) -> _FunctionWithAuthorizer
-        @implementer(ISQLAuthorizer, ISQLSchemaComponent)
-        @attr.s
-        class AnAuthorizer(object):
-            metadata = attr.ib(type=sqlalchemy.schema.MetaData)
-            datastore = attr.ib(type=AlchimiaDataStore)
-
-            authzn_for = an_authzn
-
-            def initialize_schema(self, transaction):
-                # type: (Transaction) -> Any
-                return schema(transaction, self.metadata)
-
-            def authzn_for_session(self, session_store, transaction, session):
-                # type: (AlchimiaSessionStore, Transaction, ISession) -> Any
-                return decorated(self.metadata, self.datastore, session_store,
-                                 transaction, session)
-
-        decorated = cast(_FunctionWithAuthorizer, decorated)
-        decorated.authorizer = AnAuthorizer
-        return decorated
+        result = cast(_FunctionWithAuthorizer, decorated)
+        def curriedAuthorizer(dataStore):
+            # type: (DataStore) -> ISQLAuthorizer
+            return cast(ISQLAuthorizer,
+                        AnAuthorizer(dataStore, authzn_for, decorated))
+        result.authorizer = curriedAuthorizer
+        return result
     return decorator

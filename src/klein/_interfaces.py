@@ -156,19 +156,6 @@ class ISimpleAccount(Interface):
 
 
 
-class ISQLSchemaComponent(Interface):
-    """
-    A component of an SQL schema.
-    """
-
-    @ifmethod
-    def initialize_schema(transaction):
-        """
-        Add the relevant tables to the database.
-        """
-
-
-
 class ISQLAuthorizer(Interface):
     """
     An add-on for an L{AlchimiaDataStore} that can populate data on an Alchimia

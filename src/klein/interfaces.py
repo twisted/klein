@@ -1,7 +1,6 @@
 from ._interfaces import (
     IKleinRequest,
     ISQLAuthorizer,
-    ISQLSchemaComponent,
     ISession,
     ISessionProcurer,
     ISessionStore,
@@ -22,7 +21,6 @@ __all__ = (
     "ISessionStore",
     "ISimpleAccountBinding",
     "ISimpleAccount",
-    "ISQLSchemaComponent",
     "ISessionProcurer",
     "ISQLAuthorizer",
     "SessionMechanism",

@@ -2,7 +2,7 @@
 from __future__ import print_function, unicode_literals, absolute_import
 
 
-from sqlalchemy import Table
+from sqlalchemy import Table, MetaData
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
@@ -10,10 +10,11 @@ from klein import Klein, Plating, Form, Field
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer
 )
+
+ISessionProcurer # used for type-checking
 from klein.storage.sql import (
-    openSessionStore, authorizerFor, tables
+    openSessionStore, authorizerFor, SessionSchema, DataStore
 )
-from klein.storage._sql import AlchimiaDataStore
 
 from twisted.web.util import Redirect
 
@@ -101,7 +102,7 @@ import attr
 
 @attr.s
 class Chirper(object):
-    datastore = attr.ib(type=AlchimiaDataStore)
+    datastore = attr.ib(type=DataStore)
     account = attr.ib(type=ISimpleAccount)
     chirpTable = attr.ib(type=Table)
 
@@ -115,58 +116,51 @@ class Chirper(object):
             ))
         return dstor
 
-
-
-@authorizerFor(Chirper, tables(chirp=[
-    Column("accountID", String(), ForeignKey("account.accountID")),
+appMetadata = MetaData()
+sessionSchema = SessionSchema.withMetadata(appMetadata)
+chirpTable = Table(
+    'chirp', appMetadata,
+    Column("account_id", String(),
+           ForeignKey(sessionSchema.account.c.account_id)),
     Column("chirp", String())
-]))
+)
+
+@authorizerFor(Chirper)
 @inlineCallbacks
-def authorize_chirper(metadata, datastore, session_store, transaction,
-                      session):
+def authorize_chirper(datastore, session_store, transaction, session):
     account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
     if account is not None:
-        returnValue(Chirper(datastore, account, metadata.tables["chirp"]))
+        returnValue(Chirper(datastore, account, chirpTable))
 
 
 
 @attr.s
 class ChirpReader(object):
-    datastore = attr.ib(type=AlchimiaDataStore)
-    chirpTable = attr.ib(type=Table)
-    accountTable = attr.ib(type=Table)
+    datastore = attr.ib(type=DataStore)
 
     def read_chirps(self, username):
         @self.datastore.sql
         @inlineCallbacks
         def read(txn):
-            chirp = self.chirpTable
-            account = self.accountTable
-            result = yield ((yield txn.execute(self.chirpTable.select(
-                (chirp.c.accountID == account.c.accountID) &
-                (account.c.username == username)
+            result = yield ((yield txn.execute(chirpTable.select(
+                (chirpTable.c.account_id ==
+                 sessionSchema.accountTable.c.account_id) &
+                (sessionSchema.accountTable.c.username == username)
             ))).fetchall())
             returnValue([row[chirp.c.chirp] for row in result])
         return read
 
 
 @authorizerFor(ChirpReader)
-def auth_for_reading(metadata, datastore, session_store, transaction,
-                     session):
-    return ChirpReader(datastore, metadata.tables["chirp"],
-                       metadata.tables["account"])
+def auth_for_reading(datastore, session_store, transaction, session):
+    return ChirpReader(datastore)
 
 
 from twisted.internet import reactor
-getproc = openSessionStore(reactor, "sqlite:///sessions.sqlite",
-                             [authorize_chirper.authorizer,
-                              auth_for_reading.authorizer])
-@getproc.addCallback
-def set_procurer(opened_procurer):
-    # type: (ISessionProcurer) -> None
-    global procurer
-    procurer = opened_procurer
-procurer = None                 # type: Optional[ISessionProcurer]
+procurer = openSessionStore(
+    reactor, "sqlite:///sessions.sqlite",
+    [authorize_chirper.authorizer, auth_for_reading.authorizer]
+)  # type: ISessionProcurer
 from klein._session import requirer, Optional
 
 @requirer

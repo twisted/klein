@@ -1,8 +1,9 @@
 
-from ._sql import authorizerFor, openSessionStore, tables
+from ._sql import authorizerFor, openSessionStore, SessionSchema, DataStore
 
 __all__ = [
     "openSessionStore",
     "authorizerFor",
-    "tables",
+    "SessionSchema",
+    "DataStore",
 ]

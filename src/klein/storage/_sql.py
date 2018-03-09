@@ -23,7 +23,6 @@ from sqlalchemy import (
     UniqueConstraint, create_engine, true
 )
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.schema import CreateTable
 
 from twisted.internet.defer import (
     gatherResults, inlineCallbacks, maybeDeferred, returnValue
@@ -38,7 +37,7 @@ from ._security import checkAndReset, computeKeyText
 from .. import SessionProcurer
 from ..interfaces import (
     ISQLAuthorizer, ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
-    ISimpleAccountBinding, NoSuchSession, TransactionEnded, SessionMechanism
+    ISimpleAccountBinding, NoSuchSession, SessionMechanism, TransactionEnded
 )
 
 if TYPE_CHECKING:
@@ -628,10 +627,10 @@ class SessionSchema(object):
         Create a new L{SQLSessionSchema} with the given metadata.
         """
         session = Table(
-                "session", metadata,
-                Column("session_id", Unicode(), primary_key=True,
-                       nullable=False),
-                Column("confidential", Boolean(), nullable=False),
+            "session", metadata,
+            Column("session_id", Unicode(), primary_key=True,
+                   nullable=False),
+            Column("confidential", Boolean(), nullable=False),
         )
         account = Table(
             "account", metadata,
@@ -731,12 +730,13 @@ class IPTrackingProcurer(object):
         return _
 
 
+procurerFromStoreT = Callable[[ISessionStore], ISessionProcurer]
 
 def openSessionStore(
         reactor,                # type: IReactorThreads
         databaseURL,            # type: Text
         componentCreators=(),   # type: Iterable[Callable]
-        procurer_from_store=SessionProcurer  # type: Callable
+        procurerFromStore=SessionProcurer  # type: procurerFromStoreT
 ):
     # type: (...) -> ISessionProcurer
     """
@@ -744,11 +744,9 @@ def openSessionStore(
     it.
 
     @param databaseURL: an SQLAlchemy database URL.
-    @type databaseURL: L{str}
 
-    @param procurer_from_store: A callable that takes an L{ISessionStore} and
+    @param procurerFromStore: A callable that takes an L{ISessionStore} and
         returns an L{ISessionProcurer}.
-    @type procurer_from_store: L{callable}
 
     @return: L{Deferred} firing with L{ISessionProcurer}
     """
@@ -758,7 +756,7 @@ def openSessionStore(
             AccountBindingStorePlugin,
             lambda dataStore:
             IPTrackingProcurer(
-                dataStore, procurer_from_store(
+                dataStore, procurerFromStore(
                     next(iter(dataStore.componentsProviding(ISessionStore))))),
             AccountLoginAuthorizer,
         ] + list(componentCreators)
@@ -820,6 +818,7 @@ def authorizerFor(
     def decorator(decorated):
         # type: (_authorizerFunction) -> _FunctionWithAuthorizer
         result = cast(_FunctionWithAuthorizer, decorated)
+
         def curriedAuthorizer(dataStore):
             # type: (DataStore) -> ISQLAuthorizer
             return cast(ISQLAuthorizer,

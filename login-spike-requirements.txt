@@ -1,6 +1,6 @@
 -e .
 alchimia==0.7.0
-attrs==16.0.0
+attrs==17.4.0
 incremental==15.3.0
 rethinkdb==2.3.0.post5
 scrypt==0.7.1

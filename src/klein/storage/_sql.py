@@ -245,7 +245,7 @@ class AlchimiaSessionStore(object):
             s = sessionSchema.session
             return gatherResults([
                 txn.execute(
-                    s.delete().where((s.c.sessionID == token) &
+                    s.delete().where((s.c.session_id == token) &
                                      (s.c.confidential == true()))
                 ) for token in tokens
             ])
@@ -261,7 +261,7 @@ class AlchimiaSessionStore(object):
             identifier = hexlify(urandom(32)).decode('ascii')
             s = sessionSchema.session
             yield txn.execute(s.insert().values(
-                sessionID=identifier,
+                session_id=identifier,
                 confidential=isConfidential,
             ))
             returnValue(SQLSession(self,
@@ -279,12 +279,12 @@ class AlchimiaSessionStore(object):
             # type: (Transaction) -> Any
             s = sessionSchema.session
             result = yield engine.execute(
-                s.select((s.c.sessionID == identifier) &
+                s.select((s.c.session_id == identifier) &
                          (s.c.confidential == isConfidential)))
             results = yield result.fetchall()
             if not results:
                 raise NoSuchSession()
-            fetched_identifier = results[0][s.c.sessionID]
+            fetched_identifier = results[0][s.c.session_id]
             returnValue(SQLSession(self,
                                    identifier=fetched_identifier,
                                    isConfidential=isConfidential,
@@ -331,7 +331,7 @@ class AccountSessionBinding(object):
             # type: (Transaction) -> Any
             newAccountID = unicode(uuid4())
             insert = (sessionSchema.account.insert()
-                      .values(accountID=newAccountID,
+                      .values(account_id=newAccountID,
                               username=username, email=email,
                               passwordBlob=computedHash))
             try:
@@ -379,7 +379,7 @@ class AccountSessionBinding(object):
             returnValue(None)
         [row] = accountsInfo
         stored_password_text = row[acc.c.passwordBlob]
-        accountID = row[acc.c.accountID]
+        accountID = row[acc.c.account_id]
 
         def reset_password(newPWText):
             # type: (Text) -> Any
@@ -388,7 +388,7 @@ class AccountSessionBinding(object):
                 # type: (Transaction) -> Any
                 a = sessionSchema.account
                 return engine.execute(
-                    a.update(a.c.accountID == accountID)
+                    a.update(a.c.account_id == accountID)
                     .values(passwordBlob=newPWText)
                 )
             return storenew
@@ -416,12 +416,12 @@ class AccountSessionBinding(object):
             ast = sessionSchema.sessionAccount
             acc = sessionSchema.account
             result = (yield (yield engine.execute(
-                ast.join(acc, ast.c.accountID == acc.c.accountID)
-                .select(ast.c.sessionID == self._session.identifier,
+                ast.join(acc, ast.c.account_id == acc.c.account_id)
+                .select(ast.c.session_id == self._session.identifier,
                         use_labels=True)
             )).fetchall())
             returnValue([
-                self._account(it[ast.c.accountID], it[acc.c.username],
+                self._account(it[ast.c.account_id], it[acc.c.username],
                               it[acc.c.email])
                 for it in result
             ])
@@ -452,14 +452,14 @@ class AccountSessionBinding(object):
             result = yield conn.execute(
                 select([sipt], use_labels=True)
                 .where(
-                    (acs.c.sessionID == self._session.identifier) &
-                    (acs.c.accountID == acs2.c.accountID) &
-                    (acs2.c.sessionID == sipt.c.sessionID)
+                    (acs.c.session_id == self._session.identifier) &
+                    (acs.c.account_id == acs2.c.account_id) &
+                    (acs2.c.session_id == sipt.c.session_id)
                 )
             )
             returnValue([
                 SessionIPInformation(
-                    id=row[sipt.c.sessionID],
+                    id=row[sipt.c.session_id],
                     ip=row[sipt.c.ip_address],
                     when=row[sipt.c.last_used])
                 for row in (yield result.fetchall())
@@ -479,7 +479,7 @@ class AccountSessionBinding(object):
             # type: (Transaction) -> Deferred
             ast = sessionSchema.sessionAccount
             return engine.execute(ast.delete(
-                ast.c.sessionID == self._session.identifier
+                ast.c.session_id == self._session.identifier
             ))
         return retrieve
 
@@ -511,7 +511,7 @@ class SQLAccount(object):
             return engine.execute(
                 sessionSchema.sessionAccount
                 .insert().values(accountID=self.accountID,
-                                 sessionID=session.identifier)
+                                 session_id=session.identifier)
             )
         return createrow
 
@@ -712,7 +712,7 @@ class IPTrackingProcurer(object):
                 last_used = datetime.utcnow()
                 sip = sessionSchema.sessionIP
                 return upsert(engine, sip,
-                              dict(sessionID=sessionID,
+                              dict(session_id=sessionID,
                                    ip_address=ip_address,
                                    address_family=address_family),
                               dict(last_used=last_used))

@@ -5,7 +5,7 @@ from datetime import datetime
 from functools import reduce
 from os import urandom
 from typing import (
-    Any, Callable, Dict, Iterable, List, TYPE_CHECKING, Text,
+    Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Text,
     Type, TypeVar, cast
 )
 from uuid import uuid4
@@ -19,10 +19,11 @@ from attr.validators import instance_of as an
 from six import text_type
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, ForeignKey, MetaData, Table, Unicode,
-    UniqueConstraint, create_engine, true
+    Boolean, Column, DateTime, ForeignKey, MetaData, Table,
+    Unicode, UniqueConstraint, create_engine, true
 )
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.schema import CreateTable
 
 from twisted.internet.defer import (
     gatherResults, inlineCallbacks, maybeDeferred, returnValue
@@ -46,7 +47,7 @@ if TYPE_CHECKING:
     from twisted.internet.interfaces import IReactorThreads
     from twisted.web.iweb import IRequest
     (Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text, List,
-     sqlalchemy, Dict, IRequest, IInterface)
+     sqlalchemy, Dict, IRequest, IInterface, Optional)
     T = TypeVar('T')
 
 @implementer(ISession)
@@ -614,18 +615,34 @@ def upsert(
 class SessionSchema(object):
     """
     Schema for SQL session features.
-    """
 
+    This is exposed as public API so that you can have tables which relate
+    against it in your own code, and integrate with your schema management
+    system.
+
+    However, while Klein uses Alchimia itself, it does not want to be in the
+    business of managing your schema migrations or your database access.  As
+    such, this class exposes the schema in several formats:
+
+        - via SQLAlchemy metadata, if you want to use something like Alembic or
+          SQLAlchemy-Migrate
+
+        - via a single SQL string, if you manage your SQL migrations manually
+    """
     session = attr.ib(type=Table)
     account = attr.ib(type=Table)
     sessionAccount = attr.ib(type=Table)
     sessionIP = attr.ib(type=Table)
 
     @classmethod
-    def withMetadata(cls, metadata: MetaData) -> 'SessionSchema':
+    def withMetadata(cls, metadata=None):
+        # type: (Optional[MetaData]) -> SessionSchema
         """
-        Create a new L{SQLSessionSchema} with the given metadata.
+        Create a new L{SQLSessionSchema} with the given metadata, defaulting to
+        new L{MetaData} if none is supplied.
         """
+        if metadata is None:
+            metadata = MetaData()
         session = Table(
             "session", metadata,
             Column("session_id", Unicode(), primary_key=True,
@@ -658,6 +675,49 @@ class SessionSchema(object):
             UniqueConstraint("session_id", "ip_address", "address_family"),
         )
         return cls(session, account, sessionAccount, sessionIP)
+
+
+    def tables(self):
+        # type: () -> Iterable[Table]
+        """
+        Yield all tables that need to be created in order for sessions to be
+        enabled in a SQLAlchemy database, in the order they need to be created.
+        """
+        yield self.session
+        yield self.account
+        yield self.sessionAccount
+        yield self.sessionIP
+
+
+    @inlineCallbacks
+    def create(self, transaction):
+        # type: (Transaction) -> Deferred
+        """
+        Given a L{Transaction}, create this schema in the database and return a
+        L{Deferred} that fires with C{None} when done.
+
+        This method will handle any future migration concerns.
+        """
+        for table in self.tables():
+            yield transaction.execute(CreateTable(table))
+
+
+    def migrationSQL(self):
+        # type: () -> Text
+        """
+        Return some SQL to run in order to create the tables necessary for the
+        SQL session and account store.  Currently there is only one version,
+        but in the future, sections of this will be clearly delineated by '--
+        Klein Session Schema Version X' comments.
+
+        This SQL will not attempt to discern whether the tables exist already
+        or whether the migrations should be run.
+        """
+        return (u"\n-- Klein Session Schema Version 1\n" +
+                (u";".join(str(CreateTable(table))
+                            for table in self.tables())))
+
+
 
 sessionSchema = SessionSchema.withMetadata(MetaData())
 

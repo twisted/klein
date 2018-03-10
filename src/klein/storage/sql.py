@@ -7,3 +7,6 @@ __all__ = [
     "SessionSchema",
     "DataStore",
 ]
+
+if __name__ == '__main__':
+    print(SessionSchema.withMetadata().migrationSQL())

@@ -3,6 +3,9 @@ from __future__ import print_function, unicode_literals, absolute_import
 
 
 from sqlalchemy import Table, MetaData
+from sqlalchemy.schema import CreateTable
+from sqlalchemy.exc import OperationalError
+
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
@@ -13,7 +16,7 @@ from klein.interfaces import (
 
 ISessionProcurer # used for type-checking
 from klein.storage.sql import (
-    openSessionStore, authorizerFor, SessionSchema, DataStore
+    procurerFromDataStore, authorizerFor, SessionSchema, DataStore
 )
 
 from twisted.web.util import Redirect
@@ -157,8 +160,31 @@ def auth_for_reading(datastore, session_store, transaction, session):
 
 
 from twisted.internet import reactor
-procurer = openSessionStore(
-    reactor, "sqlite:///sessions.sqlite",
+dataStore = DataStore.open(reactor, "sqlite:///sessions.sqlite")
+
+@dataStore.sql
+@inlineCallbacks
+def initSchema(transaction):
+    """
+    Initialize the application's schema in the worst possible way.
+    """
+    print("Initializing schema...")
+    for table in appMetadata.sorted_tables:
+        print("trying", table)
+        try:
+            yield transaction.execute(CreateTable(table))
+        except OperationalError:
+            print("already created", table)
+        else:
+            print("created", table)
+    print("all done")
+
+from twisted.logger import Logger
+log = Logger()
+initSchema.addErrback(log.failure)
+
+procurer = procurerFromDataStore(
+    dataStore,
     [authorize_chirper.authorizer, auth_for_reading.authorizer]
 )  # type: ISessionProcurer
 from klein._session import requirer, Optional

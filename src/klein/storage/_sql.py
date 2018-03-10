@@ -31,7 +31,7 @@ from twisted.internet.defer import (
 from twisted.python.compat import unicode
 from twisted.python.failure import Failure
 
-from zope.interface import implementedBy, implementer
+from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from ._security import checkAndReset, computeKeyText
@@ -79,8 +79,7 @@ class SQLSession(object):
             # type: (Transaction) -> Deferred
             result = {}         # type: Dict[IInterface, Deferred]
             ds = []             # type: List[Deferred]
-            authorizers = dataStore.componentsProviding(ISQLAuthorizer)
-            for a in authorizers:
+            for a in self._sessionStore._authorizers:
                 # This should probably do something smart with interface
                 # priority, checking isOrExtends or something similar.
                 if a.authzn_for in interfaces:
@@ -141,7 +140,6 @@ class DataStore(object):
     """
 
     _engine = attr.ib(type=_sqlAlchemyConnection)
-    _components = attr.ib(type=List[Any])
     _freeConnections = attr.ib(default=Factory(deque), type=deque)
 
     @inlineCallbacks
@@ -180,21 +178,8 @@ class DataStore(object):
             self._freeConnections.append(cxn)
 
 
-    def componentsProviding(self, interface):
-        # type: (Any) -> Iterable[Any]
-        # one day: (Type[I]) -> Iterable[I]
-        """
-        Get all the components providing the given interface.
-        """
-        for component in self._components:
-            if interface.providedBy(component):
-                # Adaptation-by-call doesn't work with implementedBy() objects
-                # so we can't query for classes
-                yield component
-
-
     @classmethod
-    def open(cls, reactor, dbURL, componentCreators):
+    def open(cls, reactor, dbURL):
         # type: (IReactorThreads, Text, Iterable[Callable]) -> DataStore
         """
         Open an L{DataStore}.
@@ -204,19 +189,9 @@ class DataStore(object):
 
         @param dbURL: the SQLAlchemy database URI to connect to.
         @type dbURL: L{str}
-
-        @param componentCreators: callables which can create components.
-        @type componentCreators: C{iterable} of L{callable} taking 2
-            arguments; (L{MetaData}, L{DataStore}), and returning a
-            non-C{None} value.
         """
-        components = []         # type: List[Any]
-        self = cls(
-            create_engine(dbURL, reactor=reactor, strategy=TWISTED_STRATEGY),
-            components,
-        )
-        components.extend(creator(self) for creator in componentCreators)
-        return self
+        return cls(create_engine(dbURL, reactor=reactor,
+                                 strategy=TWISTED_STRATEGY))
 
 
 @implementer(ISessionStore)
@@ -228,6 +203,7 @@ class AlchimiaSessionStore(object):
     """
 
     _dataStore = attr.ib(type=DataStore)
+    _authorizers = attr.ib(type=List[ISQLAuthorizer], default=Factory(list))
 
     def sentInsecurely(self, tokens):
         # type: (List[str]) -> Deferred
@@ -301,17 +277,15 @@ class AccountSessionBinding(object):
     (Stateless) binding between an account and a session, so that sessions can
     attach to, detach from, .
     """
-
-    _plugin = attr.ib(type='AccountBindingStorePlugin')
     _session = attr.ib(type=ISession)
-    _dataStore = attr.ib(type=DataStore)
+    _transaction = attr.ib(type=Transaction)
 
     def _account(self, accountID, username, email):
         # type: (Text, Text, Text) -> SQLAccount
         """
         Construct an L{SQLAccount} bound to this plugin & dataStore.
         """
-        return SQLAccount(self._plugin, self._dataStore, accountID, username,
+        return SQLAccount(self._transaction, accountID, username,
                           email)
 
 
@@ -325,25 +299,18 @@ class AccountSessionBinding(object):
             not be.
         """
         computedHash = yield computeKeyText(password)
-
-        @self._dataStore.sql
-        @inlineCallbacks
-        def store(engine):
-            # type: (Transaction) -> Any
-            newAccountID = unicode(uuid4())
-            insert = (sessionSchema.account.insert()
-                      .values(account_id=newAccountID,
-                              username=username, email=email,
-                              passwordBlob=computedHash))
-            try:
-                yield engine.execute(insert)
-            except IntegrityError:
-                returnValue(None)
-            else:
-                returnValue(newAccountID)
-        accountID = (yield store)
-        if accountID is None:
+        # type: (Transaction) -> Any
+        newAccountID = unicode(uuid4())
+        insert = (sessionSchema.account.insert()
+                  .values(account_id=newAccountID,
+                          username=username, email=email,
+                          passwordBlob=computedHash))
+        try:
+            yield self._transaction.execute(insert)
+        except IntegrityError:
             returnValue(None)
+        else:
+            accountID = newAccountID
         account = self._account(accountID, username, email)
         returnValue(account)
 
@@ -366,15 +333,10 @@ class AccountSessionBinding(object):
         """
         acc = sessionSchema.account
 
-        @self._dataStore.sql
-        @inlineCallbacks
-        def retrieve(engine):
-            # type: (Transaction) -> Any
-            result = yield engine.execute(
-                acc.select(acc.c.username == username)
-            )
-            returnValue((yield result.fetchall()))
-        accountsInfo = yield retrieve
+        result = yield self._transaction.execute(
+            acc.select(acc.c.username == username)
+        )
+        accountsInfo = (yield result.fetchall())
         if not accountsInfo:
             # no account, bye
             returnValue(None)
@@ -440,9 +402,7 @@ class AccountSessionBinding(object):
         acs = sessionSchema.sessionAccount
         # XXX FIXME this is a bad way to access the table, since the table
         # is not actually part of the interface passed here
-        sipt = (next(iter(self._dataStore.componentsProviding(
-            implementedBy(IPTrackingProcurer)
-        )))._session_ip_table)
+        sipt = sessionSchema.sessionIP
 
         @self._dataStore.sql
         @inlineCallbacks
@@ -494,8 +454,7 @@ class SQLAccount(object):
     An implementation of L{ISimpleAccount} backed by an Alchimia data store.
     """
 
-    _plugin = attr.ib(type='AccountBindingStorePlugin')
-    _dataStore = attr.ib(type=DataStore)
+    _transaction = attr.ib(type=DataStore)
     accountID = attr.ib(type=Text)
     username = attr.ib(type=Text)
     email = attr.ib(type=Text)
@@ -506,15 +465,11 @@ class SQLAccount(object):
         """
         Add a session to the database.
         """
-        @self._dataStore.sql
-        def createrow(engine):
-            # type: (Transaction) -> Deferred
-            return engine.execute(
-                sessionSchema.sessionAccount
-                .insert().values(accountID=self.accountID,
-                                 session_id=session.identifier)
-            )
-        return createrow
+        return self._transaction.execute(
+            sessionSchema.sessionAccount
+            .insert().values(accountID=self.accountID,
+                             session_id=session.identifier)
+        )
 
 
     @inlineCallbacks
@@ -525,62 +480,13 @@ class SQLAccount(object):
         @type new_password: L{unicode}
         """
         computed_hash = yield computeKeyText(new_password)
+        result = yield self._transaction.execute(
+            sessionSchema.account.update()
+            .where(accountID=self.accountID)
+            .values(passwordBlob=computed_hash)
+        )
+        returnValue(result)
 
-        @self._dataStore.sql
-        def change(engine):
-            # type: (Transaction) -> Deferred
-            return engine.execute(
-                sessionSchema.account.update()
-                .where(accountID=self.accountID)
-                .values(passwordBlob=computed_hash)
-            )
-        returnValue((yield change))
-
-
-
-@implementer(ISQLAuthorizer)
-@attr.s()
-class AccountBindingStorePlugin(object):
-    """
-    An authorizer for L{ISimpleAccountBinding} based on an alchimia dataStore.
-    """
-
-    _dataStore = attr.ib(type=DataStore)
-
-    authzn_for = ISimpleAccountBinding
-
-    def authzn_for_session(
-            self,
-            sessionStore,      # type: AlchimiaSessionStore
-            transaction,        # type: Transaction
-            session             # type: ISession
-    ):
-        # type: (...) -> AccountSessionBinding
-        return AccountSessionBinding(self, session, self._dataStore)
-
-
-@implementer(ISQLAuthorizer)
-@attr.s()
-class AccountLoginAuthorizer(object):
-    """
-    An authorizor for an L{ISimpleAccount} based on an alchimia data store.
-    """
-
-    authzn_for = ISimpleAccount
-
-    _dataStore = attr.ib(type=DataStore)
-
-    @inlineCallbacks
-    def authzn_for_session(self, sessionStore, transaction, session):
-        # type: (AlchimiaSessionStore, Transaction, SQLSession) -> Any
-        """
-        Authorize a given session for having a simple account logged in to it,
-        returning None if that session is not bound to an account.
-        """
-        binding = (yield session.authorize([ISimpleAccountBinding])
-                   )[ISimpleAccountBinding]
-        returnValue(next(iter((yield binding.authenticated_accounts())),
-                         None))
 
 
 
@@ -792,10 +698,9 @@ class IPTrackingProcurer(object):
 
 procurerFromStoreT = Callable[[ISessionStore], ISessionProcurer]
 
-def openSessionStore(
-        reactor,                # type: IReactorThreads
-        databaseURL,            # type: Text
-        componentCreators=(),   # type: Iterable[Callable]
+def procurerFromDataStore(
+        dataStore,                        # type: DataStore
+        authorizers,                      # type: List[ISQLAuthorizer]
         procurerFromStore=SessionProcurer  # type: procurerFromStoreT
 ):
     # type: (...) -> ISessionProcurer
@@ -810,18 +715,12 @@ def openSessionStore(
 
     @return: L{Deferred} firing with L{ISessionProcurer}
     """
-    dataStore = DataStore.open(
-        reactor, databaseURL, [
-            lambda dataStore: AlchimiaSessionStore(dataStore),
-            AccountBindingStorePlugin,
-            lambda dataStore:
-            IPTrackingProcurer(
-                dataStore, procurerFromStore(
-                    next(iter(dataStore.componentsProviding(ISessionStore))))),
-            AccountLoginAuthorizer,
-        ] + list(componentCreators)
+    sessionStore = AlchimiaSessionStore(
+        dataStore, [simpleAccountBinding.authorizer,
+                    logMeIn.authorizer] + list(authorizers)
     )
-    return next(iter(dataStore.componentsProviding(ISessionProcurer)))
+    basicProcurer = procurerFromStore(sessionStore)
+    return IPTrackingProcurer(dataStore, basicProcurer)
 
 
 
@@ -849,15 +748,15 @@ _authorizerFunction = Callable[
 
 @implementer(ISQLAuthorizer)
 @attr.s
-class AnAuthorizer(object):
-    dataStore = attr.ib(type=DataStore)
+class SimpleSQLAuthorizer(object):
     authzn_for = attr.ib(type=Type)
     _decorated = attr.ib(type=_authorizerFunction)
 
     def authzn_for_session(self, sessionStore, transaction, session):
         # type: (AlchimiaSessionStore, Transaction, ISession) -> Any
         cb = cast(_authorizerFunction, self._decorated)  # type: ignore
-        return cb(self.dataStore, sessionStore, transaction, session)
+        return cb(sessionStore, transaction, session)
+
 
 def authorizerFor(
         authzn_for,                        # type: Type
@@ -878,11 +777,38 @@ def authorizerFor(
     def decorator(decorated):
         # type: (_authorizerFunction) -> _FunctionWithAuthorizer
         result = cast(_FunctionWithAuthorizer, decorated)
-
-        def curriedAuthorizer(dataStore):
-            # type: (DataStore) -> ISQLAuthorizer
-            return cast(ISQLAuthorizer,
-                        AnAuthorizer(dataStore, authzn_for, decorated))
-        result.authorizer = curriedAuthorizer
+        result.authorizer = SimpleSQLAuthorizer(authzn_for, decorated)
         return result
     return decorator
+
+
+
+@authorizerFor(ISimpleAccountBinding)
+def simpleAccountBinding(
+        sessionStore,           # type: AlchimiaSessionStore
+        transaction,            # type: Transaction
+        session                 # type: ISession
+):
+    """
+    All sessions are authorized for access to an L{ISimpleAccountBinding}.
+    """
+    # type: (...) -> AccountSessionBinding
+    return AccountSessionBinding(session, transaction)
+
+
+
+@authorizerFor(ISimpleAccount)
+@inlineCallbacks
+def logMeIn(
+        sessionStore,           # type: AlchimiaSessionStore
+        transaction,            # type: Transaction
+        session                 # type: ISession
+):
+    # type: (...) -> Deferred
+    """
+    Retrieve an L{ISimpleAccount} authorization.
+    """
+    binding = ((yield session.authorize([ISimpleAccountBinding]))
+               [ISimpleAccountBinding])
+    returnValue(next(iter((yield binding.authenticated_accounts())),
+                     None))

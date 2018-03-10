@@ -1,8 +1,10 @@
 
-from ._sql import DataStore, SessionSchema, authorizerFor, openSessionStore
+from ._sql import (
+    DataStore, SessionSchema, authorizerFor, procurerFromDataStore
+)
 
 __all__ = [
-    "openSessionStore",
+    "procurerFromDataStore",
     "authorizerFor",
     "SessionSchema",
     "DataStore",

@@ -1,4 +1,4 @@
-
+from sys import exc_info
 from binascii import hexlify
 from collections import deque
 from datetime import datetime
@@ -26,7 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.schema import CreateTable
 
 from twisted.internet.defer import (
-    gatherResults, inlineCallbacks, maybeDeferred, returnValue
+    gatherResults, inlineCallbacks, maybeDeferred, returnValue, succeed
 )
 from twisted.python.compat import unicode
 from twisted.python.failure import Failure
@@ -110,6 +110,15 @@ class SessionIPInformation(object):
     when = attr.ib(validator=an(datetime), type=datetime)
 
 _sqlAlchemyConnection = Any
+_sqlAlchemyTransaction = Any
+
+COMMITTING = "committing"
+COMMITTED = "committed"
+COMMIT_FAILED = "commit failed"
+ROLLING_BACK = "rolling back"
+ROLLED_BACK = "rolled back"
+ROLLBACK_FAILED = "rollback failed"
+
 
 @attr.s
 class Transaction(object):
@@ -118,7 +127,21 @@ class Transaction(object):
     transaction is committed or rolled back.
     """
     _connection = attr.ib(type=_sqlAlchemyConnection)
+    _transaction = attr.ib(type=_sqlAlchemyTransaction)
+    _parent = attr.ib(type='Optional[Transaction]', default=None)
     _stopped = attr.ib(type=Text, default=u"")
+    _completeDeferred = attr.ib(type=Deferred, default=Factory(Deferred))
+
+    def _checkStopped(self):
+        """
+        Raise an exception if the transaction has been stopped for any reason.
+        """
+        # type: () -> None
+        if self._stopped:
+            raise TransactionEnded(self._stopped)
+        if self._parent is not None:
+            self._parent._checkStopped()
+
 
     def execute(self, statement, *multiparams, **params):
         # type: (Any, *Any, **Any) -> Deferred
@@ -126,9 +149,126 @@ class Transaction(object):
         Execute a statement unless this transaction has been stopped, otherwise
         raise L{TransactionEnded}.
         """
-        if self._stopped:
-            raise TransactionEnded(self._stopped)
+        self._checkStopped()
         return self._connection.execute(statement, *multiparams, **params)
+
+
+    def commit(self):
+        # type: () -> Deferred
+        """
+        Commit this transaction.
+        """
+        self._checkStopped()
+        self._stopped = COMMITTING
+        return self._transaction.commit().addCallbacks(
+            (lambda commitResult: self._finishWith(COMMITTED)),
+            (lambda commitFailure: self._finishWith(COMMIT_FAILED))
+        )
+
+
+    def rollback(self):
+        # type: () -> Deferred
+        """
+        Roll this transaction back.
+        """
+        self._checkStopped()
+        self._stopped = ROLLING_BACK
+        return self._transaction.rollback().addCallbacks(
+            (lambda commitResult: self._finishWith(ROLLED_BACK)),
+            (lambda commitFailure: self._finishWith(ROLLBACK_FAILED))
+        )
+
+
+    def _finishWith(self, stopStatus):
+        """
+        Complete this transaction.
+        """
+        self._stopped = stopStatus
+        self._completeDeferred.callback(stopStatus)
+
+
+    @inlineCallbacks
+    def savepoint(self):
+        # type: () -> Deferred
+        """
+        Create a L{Savepoint} which can be treated as a sub-transaction.
+
+        @note: As long as this L{Savepoint} has not been rolled back or
+            committed, this transaction's C{execute} method will execute within
+            the context of that savepoint.
+        """
+        returnValue(Transaction(
+            self._connection, (yield self._connection.begin_nested()),
+            self
+        ))
+
+
+    def maybeCommit(self):
+        # type: () -> Deferred
+        """
+        Commit this transaction if it hasn't been finished (committed or rolled
+        back) yet; otherwise, do nothing.
+        """
+        if self._stopped:
+            return succeed(None)
+        return self.commit()
+
+
+    def maybeRollback(self):
+        # type: () -> Deferred
+        """
+        Roll this transaction back if it hasn't been finished (committed or
+        rolled back) yet; otherwise, do nothing.
+        """
+        if self._stopped:
+            return succeed(None)
+        return self.rollback()
+
+
+@attr.s
+class TransactionRunner(object):
+    """
+    A context manager that represents the lifecycle of a transaction when
+    paired with application code.
+    """
+
+    _dataStore = attr.ib(type='DataStore')
+    _transaction = attr.ib(type=Optional[Transaction], default=None)
+
+    @inlineCallbacks
+    def __aenter__(self):
+        """
+        Start a transaction.
+        """
+        # type: (type, Exception, Any) -> Deferred
+        self._transaction = yield self._dataStore.newTransaction()
+        returnValue(self._transaction)
+
+    @inlineCallbacks
+    def __aexit__(self, exc_type, exc_value, traceback):
+        # type: (type, Exception, Any) -> Deferred
+        """
+        End a transaction.
+        """
+        if exc_type is None:
+            yield self._transaction.commit()
+        else:
+            yield self._transaction.rollback()
+        self._transaction = None
+
+    @inlineCallbacks
+    def run(self, logic):
+        """
+        Run the given logic within this L{TransactionContext}, starting and
+        stopping as usual.
+        """
+        # type: (Callable) -> Deferred
+        try:
+            transaction = yield self.__aenter__()
+            result = yield logic(transaction)
+        finally:
+            yield self.__aexit__(*exc_info())
+        returnValue(result)
 
 
 
@@ -141,6 +281,24 @@ class DataStore(object):
 
     _engine = attr.ib(type=_sqlAlchemyConnection)
     _freeConnections = attr.ib(default=Factory(deque), type=deque)
+
+    @inlineCallbacks
+    def newTransaction(self):
+        """
+        Create a new Klein transaction.
+        """
+        alchimiaConnection = (
+            self._freeConnections.popleft() if self._freeConnections
+            else (yield self._engine.connect())
+        )
+        alchimiaTransaction = yield alchimiaConnection.begin()
+        kleinTransaction = Transaction(alchimiaConnection, alchimiaTransaction)
+        @kleinTransaction._completeDeferred.addBoth
+        def recycleTransaction(anything):
+            self._freeConnections.append(alchimiaConnection)
+            return anything
+        returnValue(kleinTransaction)
+
 
     @inlineCallbacks
     def sql(self, callable):
@@ -157,25 +315,7 @@ class DataStore(object):
         @rtype: L{Deferred} that fires when the transaction is complete, or
             fails when the transaction is rolled back.
         """
-        try:
-            cxn = (self._freeConnections.popleft() if self._freeConnections
-                   else (yield self._engine.connect()))
-            sqla_txn = yield cxn.begin()
-            txn = Transaction(cxn)
-            try:
-                result = yield callable(txn)
-            except BaseException:
-                # XXX rollback() and commit() might both also fail
-                failure = Failure()
-                txn._stopped = "rolled back"
-                yield sqla_txn.rollback()
-                returnValue(failure)
-            else:
-                txn._stopped = "committed"
-                yield sqla_txn.commit()
-                returnValue(result)
-        finally:
-            self._freeConnections.append(cxn)
+        return TransactionRunner(self).run(callable)
 
 
     @classmethod

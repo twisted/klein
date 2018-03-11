@@ -1,5 +1,5 @@
 -e .
-alchimia==0.7.0
+git+https://github.com/alex/alchimia.git@ce7ee4d9270eb67d212cac9f507d253f08cbe405#egg=alchimia
 attrs==17.4.0
 incremental==15.3.0
 rethinkdb==2.3.0.post5

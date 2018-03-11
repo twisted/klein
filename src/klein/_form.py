@@ -53,6 +53,16 @@ class ValidationError(Exception):
         self.message = message
 
 
+def textConverter(value):
+    # type: (AnyStr) -> Text
+    """
+    Converter for form values (which may be any type of string) into text.
+    """
+    return (
+        value if isinstance(value, unicode) else unicode(value, "utf-8")
+    )
+
+
 @attr.s(frozen=True)
 class Field(object):
     """
@@ -140,9 +150,7 @@ class Field(object):
         Shorthand for a form field that contains a short string, and will be
         rendered as a plain <input>.
         """
-        return cls(converter=lambda x: (
-            x if isinstance(x, unicode) else unicode(x, "utf-8")
-        ), formInputType="text")
+        return cls(converter=textConverter, formInputType="text")
 
     @classmethod
     def password(cls):          # type: () -> Field
@@ -151,7 +159,7 @@ class Field(object):
         but should be obscured when typed (and, to the extent possible,
         obscured in other sensitive contexts, such as logging.)
         """
-        return cls(converter=lambda x: unicode(x, "utf-8"),
+        return cls(converter=textConverter,
                    formInputType="password")
 
     @classmethod
@@ -160,7 +168,7 @@ class Field(object):
         """
         Shorthand for a hidden field.
         """
-        return cls(converter=lambda x: unicode(x, "utf-8"),
+        return cls(converter=textConverter,
                    formInputType="hidden",
                    noLabel=True,
                    value=value).maybeNamed(name)
@@ -477,6 +485,7 @@ class Form(object):
                 if session.authenticatedBy == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION.encode("ascii"),
                                              [b""])[0]
+                    print("TOKEN?", repr(token))
                     token = token.decode("ascii")
                     if token != session.identifier:
                         raise CrossSiteRequestForgery(token,
@@ -485,10 +494,13 @@ class Form(object):
                 prevalidationValues = {}
                 arguments = {}
                 for field in self._fields:
+                    print("FIELD", field)
                     text = field.extractValue(request)
+                    print("EXTRACTED", text)
                     prevalidationValues[field] = text
                     try:
                         value = field.validateValue(text)
+                        print("validated!", value)
                         argName = field.pythonArgumentName
                         if argName is None:
                             raise ValidationError(
@@ -499,6 +511,7 @@ class Form(object):
                     else:
                         arguments[argName] = value
                 if validationErrors:
+                    print("VE:", validationErrors)
                     result = yield _call(
                         instance,
                         failureHandlers.get(self, self._onValidationFailure),
@@ -506,6 +519,7 @@ class Form(object):
                         *args, **kw
                     )
                 else:
+                    print("KWA:", arguments, function)
                     kw.update(arguments)
                     result = yield _call(instance, function, request,
                                          *args, **kw)

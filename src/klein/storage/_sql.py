@@ -196,7 +196,7 @@ class AccountSessionBinding(object):
         insert = (sessionSchema.account.insert()
                   .values(account_id=newAccountID,
                           username=username, email=email,
-                          passwordBlob=computedHash))
+                          password_blob=computedHash))
         try:
             yield self._transaction.execute(insert)
         except IntegrityError:
@@ -233,7 +233,7 @@ class AccountSessionBinding(object):
             # no account, bye
             returnValue(None)
         [row] = accountsInfo
-        stored_password_text = row[acc.c.passwordBlob]
+        stored_password_text = row[acc.c.password_blob]
         accountID = row[acc.c.account_id]
 
         def reset_password(newPWText):
@@ -241,7 +241,7 @@ class AccountSessionBinding(object):
             a = sessionSchema.account
             return self._transaction.execute(
                 a.update(a.c.account_id == accountID)
-                .values(passwordBlob=newPWText)
+                .values(password_blob=newPWText)
             )
 
         if (yield checkAndReset(stored_password_text,
@@ -343,7 +343,7 @@ class SQLAccount(object):
         """
         return self._transaction.execute(
             sessionSchema.sessionAccount
-            .insert().values(accountID=self.accountID,
+            .insert().values(account_id=self.accountID,
                              session_id=session.identifier)
         )
 
@@ -358,8 +358,8 @@ class SQLAccount(object):
         computed_hash = yield computeKeyText(new_password)
         result = yield self._transaction.execute(
             sessionSchema.account.update()
-            .where(accountID=self.accountID)
-            .values(passwordBlob=computed_hash)
+            .where(account_id=self.accountID)
+            .values(password_blob=computed_hash)
         )
         returnValue(result)
 
@@ -598,8 +598,6 @@ class _FunctionWithAuthorizer(object):
 
     def __call__(
             self,
-            metadata,           # type: MetaData
-            dataStore,          # type: DataStore
             sessionStore,       # type: AlchimiaSessionStore
             transaction,        # type: Transaction
             session             # type: ISession

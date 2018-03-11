@@ -1,6 +1,6 @@
 
 from ._sql import (
-    DataStore, SessionSchema, authorizerFor, procurerFromDataStore
+    DataStore, SessionSchema, authorizerFor, procurerFromDataStore, Transaction
 )
 
 __all__ = [
@@ -8,6 +8,7 @@ __all__ = [
     "authorizerFor",
     "SessionSchema",
     "DataStore",
+    "Transaction",
 ]
 
 if __name__ == '__main__':

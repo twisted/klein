@@ -16,7 +16,7 @@ from klein.interfaces import (
 
 ISessionProcurer # used for type-checking
 from klein.storage.sql import (
-    procurerFromDataStore, authorizerFor, SessionSchema, DataStore
+    procurerFromDataStore, authorizerFor, SessionSchema, DataStore, Transaction
 )
 
 from twisted.web.util import Redirect
@@ -105,19 +105,16 @@ import attr
 
 @attr.s
 class Chirper(object):
-    datastore = attr.ib(type=DataStore)
+    transaction = attr.ib(type=Transaction)
     account = attr.ib(type=ISimpleAccount)
     chirpTable = attr.ib(type=Table)
 
     def chirp(self, value):
         chirpTable = self.chirpTable
-        @self.datastore.transact
-        def dstor(transaction):
-            return transaction.execute(chirpTable.insert().values(
-                accountID=self.account.accountID,
+        return self.transaction.execute(chirpTable.insert().values(
+                account_id=self.account.accountID,
                 chirp=value
             ))
-        return dstor
 
 appMetadata = MetaData()
 sessionSchema = SessionSchema.withMetadata(appMetadata)
@@ -130,33 +127,30 @@ chirpTable = Table(
 
 @authorizerFor(Chirper)
 @inlineCallbacks
-def authorize_chirper(datastore, session_store, transaction, session):
+def authorize_chirper(session_store, transaction, session):
     account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
     if account is not None:
-        returnValue(Chirper(datastore, account, chirpTable))
+        returnValue(Chirper(transaction, account, chirpTable))
 
 
 
 @attr.s
 class ChirpReader(object):
-    datastore = attr.ib(type=DataStore)
+    transaction = attr.ib(type=Transaction)
 
+    @inlineCallbacks
     def read_chirps(self, username):
-        @self.datastore.transact
-        @inlineCallbacks
-        def read(txn):
-            result = yield ((yield txn.execute(chirpTable.select(
-                (chirpTable.c.account_id ==
-                 sessionSchema.accountTable.c.account_id) &
-                (sessionSchema.accountTable.c.username == username)
-            ))).fetchall())
-            returnValue([row[chirp.c.chirp] for row in result])
-        return read
+        result = yield ((yield self.transaction.execute(chirpTable.select(
+            (chirpTable.c.account_id ==
+             sessionSchema.account.c.account_id) &
+            (sessionSchema.account.c.username == username)
+        ))).fetchall())
+        returnValue([row[chirpTable.c.chirp] for row in result])
 
 
 @authorizerFor(ChirpReader)
-def auth_for_reading(datastore, session_store, transaction, session):
-    return ChirpReader(datastore)
+def auth_for_reading(session_store, transaction, session):
+    return ChirpReader(transaction)
 
 
 from twisted.internet import reactor
@@ -195,10 +189,10 @@ def authorized():
     return procurer
 
 logout = Form(authorized)
-chirp = Form(authorized).withFields(value=Field.text())
+chirpForm = Form(authorized).withFields(value=Field.text())
 
 @authorized(
-    chirp.renderer(
+    chirpForm.renderer(
         style.routed(app.route("/"),
                      [tags.h1(slot('result')),
                       tags.div(slot("chirp_form"))]),
@@ -235,7 +229,7 @@ def read_some_chirps(request, user, reader):
         "chirps": chirps,
     })
 
-@authorized(chirp.handler(app.route("/chirp", methods=["POST"])),
+@authorized(chirpForm.handler(app.route("/chirp", methods=["POST"])),
             chirper=Chirper)
 @inlineCallbacks
 def addChirp(request, chirper, value):

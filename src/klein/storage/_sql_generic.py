@@ -2,13 +2,14 @@
 Generic SQL data storage stuff; the substrate for session-storage stuff.
 """
 
+from zope.interface import Interface, implementer
 from collections import deque
 from sys import exc_info
 from typing import Any, Text, Optional
 import attr
 from attr import Factory
 from twisted.internet.defer import (Deferred, inlineCallbacks, returnValue,
-                                    succeed)
+                                    succeed, gatherResults)
 from ..interfaces import TransactionEnded
 from sqlalchemy import create_engine
 from alchimia import TWISTED_STRATEGY
@@ -168,7 +169,7 @@ class Transactor(object):
         self._transaction = None
 
     @inlineCallbacks
-    def run(self, logic):
+    def transact(self, logic):
         """
         Run the given logic within this L{TransactionContext}, starting and
         stopping as usual.
@@ -183,7 +184,7 @@ class Transactor(object):
 
 
 
-@attr.s
+@attr.s(hash=False)
 class DataStore(object):
     """
     L{DataStore} is a generic storage object that connect to an SQL
@@ -211,7 +212,6 @@ class DataStore(object):
         returnValue(kleinTransaction)
 
 
-    @inlineCallbacks
     def transact(self, callable):
         # type: (Callable[[Transaction], Any]) -> Any
         """
@@ -245,6 +245,40 @@ class DataStore(object):
                                  strategy=TWISTED_STRATEGY))
 
 
+class ITransactionRequestAssociator(Interface):
+    """
+    Associates transactions with requests.
+    """
+
+@implementer(ITransactionRequestAssociator)
+@attr.s
+class TransactionRequestAssociator(object):
+    """
+    Does the thing the interface says.
+    """
+    _map = attr.ib(type=dict, default=Factory(dict))
+    committing = attr.ib(type=bool, default=False)
+
+    @inlineCallbacks
+    def transactionForStore(self, dataStore):
+        """
+        Get a transaction for the given datastore.
+        """
+        if dataStore in self._map:
+            returnValue(self._map[dataStore])
+        txn = yield dataStore.newTransaction()
+        self._map[dataStore] = txn
+        returnValue(txn)
+
+    def commitAll(self):
+        """
+        Commit all associated transactions.
+        """
+        self.committing = True
+        return gatherResults([value.maybeCommit()
+                              for value in self._map.values()])
+
+@inlineCallbacks
 def requestBoundTransaction(request, dataStore):
     # type: (IRequest, DataStore) -> Deferred
     """
@@ -275,4 +309,38 @@ def requestBoundTransaction(request, dataStore):
            all database locks while doing some potentially slow external API
            calls, then start a I{new} transaction later in the request flow.
     """
-    
+    assoc = request.getComponent(ITransactionRequestAssociator)
+    if assoc is None:
+        assoc = TransactionRequestAssociator()
+        request.setComponent(ITransactionRequestAssociator, assoc)
+
+        def finishCommit(result):
+            return assoc.commitAll()
+        request.notifyFinish().addBoth(finishCommit)
+
+        # originalWrite = request.write
+        # buffer = []
+        # def committed(result):
+        #     for buf in buffer:
+        #         if buf is None:
+        #             originalFinish()
+        #         else:
+        #             originalWrite(buf)
+
+        # def maybeWrite(data):
+        #     if request.startedWriting:
+        #         return originalWrite(data)
+        #     buffer.append(data)
+        #     if assoc.committing:
+        #         return
+        #     assoc.commitAll().addBoth(committed)
+        # def maybeFinish():
+        #     if not request.startedWriting:
+        #         buffer.append(None)
+        #     else:
+        #         originalFinish()
+        # originalFinish = request.finish
+        # request.write = maybeWrite
+        # request.finish = maybeFinish
+    txn = yield assoc.transactionForStore(dataStore)
+    return txn

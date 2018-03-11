@@ -30,7 +30,7 @@ from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from ._security import checkAndReset, computeKeyText
-from ._sql_generic import DataStore, Transaction
+from ._sql_generic import DataStore, Transaction, requestBoundTransaction
 from .. import SessionProcurer
 from ..interfaces import (
     ISQLAuthorizer, ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
@@ -68,31 +68,26 @@ class SQLSession(object):
     def authorize(self, interfaces):
         # type: (Iterable[IInterface]) -> Any
         interfaces = set(interfaces)
-        dataStore = self._sessionStore._dataStore
+        result = {}         # type: Dict[IInterface, Deferred]
+        ds = []             # type: List[Deferred]
+        txn = self._sessionStore._transaction
+        for a in self._sessionStore._authorizers:
+            # This should probably do something smart with interface
+            # priority, checking isOrExtends or something similar.
+            if a.authzn_for in interfaces:
+                v = maybeDeferred(a.authzn_for_session,
+                                  self._sessionStore, txn, self)
+                ds.append(v)
+                result[a.authzn_for] = v
+                v.addCallback(
+                    lambda value, ai: result.__setitem__(ai, value),
+                    ai=a.authzn_for
+                )
 
-        @dataStore.sql
-        def authzn(txn):
-            # type: (Transaction) -> Deferred
-            result = {}         # type: Dict[IInterface, Deferred]
-            ds = []             # type: List[Deferred]
-            for a in self._sessionStore._authorizers:
-                # This should probably do something smart with interface
-                # priority, checking isOrExtends or something similar.
-                if a.authzn_for in interfaces:
-                    v = maybeDeferred(a.authzn_for_session,
-                                      self._sessionStore, txn, self)
-                    ds.append(v)
-                    result[a.authzn_for] = v
-                    v.addCallback(
-                        lambda value, ai: result.__setitem__(ai, value),
-                        ai=a.authzn_for
-                    )
-
-            def r(ignored):
-                # type: (T) -> Dict[str, Any]
-                return result
-            return (gatherResults(ds).addCallback(r))
-        return authzn
+        def r(ignored):
+            # type: (T) -> Dict[str, Any]
+            return result
+        return (gatherResults(ds).addCallback(r))
 
 
 
@@ -107,13 +102,13 @@ class SessionIPInformation(object):
 
 @implementer(ISessionStore)
 @attr.s()
-class AlchimiaSessionStore(object):
+class SessionStore(object):
     """
-    An implementation of L{ISessionStore} based on an L{AlchimiaStore}, that
+    An implementation of L{ISessionStore} based on a L{DataStore}, that
     stores sessions in a SQLAlchemy database.
     """
 
-    _dataStore = attr.ib(type=DataStore)
+    _transaction = attr.ib(type=Transaction)
     _authorizers = attr.ib(type=List[ISQLAuthorizer], default=Factory(list))
 
     def sentInsecurely(self, tokens):
@@ -127,57 +122,43 @@ class AlchimiaSessionStore(object):
         @return: a L{Deferred} that fires when the tokens have been
             invalidated.
         """
-        @self._dataStore.transact
-        def invalidate(txn):
-            # type: (Transaction) -> Deferred
-            s = sessionSchema.session
-            return gatherResults([
-                txn.execute(
-                    s.delete().where((s.c.session_id == token) &
-                                     (s.c.confidential == true()))
-                ) for token in tokens
-            ])
-        return invalidate
+        s = sessionSchema.session
+        return gatherResults([
+            self._transaction.execute(
+                s.delete().where((s.c.session_id == token) &
+                                 (s.c.confidential == true()))
+            ) for token in tokens
+        ])
 
 
+    @inlineCallbacks
     def newSession(self, isConfidential, authenticatedBy):
-        # type: (bool, SessionMechanism) -> Any
-        @self._dataStore.transact
-        @inlineCallbacks
-        def created(txn):
-            # type: (Transaction) -> Any
-            identifier = hexlify(urandom(32)).decode('ascii')
-            s = sessionSchema.session
-            yield txn.execute(s.insert().values(
-                session_id=identifier,
-                confidential=isConfidential,
-            ))
-            returnValue(SQLSession(self,
-                                   identifier=identifier,
-                                   isConfidential=isConfidential,
-                                   authenticatedBy=authenticatedBy))
-        return created
+        identifier = hexlify(urandom(32)).decode('ascii')
+        s = sessionSchema.session
+        yield self._transaction.execute(s.insert().values(
+            session_id=identifier,
+            confidential=isConfidential,
+        ))
+        returnValue(SQLSession(self,
+                               identifier=identifier,
+                               isConfidential=isConfidential,
+                               authenticatedBy=authenticatedBy))
 
 
+    @inlineCallbacks
     def loadSession(self, identifier, isConfidential, authenticatedBy):
-        # type: (Text, bool, SessionMechanism) -> Any
-        @self._dataStore.transact
-        @inlineCallbacks
-        def loaded(engine):
-            # type: (Transaction) -> Any
-            s = sessionSchema.session
-            result = yield engine.execute(
-                s.select((s.c.session_id == identifier) &
-                         (s.c.confidential == isConfidential)))
-            results = yield result.fetchall()
-            if not results:
-                raise NoSuchSession()
-            fetched_identifier = results[0][s.c.session_id]
-            returnValue(SQLSession(self,
-                                   identifier=fetched_identifier,
-                                   isConfidential=isConfidential,
-                                   authenticatedBy=authenticatedBy))
-        return loaded
+        s = sessionSchema.session
+        result = yield self._transaction.execute(
+            s.select((s.c.session_id == identifier) &
+                     (s.c.confidential == isConfidential)))
+        results = yield result.fetchall()
+        if not results:
+            raise NoSuchSession()
+        fetched_identifier = results[0][s.c.session_id]
+        returnValue(SQLSession(self,
+                               identifier=fetched_identifier,
+                               isConfidential=isConfidential,
+                               authenticatedBy=authenticatedBy))
 
 
 
@@ -257,15 +238,11 @@ class AccountSessionBinding(object):
 
         def reset_password(newPWText):
             # type: (Text) -> Any
-            @self._dataStore.transact
-            def storenew(engine):
-                # type: (Transaction) -> Any
-                a = sessionSchema.account
-                return engine.execute(
-                    a.update(a.c.account_id == accountID)
-                    .values(passwordBlob=newPWText)
-                )
-            return storenew
+            a = sessionSchema.account
+            return self._transaction.execute(
+                a.update(a.c.account_id == accountID)
+                .values(passwordBlob=newPWText)
+            )
 
         if (yield checkAndReset(stored_password_text,
                                 password,
@@ -276,32 +253,30 @@ class AccountSessionBinding(object):
             returnValue(account)
 
 
+    @inlineCallbacks
     def authenticated_accounts(self):
-        # type: () -> Any
+        # type: () -> Deferred
         """
         Retrieve the accounts currently associated with this session.
 
         @return: L{Deferred} firing with a L{list} of accounts.
         """
-        @self._dataStore.transact
-        @inlineCallbacks
-        def retrieve(engine):
-            # type: (Transaction) -> Any
-            ast = sessionSchema.sessionAccount
-            acc = sessionSchema.account
-            result = (yield (yield engine.execute(
-                ast.join(acc, ast.c.account_id == acc.c.account_id)
-                .select(ast.c.session_id == self._session.identifier,
-                        use_labels=True)
-            )).fetchall())
-            returnValue([
-                self._account(it[ast.c.account_id], it[acc.c.username],
-                              it[acc.c.email])
-                for it in result
-            ])
-        return retrieve
+        # type: (Transaction) -> Any
+        ast = sessionSchema.sessionAccount
+        acc = sessionSchema.account
+        result = (yield (yield self._transaction.execute(
+            ast.join(acc, ast.c.account_id == acc.c.account_id)
+            .select(ast.c.session_id == self._session.identifier,
+                    use_labels=True)
+        )).fetchall())
+        returnValue([
+            self._account(it[ast.c.account_id], it[acc.c.username],
+                          it[acc.c.email])
+            for it in result
+        ])
 
 
+    @inlineCallbacks
     def attached_sessions(self):
         # type: () -> Any
         """
@@ -315,28 +290,23 @@ class AccountSessionBinding(object):
         # is not actually part of the interface passed here
         sipt = sessionSchema.sessionIP
 
-        @self._dataStore.transact
-        @inlineCallbacks
-        def query(conn):
-            # type: (Transaction) -> Any
-            acs2 = acs.alias()
-            from sqlalchemy.sql.expression import select
-            result = yield conn.execute(
-                select([sipt], use_labels=True)
-                .where(
-                    (acs.c.session_id == self._session.identifier) &
-                    (acs.c.account_id == acs2.c.account_id) &
-                    (acs2.c.session_id == sipt.c.session_id)
-                )
+        acs2 = acs.alias()
+        from sqlalchemy.sql.expression import select
+        result = yield self._transaction.execute(
+            select([sipt], use_labels=True)
+            .where(
+                (acs.c.session_id == self._session.identifier) &
+                (acs.c.account_id == acs2.c.account_id) &
+                (acs2.c.session_id == sipt.c.session_id)
             )
-            returnValue([
-                SessionIPInformation(
-                    id=row[sipt.c.session_id],
-                    ip=row[sipt.c.ip_address],
-                    when=row[sipt.c.last_used])
-                for row in (yield result.fetchall())
-            ])
-        return query
+        )
+        returnValue([
+            SessionIPInformation(
+                id=row[sipt.c.session_id],
+                ip=row[sipt.c.ip_address],
+                when=row[sipt.c.last_used])
+            for row in (yield result.fetchall())
+        ])
 
 
     def log_out(self):
@@ -346,15 +316,10 @@ class AccountSessionBinding(object):
 
         @return: a L{Deferred} that fires when the account is logged out.
         """
-        @self._dataStore.transact
-        def retrieve(engine):
-            # type: (Transaction) -> Deferred
-            ast = sessionSchema.sessionAccount
-            return engine.execute(ast.delete(
-                ast.c.session_id == self._session.identifier
-            ))
-        return retrieve
-
+        ast = sessionSchema.sessionAccount
+        return self._transaction.execute(ast.delete(
+            ast.c.session_id == self._session.identifier
+        ))
 
 
 
@@ -548,7 +513,7 @@ class IPTrackingProcurer(object):
     def __init__(
             self,
             dataStore,          # type: DataStore
-            procurer            # type: ISessionProcurer
+            procurerFromTransaction  # type: Callable[[Transaction], ISessionProcurer]
     ):
         # type: (...) -> None
         """
@@ -556,7 +521,7 @@ class IPTrackingProcurer(object):
         data store, and an existing L{ISessionProcurer}.
         """
         self._dataStore = dataStore
-        self._procurer = procurer
+        self._procurerFromTransaction = procurerFromTransaction
 
 
     @inlineCallbacks
@@ -567,8 +532,16 @@ class IPTrackingProcurer(object):
         Procure a session from the underlying procurer, keeping track of the IP
         of the request object.
         """
-        session = yield self._procurer.procureSession(request, forceInsecure,
-                                                      alwaysCreate)
+        alreadyProcured = request.getComponent(ISession)
+        if alreadyProcured is not None:
+            returnValue(alreadyProcured)
+        # if getattr(request, 'requesting', False):
+        #     raise RuntimeError("what are you doing!?")
+        # request.requesting = True
+        transaction = yield requestBoundTransaction(request, self._dataStore)
+        procurer = yield self._procurerFromTransaction(transaction)
+        session = yield procurer.procureSession(request, forceInsecure,
+                                                alwaysCreate)
         if session is None:
             return
         try:
@@ -583,6 +556,8 @@ class IPTrackingProcurer(object):
                                  else u"AF_INET")),
             dict(last_used=datetime.utcnow())
         )
+        # XXX This should set a savepoint because we don't want application
+        # logic to be able to roll back the IP access log.
         returnValue(session)
 
 
@@ -606,12 +581,14 @@ def procurerFromDataStore(
 
     @return: L{Deferred} firing with L{ISessionProcurer}
     """
-    sessionStore = AlchimiaSessionStore(
-        dataStore, [simpleAccountBinding.authorizer,
-                    logMeIn.authorizer] + list(authorizers)
+    allAuthorizers = [simpleAccountBinding.authorizer,
+                      logMeIn.authorizer] + list(authorizers)
+    return IPTrackingProcurer(
+        dataStore,
+        lambda transaction: procurerFromStore(SessionStore(
+            transaction, allAuthorizers
+        ))
     )
-    basicProcurer = procurerFromStore(sessionStore)
-    return IPTrackingProcurer(dataStore, basicProcurer)
 
 
 
@@ -633,7 +610,7 @@ class _FunctionWithAuthorizer(object):
         """
 
 _authorizerFunction = Callable[
-    [DataStore, AlchimiaSessionStore, Transaction, ISession],
+    [DataStore, SessionStore, Transaction, ISession],
     Any
 ]
 

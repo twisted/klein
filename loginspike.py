@@ -111,7 +111,7 @@ class Chirper(object):
 
     def chirp(self, value):
         chirpTable = self.chirpTable
-        @self.datastore.sql
+        @self.datastore.transact
         def dstor(transaction):
             return transaction.execute(chirpTable.insert().values(
                 accountID=self.account.accountID,
@@ -142,7 +142,7 @@ class ChirpReader(object):
     datastore = attr.ib(type=DataStore)
 
     def read_chirps(self, username):
-        @self.datastore.sql
+        @self.datastore.transact
         @inlineCallbacks
         def read(txn):
             result = yield ((yield txn.execute(chirpTable.select(
@@ -162,7 +162,7 @@ def auth_for_reading(datastore, session_store, transaction, session):
 from twisted.internet import reactor
 dataStore = DataStore.open(reactor, "sqlite:///sessions.sqlite")
 
-@dataStore.sql
+@dataStore.transact
 @inlineCallbacks
 def initSchema(transaction):
     """
@@ -230,7 +230,6 @@ def read_some_chirps(request, user, reader):
     
     """
     chirps = yield reader.read_chirps(user)
-    print("chirps?", repr(chirps))
     returnValue({
         "user": user,
         "chirps": chirps,
@@ -240,7 +239,6 @@ def read_some_chirps(request, user, reader):
             chirper=Chirper)
 @inlineCallbacks
 def addChirp(request, chirper, value):
-    print("CHIRPING", repr(value))
     yield chirper.chirp(value)
     returnValue(Redirect(b"/"))
 

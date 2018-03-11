@@ -559,6 +559,7 @@ class IPTrackingProcurer(object):
         self._procurer = procurer
 
 
+    @inlineCallbacks
     def procureSession(self, request, forceInsecure=False,
                        alwaysCreate=True):
         # type: (IRequest, bool, bool) -> Deferred
@@ -566,45 +567,24 @@ class IPTrackingProcurer(object):
         Procure a session from the underlying procurer, keeping track of the IP
         of the request object.
         """
-        andThen = (self._procurer
-                   .procureSession(request, forceInsecure, alwaysCreate)
-                   .addCallback)
+        session = yield self._procurer.procureSession(request, forceInsecure,
+                                                      alwaysCreate)
+        if session is None:
+            return
+        try:
+            ipAddress = (request.client.host or b"").decode("ascii")
+        except BaseException:
+            ipAddress = u""
+        sip = sessionSchema.sessionIP
+        yield upsert(
+            transaction, sip,
+            dict(session_id=session.identifier, ip_address=ipAddress,
+                 address_family=(u"AF_INET6" if u":" in ipAddress
+                                 else u"AF_INET")),
+            dict(last_used=datetime.utcnow())
+        )
+        returnValue(session)
 
-        @andThen
-        def _(session):
-            # type: (SQLSession) -> Any
-            if session is None:
-                return
-            sessionID = session.identifier
-            try:
-                ip_address = (request.client.host or b"").decode("ascii")
-            except BaseException:
-                ip_address = u""
-
-            @self._dataStore.transact
-            def touch(engine):
-                # type: (Transaction) -> Deferred
-                address_family = (u"AF_INET6" if u":" in ip_address
-                                  else u"AF_INET")
-                last_used = datetime.utcnow()
-                sip = sessionSchema.sessionIP
-                return upsert(engine, sip,
-                              dict(session_id=sessionID,
-                                   ip_address=ip_address,
-                                   address_family=address_family),
-                              dict(last_used=last_used))
-
-            @touch.addCallback
-            def andReturn(ignored):
-                # type: (Any) -> SQLSession
-                return session
-            return andReturn
-
-        @_.addCallback
-        def showMe(result):
-            # type: (T) -> T
-            return result
-        return _
 
 
 procurerFromStoreT = Callable[[ISessionStore], ISessionProcurer]

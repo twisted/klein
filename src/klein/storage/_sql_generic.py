@@ -245,3 +245,34 @@ class DataStore(object):
                                  strategy=TWISTED_STRATEGY))
 
 
+def requestBoundTransaction(request, dataStore):
+    # type: (IRequest, DataStore) -> Deferred
+    """
+    Retrieve a transaction that is bound to the lifecycle of the given request.
+
+    There are three use-cases for this lifecycle:
+
+        1. 'normal CRUD' - a request begins, a transaction is associated with
+           it, and the transaction completes when the request completes.  The
+           appropriate time to commit the transaction is the moment before the
+           first byte goes out to the client.  The appropriate moment to
+           interpose this commit is in `Request.write`, at the moment where
+           it's about to call channel.writeHeaders, since the HTTP status code
+           should be an indicator of whether the transaction succeeded or
+           failed.
+
+        2. 'just the session please' - a request begins, a transaction is
+           associated with it in order to discover the session, and the
+           application code in question isn't actually using the database.
+           (Ideally as expressed through "the dependency-declaration decorator,
+           such as @authorized, did not indicate that a transaction will be
+           required").
+
+        3. 'fancy API stuff' - a request begins, a transaction is associated
+           with it in order to discover the session, the application code needs
+           to then do I{something} with that transaction in-line with the
+           session discovery, but then needs to commit in order to relinquish
+           all database locks while doing some potentially slow external API
+           calls, then start a I{new} transaction later in the request flow.
+    """
+    

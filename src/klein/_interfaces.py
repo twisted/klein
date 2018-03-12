@@ -43,7 +43,7 @@ class TransactionEnded(Exception):
 
 
 
-class _ISessionStore(Interface):
+class ISessionStore(Interface):
     """
     Backing storage for sessions.
     """
@@ -191,7 +191,7 @@ class ISQLAuthorizer(Interface):
 
 
 
-class _ISessionProcurer(Interface):
+class ISessionProcurer(Interface):
     """
     An L{ISessionProcurer} wraps an L{ISessionStore} and can procure sessions
     that store, given HTTP request objects.
@@ -251,7 +251,7 @@ class SessionMechanism(Names):
 
 
 
-class _ISession(Interface):
+class ISession(Interface):
     """
     An L{ISession} provider contains an identifier for the session, information
     about how the session was negotiated with the client software, and
@@ -290,6 +290,7 @@ class _ISession(Interface):
     )
 
 
+    @ifmethod
     def authorize(interfaces):
         """
         Retrieve other objects from this session.
@@ -308,18 +309,3 @@ class _ISession(Interface):
             L{zope.interface.interfaces.IInterface} to providers of each
             interface.
         """
-
-if TYPE_CHECKING:
-    from ._storage.memory import MemorySessionStore, MemorySession
-    from ._storage.sql import AlchimiaSessionStore
-    from ._session import SessionProcurer
-    from typing import Union
-
-    ISessionStore = Union[_ISessionStore, MemorySessionStore,
-                          AlchimiaSessionStore]
-    ISessionProcurer = Union[_ISessionProcurer, SessionProcurer]
-    ISession = Union[_ISession, MemorySession]
-else:
-    ISessionStore = _ISessionStore
-    ISessionProcurer = _ISessionProcurer
-    ISession = _ISession

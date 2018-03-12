@@ -1,10 +1,10 @@
 from ._interfaces import (
     IKleinRequest,
     ISQLAuthorizer,
-    ISession,
-    ISessionProcurer,
-    ISessionStore,
-    ISimpleAccount,
+    ISession as _ISession,
+    ISessionProcurer as _ISessionProcurer,
+    ISessionStore as _ISessionStore,
+    ISimpleAccount as _ISimpleAccount,
     ISimpleAccountBinding,
     NoSuchSession,
     SessionMechanism,
@@ -12,6 +12,24 @@ from ._interfaces import (
     TransactionEnded,
 )
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._storage.memory import MemorySessionStore, MemorySession
+    from ._storage.sql import SessionStore, SQLAccount, IPTrackingProcurer
+    from ._session import SessionProcurer
+    from typing import Union
+
+    ISessionStore = Union[_ISessionStore, MemorySessionStore,
+                          SessionStore]
+    ISessionProcurer = Union[_ISessionProcurer, SessionProcurer,
+                             IPTrackingProcurer]
+    ISession = Union[_ISession, MemorySession]
+    ISimpleAccount = Union[_ISimpleAccount, SQLAccount]
+else:
+    ISessionStore = _ISessionStore
+    ISimpleAccount = _ISimpleAccount
+    ISessionProcurer = _ISessionProcurer
 
 __all__ = (
     "IKleinRequest",

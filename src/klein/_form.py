@@ -21,7 +21,7 @@ from zope.interface import implementer
 
 from ._app import _call
 from ._decorators import bindable, modified
-from ._interfaces import ISession, SessionMechanism
+from .interfaces import ISession, SessionMechanism
 
 
 if TYPE_CHECKING:

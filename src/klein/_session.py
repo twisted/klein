@@ -10,7 +10,7 @@ from zope.interface.interfaces import IInterface
 
 from ._app import _call
 from ._decorators import bindable, modified
-from ._interfaces import (
+from .interfaces import (
     ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
     TooLateForCookies
 )

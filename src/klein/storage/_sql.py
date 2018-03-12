@@ -30,7 +30,7 @@ from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from ._security import checkAndReset, computeKeyText
-from ._sql_generic import DataStore, Transaction, requestBoundTransaction
+from ._sql_generic import Transaction, requestBoundTransaction
 from .. import SessionProcurer
 from ..interfaces import (
     ISQLAuthorizer, ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 @implementer(ISession)
 @attr.s
 class SQLSession(object):
-    _sessionStore = attr.ib(type='AlchimiaSessionStore')
+    _sessionStore = attr.ib(type='SessionStore')
     identifier = attr.ib(type=Text)
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
@@ -57,7 +57,7 @@ class SQLSession(object):
     if TYPE_CHECKING:
         def __init__(
                 self,
-                sessionStore,    # type: AlchimiaSessionStore
+                sessionStore,    # type: SessionStore
                 identifier,      # type: Text
                 isConfidential,  # type: bool
                 authenticatedBy  # type: SessionMechanism
@@ -133,6 +133,7 @@ class SessionStore(object):
 
     @inlineCallbacks
     def newSession(self, isConfidential, authenticatedBy):
+        # type: (bool, SessionMechanism) -> Deferred
         identifier = hexlify(urandom(32)).decode('ascii')
         s = sessionSchema.session
         yield self._transaction.execute(s.insert().values(
@@ -147,6 +148,7 @@ class SessionStore(object):
 
     @inlineCallbacks
     def loadSession(self, identifier, isConfidential, authenticatedBy):
+        # type: (Text, bool, SessionMechanism) -> Deferred
         s = sessionSchema.session
         result = yield self._transaction.execute(
             s.select((s.c.session_id == identifier) &
@@ -328,7 +330,7 @@ class SQLAccount(object):
     An implementation of L{ISimpleAccount} backed by an Alchimia data store.
     """
 
-    _transaction = attr.ib(type=DataStore)
+    _transaction = attr.ib(type=Transaction)
     accountID = attr.ib(type=Text)
     username = attr.ib(type=Text)
     email = attr.ib(type=Text)
@@ -596,7 +598,7 @@ class _FunctionWithAuthorizer(object):
 
     def __call__(
             self,
-            sessionStore,       # type: AlchimiaSessionStore
+            sessionStore,       # type: SessionStore
             transaction,        # type: Transaction
             session             # type: ISession
     ):
@@ -606,7 +608,7 @@ class _FunctionWithAuthorizer(object):
         """
 
 _authorizerFunction = Callable[
-    [DataStore, SessionStore, Transaction, ISession],
+    [SessionStore, Transaction, ISession],
     Any
 ]
 
@@ -617,13 +619,13 @@ class SimpleSQLAuthorizer(object):
     _decorated = attr.ib(type=_authorizerFunction)
 
     def authzn_for_session(self, sessionStore, transaction, session):
-        # type: (AlchimiaSessionStore, Transaction, ISession) -> Any
+        # type: (SessionStore, Transaction, ISession) -> Any
         cb = cast(_authorizerFunction, self._decorated)  # type: ignore
         return cb(sessionStore, transaction, session)
 
 
 def authorizerFor(
-        authzn_for,                        # type: Type
+        authzn_for,                        # type: IInterface
 ):
     # type: (...) -> Callable[[Callable], _FunctionWithAuthorizer]
     """
@@ -649,7 +651,7 @@ def authorizerFor(
 
 @authorizerFor(ISimpleAccountBinding)
 def simpleAccountBinding(
-        sessionStore,           # type: AlchimiaSessionStore
+        sessionStore,           # type: SessionStore
         transaction,            # type: Transaction
         session                 # type: ISession
 ):
@@ -664,7 +666,7 @@ def simpleAccountBinding(
 @authorizerFor(ISimpleAccount)
 @inlineCallbacks
 def logMeIn(
-        sessionStore,           # type: AlchimiaSessionStore
+        sessionStore,           # type: SessionStore
         transaction,            # type: Transaction
         session                 # type: ISession
 ):

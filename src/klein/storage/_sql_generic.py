@@ -5,7 +5,7 @@ Generic SQL data storage stuff; the substrate for session-storage stuff.
 from zope.interface import Interface, implementer
 from collections import deque
 from sys import exc_info
-from typing import Any, Text, Optional
+from typing import Any, Text, Optional, TypeVar, TYPE_CHECKING
 import attr
 from attr import Factory
 from twisted.internet.defer import (Deferred, inlineCallbacks, returnValue,
@@ -23,6 +23,17 @@ COMMIT_FAILED = "commit failed"
 ROLLING_BACK = "rolling back"
 ROLLED_BACK = "rolled back"
 ROLLBACK_FAILED = "rollback failed"
+
+if TYPE_CHECKING:
+    T = TypeVar('T')
+    from twisted.internet.interfaces import IReactorThreads
+    IReactorThreads
+    from typing import Iterable
+    Iterable
+    from typing import Callable
+    Callable
+    from twisted.web.iweb import IRequest
+    IRequest
 
 
 @attr.s
@@ -85,6 +96,7 @@ class Transaction(object):
 
 
     def _finishWith(self, stopStatus):
+        # type: (Text) -> None
         """
         Complete this transaction.
         """
@@ -109,6 +121,7 @@ class Transaction(object):
 
 
     def subtransact(self, logic):
+        # type: (Callable[[Transaction], Deferred]) -> Deferred
         """
         Run the given C{logic} in a subtransaction.
         """
@@ -144,16 +157,17 @@ class Transactor(object):
     paired with application code.
     """
 
-    _newTransaction = attr.ib(type='Callable[[...], Deferred]')
+    _newTransaction = attr.ib(type='Callable[[], Deferred]')
     _transaction = attr.ib(type=Optional[Transaction], default=None)
 
     @inlineCallbacks
     def __aenter__(self):
-        # type: (type, Exception, Any) -> Deferred
+        # type: () -> Deferred
         """
         Start a transaction.
         """
-        self._transaction = yield self._newTransaction()
+        self._transaction = yield self._newTransaction()  # type: ignore
+        # ^ https://github.com/python/mypy/issues/4688
         returnValue(self._transaction)
 
     @inlineCallbacks
@@ -162,6 +176,7 @@ class Transactor(object):
         """
         End a transaction.
         """
+        assert self._transaction is not None
         if exc_type is None:
             yield self._transaction.commit()
         else:
@@ -196,6 +211,7 @@ class DataStore(object):
 
     @inlineCallbacks
     def newTransaction(self):
+        # type: () -> Deferred
         """
         Create a new Klein transaction.
         """
@@ -205,8 +221,10 @@ class DataStore(object):
         )
         alchimiaTransaction = yield alchimiaConnection.begin()
         kleinTransaction = Transaction(alchimiaConnection, alchimiaTransaction)
+
         @kleinTransaction._completeDeferred.addBoth
         def recycleTransaction(anything):
+            # type: (T) -> T
             self._freeConnections.append(alchimiaConnection)
             return anything
         returnValue(kleinTransaction)
@@ -231,7 +249,7 @@ class DataStore(object):
 
     @classmethod
     def open(cls, reactor, dbURL):
-        # type: (IReactorThreads, Text, Iterable[Callable]) -> DataStore
+        # type: (IReactorThreads, Text) -> DataStore
         """
         Open an L{DataStore}.
 
@@ -261,6 +279,7 @@ class TransactionRequestAssociator(object):
 
     @inlineCallbacks
     def transactionForStore(self, dataStore):
+        # type: (DataStore) -> Deferred
         """
         Get a transaction for the given datastore.
         """
@@ -271,6 +290,7 @@ class TransactionRequestAssociator(object):
         returnValue(txn)
 
     def commitAll(self):
+        # type: () -> Deferred
         """
         Commit all associated transactions.
         """
@@ -315,6 +335,7 @@ def requestBoundTransaction(request, dataStore):
         request.setComponent(ITransactionRequestAssociator, assoc)
 
         def finishCommit(result):
+            # type: (Any) -> Deferred
             return assoc.commitAll()
         request.notifyFinish().addBoth(finishCommit)
 

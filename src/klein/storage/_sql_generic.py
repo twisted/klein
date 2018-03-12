@@ -38,10 +38,10 @@ class Transaction(object):
     _completeDeferred = attr.ib(type=Deferred, default=Factory(Deferred))
 
     def _checkStopped(self):
+        # type: () -> None
         """
         Raise an exception if the transaction has been stopped for any reason.
         """
-        # type: () -> None
         if self._stopped:
             raise TransactionEnded(self._stopped)
         if self._parent is not None:
@@ -149,10 +149,10 @@ class Transactor(object):
 
     @inlineCallbacks
     def __aenter__(self):
+        # type: (type, Exception, Any) -> Deferred
         """
         Start a transaction.
         """
-        # type: (type, Exception, Any) -> Deferred
         self._transaction = yield self._newTransaction()
         returnValue(self._transaction)
 
@@ -170,11 +170,11 @@ class Transactor(object):
 
     @inlineCallbacks
     def transact(self, logic):
+        # type: (Callable) -> Deferred
         """
         Run the given logic within this L{TransactionContext}, starting and
         stopping as usual.
         """
-        # type: (Callable) -> Deferred
         try:
             transaction = yield self.__aenter__()
             result = yield logic(transaction)

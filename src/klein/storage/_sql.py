@@ -191,7 +191,6 @@ class AccountSessionBinding(object):
             not be.
         """
         computedHash = yield computeKeyText(password)
-        # type: (Transaction) -> Any
         newAccountID = unicode(uuid4())
         insert = (sessionSchema.account.insert()
                   .values(account_id=newAccountID,
@@ -261,7 +260,6 @@ class AccountSessionBinding(object):
 
         @return: L{Deferred} firing with a L{list} of accounts.
         """
-        # type: (Transaction) -> Any
         ast = sessionSchema.sessionAccount
         acc = sessionSchema.account
         result = (yield (yield self._transaction.execute(
@@ -655,10 +653,10 @@ def simpleAccountBinding(
         transaction,            # type: Transaction
         session                 # type: ISession
 ):
+    # type: (...) -> AccountSessionBinding
     """
     All sessions are authorized for access to an L{ISimpleAccountBinding}.
     """
-    # type: (...) -> AccountSessionBinding
     return AccountSessionBinding(session, transaction)
 
 

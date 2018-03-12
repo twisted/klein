@@ -54,17 +54,6 @@ class SQLSession(object):
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
 
-    if TYPE_CHECKING:
-        def __init__(
-                self,
-                sessionStore,    # type: SessionStore
-                identifier,      # type: Text
-                isConfidential,  # type: bool
-                authenticatedBy  # type: SessionMechanism
-        ):
-            # type: (...) -> None
-            pass
-
     def authorize(self, interfaces):
         # type: (Iterable[IInterface]) -> Any
         interfaces = set(interfaces)

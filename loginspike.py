@@ -46,13 +46,15 @@ style = Plating(
                     tags.li(Class=["nav-item ", slot("homeActive")])(
                         tags.a(Class="nav-link",
                                href="/")(
-                            "Home", tags.span(Class="sr-only")("(current)"))),
-                    tags.li(Class=["nav-item ", slot("loginActive")])(
-                        tags.a("Login",
+                                   "Home", tags.span(Class="sr-only")("(current)"))),
+                    tags.li(render="if_logged_out",
+                            Class=["nav-item ", slot("loginActive")])(
+                                    tags.a("Login",
                                Class="nav-link",
-                               href="/login")),
-                    tags.li(Class=["nav-item ", slot("signupActive")])(
-                        tags.a("Signup", Class="nav-link", href="/signup")),
+                                           href="/login")),
+                    tags.li(render="if_logged_out",
+                            Class=["nav-item ", slot("signupActive")])(
+                                    tags.a("Signup", Class="nav-link", href="/signup")),
                 ),
                 tags.ul(Class="nav navbar-nav ml-auto")(
                     tags.transparent(render="if_logged_in")(
@@ -256,6 +258,17 @@ def if_logged_in(request, tag, account):
     else:
         return tag
 
+
+
+@authorized(style.render, account=Optional(ISimpleAccount))
+def if_logged_out(request, tag, account):
+    """
+    Render the given tag if the user is logged in, otherwise don't.
+    """
+    if account is not None:
+        return u""
+    else:
+        return tag
 
 
 @logout.renderer(style.render, "/logout")

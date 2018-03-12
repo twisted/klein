@@ -156,25 +156,22 @@ def auth_for_reading(session_store, transaction, session):
 from twisted.internet import reactor
 dataStore = DataStore.open(reactor, "sqlite:///sessions.sqlite")
 
+from twisted.logger import Logger
+log = Logger()
 @dataStore.transact
 @inlineCallbacks
 def initSchema(transaction):
     """
     Initialize the application's schema in the worst possible way.
     """
-    print("Initializing schema...")
     for table in appMetadata.sorted_tables:
-        print("trying", table)
         try:
             yield transaction.execute(CreateTable(table))
         except OperationalError:
-            print("already created", table)
+            pass
         else:
-            print("created", table)
-    print("all done")
+            log.info("created {table}", table=table)
 
-from twisted.logger import Logger
-log = Logger()
 initSchema.addErrback(log.failure)
 
 procurer = procurerFromDataStore(
@@ -379,16 +376,13 @@ def one_session(session_info, form, current):
 
 
 @authorized(
-    logout_other.renderer(
-        style.routed(app.route("/sessions", methods=["GET"]),
-                     [tags.h1("List of Sessions"),
-                      tags.table(border="5",
-                                 cellpadding="2", cellspacing="2"
-                      )(tags.transparent(render="sessions:list")
-                        (slot("item")))]),
-        "/sessions/logout",
-    ),
-    # If all bindings are Optional, then session creation should be optional.
+    logout_other.renderer(style.routed(
+        app.route("/sessions", methods=["GET"]),
+        [tags.h1("List of Sessions"),
+         tags.table(border="5", cellpadding="2", cellspacing="2")
+         (tags.transparent(render="sessions:list")
+          (slot("item")))]
+    ), "/sessions/logout"),
     binding=Optional(ISimpleAccountBinding),
 )
 @inlineCallbacks
@@ -468,7 +462,6 @@ def signup_page(request, the_form):
 )
 @inlineCallbacks
 def do_signup(request, username, email, password, binding):
-    print("u", username, "e", email, "p", password, "b", binding)
     acct = yield binding.createAccount(username, email, password)
     result = {
         "signupActive": "active",

@@ -485,7 +485,6 @@ class Form(object):
                 if session.authenticatedBy == SessionMechanism.Cookie:
                     token = request.args.get(CSRF_PROTECTION.encode("ascii"),
                                              [b""])[0]
-                    print("TOKEN?", repr(token))
                     token = token.decode("ascii")
                     if token != session.identifier:
                         raise CrossSiteRequestForgery(token,
@@ -494,13 +493,10 @@ class Form(object):
                 prevalidationValues = {}
                 arguments = {}
                 for field in self._fields:
-                    print("FIELD", field)
                     text = field.extractValue(request)
-                    print("EXTRACTED", text)
                     prevalidationValues[field] = text
                     try:
                         value = field.validateValue(text)
-                        print("validated!", value)
                         argName = field.pythonArgumentName
                         if argName is None:
                             raise ValidationError(
@@ -511,7 +507,6 @@ class Form(object):
                     else:
                         arguments[argName] = value
                 if validationErrors:
-                    print("VE:", validationErrors)
                     result = yield _call(
                         instance,
                         failureHandlers.get(self, self._onValidationFailure),
@@ -519,7 +514,6 @@ class Form(object):
                         *args, **kw
                     )
                 else:
-                    print("KWA:", arguments, function)
                     kw.update(arguments)
                     result = yield _call(instance, function, request,
                                          *args, **kw)

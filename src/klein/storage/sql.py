@@ -13,4 +13,5 @@ __all__ = [
 ]
 
 if __name__ == '__main__':
-    print(SessionSchema.withMetadata().migrationSQL())
+    import sys
+    sys.stdout.write(SessionSchema.withMetadata().migrationSQL())

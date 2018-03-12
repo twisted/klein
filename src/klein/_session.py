@@ -191,7 +191,7 @@ _requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
                            Callable[[_kleinCallable], _kleinCallable]]
 
 @attr.s(frozen=True)
-class Optional(object):
+class NoneIfAbsent(object):
     _interface = attr.ib(type=IInterface)
     _required = False
 
@@ -212,7 +212,7 @@ class Required(object):
     @classmethod
     def maybe(cls, it):
         # type: (Union[_Either, object]) -> _Either
-        if isinstance(it, (Optional, Required)):
+        if isinstance(it, (NoneIfAbsent, Required)):
             return it
         return cls(it)
 
@@ -220,26 +220,50 @@ class Required(object):
         # type: (Dict[IInterface, T]) -> T
         return dict[self._interface]
 
-_Either = Union[Optional, Required]
+_Either = Union[NoneIfAbsent, Required]
+
+@attr.s
+class Authorizer(object):
+    """
+    Authorize.
+    """
+    _procureProcurer = attr.ib(default=None)
+
+    def procureSessions(self, procureProcurer):
+        # type: (_procureProcurerType) -> _procureProcurerType
+        """
+        Instruct this authorizer to procure its sessions from the given
+        callable.
+        """
+        self._procureProcurer = procureProcurer
+        return procureProcurer
 
 
-def requirer(procure_procurer):
-    # type: (_procureProcurerType) -> _requirerResult
-    def requires(route, **requestedRequirements):
+    def optional(self, requirement):
+        # type: (Type[Any]) -> NoneIfAbsent
+        """
+        Make a requirement passed to L{Authorizer.require}.
+        """
+        return NoneIfAbsent(requirement)
+
+
+    def require(self, route, **requestedRequirements):
         # type: (_routeCallable, **Any) -> _kleinDecorator
+        """
+        Require the given C{requestedRequirements} when invoking the given
+        C{route}.
+        """
         def toroute(thunk):
             # type: (_kleinCallable) -> _kleinCallable
             # FIXME: this should probably inspect the signature of 'thunk' to
             # see if it has default arguments, rather than relying upon people
             # to pass in Optional instances
-            optified = dict([
-                (k, Required.maybe(v))
-                for k, v in requestedRequirements.items()
-            ])
-            any_required = any(v._required for v in optified.values())
-            session_set = set([Optional(ISession), Required(ISession)])
-            to_authorize = set(x._interface for x in
-                               (set(optified.values()) - session_set))
+            optified = dict([(k, Required.maybe(v))
+                             for k, v in requestedRequirements.items()])
+            anyRequired = any(v._required for v in optified.values())
+            sessionSet = set([NoneIfAbsent(ISession), Required(ISession)])
+            toAuthorize = set(x._interface for x in
+                              (set(optified.values()) - sessionSet))
 
             @modified("requirer", thunk, route)
             @bindable
@@ -247,12 +271,12 @@ def requirer(procure_procurer):
             def routed(instance, request, *args, **kwargs):
                 # type: (object, IRequest, *Any, **Any) -> Any
                 newkw = kwargs.copy()
-                procu = _call(instance, procure_procurer)
+                procu = _call(instance, self._procureProcurer)
                 session = yield (
-                    procu.procureSession(request, alwaysCreate=any_required)
+                    procu.procureSession(request, alwaysCreate=anyRequired)
                 )
                 values = ({} if session is None else
-                          (yield session.authorize(to_authorize)))
+                          (yield session.authorize(toAuthorize)))
                 values[ISession] = session
                 for k, v in optified.items():
                     oneval = v.retrieve(values)
@@ -262,4 +286,3 @@ def requirer(procure_procurer):
                 )
             return thunk
         return toroute
-    return requires

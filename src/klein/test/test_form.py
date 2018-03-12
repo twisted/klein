@@ -7,8 +7,7 @@ from treq.testing import StubTreq
 
 from twisted.trial.unittest import SynchronousTestCase
 
-from klein import Field, Form, Klein, SessionProcurer
-from klein._session import requirer
+from klein import Authorizer, Field, Form, Klein, SessionProcurer
 from klein.interfaces import ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore
 
@@ -27,12 +26,15 @@ class TestObject(object):
             pass
     router = Klein()
 
-    @requirer
-    def authorizor(self):
+    authorizer = Authorizer()
+
+    @authorizer.procureSessions
+    def getSessionProcurer(self):
         # type: () -> SessionProcurer
         return SessionProcurer(self.sessionStore,
                                secureTokenHeader=b'X-Test-Session')
-    x = Form(authorizor).withFields(
+
+    x = Form(authorizer).withFields(
         name=Field.text(),
         value=Field.integer(),
     )

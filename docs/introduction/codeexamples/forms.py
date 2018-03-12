@@ -1,19 +1,21 @@
 
 from twisted.web.template import tags, slot
-from klein import Klein, Plating, Form, Field, SessionProcurer
+from klein import Klein, Plating, Form, Field, SessionProcurer, Authorizer
+from klein.interfaces import ISession
 from klein.storage.memory import MemorySessionStore
-
-from klein._session import requirer
+from klein._form import RenderableForm
 
 app = Klein()
 
 sessions = MemorySessionStore()
 
-@requirer
-def authorizer():
+auth = Authorizer()
+
+@auth.procureSessions
+def procurer():
     return SessionProcurer(sessions)
 
-sample = Form(authorizer).withFields(
+sample = Form(auth).withFields(
     foo=Field.integer(minimum=3, maximum=10),
     bar=Field.text(),
 )
@@ -36,11 +38,19 @@ def form_renderer(request, the_form):
 def post_handler(request, foo, bar):
     return {"an-form-arg": foo}
 
-@style.routed(sample.onValidationFailureFor(post_handler),
-              [tags.h1('invalid form'),
-               tags.div(slot('the-invalid-form'))])
-def validation_failed(request, form):
-    return {'the-invalid-form': form}
+@auth.require(
+    style.routed(
+        sample.renderer(sample.onValidationFailureFor(post_handler),
+                        action="/?post=yes",
+                        argument="renderable"),
+        [tags.h1('invalid form'),
+         tags.div(slot('the-invalid-form'))]),
+    session=ISession
+)
+def validation_failed(request, form, values, errors, session, renderable):
+    renderable.prevalidationValues = values
+    renderable.validationErrors = errors
+    return {'the-invalid-form': renderable}
 
 
 app.run("localhost", 8080)

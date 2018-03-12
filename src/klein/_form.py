@@ -19,6 +19,7 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from zope.interface import implementer
 
+from ._session import Authorizer
 from ._app import _call
 from ._decorators import bindable, modified
 from .interfaces import ISession, SessionMechanism
@@ -383,7 +384,7 @@ class Form(object):
     A L{Form} object which includes an authorizer, and may therefore be bound
     (via L{Form.bind}) to an individual session, producing a L{RenderableForm}.
     """
-    _authorized = attr.ib(type=_routeDecorator)
+    _authorizer = attr.ib(type=Authorizer)
     _fields = attr.ib(default=cast(List[Field], attr.Factory(list)),
                       type=List[Field])
     _onValidationFailure = attr.ib(
@@ -422,7 +423,8 @@ class Form(object):
 
             # Handle input validation failures for handleForm
             @myForm.onValidationFailureFor(handleForm)
-            def handleValidationFailures(request, formWithErrors):
+            def handleValidationFailures(request, formWithErrors,
+                                         values, errors):
                 return "Your inputs didn't validate."
 
         @see: L{defaultValidationFailureHandler} for a more detailed
@@ -473,10 +475,8 @@ class Form(object):
                 setattr(function, validationFailureHandlerAttribute,
                         failureHandlers)
 
-            authorized = cast(_routeDecorator, self._authorized)
-
             @modified("form handler", function,
-                      authorized(route, __session__=ISession))
+                      self._authorizer.require(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def decoratedHandler(instance, request, *args, **kw):
@@ -542,10 +542,9 @@ class Form(object):
 
         def decorator(function):
             # type: (Callable) -> Callable
-            authorized = cast(_routeDecorator, self._authorized)
 
             @modified("form renderer", function,
-                      authorized(route, __session__=ISession))
+                      self._authorizer.require(route, __session__=ISession))
             @bindable
             @inlineCallbacks
             def renderer_decorated(instance, request, *args, **kw):

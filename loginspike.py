@@ -9,7 +9,7 @@ from sqlalchemy.exc import OperationalError
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from klein import Klein, Plating, Form, Field
+from klein import Klein, Plating, Form, Field, Authorizer
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer
 )
@@ -180,24 +180,25 @@ procurer = procurerFromDataStore(
     dataStore,
     [authorize_chirper.authorizer, auth_for_reading.authorizer]
 )  # type: ISessionProcurer
-from klein._session import requirer, Optional
 
-@requirer
-def authorized():
+authorizer = Authorizer()
+
+@authorizer.procureSessions
+def getSessionProcurer():
     # type: () -> ISessionProcurer
     return procurer
 
-logout = Form(authorized)
-chirpForm = Form(authorized).withFields(value=Field.text())
+logout = Form(authorizer)
+chirpForm = Form(authorizer).withFields(value=Field.text())
 
-@authorized(
+@authorizer.require(
     chirpForm.renderer(
         style.routed(app.route("/"),
                      [tags.h1(slot('result')),
                       tags.div(slot("chirp_form"))]),
         "/chirp", argument="chirp_form"
     ),
-    account=Optional(ISimpleAccount)
+    account=authorizer.optional(ISimpleAccount)
 )
 def root(request, chirp_form, account):
     if account is None:
@@ -209,7 +210,7 @@ def root(request, chirp_form, account):
     }
 
 
-@authorized(
+@authorizer.require(
     style.routed(app.route("/u/<user>"),
                  [tags.h1("chirps for ", slot("user")),
                   tags.div(Class="chirp", render="chirps:list")(
@@ -228,7 +229,7 @@ def read_some_chirps(request, user, reader):
         "chirps": chirps,
     })
 
-@authorized(chirpForm.handler(app.route("/chirp", methods=["POST"])),
+@authorizer.require(chirpForm.handler(app.route("/chirp", methods=["POST"])),
             chirper=Chirper)
 @inlineCallbacks
 def addChirp(request, chirper, value):
@@ -236,7 +237,7 @@ def addChirp(request, chirper, value):
     returnValue(Redirect(b"/"))
 
 
-@authorized(logout.handler(app.route("/logout", methods=["POST"])),
+@authorizer.require(logout.handler(app.route("/logout", methods=["POST"])),
             binding=ISimpleAccountBinding)
 @inlineCallbacks
 def bye(request, binding):
@@ -248,7 +249,7 @@ def bye(request, binding):
 
 
 
-@authorized(style.render, account=Optional(ISimpleAccount))
+@authorizer.require(style.render, account=authorizer.optional(ISimpleAccount))
 def if_logged_in(request, tag, account):
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -260,7 +261,7 @@ def if_logged_in(request, tag, account):
 
 
 
-@authorized(style.render, account=Optional(ISimpleAccount))
+@authorizer.require(style.render, account=authorizer.optional(ISimpleAccount))
 def if_logged_out(request, tag, account):
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -276,12 +277,12 @@ def logout_glue(request, tag, form):
     glue = form.glue()
     return tag(glue)
 
-@authorized(style.render, account=ISimpleAccount)
+@authorizer.require(style.render, account=ISimpleAccount)
 def username(request, tag, account):
     return tag(account.username)
 
 
-login = Form(authorized).withFields(
+login = Form(authorizer).withFields(
     username=Field.text(),
     password=Field.password(),
 )
@@ -323,7 +324,7 @@ def loginform(request, login_form):
 
 
 
-@authorized(
+@authorizer.require(
     style.routed(login.handler(app.route("/login", methods=["POST"])),
                  [tags.h1("u log in 2 ", slot("newAccountID"))]),
     binding=ISimpleAccountBinding,
@@ -342,11 +343,11 @@ def dologin(request, username, password, binding):
 
 
 
-logout_other = Form(authorized).withFields(
+logout_other = Form(authorizer).withFields(
     sessionID=Field.text(),
 )
 
-@authorized(
+@authorizer.require(
     logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
     binding=ISimpleAccountBinding,
 )
@@ -388,7 +389,7 @@ def one_session(session_info, form, current):
 
 
 
-@authorized(
+@authorizer.require(
     logout_other.renderer(style.routed(
         app.route("/sessions", methods=["GET"]),
         [tags.h1("List of Sessions"),
@@ -396,7 +397,7 @@ def one_session(session_info, form, current):
          (tags.transparent(render="sessions:list")
           (slot("item")))]
     ), "/sessions/logout"),
-    binding=Optional(ISimpleAccountBinding),
+    binding=authorizer.optional(ISimpleAccountBinding),
 )
 @inlineCallbacks
 def sessions(request, binding, form):
@@ -413,7 +414,7 @@ def sessions(request, binding, form):
 
 
 
-signup = Form(authorized).withFields(
+signup = Form(authorizer).withFields(
     username=Field.text(),
     email=Field.text(),
     password=Field.password(),
@@ -463,7 +464,7 @@ def signup_page(request, the_form):
         "signupActive": "active"
     }
 
-@authorized(
+@authorizer.require(
     style.routed(
         signup.handler(app.route("/signup", methods=["POST"])),
         [tags.h1(slot("success")),

@@ -1,8 +1,8 @@
 
-from ._sql_generic import DataStore
 from ._sql import (
-    SessionSchema, authorizerFor, procurerFromDataStore, Transaction
+    SessionSchema, Transaction, authorizerFor, procurerFromDataStore
 )
+from ._sql_generic import DataStore
 
 __all__ = [
     "procurerFromDataStore",

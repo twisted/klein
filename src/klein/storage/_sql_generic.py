@@ -2,17 +2,23 @@
 Generic SQL data storage stuff; the substrate for session-storage stuff.
 """
 
-from zope.interface import Interface, implementer
 from collections import deque
 from sys import exc_info
-from typing import Any, Text, Optional, TypeVar, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, Text, TypeVar
+
+from alchimia import TWISTED_STRATEGY
+
 import attr
 from attr import Factory
-from twisted.internet.defer import (Deferred, inlineCallbacks, returnValue,
-                                    succeed, gatherResults)
-from ..interfaces import TransactionEnded
+
 from sqlalchemy import create_engine
-from alchimia import TWISTED_STRATEGY
+
+from twisted.internet.defer import (Deferred, gatherResults, inlineCallbacks,
+                                    returnValue, succeed)
+
+from zope.interface import Interface, implementer
+
+from ..interfaces import TransactionEnded
 
 _sqlAlchemyConnection = Any
 _sqlAlchemyTransaction = Any

@@ -42,8 +42,9 @@ if TYPE_CHECKING:
     from twisted.internet.defer import Deferred
     from twisted.internet.interfaces import IReactorThreads
     from twisted.web.iweb import IRequest
-    (Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text, List,
-     sqlalchemy, Dict, IRequest, IInterface, Optional)
+    from ._sql_generic import DataStore
+    (Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text,
+     List, sqlalchemy, Dict, IRequest, IInterface, Optional, DataStore)
     T = TypeVar('T')
 
 @implementer(ISession)
@@ -486,11 +487,13 @@ class SessionSchema(object):
         """
         return (u"\n-- Klein Session Schema Version 1\n" +
                 (u";".join(str(CreateTable(table))
-                            for table in self.tables())))
+                           for table in self.tables())))
 
 
 
 sessionSchema = SessionSchema.withMetadata(MetaData())
+
+procurerFromTransactionT = Callable[[Transaction], ISessionProcurer]
 
 @implementer(ISessionProcurer)
 class IPTrackingProcurer(object):
@@ -502,7 +505,7 @@ class IPTrackingProcurer(object):
     def __init__(
             self,
             dataStore,          # type: DataStore
-            procurerFromTransaction  # type: Callable[[Transaction], ISessionProcurer]
+            procurerFromTransaction  # type: procurerFromTransactionT
     ):
         # type: (...) -> None
         """

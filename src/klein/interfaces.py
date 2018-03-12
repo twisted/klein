@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from ._interfaces import (
     IKleinRequest,
     ISQLAuthorizer,
@@ -12,7 +14,6 @@ from ._interfaces import (
     TransactionEnded,
 )
 
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._storage.memory import MemorySessionStore, MemorySession

@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     ISession = Union[_ISession, MemorySession]
     ISimpleAccount = Union[_ISimpleAccount, SQLAccount]
 else:
+    ISession = _ISession
     ISessionStore = _ISessionStore
     ISimpleAccount = _ISimpleAccount
     ISessionProcurer = _ISessionProcurer

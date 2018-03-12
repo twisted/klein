@@ -1,6 +1,7 @@
 
+from ._sql_generic import DataStore
 from ._sql import (
-    DataStore, SessionSchema, authorizerFor, procurerFromDataStore, Transaction
+    SessionSchema, authorizerFor, procurerFromDataStore, Transaction
 )
 
 __all__ = [

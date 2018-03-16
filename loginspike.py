@@ -23,6 +23,23 @@ from twisted.web.util import Redirect
 
 app = Klein()
 
+authorizer = Authorizer()
+
+logout = Form(authorizer)
+chirpForm = Form(authorizer).withFields(value=Field.text())
+login = Form(authorizer).withFields(
+    username=Field.text(),
+    password=Field.password(),
+)
+logout_other = Form(authorizer).withFields(
+    sessionID=Field.text(),
+)
+signup = Form(authorizer).withFields(
+    username=Field.text(),
+    email=Field.text(),
+    password=Field.password(),
+)
+
 def bootstrap(x):
     return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/" + x
 
@@ -149,7 +166,6 @@ class ChirpReader(object):
         ))).fetchall())
         returnValue([row[chirpTable.c.chirp] for row in result])
 
-
 @authorizerFor(ChirpReader)
 def auth_for_reading(session_store, transaction, session):
     return ChirpReader(transaction)
@@ -181,15 +197,10 @@ procurer = procurerFromDataStore(
     [authorize_chirper.authorizer, auth_for_reading.authorizer]
 )  # type: ISessionProcurer
 
-authorizer = Authorizer()
-
 @authorizer.procureSessions
 def getSessionProcurer():
     # type: () -> ISessionProcurer
     return procurer
-
-logout = Form(authorizer)
-chirpForm = Form(authorizer).withFields(value=Field.text())
 
 @authorizer.require(
     chirpForm.renderer(
@@ -282,11 +293,6 @@ def username(request, tag, account):
     return tag(account.username)
 
 
-login = Form(authorizer).withFields(
-    username=Field.text(),
-    password=Field.password(),
-)
-
 @style.routed(
     login.renderer(app.route("/login", methods=["GET"]), action="/login",
                    argument="login_form"),
@@ -342,10 +348,6 @@ def dologin(request, username, password, binding):
     })
 
 
-
-logout_other = Form(authorizer).withFields(
-    sessionID=Field.text(),
-)
 
 @authorizer.require(
     logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
@@ -414,11 +416,6 @@ def sessions(request, binding, form):
 
 
 
-signup = Form(authorizer).withFields(
-    username=Field.text(),
-    email=Field.text(),
-    password=Field.password(),
-)
 
 @style.routed(
     signup.renderer(app.route("/signup", methods=["GET"]),

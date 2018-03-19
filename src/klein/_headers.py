@@ -9,7 +9,7 @@ from typing import (
     AnyStr, Iterable, List, MutableSequence, Sequence, Text, Tuple, Union
 )
 
-from attr import attrib, attrs
+from attr import Factory, attrib, attrs
 
 from zope.interface import Attribute, Interface, implementer
 
@@ -263,7 +263,7 @@ class FrozenHTTPHeaders(object):
     """
 
     rawHeaders = attrib(
-        convert=normalizeRawHeadersFrozen,
+        converter=normalizeRawHeadersFrozen,
         default=(),
     )  # type: RawHeaders
 
@@ -282,8 +282,8 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        convert=normalizeRawHeadersMutable,
-        default=(),
+        converter=normalizeRawHeadersMutable,
+        default=Factory(list),
     )  # type: MutableRawHeaders
 
 

@@ -34,10 +34,10 @@ tmp="$(mktemp -t mypy.XXXX)";
 mypy "$@"      \
     | grep -v  \
         -e ': error: "Callable\[\[[^]]*\], [^]]*\]" has no attribute "\(skip\|todo\)"'                             \
+        -e ': error: Argument .* has incompatible type "[^"]*"; expected "I[^"]*HTTPHeaders"'                      \
         -e ': error: Incompatible return value type (got "[^"]*HTTP[^"]*", expected "I[^"]*HTTP[^"]*")'            \
         -e ': error: Method must have at least one argument'                                                       \
         -e ': error: Unexpected keyword argument.* for .*"[^"]*HTTP\(Headers\|Request\|Response\)"'                \
-        -e ': error: Argument .* has incompatible type "[^"]*HTTPHeaders"; expected "IHTTPHeaders"'                \
         -e ': note: .* defined here'                                                                               \
         -e '^src/klein/_app.py:.[0-9:]*: error: All conditional function variants must have identical signatures'  \
         -e '^src/klein/_app.py:.[0-9:]*: error: Function is missing a type annotation'                             \

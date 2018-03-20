@@ -5,116 +5,23 @@
 HTTP headers API.
 """
 
-from typing import (
-    AnyStr, Iterable, List, MutableSequence, Sequence, Text, Tuple, Union
-)
+from typing import AnyStr, Iterable, Text, Tuple, Union
 
 from attr import Factory, attrib, attrs
 
-from zope.interface import Attribute, Interface, implementer
+from zope.interface import implementer
 
-AnyStr, Iterable, List  # Silence linter
+from ._imessage import MutableRawHeaders, RawHeader, RawHeaders
+from ._interfaces import IHTTPHeaders, IMutableHTTPHeaders
+
+# Silence linter
+AnyStr, Iterable, Tuple, MutableRawHeaders, RawHeader, RawHeaders
 
 
 __all__ = ()
 
 
-# Interfaces
-
 String = Union[bytes, Text]
-
-RawHeader = Tuple[bytes, bytes]
-RawHeaders = Sequence[RawHeader]
-MutableRawHeaders = MutableSequence[RawHeader]
-
-
-class IHTTPHeaders(Interface):
-    """
-    HTTP entity headers.
-
-    HTTP headers names and values are sort-of-but-not-quite-specifically
-    expected to be text.
-
-    Because the specifications are somewhat vague, and implementations vary in
-    fidelity, both header names and values must be made available as the
-    original bytes received from the network.
-    This interface also makes them available as an ordered sequence of name and
-    value pairs so that they can be iterated in the same order as they were
-    received on the network.
-
-    As such, the C{rawHeaders} attribute provides the header data as a sequence
-    of C{(name, value)} L{tuple}s.
-
-    A dictionary-like interface that maps text names to an ordered sequence of
-    text values.
-    This interface assumes that both header name bytes and header value bytes
-    are encoded as ISO-8859-1.
-
-    Note that header name bytes should be strictly encoded as ASCII; this
-    interface uses ISO-8859-1 to provide interoperability with (naughty) HTTP
-    implementations that send non-ASCII data.
-    Because ISO-8859-1 is a superset of ASCII, this will still work for
-    well-behaved implementations.
-    """
-
-    rawHeaders = Attribute(
-        """
-        Raw header data as a tuple in the from: C{((name, value), ...)}.
-        C{name} and C{value} are bytes.
-        Headers are provided in the order that they were received.
-        Headers with multiple values are provided as separate name and value
-        pairs.
-        """
-    )  # type: RawHeaders
-
-
-    def getValues(name):
-        # type: (AnyStr) -> Iterable[AnyStr]
-        """
-        Get the values associated with the given header name.
-
-        If the given name is L{bytes}, the value will be returned as the raw
-        header L{bytes}.
-
-        If the given name is L{Text}, the name will be encoded as ISO-8859-1
-        and the value will be returned as text, by decoding the raw header
-        value bytes with ISO-8859-1.
-
-        @param name: The name of the header to look for.
-
-        @return: The values of the header with the given name.
-        """
-
-
-
-class IMutableHTTPHeaders(IHTTPHeaders):
-    """
-    Mutable HTTP entity headers.
-    """
-
-    def remove(name):
-        # type: (AnyStr) -> None
-        """
-        Remove all header name/value pairs for the given header name.
-
-        If the given name is L{Text}, it will be encoded as ISO-8859-1 before
-        comparing to the (L{bytes}) header names.
-
-        @param name: The name of the header to remove.
-        """
-
-
-    def addValue(name, value):
-        # type: (AnyStr, AnyStr) -> None
-        """
-        Add the given header name/value pair.
-
-        If the given name is L{bytes}, the value must also be L{bytes}.
-
-        If the given name is L{Text}, it will be encoded as ISO-8859-1, and the
-        value, which must also be L{Text}, will be encoded as ISO-8859-1.
-        """
-
 
 
 # Encoding/decoding header data

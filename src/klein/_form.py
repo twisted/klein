@@ -17,7 +17,7 @@ from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.template import Element, Tag, TagLoader, tags
 
-from zope.interface import implementer
+from zope.interface import implementer, Interface
 
 from ._session import Authorizer
 from ._app import _call
@@ -90,7 +90,8 @@ class Field(object):
         """
         Register this form field as a dependency injector.
         """
-        
+        protoForm = IProtoForm(injectionComponents)
+        protoForm.addField(self.maybeNamed(parameterName))
 
 
     def maybeNamed(self, name):
@@ -389,6 +390,61 @@ _validationFailureHandler = Callable[
 
 validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
 
+
+class IProtoForm(object):
+    """
+    
+    """
+    
+
+class IForm(Interface):
+    """
+    Marker interface for form attached to dependency injection components.
+    """
+
+
+@implementer(IProtoForm)
+@attr.s
+class ProtoForm(object):
+    """
+    Form-builder.
+    """
+    _componentized = attr.ib()
+    _fields = attr.ib(default=attr.Factory(list))
+
+    @classmethod
+    def fromComponentized(cls, componentized):
+        """
+        Create a ProtoForm from a componentized object.
+        """
+        return cls(componentized)
+
+
+    def finalize(self, lifecycle):
+        """
+        Finalize this.
+        """
+        finalForm = IForm(self._componentized, None)
+        if finalForm is None:
+            lifecycle.before.append(sessionAndForm)
+            self._componentized.setComponent(IForm, finalForm)
+
+
+from twisted.python.componets import Componentized, registerAdapter
+registerAdapter(ProtoForm.fromComponentized, Componentized, IProtoForm)
+
+@attr.s
+class FormParameter(object):
+    """
+    A parameter for a form.
+    """
+
+    def injectValue(self, request):
+        """
+        
+        """
+
+
 @attr.s(hash=False)
 class Form(object):
     """
@@ -570,3 +626,6 @@ class Form(object):
                 returnValue(result)
             return function
         return decorator
+
+
+registerAdapter(lambda c: Form())

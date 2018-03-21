@@ -1,81 +1,53 @@
 
-from twisted.python.components import Componentized, registerAdapter
+import attr
+
+from twisted.python.components import Componentized
 from twisted.internet.defer import inlineCallbacks, returnValue
 
 from klein._decorators import modified
 from klein._decorators import bindable
 from klein._app import _call
-from zope.interface import Interface
-
-class  IProtoForm(object):
-    """
-    
-    """
-    
-
-class ProtoForm(object):
-    """
-    
-    """
-    def __init__(self, componentized):
-        """
-        
-        """
-        self._finalForm = None
-        self._parameters = []
-
-    def finalize(self):
-        """
-        
-        """
-        
-
-registerAdapter(ProtoForm, Componentized, IProtoForm)
 
 @attr.s
-class FormParameter(object):
+class RequestLifecycle(object):
     """
-    A parameter for a form.
+    Before and after hooks.
     """
+    before = attr.ib(default=attr.Factory(list))
+    after = attr.ib(default=attr.Factory(list))
 
-    def registerInjector(self, registeredOn, parameterName):
-        """
-        Registered with the given injector.
-        """
-        protoForm = IProtoForm(registeredOn)
-        protoForm._parameters.append()
-
-
-    def injectValue(self, request):
-        """
-        
-        """
-
-
-
-def inject(routeDecorator, **dependencies):
+def inject(routeDecorator, **requiredParameters):
     # type: (_routeT, **IDependencyInjector) -> _routeDecorator
     """
     Inject the given dependencies while running the given route.
     """
+
     def decorator(functionWithRequirements):
         injectionComponents = Componentized()
 
-        for k, v in dependencies.items():
-            v.registerInjector(injectionComponents, k)
+        injectors = {}
+        for parameterName, required in requiredParameters.items():
+            injectors[parameterName] = required.registerInjector(
+                injectionComponents, parameterName
+            )
 
-        for v in dependencies.values():
-            v.finalize()
+        lifecycle = RequestLifecycle()
+        for v in injectors.values():
+            v.finalize(lifecycle)
 
         @modified("dependency-injecting route", routeDecorator)
         @bindable
         @inlineCallbacks
         def router(instance, request, *args, **kw):
             injected = {}
-            for (k, injector) in dependencies.items():
+            for beforeHook in lifecycle.before:
+                beforeHook(request)
+            for (k, injector) in injectors.items():
                 injected[k] = yield injector.injectValue(request)
             kw.update(injected)
             result = yield _call(instance, *args, **kw)
+            for afterHook in lifecycle.after:
+                afterHook(request, result)
             returnValue(result)
 
         functionWithRequirements.injectionComponents = injectionComponents

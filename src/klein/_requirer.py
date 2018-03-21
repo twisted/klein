@@ -16,7 +16,7 @@ class RequestLifecycle(object):
     before = attr.ib(default=attr.Factory(list))
     after = attr.ib(default=attr.Factory(list))
 
-def inject(routeDecorator, **requiredParameters):
+def require(routeDecorator, **requiredParameters):
     # type: (_routeT, **IDependencyInjector) -> _routeDecorator
     """
     Inject the given dependencies while running the given route.

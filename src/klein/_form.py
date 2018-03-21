@@ -91,7 +91,7 @@ class Field(object):
         Register this form field as a dependency injector.
         """
         protoForm = IProtoForm(injectionComponents)
-        protoForm.addField(self.maybeNamed(parameterName))
+        return protoForm.addField(self.maybeNamed(parameterName))
 
 
     def maybeNamed(self, name):

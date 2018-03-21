@@ -63,7 +63,9 @@ def textConverter(value):
         value if isinstance(value, unicode) else unicode(value, "utf-8")
     )
 
+from klein.interfaces import IDependencyInjector, IRequiredParameter
 
+@implementer(IDependencyInjector, IRequiredParameter)
 @attr.s(frozen=True)
 class Field(object):
     """
@@ -81,6 +83,15 @@ class Field(object):
     value = attr.ib(type=Text, default=u"")
     error = attr.ib(type=ValidationError, default=None)
     order = attr.ib(type=int, default=attr.Factory(lambda: next(count())))
+
+    # IRequiredParameter
+    def registerInjector(self, injectionComponents, parameterName):
+        # type: (Componentized, str) -> IDependencyInjector
+        """
+        Register this form field as a dependency injector.
+        """
+        
+
 
     def maybeNamed(self, name):
         # type: (str) -> Field

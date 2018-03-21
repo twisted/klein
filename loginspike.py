@@ -240,11 +240,42 @@ def read_some_chirps(request, user, reader):
         "chirps": chirps,
     })
 
-@authorizer.require(chirpForm.handler(app.route("/chirp", methods=["POST"])),
-            chirper=Chirper)
+"""
+Suggested protocol:
+
+def extractParameter(nameOfParameter: str, request: IRequest) -> valueToSupply
+
+how do I render the form?
+
+def injectorRegistered(registeredOn: callable, nameOfParameter: str):
+    alreadyHasForm = getattr(registeredOn, "form", None)
+    if alreadyHasForm is None:
+        alreadyHasForm = Form()
+
+
+"""
+
+@injector.inject(
+    app.route("/chirp", methods=["POST"]),
+    value=api.text(),
+    user=api.text(),
+    chirper=session.authorize(Chirper, authorizer),
+    binding=session.authorize(ISimpleAccountBinding),
+    quickbooksHooey=quickbooks.goshItsSlow(),
+    transaction=database.transaction(),
+)
+
+# ^ -- new
+# v -- current
+
+@authorizer.require(
+    chirpForm.handler(app.route("/chirp", methods=["POST"])),
+    chirper=Chirper
+)
 @inlineCallbacks
-def addChirp(request, chirper, value):
+def addChirp(request, chirper, value, quickbooksHooey):
     yield chirper.chirp(value)
+    quickbooksHooey.pickUpCachedResults()
     returnValue(Redirect(b"/"))
 
 

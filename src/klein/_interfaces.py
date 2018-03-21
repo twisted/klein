@@ -309,3 +309,31 @@ class ISession(Interface):
             L{zope.interface.interfaces.IInterface} to providers of each
             interface.
         """
+
+
+class IDependencyInjector(Interface):
+    """
+    An injector for a given dependency.
+    """
+
+    def injectValue(request):
+        # type: (request) -> Deferred
+        """
+        
+        """
+
+class IRequiredParameter(Interface):
+    """
+    A declaration that a given Python parameter is required to satisfy a given
+    dependency at request-handling time.
+    """
+
+    def registerInjector(injectionComponents, parameterName):
+        # type: (Componentized, str) -> IDependencyInjector
+        """
+        Register the given injector at method-decoration time, informing it of
+        its parameter name.
+        """
+
+
+

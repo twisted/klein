@@ -419,17 +419,44 @@ class ProtoForm(object):
         return cls(componentized)
 
 
+class IParsedFields(Interface):
+    """
+    Marker interface for parsed fields.
+    """
+
+@implementer(IDependencyInjector)
+@attr.s
+class FieldInjector(object):
+    """
+    Field injector.
+    """
+    _componentized = attr.ib()
+    _field = attr.ib()
+
+    def injectValue(self, request):
+        # type: (request) -> Any
+        """
+        Inject the given value into the form.
+        """
+        return IParsedFields(request).getField()
+
     def finalize(self, lifecycle):
         """
-        Finalize this.
+        Finalize this ProtoForm into a real form.
         """
         finalForm = IForm(self._componentized, None)
-        if finalForm is None:
-            lifecycle.before.append(sessionAndForm)
-            self._componentized.setComponent(IForm, finalForm)
+        if finalForm is not None:
+            return
+        def parseFormFields(request):
+            pass
+        self._componentized.setComponent(IForm, finalForm)
+        lifecycle.before.append(parseFormFields)
+        return finalForm
 
 
-from twisted.python.componets import Componentized, registerAdapter
+
+
+from twisted.python.components import Componentized, registerAdapter
 registerAdapter(ProtoForm.fromComponentized, Componentized, IProtoForm)
 
 @attr.s
@@ -440,7 +467,7 @@ class FormParameter(object):
 
     def injectValue(self, request):
         """
-        
+        Inject a value for a form parameter.
         """
 
 

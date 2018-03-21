@@ -7,9 +7,8 @@ from treq.testing import StubTreq
 
 from twisted.trial.unittest import SynchronousTestCase
 
-from klein import Authorizer, Field, Form, Klein, SessionProcurer
-from klein import Requirer
-from klein.interfaces import ISessionStore, SessionMechanism
+from klein import Field, Form, Klein, Requirer, SessionProcurer
+from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:
@@ -27,27 +26,27 @@ class TestObject(object):
             pass
     router = Klein()
 
-    authorizer = Authorizer()
+    requirer = Requirer()
 
-    @authorizer.procureSessions
+    @requirer.prerequisite(ISession)
     def getSessionProcurer(self):
-        # type: () -> SessionProcurer
-        return SessionProcurer(self.sessionStore,
-                               secureTokenHeader=b'X-Test-Session')
+        return lambda request: SessionProcurer(
+            self.sessionStore, secureTokenHeader=b'X-Test-Session'
+        ).procureSession(request)
 
-    x = Form(authorizer).withFields(
-        name=Field.text(),
-        value=Field.integer(),
+    @requirer.require(
+        router.route("/handle", methods=['POST']),
+        name=Field.text(), value=Field.text(),
     )
-
-    @x.handler(router.route("/handle", methods=['POST']))
     def handler(self, request, name, value):
         # type: (IRequest, Text, Text) -> bytes
         self.calls.append((name, value))
         return b'yay'
 
-    @x.renderer(router.route("/render", methods=['GET']),
-                action=b'/handle')
+    @requirer.require(
+        router.route("/render", methods=['GET']),
+        form=Form.rendererFor(handler, action=b'/handle')
+    )
     def renderer(self, request, form):
         # type: (IRequest, Form) -> Form
         return form

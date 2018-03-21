@@ -393,9 +393,8 @@ validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
 
 class IProtoForm(object):
     """
-    
+    Marker interface for L{ProtoForm}.
     """
-    
 
 class IForm(Interface):
     """

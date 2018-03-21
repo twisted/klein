@@ -317,10 +317,41 @@ class IDependencyInjector(Interface):
     """
 
     def injectValue(request):
-        # type: (request) -> Deferred
+        # type: (request) -> Any
         """
-        
+        Return a value to be injected into the parameter name specified by the
+        IRequiredParameter.  This may return a Deferred, or an object, or an
+        object directly providing the relevant interface.
         """
+
+    def finalize(lifecycle):
+        # type: (RequestLifecycle) -> None
+        """
+        Finalize this injector before allowing the route to be created.
+
+        Finalization generally includes:
+
+            - attaching any hooks to the request lifecycle object that need to
+              be run before/after each request
+
+            - attaching any finalized component objects to the
+              injectionComponents originally passed along to the
+              IRequiredParameter that created this IDependencyInjector.
+
+        @note: this happens at I{route definition} time, after all other
+            injectors have been registered by
+            L{IRequiredParameter.registerInjector}.
+
+        @param lifecycle: A L{klein._injectme.RequestLifecycle} object which
+            contains hooks that will be run before and after each request.  If
+            this injector has shared per-request dependencies that need to be
+            executed before or after the request is processed, this method
+            should attach them to those lists.  These hooks are supplied here
+            rather than relying on C{injectValue} to run the requisite logic
+            each time so that DependencyInjectors may cooperate on logic that
+            needs to be duplicated, such as provisioning a session.
+        """
+
 
 class IRequiredParameter(Interface):
     """
@@ -332,7 +363,7 @@ class IRequiredParameter(Interface):
         # type: (Componentized, str) -> IDependencyInjector
         """
         Register the given injector at method-decoration time, informing it of
-        its parameter name.
+        its Python parameter name.
         """
 
 

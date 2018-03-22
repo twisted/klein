@@ -81,8 +81,9 @@ style = Plating(
                         )
                     ),
                     tags.li(
-                        tags.form(Class="form-inline")(
+                        tags.form(Class="form-inline", action="/search")(
                             tags.input(Class="form-control", type="text",
+                                       name="q",
                                        placeholder="Search"),
                             tags.button("Search",
                                         Class="btn btn-outline-success",

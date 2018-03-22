@@ -630,45 +630,6 @@ class Form(object):
         )
 
 
-    def renderer(
-            self,
-            route,              # type: _routeCallable
-            action,             # type: Union[Text, bytes]
-            method=u"POST",     # type: Union[Text, bytes]
-            enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
-            argument="form",            # type: str
-            encoding="utf-8"            # type: str
-    ):                          # type: (...) -> Callable[[Callable], Callable]
-        if isinstance(action, bytes):
-            taction = action.decode("charmap")
-        else:
-            taction = action
-        if isinstance(method, bytes):
-            tmethod = method.decode("charmap")
-        else:
-            tmethod = method
-
-        def decorator(function):
-            # type: (Callable) -> Callable
-
-            @modified("form renderer", function,
-                      self._authorizer.require(route, __session__=ISession))
-            @bindable
-            @inlineCallbacks
-            def renderer_decorated(instance, request, *args, **kw):
-                # type: (object, IRequest, *Any, **Any) -> Any
-                session = kw.pop("__session__")
-                form = RenderableForm(self, session, taction, tmethod, enctype,
-                                      encoding="utf-8",
-                                      prevalidationValues={},
-                                      validationErrors={})
-                kw[argument] = form
-                result = yield _call(instance, function, request, *args, **kw)
-                returnValue(result)
-            return function
-        return decorator
-
-
 @implementer(IRequiredParameter, IDependencyInjector)
 @attr.s
 class RenderableFormParam(object):

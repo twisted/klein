@@ -29,7 +29,6 @@ class RequestLifecycle(object):
         """
         # TODO: topological requirements sort
         self._before.append(beforeHook)
-        print("BEFORE HOOKS", self._before)
 
 
     def addAfterHook(self, afterHook):

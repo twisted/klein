@@ -493,7 +493,6 @@ class FieldInjector(object):
         # required; add flag somewhere to indicate if a form is
         # side-effect-free (like a search field) that can be handled even
         # without a CSRF token.
-        print("ADDING BEFORE HOOK")
         self._lifecycle.addBeforeHook(
             finalForm.populateRequestValues, provides=[IFieldValues],
             requires=[ISession]

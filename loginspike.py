@@ -9,9 +9,10 @@ from sqlalchemy.exc import OperationalError
 from twisted.web.template import tags, slot
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from klein import Klein, Plating, Form, Field, Authorizer
+from klein import Klein, Plating, Form, Field, Requirer, Authorization
 from klein.interfaces import (
-    ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer
+    ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer,
+    ISession
 )
 
 ISessionProcurer # used for type-checking
@@ -23,25 +24,10 @@ from twisted.web.util import Redirect
 
 app = Klein()
 
-authorizer = Authorizer()
-
-logout = Form(authorizer)
-chirpForm = Form(authorizer).withFields(value=Field.text())
-login = Form(authorizer).withFields(
-    username=Field.text(),
-    password=Field.password(),
-)
-logout_other = Form(authorizer).withFields(
-    sessionID=Field.text(),
-)
-signup = Form(authorizer).withFields(
-    username=Field.text(),
-    email=Field.text(),
-    password=Field.password(),
-)
-
 def bootstrap(x):
     return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/" + x
+
+requirer = Requirer()
 
 style = Plating(
     tags=tags.html(
@@ -197,19 +183,45 @@ procurer = procurerFromDataStore(
     [authorize_chirper.authorizer, auth_for_reading.authorizer]
 )  # type: ISessionProcurer
 
-@authorizer.procureSessions
-def getSessionProcurer():
+@requirer.prerequisite(ISession)
+def getSessionProcurer(request):
     # type: () -> ISessionProcurer
-    return procurer
+    return procurer.procureSession(request)
 
-@authorizer.require(
-    chirpForm.renderer(
-        style.routed(app.route("/"),
-                     [tags.h1(slot('result')),
-                      tags.div(slot("chirp_form"))]),
-        "/chirp", argument="chirp_form"
-    ),
-    account=authorizer.optional(ISimpleAccount)
+@requirer.require(
+    style.routed(app.route("/u/<user>"),
+                 [tags.h1("chirps for ", slot("user")),
+                  tags.div(Class="chirp", render="chirps:list")(
+                      slot("item"),
+                  )]),
+    reader=ChirpReader
+)
+@inlineCallbacks
+def read_some_chirps(request, user, reader):
+    chirps = yield reader.read_chirps(user)
+    returnValue({
+        "user": user,
+        "chirps": chirps,
+    })
+
+
+@requirer.require(
+    app.route("/chirp", methods=["POST"]),
+    value=Field.text(),
+    chirper=Authorization(Chirper),
+)
+@inlineCallbacks
+def addChirp(request, chirper, value):
+    yield chirper.chirp(value)
+    returnValue(Redirect(b"/"))
+
+
+@requirer.require(
+    style.routed(app.route("/"),
+                 [tags.h1(slot('result')),
+                  tags.div(slot("chirp_form"))]),
+    account=Authorization.optional(ISimpleAccount),
+    chirp_form=Form.rendererFor(addChirp, "/chirp")
 )
 def root(request, chirp_form, account):
     if account is None:
@@ -221,66 +233,10 @@ def root(request, chirp_form, account):
     }
 
 
-@authorizer.require(
-    style.routed(app.route("/u/<user>"),
-                 [tags.h1("chirps for ", slot("user")),
-                  tags.div(Class="chirp", render="chirps:list")(
-                      slot("item"),
-                  )]),
-    reader=ChirpReader
+@requirer.require(
+    app.route("/logout", methods=["POST"]),
+    binding=Authorization(ISimpleAccountBinding)
 )
-@inlineCallbacks
-def read_some_chirps(request, user, reader):
-    """
-    
-    """
-    chirps = yield reader.read_chirps(user)
-    returnValue({
-        "user": user,
-        "chirps": chirps,
-    })
-
-"""
-Suggested protocol:
-
-def extractParameter(nameOfParameter: str, request: IRequest) -> valueToSupply
-
-how do I render the form?
-
-def injectorRegistered(registeredOn: callable, nameOfParameter: str):
-    alreadyHasForm = getattr(registeredOn, "form", None)
-    if alreadyHasForm is None:
-        alreadyHasForm = Form()
-
-
-"""
-
-@injector.inject(
-    app.route("/chirp", methods=["POST"]),
-    value=api.text(),
-    user=api.text(),
-    chirper=session.authorize(Chirper, authorizer),
-    binding=session.authorize(ISimpleAccountBinding),
-    quickbooksHooey=quickbooks.goshItsSlow(),
-    transaction=database.transaction(),
-)
-
-# ^ -- new
-# v -- current
-
-@authorizer.require(
-    chirpForm.handler(app.route("/chirp", methods=["POST"])),
-    chirper=Chirper
-)
-@inlineCallbacks
-def addChirp(request, chirper, value, quickbooksHooey):
-    yield chirper.chirp(value)
-    quickbooksHooey.pickUpCachedResults()
-    returnValue(Redirect(b"/"))
-
-
-@authorizer.require(logout.handler(app.route("/logout", methods=["POST"])),
-            binding=ISimpleAccountBinding)
 @inlineCallbacks
 def bye(request, binding):
     """

@@ -612,21 +612,45 @@ class Form(object):
         request.setComponent(IFieldValues, values)
 
 
-    @classmethod
-    def rendererFor(cls,
-                    decoratedFunction,
-                    action,             # type: Union[Text, bytes]
-                    method=u"POST",     # type: Union[Text, bytes]
-                    enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
-                    argument="form",            # type: str
-                    encoding="utf-8"            # type: str
+    @staticmethod
+    def rendererFor(
+            decoratedFunction,
+            action,             # type: Union[Text, bytes]
+            method=u"POST",     # type: Union[Text, bytes]
+            enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
+            argument="form",                           # type: str
+            encoding="utf-8"                           # type: str
     ):
         """
-        
+        A form parameter that can render a form declared as a number of fields
+        on another route.
+
+        Use like so::
+
+            class MyFormApp(object):
+                router = Klein()
+                requirer = Requirer()
+
+                @requirer.require(
+                    router.route("/handle-form", methods=["POST"]),
+                    name=Field.text(), value=Field.integer(),
+                )
+                def formRoute(self, request, name, value):
+                    ...
+
+                @requirer.require(
+                    router.route("/show-form", methods=["GET"]),
+                    form=Form.rendererFor(formRoute)
+                )
+                def showForm(self, request, form):
+                    return form
+
+        As a L{RenderableForm} provides L{IRenderable}, you may return the
+        parameter directly
         """
         return RenderableFormParam(
             IForm(decoratedFunction.injectionComponents),
-            action, method, enctype, argument, encoding
+            action, method, enctype, encoding
         )
 
 
@@ -634,16 +658,15 @@ class Form(object):
 @attr.s
 class RenderableFormParam(object):
     """
-    
+    A L{RenderableFormParam} implements L{IRequiredParameter} and
+    L{IDependencyInjector} to provide a L{RenderableForm} to your route.
     """
 
     _form = attr.ib()
     _action = attr.ib()
     _method = attr.ib()
     _enctype = attr.ib()
-    _argument = attr.ib()
     _encoding = attr.ib()
-
 
     def registerInjector(self, injectionComponents, parameterName,
                          requestLifecycle):
@@ -651,17 +674,16 @@ class RenderableFormParam(object):
 
     def injectValue(self, request):
         """
-        
+        Create the renderable form from the request.
         """
         return RenderableForm(
-            self._form,
-            ISession(request), self._action, self._method,
+            self._form, ISession(request), self._action, self._method,
             self._enctype, self._encoding, prevalidationValues={},
             validationErrors={}
         )
 
     def finalize(self):
         """
-        
+        Nothing to do upon finalization.
         """
-        
+

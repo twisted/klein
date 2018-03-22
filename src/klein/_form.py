@@ -10,7 +10,7 @@ from typing import (
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import unicode
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRenderable, IRequest
@@ -21,7 +21,7 @@ from twisted.web.http import FORBIDDEN
 from zope.interface import implementer, Interface
 
 from ._app import _call
-from ._decorators import bindable, modified
+from ._decorators import bindable
 from .interfaces import EarlyExit, IRequestLifecycle, ISession, SessionMechanism
 
 

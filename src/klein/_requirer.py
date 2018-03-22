@@ -48,8 +48,7 @@ class RequestLifecycle(object):
         @param request: The IRequest being processed.
         """
         for hook in self._before:
-            # TODO: _call here sometimes?
-            yield hook(instance, request)
+            yield _call(instance, hook, request)
 
     @inlineCallbacks
     def runAfterHooks(self, instance, request, result):
@@ -63,7 +62,7 @@ class RequestLifecycle(object):
         @param result: The result produced by the route.
         """
         for hook in self._after:
-            yield hook(instance, request, result)
+            yield _call(instance, hook, request, result)
 
 
 _finalizish = List[Callable[[Componentized, RequestLifecycle], None]]

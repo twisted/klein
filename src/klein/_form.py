@@ -590,6 +590,7 @@ class Form(object):
         return decorate
 
 
+    @bindable
     def populateRequestValues(self, instance, request):
         """
         Extract the values present in this request and populate a
@@ -657,10 +658,10 @@ class Form(object):
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        return RenderableFormParam(
-            IForm(decoratedFunction.injectionComponents),
-            action, method, enctype, encoding
-        )
+        form = IForm(decoratedFunction.injectionComponents, None)
+        if form is None:
+            form = Form([])
+        return RenderableFormParam(form, action, method, enctype, encoding)
 
 
 @implementer(IRequiredParameter, IDependencyInjector)

@@ -194,7 +194,7 @@ def getSessionProcurer(request):
                   tags.div(Class="chirp", render="chirps:list")(
                       slot("item"),
                   )]),
-    reader=ChirpReader
+    reader=Authorization(ChirpReader)
 )
 @inlineCallbacks
 def read_some_chirps(request, user, reader):
@@ -247,7 +247,9 @@ def bye(request, binding):
 
 
 
-@authorizer.require(style.render, account=authorizer.optional(ISimpleAccount))
+@requirer.require(
+    style.render, account=Authorization.optional(ISimpleAccount)
+)
 def if_logged_in(request, tag, account):
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -259,7 +261,7 @@ def if_logged_in(request, tag, account):
 
 
 
-@authorizer.require(style.render, account=authorizer.optional(ISimpleAccount))
+@requirer.require(style.render, account=Authorization.optional(ISimpleAccount))
 def if_logged_out(request, tag, account):
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -270,19 +272,40 @@ def if_logged_out(request, tag, account):
         return tag
 
 
-@logout.renderer(style.render, "/logout")
+@requirer.require(
+    style.render, form=Form.rendererFor(bye, "/logout")
+)
 def logout_glue(request, tag, form):
     glue = form.glue()
     return tag(glue)
 
-@authorizer.require(style.render, account=ISimpleAccount)
+@requirer.require(style.render, account=Authorization(ISimpleAccount))
 def username(request, tag, account):
     return tag(account.username)
 
 
-@style.routed(
-    login.renderer(app.route("/login", methods=["GET"]), action="/login",
-                   argument="login_form"),
+@requirer.require(
+    style.routed(app.route("/login", methods=["POST"]),
+                 [tags.h1("u log in 2 ", slot("newAccountID"))]),
+    binding=Authorization(ISimpleAccountBinding),
+    username=Field.text(),
+    password=Field.password(),
+)
+@inlineCallbacks
+def dologin(request, username, password, binding):
+    account = yield binding.log_in(username, password)
+    if account is None:
+        an_id = 'naaaahtthiiiing'
+    else:
+        an_id = account.accountID
+    returnValue({
+        "loginActive": "active",
+        "newAccountID": an_id,
+    })
+
+
+@requirer.require(style.routed(
+    app.route("/login", methods=["GET"]),
     [tags.h1("Log In....."),
      tags.div(Class="container")
      (tags.form(
@@ -307,7 +330,8 @@ def username(request, tag, account):
        tags.div(Class="form-group row")
        (tags.div(Class="offset-sm-3 col-sm-8")
         (tags.button(type="submit", Class="btn btn-primary col-sm-4")
-         ("Log In")))))]
+         ("Log In")))))]),
+                  login_form=Form.rendererFor(dologin, action="/login")
 )
 def loginform(request, login_form):
     return {
@@ -317,28 +341,10 @@ def loginform(request, login_form):
 
 
 
-@authorizer.require(
-    style.routed(login.handler(app.route("/login", methods=["POST"])),
-                 [tags.h1("u log in 2 ", slot("newAccountID"))]),
-    binding=ISimpleAccountBinding,
-)
-@inlineCallbacks
-def dologin(request, username, password, binding):
-    account = yield binding.log_in(username, password)
-    if account is None:
-        an_id = 'naaaahtthiiiing'
-    else:
-        an_id = account.accountID
-    returnValue({
-        "loginActive": "active",
-        "newAccountID": an_id,
-    })
-
-
-
-@authorizer.require(
-    logout_other.handler(app.route("/sessions/logout", methods=["POST"])),
-    binding=ISimpleAccountBinding,
+@requirer.require(
+    app.route("/sessions/logout", methods=["POST"]),
+    binding=Authorization(ISimpleAccountBinding),
+    sessionID=Field.text(),
 )
 @inlineCallbacks
 def log_other_out(request, sessionID, binding):
@@ -378,15 +384,16 @@ def one_session(session_info, form, current):
 
 
 
-@authorizer.require(
-    logout_other.renderer(style.routed(
+@requirer.require(
+    style.routed(
         app.route("/sessions", methods=["GET"]),
         [tags.h1("List of Sessions"),
          tags.table(border="5", cellpadding="2", cellspacing="2")
          (tags.transparent(render="sessions:list")
           (slot("item")))]
-    ), "/sessions/logout"),
-    binding=authorizer.optional(ISimpleAccountBinding),
+    ),
+    form=Form.rendererFor(log_other_out, action="/sessions/logout"),
+    binding=Authorization.optional(ISimpleAccountBinding),
 )
 @inlineCallbacks
 def sessions(request, binding, form):
@@ -403,11 +410,46 @@ def sessions(request, binding, form):
 
 
 
+@requirer.require(
+    style.routed(
+        app.route("/signup", methods=["POST"]),
+        [tags.h1(slot("success")),
+         tags.p(
+             "Now ", tags.a(href=slot("next_url"))(slot("link_message")), "."
+         )]
+    ),
+    binding=Authorization(ISimpleAccountBinding),
+    username=Field.text(),
+    email=Field.text(),
+    password=Field.password(),
+)
+@inlineCallbacks
+def do_signup(request, username, email, password, binding):
+    acct = yield binding.createAccount(username, email, password)
+    result = {
+        "signupActive": "active",
+        "accountID": None
+    }
+    if acct is None:
+        result.update({
+            "success": "Account creation failed!",
+            "link_message": "try again",
+            "next_url": "/signup",
+        })
+    else:
+        result.update({
+            "accountID": acct.accountID,
+            "success": "Account created!",
+            "link_message": "log in",
+            "next_url": "/login"
+        })
+    returnValue(result)
 
-@style.routed(
-    signup.renderer(app.route("/signup", methods=["GET"]),
-                    action="/signup",
-                    argument="the_form"),
+
+
+
+@requirer.require(style.routed(
+    app.route("/signup", methods=["GET"]),
     [tags.h1("Sign Up"),
      tags.div(Class="container")
      (tags.form(
@@ -440,47 +482,14 @@ def sessions(request, binding, form):
        tags.div(Class="form-group row")
        (tags.div(Class="offset-sm-3 col-sm-8")
         (tags.button(type="submit", Class="btn btn-primary col-sm-4")
-         ("Sign Up")))))]
+         ("Sign Up")))))]),
+                  the_form=Form.rendererFor(do_signup, action="/signup")
 )
 def signup_page(request, the_form):
     return {
         "glue_here": the_form.glue(),
         "signupActive": "active"
     }
-
-@authorizer.require(
-    style.routed(
-        signup.handler(app.route("/signup", methods=["POST"])),
-        [tags.h1(slot("success")),
-         tags.p(
-             "Now ", tags.a(href=slot("next_url"))(slot("link_message")), "."
-         )]
-    ),
-    binding=ISimpleAccountBinding
-)
-@inlineCallbacks
-def do_signup(request, username, email, password, binding):
-    acct = yield binding.createAccount(username, email, password)
-    result = {
-        "signupActive": "active",
-        "accountID": None
-    }
-    if acct is None:
-        result.update({
-            "success": "Account creation failed!",
-            "link_message": "try again",
-            "next_url": "/signup",
-        })
-    else:
-        result.update({
-            "accountID": acct.accountID,
-            "success": "Account created!",
-            "link_message": "log in",
-            "next_url": "/login"
-        })
-    returnValue(result)
-
-
 
 if __name__ == '__main__':
     app.run("localhost", 8976)

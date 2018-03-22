@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division
 
 from ._app import Klein, handle_errors, resource, route, run, urlFor, url_for
-from ._form import Field, Form
+from ._form import Field, Form, RenderableForm
 from ._plating import Plating
 from ._requirer import Requirer
 from ._session import Authorization, SessionProcurer
@@ -13,6 +13,7 @@ __all__ = (
     "Plating",
     'Field',
     'Form',
+    'RenderableForm',
     'SessionProcurer',
     'Authorization',
     'Requirer',

@@ -6,21 +6,28 @@ from sqlalchemy import Table, MetaData
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError
 
-from twisted.web.template import tags, slot
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.web.iweb import IRequest, ISessionStore
+from twisted.web.template import tags, slot, Tag
+from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 
-from klein import Klein, Plating, Form, Field, Requirer, Authorization
+from typing import Dict, Any
+
+from klein import (Klein, Plating, Form, Field, RenderableForm, Requirer,
+                   Authorization)
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer,
     ISession
 )
 
-ISessionProcurer # used for type-checking
 from klein.storage.sql import (
     procurerFromDataStore, authorizerFor, SessionSchema, DataStore, Transaction
 )
 
 from twisted.web.util import Redirect
+
+# silence flake8 for type-checking
+(ISessionProcurer, Deferred, ISessionStore, IRequest, Dict, Tag, Any,
+ RenderableForm)
 
 app = Klein()
 
@@ -116,6 +123,7 @@ class Chirper(object):
     chirpTable = attr.ib(type=Table)
 
     def chirp(self, value):
+        # type: (str) -> Deferred
         chirpTable = self.chirpTable
         return self.transaction.execute(chirpTable.insert().values(
                 account_id=self.account.accountID,
@@ -134,6 +142,7 @@ chirpTable = Table(
 @authorizerFor(Chirper)
 @inlineCallbacks
 def authorize_chirper(session_store, transaction, session):
+    # type: (ISessionStore, Transaction, ISession) -> Deferred
     account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
     if account is not None:
         returnValue(Chirper(transaction, account, chirpTable))
@@ -146,6 +155,7 @@ class ChirpReader(object):
 
     @inlineCallbacks
     def read_chirps(self, username):
+        # type: (str) -> Deferred
         result = yield ((yield self.transaction.execute(chirpTable.select(
             (chirpTable.c.account_id ==
              sessionSchema.account.c.account_id) &
@@ -155,6 +165,7 @@ class ChirpReader(object):
 
 @authorizerFor(ChirpReader)
 def auth_for_reading(session_store, transaction, session):
+    # type: (ISessionStore, Transaction, ISession) -> ChirpReader
     return ChirpReader(transaction)
 
 
@@ -166,6 +177,7 @@ log = Logger()
 @dataStore.transact
 @inlineCallbacks
 def initSchema(transaction):
+    # type: (Transaction) -> Deferred
     """
     Initialize the application's schema in the worst possible way.
     """
@@ -199,6 +211,7 @@ def getSessionProcurer(request):
 )
 @inlineCallbacks
 def read_some_chirps(request, user, reader):
+    # type: (IRequest, str, ChirpReader) -> Deferred
     chirps = yield reader.read_chirps(user)
     returnValue({
         "user": user,
@@ -213,6 +226,7 @@ def read_some_chirps(request, user, reader):
 )
 @inlineCallbacks
 def addChirp(request, chirper, value):
+    # type: (IRequest, Chirper, str) -> Deferred
     yield chirper.chirp(value)
     returnValue(Redirect(b"/"))
 
@@ -225,12 +239,11 @@ def addChirp(request, chirper, value):
     chirp_form=Form.rendererFor(addChirp, "/chirp")
 )
 def root(request, chirp_form, account):
-    if account is None:
-        chirp_form = u""
+    # type: (IRequest, Chirper, ISimpleAccount) -> Dict
     return {
         "result": "hello world",
         "homeActive": "active",
-        "chirp_form": chirp_form,
+        "chirp_form": chirp_form if account is not None else u"",
     }
 
 
@@ -240,6 +253,7 @@ def root(request, chirp_form, account):
 )
 @inlineCallbacks
 def bye(request, binding):
+    # type: (IRequest, ISimpleAccountBinding) -> Deferred
     """
     Log out.
     """
@@ -252,6 +266,7 @@ def bye(request, binding):
     style.render, account=Authorization.optional(ISimpleAccount)
 )
 def if_logged_in(request, tag, account):
+    # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
@@ -264,6 +279,7 @@ def if_logged_in(request, tag, account):
 
 @requirer.require(style.render, account=Authorization.optional(ISimpleAccount))
 def if_logged_out(request, tag, account):
+    # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
@@ -277,11 +293,12 @@ def if_logged_out(request, tag, account):
     style.render, form=Form.rendererFor(bye, "/logout")
 )
 def logout_glue(request, tag, form):
-    glue = form.glue()
-    return tag(glue)
+    # type: (IRequest, Tag, RenderableForm) -> Tag
+    return tag(form.glue())
 
 @requirer.require(style.render, account=Authorization(ISimpleAccount))
 def username(request, tag, account):
+    # type: (IRequest, Tag, ISimpleAccount) -> Tag
     return tag(account.username)
 
 
@@ -294,6 +311,7 @@ def username(request, tag, account):
 )
 @inlineCallbacks
 def dologin(request, username, password, binding):
+    # type: (IRequest, str, str, ISimpleAccountBinding) -> Deferred
     account = yield binding.log_in(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
@@ -335,6 +353,7 @@ def dologin(request, username, password, binding):
                   login_form=Form.rendererFor(dologin, action="/login")
 )
 def loginform(request, login_form):
+    # type: (IRequest, RenderableForm) -> Dict
     return {
         "loginActive": "active",
         "glue_here": login_form.glue()
@@ -349,6 +368,7 @@ def loginform(request, login_form):
 )
 @inlineCallbacks
 def log_other_out(request, sessionID, binding):
+    # type: (IRequest, str, ISimpleAccountBinding) -> Deferred
     from attr import assoc
     session = yield binding._session._sessionStore.loadSession(
         sessionID, request.isSecure(), SessionMechanism.Header

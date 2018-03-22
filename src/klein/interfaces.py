@@ -13,7 +13,7 @@ from ._isession import (
     ISessionProcurer as _ISessionProcurer,
     ISessionStore as _ISessionStore,
     ISimpleAccount as _ISimpleAccount,
-    ISimpleAccountBinding,
+    ISimpleAccountBinding as _ISimpleAccountBinding,
     NoSuchSession,
     SessionMechanism,
     TooLateForCookies,
@@ -22,7 +22,8 @@ from ._isession import (
 
 if TYPE_CHECKING:
     from ._storage.memory import MemorySessionStore, MemorySession
-    from ._storage.sql import SessionStore, SQLAccount, IPTrackingProcurer
+    from ._storage.sql import (SessionStore, SQLAccount, IPTrackingProcurer,
+                               AccountSessionBinding)
     from ._session import SessionProcurer
     from typing import Union
 
@@ -32,11 +33,14 @@ if TYPE_CHECKING:
                              IPTrackingProcurer]
     ISession = Union[_ISession, MemorySession]
     ISimpleAccount = Union[_ISimpleAccount, SQLAccount]
+    ISimpleAccountBinding = Union[_ISimpleAccountBinding,
+                                  AccountSessionBinding]
 else:
     ISession = _ISession
     ISessionStore = _ISessionStore
     ISimpleAccount = _ISimpleAccount
     ISessionProcurer = _ISessionProcurer
+    ISimpleAccountBinding = _ISimpleAccountBinding
 
 __all__ = (
     "IKleinRequest",

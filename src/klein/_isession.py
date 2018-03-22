@@ -80,6 +80,7 @@ class ISimpleAccountBinding(Interface):
     attribute as a component.
     """
 
+    @ifmethod
     def log_in(username, password):
         """
         Attach the session this is a component of to an account with the given
@@ -87,6 +88,7 @@ class ISimpleAccountBinding(Interface):
         authenticate a principal.
         """
 
+    @ifmethod
     def authenticated_accounts():
         """
         Retrieve the accounts currently associated with the session this is a
@@ -95,12 +97,14 @@ class ISimpleAccountBinding(Interface):
         @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
         """
 
+    @ifmethod
     def log_out():
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
         """
 
+    @ifmethod
     def createAccount(username, email, password):
         """
         Create a new account with the given username, email and password.

@@ -36,7 +36,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/handle", methods=['POST']),
-        name=Field.text(), value=Field.text(),
+        name=Field.text(), value=Field.integer(),
     )
     def handler(self, request, name, value):
         # type: (IRequest, Text, Text) -> bytes

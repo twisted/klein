@@ -12,18 +12,19 @@ import attr
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import unicode
+from twisted.python.components import Componentized, registerAdapter
 from twisted.web.error import MissingRenderMethod
-from twisted.web.iweb import IRenderable, IRequest
-from twisted.web.template import Element, Tag, TagLoader, tags
-from twisted.web.resource import Resource
 from twisted.web.http import FORBIDDEN
+from twisted.web.iweb import IRenderable, IRequest
+from twisted.web.resource import Resource
+from twisted.web.template import Element, Tag, TagLoader, tags
 
-from zope.interface import implementer, Interface
+from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
-from .interfaces import EarlyExit, IRequestLifecycle, ISession, SessionMechanism
-
+from .interfaces import (EarlyExit, IDependencyInjector, IRequestLifecycle,
+                         IRequiredParameter, ISession, SessionMechanism)
 
 if TYPE_CHECKING:
     from mypy_extensions import DefaultNamedArg, NoReturn
@@ -73,7 +74,7 @@ def textConverter(value):
         value if isinstance(value, unicode) else unicode(value, "utf-8")
     )
 
-from klein.interfaces import IDependencyInjector, IRequiredParameter
+
 
 @implementer(IDependencyInjector, IRequiredParameter)
 @attr.s(frozen=True)
@@ -512,9 +513,9 @@ class FieldInjector(object):
 
 
 
-
-from twisted.python.components import Componentized, registerAdapter
 registerAdapter(ProtoForm.fromComponentized, Componentized, IProtoForm)
+
+
 
 class IValidationFailureHandler(Interface):
     """
@@ -696,4 +697,3 @@ class RenderableFormParam(object):
         """
         Nothing to do upon finalization.
         """
-

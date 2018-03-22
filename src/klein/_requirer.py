@@ -3,15 +3,14 @@ from typing import Callable, List
 
 import attr
 
-from klein._app import _call
-from klein._decorators import bindable, modified
-from klein._interfaces import IRequestLifecycle, EarlyExit
-
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.python.components import Componentized
 
 from zope.interface import implementer
 
+from klein._app import _call
+from klein._decorators import bindable, modified
+from klein._interfaces import EarlyExit, IRequestLifecycle
 
 @implementer(IRequestLifecycle)
 @attr.s

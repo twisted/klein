@@ -1,7 +1,8 @@
 import attr
 
-from zope.interface import Interface, Attribute
-from constantly import Names, NamedConstant
+from constantly import NamedConstant, Names
+
+from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
 

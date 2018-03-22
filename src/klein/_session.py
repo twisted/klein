@@ -4,16 +4,17 @@ from typing import Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
 import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
 from twisted.web.resource import Resource
-from twisted.python.reflect import qual
 
 from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from .interfaces import (
-    ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
-    TooLateForCookies, IDependencyInjector, IRequiredParameter, EarlyExit
+    EarlyExit, IDependencyInjector, IRequiredParameter, ISession,
+    ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
+    TooLateForCookies
 )
 
 if TYPE_CHECKING:
@@ -246,4 +247,3 @@ class Authorization(object):
         """
         Nothing to finalize when registering.
         """
-

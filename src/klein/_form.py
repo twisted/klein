@@ -272,18 +272,18 @@ class RenderableForm(object):
                   additional field for a default submit button so the form can
                   be submitted.
         """
-        any_submit = False
+        anySubmit = False
         for field in self._form._fields:
-            yield attr.assoc(field,
-                             value=self.prevalidationValues.get(
-                                 field, field.value
-                             ),
-                             error=self.validationErrors.get(field, None))
+            yield attr.assoc(
+                field,
+                value=self.prevalidationValues.get(field, field.value),
+                error=self.validationErrors.get(field, None)
+            )
             if field.formInputType == "submit":
-                any_submit = True
-        if not any_submit:
+                anySubmit = True
+        if not anySubmit:
             yield Field(converter=str, formInputType="submit", value=u"submit",
-                        pythonArgumentName="submit", formFieldName="submit")
+                        formFieldName="__klein_auto_submit__")
         yield self._fieldForCSRF()
 
     # Public interface below.

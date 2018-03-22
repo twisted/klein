@@ -1,40 +1,94 @@
 
+from typing import Callable, List
+
 import attr
 
-from twisted.python.components import Componentized
-from twisted.internet.defer import inlineCallbacks, returnValue
-
-from klein._decorators import modified
-from klein._decorators import bindable
 from klein._app import _call
+from klein._decorators import bindable, modified
+from klein._interfaces import IRequestLifecycle, EarlyExit
 
-from typing import List, Callable
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.python.components import Componentized
 
+from zope.interface import implementer
+
+
+@implementer(IRequestLifecycle)
 @attr.s
 class RequestLifecycle(object):
     """
     Before and after hooks.
     """
-    before = attr.ib(default=attr.Factory(list))
-    after = attr.ib(default=attr.Factory(list))
+    _before = attr.ib(default=attr.Factory(list))
+    _after = attr.ib(default=attr.Factory(list))
+
+    def addBeforeHook(self, beforeHook, requires=(), provides=()):
+        """
+        Add a hook that promises to supply the given interfaces as components
+        on the request, and requires the given requirements.
+        """
+        # TODO: topological requirements sort
+        self._before.append(beforeHook)
+        print("BEFORE HOOKS", self._before)
 
 
-_finalizish = List[Callable[Componentized, [RequestLifecycle], None]]
+    def addAfterHook(self, afterHook):
+        """
+        Add a hook that will execute after the request has completed.
+        """
+        self._after.append(afterHook)
+
+
+    @inlineCallbacks
+    def runBeforeHooks(self, instance, request):
+        """
+        Execute all the "before" hooks.
+
+        @param instance: The instance bound to the Klein route.
+
+        @param request: The IRequest being processed.
+        """
+        for hook in self._before:
+            # TODO: _call here sometimes?
+            yield hook(instance, request)
+
+    @inlineCallbacks
+    def runAfterHooks(self, instance, request, result):
+        """
+        Execute all "after" hooks.
+
+        @param instance: The instance bound to the Klein route.
+
+        @param request: The IRequest being processed.
+
+        @param result: The result produced by the route.
+        """
+        for hook in self._after:
+            yield hook(instance, request, result)
+
+
+_finalizish = List[Callable[[Componentized, RequestLifecycle], None]]
 
 @attr.s
 class Requirer(object):
     """
     Dependency injection for required parameters.
     """
-    _prerequisites = attr.ib()  # type: _finalizish
+    _prerequisites = attr.ib(
+        default=attr.Factory(list))  # type: List[_finalizish]
 
-    def prerequisite(self, requiredRequestComponent):
+    def prerequisite(self, providesComponents, requiresComponents=()):
         # type: (_finalizish) -> _finalizish
         """
         Prerequisite.
         """
         def decorator(prerequisiteMethod):
-            self._prerequisites.append(prerequisiteMethod)
+            self._prerequisites.append(
+                lambda lifecycle: lifecycle.addBeforeHook(
+                    prerequisiteMethod, requires=requiresComponents,
+                    provides=providesComponents
+                )
+            )
             return prerequisiteMethod
         return decorator
 
@@ -47,34 +101,41 @@ class Requirer(object):
 
         def decorator(functionWithRequirements):
             injectionComponents = Componentized()
+            lifecycle = RequestLifecycle()
+            injectionComponents.setComponent(IRequestLifecycle, lifecycle)
 
             injectors = {}
+
             for parameterName, required in requiredParameters.items():
                 injectors[parameterName] = required.registerInjector(
-                    injectionComponents, parameterName
+                    injectionComponents, parameterName, lifecycle
                 )
 
-            lifecycle = RequestLifecycle()
+            for prereq in self._prerequisites:
+                prereq(lifecycle)
 
             for v in injectors.values():
-                v.finalize(lifecycle)
+                v.finalize()
 
-            @modified("dependency-injecting route", routeDecorator)
+            @modified("dependency-injecting route", functionWithRequirements)
             @bindable
             @inlineCallbacks
             def router(instance, request, *args, **kw):
                 injected = {}
-                for beforeHook in lifecycle.before:
-                    beforeHook(instance, request)
-                for (k, injector) in injectors.items():
-                    injected[k] = yield injector.injectValue(request)
+                try:
+                    lifecycle.runBeforeHooks(instance, request)
+                    for (k, injector) in injectors.items():
+                        injected[k] = yield injector.injectValue(request)
+                except EarlyExit as ee:
+                    return ee.alternateReturnValue
                 kw.update(injected)
-                result = yield _call(instance, *args, **kw)
-                for afterHook in lifecycle.after:
-                    afterHook(instance, request, result)
+                result = yield _call(instance, functionWithRequirements,
+                                     request, *args, **kw)
+                lifecycle.runAfterHooks(instance, request, result)
                 returnValue(result)
 
             functionWithRequirements.injectionComponents = injectionComponents
+            routeDecorator(router)
             return functionWithRequirements
 
         return decorator

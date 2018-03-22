@@ -7,7 +7,6 @@ from typing import (
     Any, AnyStr, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Text,
     Union, cast
 )
-from weakref import WeakKeyDictionary
 
 import attr
 
@@ -19,10 +18,9 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from zope.interface import implementer, Interface
 
-from ._session import Authorizer
 from ._app import _call
 from ._decorators import bindable, modified
-from .interfaces import ISession, SessionMechanism
+from .interfaces import EarlyExit, IRequestLifecycle, ISession, SessionMechanism
 
 
 if TYPE_CHECKING:
@@ -85,7 +83,8 @@ class Field(object):
     order = attr.ib(type=int, default=attr.Factory(lambda: next(count())))
 
     # IRequiredParameter
-    def registerInjector(self, injectionComponents, parameterName):
+    def registerInjector(self, injectionComponents, parameterName,
+                         requestLifecycle):
         # type: (Componentized, str) -> IDependencyInjector
         """
         Register this form field as a dependency injector.
@@ -108,7 +107,6 @@ class Field(object):
             return that if it is None else it
         return attr.assoc(
             self,
-            pythonArgumentName=maybe(self.pythonArgumentName),
             formFieldName=maybe(self.formFieldName),
             formLabel=maybe(self.formLabel,
                             name.capitalize() if not self.noLabel else None),
@@ -391,7 +389,7 @@ _validationFailureHandler = Callable[
 validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
 
 
-class IProtoForm(object):
+class IProtoForm(Interface):
     """
     Marker interface for L{ProtoForm}.
     """
@@ -409,6 +407,7 @@ class ProtoForm(object):
     Form-builder.
     """
     _componentized = attr.ib()
+    _lifecycle = attr.ib()
     _fields = attr.ib(default=attr.Factory(list))
 
     @classmethod
@@ -416,13 +415,51 @@ class ProtoForm(object):
         """
         Create a ProtoForm from a componentized object.
         """
-        return cls(componentized)
+        rl = IRequestLifecycle(componentized)
+        assert rl is not None
+        return cls(componentized, rl)
 
 
-class IParsedFields(Interface):
+    def addField(self, field):
+        """
+        Add the given field to the form ultimately created here.
+        """
+        self._fields.append(field)
+        return FieldInjector(self._componentized, field, self._lifecycle)
+
+
+class IFieldValues(Interface):
     """
     Marker interface for parsed fields.
     """
+
+@implementer(IFieldValues)
+@attr.s
+class FieldValues(object):
+    """
+    Reified post-parsing values for HTTP form submission.
+    """
+
+    arguments = attr.ib()
+    prevalidationValues = attr.ib()
+    validationErrors = attr.ib()
+
+    @inlineCallbacks
+    def validate(self, instance, request):
+        """
+
+        """
+        if self.validationErrors:
+            result = yield _call(
+                instance,
+                IValidationFailureHandler(self._injectionComponents),
+                request, self, self.prevalidationValues, self.validationErrors
+            )
+            raise EarlyExit(result)
+
+
+
+
 
 @implementer(IDependencyInjector)
 @attr.s
@@ -432,26 +469,34 @@ class FieldInjector(object):
     """
     _componentized = attr.ib()
     _field = attr.ib()
+    _lifecycle = attr.ib()
 
     def injectValue(self, request):
         # type: (request) -> Any
         """
         Inject the given value into the form.
         """
-        return IParsedFields(request).getField()
+        return IFieldValues(request).arguments[self._field.pythonArgumentName]
 
-    def finalize(self, lifecycle):
+    def finalize(self):
         """
         Finalize this ProtoForm into a real form.
         """
         finalForm = IForm(self._componentized, None)
         if finalForm is not None:
             return
-        def parseFormFields(request):
-            pass
+        finalForm = Form(IProtoForm(self._componentized)._fields)
         self._componentized.setComponent(IForm, finalForm)
-        lifecycle.before.append(parseFormFields)
-        return finalForm
+
+        # XXX set requiresComponents argument here to ISession if CSRF is
+        # required; add flag somewhere to indicate if a form is
+        # side-effect-free (like a search field) that can be handled even
+        # without a CSRF token.
+        print("ADDING BEFORE HOOK")
+        self._lifecycle.addBeforeHook(
+            finalForm.populateRequestValues, provides=[IFieldValues],
+            requires=[ISession]
+        )
 
 
 
@@ -459,16 +504,10 @@ class FieldInjector(object):
 from twisted.python.components import Componentized, registerAdapter
 registerAdapter(ProtoForm.fromComponentized, Componentized, IProtoForm)
 
-@attr.s
-class FormParameter(object):
+class IValidationFailureHandler(Interface):
     """
-    A parameter for a form.
+    Validation failure handler callable interface.
     """
-
-    def injectValue(self, request):
-        """
-        Inject a value for a form parameter.
-        """
 
 
 @attr.s(hash=False)
@@ -477,30 +516,11 @@ class Form(object):
     A L{Form} object which includes an authorizer, and may therefore be bound
     (via L{Form.bind}) to an individual session, producing a L{RenderableForm}.
     """
-    _authorizer = attr.ib(type=Authorizer)
     _fields = attr.ib(default=cast(List[Field], attr.Factory(list)),
                       type=List[Field])
-    _onValidationFailure = attr.ib(
-        default=defaultValidationFailureHandler,
-        # Untyped because of https://github.com/python/mypy/issues/708
-        type=Any
-    )
 
-    def withFields(self, **fields):
-        # type: (**Field) -> Form
-        """
-        Create a derived form with a series of fields.
-        """
-        return attr.evolve(
-            self,
-            fields=[
-                field.maybeNamed(name) for name, field
-                in sorted(fields.items(), key=lambda x: x[1].order)
-            ]
-        )
-
-
-    def onValidationFailureFor(self, handler):
+    @staticmethod
+    def onValidationFailureFor(handler):
         # type: (_HandlerTypeStub) -> Callable[[Callable], Callable]
         """
         Register a function to be run in the event of a validation failure for
@@ -532,87 +552,70 @@ class Form(object):
         """
         def decorate(decoratee):
             # type: (Callable) -> Callable
-            handler.__kleinFormValidationFailureHandlers__[self] = decoratee
+            handler.injectionComponents.setComponent(IValidationFailureHandler,
+                                                     decoratee)
             return decoratee
         return decorate
 
 
-    def handler(self, route):
-        # type: (_routeCallable) -> Callable[[Callable], Callable]
+    def populateRequestValues(self, instance, request):
         """
-        Declare a handler for a form.
-
-        This is a decorator that takes a route.
-
-        The function that it decorates should receive, as arguments, those
-        parameters that C{route} would give it, in addition to parameters with
-        the same names as all the L{Field}s in this L{Form}.
-
-        For example::
-
-            router = Klein()
-            myForm = Form(authorized).withFields(value=Field.integer(),
-                                                 name=Field.text())
-
-            @myForm.handler(router.route("/", methods=["POST"]))
-            def handleForm(request, value, name):
-                return "form handled"
+        Extract the values present in this request and populate a
+        L{FieldValues} object.
         """
-        def decorator(function):
-            # type: (Callable) -> Callable
-            failureHandlers = getattr(
-                function, validationFailureHandlerAttribute, None
-            )                   # type: Dict[Form, _validationFailureHandler]
-            if failureHandlers is None:
-                failureHandlers = WeakKeyDictionary()
-                setattr(function, validationFailureHandlerAttribute,
-                        failureHandlers)
+        assert IFieldValues(request, None) is None
 
-            @modified("form handler", function,
-                      self._authorizer.require(route, __session__=ISession))
-            @bindable
-            @inlineCallbacks
-            def decoratedHandler(instance, request, *args, **kw):
-                # type: (object, IRequest, *Any, **Any) -> Any
-                session = kw.pop("__session__")
-                if session.authenticatedBy == SessionMechanism.Cookie:
-                    token = request.args.get(CSRF_PROTECTION.encode("ascii"),
-                                             [b""])[0]
-                    token = token.decode("ascii")
-                    if token != session.identifier:
-                        raise CrossSiteRequestForgery(token,
-                                                      session.identifier)
-                validationErrors = {}
-                prevalidationValues = {}
-                arguments = {}
-                for field in self._fields:
-                    text = field.extractValue(request)
-                    prevalidationValues[field] = text
-                    try:
-                        value = field.validateValue(text)
-                        argName = field.pythonArgumentName
-                        if argName is None:
-                            raise ValidationError(
-                                "Form fields must all have names."
-                            )
-                    except ValidationError as ve:
-                        validationErrors[field] = ve
-                    else:
-                        arguments[argName] = value
-                if validationErrors:
-                    result = yield _call(
-                        instance,
-                        failureHandlers.get(self, self._onValidationFailure),
-                        request, self, prevalidationValues, validationErrors,
-                        *args, **kw
+        validationErrors = {}
+        prevalidationValues = {}
+        arguments = {}
+
+        # TODO: optionalize CSRF protection for GET forms
+        session = ISession(request)
+        if session.authenticatedBy == SessionMechanism.Cookie:
+            token = request.args.get(CSRF_PROTECTION.encode("ascii"),
+                                     [b""])[0]
+            token = token.decode("ascii")
+            if token != session.identifier:
+                # leak only the value passed, not the actual token, just in
+                # case there's some additional threat vector there
+                raise CrossSiteRequestForgery(
+                    "token mismatch: {!r}".format(token)
+                )
+
+        for field in self._fields:
+            text = field.extractValue(request)
+            prevalidationValues[field] = text
+            try:
+                value = field.validateValue(text)
+                argName = field.pythonArgumentName
+                if argName is None:
+                    raise ValidationError(
+                        "Form fields must all have names."
                     )
-                else:
-                    kw.update(arguments)
-                    result = yield _call(instance, function, request,
-                                         *args, **kw)
-                returnValue(result)
-            return function
-        return decorator
+            except ValidationError as ve:
+                validationErrors[field] = ve
+            else:
+                arguments[argName] = value
+        values = FieldValues(arguments, prevalidationValues, validationErrors)
+        request.setComponent(IFieldValues, values)
+
+
+    @classmethod
+    def rendererFor(cls,
+                    decoratedFunction,
+                    action,             # type: Union[Text, bytes]
+                    method=u"POST",     # type: Union[Text, bytes]
+                    enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
+                    argument="form",            # type: str
+                    encoding="utf-8"            # type: str
+    ):
+        """
+        
+        """
+        return RenderableFormParam(
+            IForm(decoratedFunction.injectionComponents),
+            action, method, enctype, argument, encoding
+        )
 
 
     def renderer(
@@ -654,4 +657,38 @@ class Form(object):
         return decorator
 
 
-registerAdapter(lambda c: Form())
+@implementer(IRequiredParameter, IDependencyInjector)
+@attr.s
+class RenderableFormParam(object):
+    """
+    
+    """
+
+    _form = attr.ib()
+    _action = attr.ib()
+    _method = attr.ib()
+    _enctype = attr.ib()
+    _argument = attr.ib()
+    _encoding = attr.ib()
+
+
+    def registerInjector(self, injectionComponents, parameterName,
+                         requestLifecycle):
+        return self
+
+    def injectValue(self, request):
+        """
+        
+        """
+        return RenderableForm(
+            self._form,
+            ISession(request), self._action, self._method,
+            self._enctype, self._encoding, prevalidationValues={},
+            validationErrors={}
+        )
+
+    def finalize(self):
+        """
+        
+        """
+        

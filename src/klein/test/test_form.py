@@ -29,10 +29,10 @@ class TestObject(object):
     requirer = Requirer()
 
     @requirer.prerequisite(ISession)
-    def getSessionProcurer(self):
-        return lambda request: SessionProcurer(
-            self.sessionStore, secureTokenHeader=b'X-Test-Session'
-        ).procureSession(request)
+    def procureASession(self, request):
+        return (SessionProcurer(self.sessionStore,
+                                secureTokenHeader=b'X-Test-Session')
+                .procureSession(request))
 
     @requirer.require(
         router.route("/handle", methods=['POST']),

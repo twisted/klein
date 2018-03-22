@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division
 
+import attr
+
 from typing import TYPE_CHECKING
 
 from twisted.python.constants import NamedConstant, Names
@@ -324,8 +326,8 @@ class IDependencyInjector(Interface):
         object directly providing the relevant interface.
         """
 
-    def finalize(lifecycle):
-        # type: (RequestLifecycle) -> None
+    def finalize():
+        # type: () -> None
         """
         Finalize this injector before allowing the route to be created.
 
@@ -338,18 +340,6 @@ class IDependencyInjector(Interface):
               injectionComponents originally passed along to the
               IRequiredParameter that created this IDependencyInjector.
 
-        @note: this happens at I{route definition} time, after all other
-            injectors have been registered by
-            L{IRequiredParameter.registerInjector}.
-
-        @param lifecycle: A L{klein._injectme.RequestLifecycle} object which
-            contains hooks that will be run before and after each request.  If
-            this injector has shared per-request dependencies that need to be
-            executed before or after the request is processed, this method
-            should attach them to those lists.  These hooks are supplied here
-            rather than relying on C{injectValue} to run the requisite logic
-            each time so that DependencyInjectors may cooperate on logic that
-            needs to be duplicated, such as provisioning a session.
         """
 
 
@@ -359,12 +349,44 @@ class IRequiredParameter(Interface):
     dependency at request-handling time.
     """
 
-    def registerInjector(injectionComponents, parameterName):
-        # type: (Componentized, str) -> IDependencyInjector
+    def registerInjector(injectionComponents, parameterName, lifecycle):
+        # type: (Componentized, str, RequestLifecycle) -> IDependencyInjector
         """
         Register the given injector at method-decoration time, informing it of
         its Python parameter name.
+
+        @note: this happens at I{route definition} time, after all other
+            injectors have been registered by
+            L{IRequiredParameter.registerInjector}.
+
+        @param lifecycle: An L{IRequestLifecycle} provider which contains hooks
+            that will be run before and after each request.  If this injector
+            has shared per-request dependencies that need to be executed before
+            or after the request is processed, this method should attach them
+            to those lists.  These hooks are supplied here rather than relying
+            on C{injectValue} to run the requisite logic each time so that
+            DependencyInjectors may cooperate on logic that needs to be
+            duplicated, such as provisioning a session.
         """
 
 
 
+class IRequestLifecycle(Interface):
+    """
+    Interface for adding hooks to the phases of a request's lifecycle.
+    """
+
+
+@attr.s
+class EarlyExit(Exception):
+    """
+    An L{EarlyExit} may be raised by any of the code that runs in the
+    before-request dependency injection code path when using
+    L{klein.Requirer.require}.
+
+    @ivar alternateReturnValue: The return value which should instead be
+        supplied as the route's response.
+    @type alternateReturnValue: Any type that's acceptable to return from a
+        Klein route.
+    """
+    alternateReturnValue = attr.ib()

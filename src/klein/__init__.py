@@ -3,7 +3,7 @@ from __future__ import absolute_import, division
 from ._app import Klein, handle_errors, resource, route, run, urlFor, url_for
 from ._form import Field, Form
 from ._plating import Plating
-from ._session import SessionProcurer, Authorizer
+from ._session import SessionProcurer, Authorization
 from ._requirer import Requirer
 from ._version import __version__ as _incremental_version
 
@@ -14,7 +14,7 @@ __all__ = (
     'Field',
     'Form',
     'SessionProcurer',
-    'Authorizer',
+    'Authorization',
     'Requirer',
     "__author__",
     "__copyright__",

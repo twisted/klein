@@ -4,15 +4,16 @@ from typing import Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
 import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.web.http import UNAUTHORIZED
+from twisted.web.resource import Resource
+from twisted.python.reflect import qual
 
 from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
-from ._app import _call
-from ._decorators import bindable, modified
 from .interfaces import (
     ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
-    TooLateForCookies
+    TooLateForCookies, IDependencyInjector, IRequiredParameter, EarlyExit
 )
 
 if TYPE_CHECKING:
@@ -190,99 +191,59 @@ _kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
 _requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
                            Callable[[_kleinCallable], _kleinCallable]]
 
-@attr.s(frozen=True)
-class NoneIfAbsent(object):
-    _interface = attr.ib(type=IInterface)
-    _required = False
 
-    def retrieve(self, dict):
-        # type: (Dict[IInterface, T]) -> _Optional[T]
-        return dict.get(self._interface, None)
+class AuthorizationDenied(Resource, object):
+    def __init__(self, interface):
+        self._interface = interface
+        super(AuthorizationDenied, self).__init__()
 
-@attr.s(frozen=True)
-class Required(object):
-    _interface = attr.ib(type=IInterface)
-    _required = True
+    def render(self, request):
+        request.setResponseCode(UNAUTHORIZED)
+        return "{} DENIED".format(qual(self._interface)).encode('utf-8')
 
-    if TYPE_CHECKING:
-        def __init__(self, interface):
-            # type: (IInterface) -> None
-            pass
 
-    @classmethod
-    def maybe(cls, it):
-        # type: (Union[_Either, object]) -> _Either
-        if isinstance(it, (NoneIfAbsent, Required)):
-            return it
-        return cls(it)
-
-    def retrieve(self, dict):
-        # type: (Dict[IInterface, T]) -> T
-        return dict[self._interface]
-
-_Either = Union[NoneIfAbsent, Required]
-
+@implementer(IDependencyInjector, IRequiredParameter)
 @attr.s
-class Authorizer(object):
+class Authorization(object):
     """
     Authorize.
     """
-    _procureProcurer = attr.ib(default=None)
+    _interface = attr.ib(type=IInterface)
+    _required = attr.ib(type=bool, default=True)
 
-    def procureSessions(self, procureProcurer):
-        # type: (_procureProcurerType) -> _procureProcurerType
-        """
-        Instruct this authorizer to procure its sessions from the given
-        callable.
-        """
-        self._procureProcurer = procureProcurer
-        return procureProcurer
-
-
-    def optional(self, requirement):
+    @classmethod
+    def optional(cls, interface):
         # type: (Type[Any]) -> NoneIfAbsent
         """
         Make a requirement passed to L{Authorizer.require}.
         """
-        return NoneIfAbsent(requirement)
+        return cls(interface, required=False)
 
 
-    def require(self, route, **requestedRequirements):
-        # type: (_routeCallable, **Any) -> _kleinDecorator
+    def registerInjector(self, injectionComponents, parameterName, lifecycle):
         """
-        Require the given C{requestedRequirements} when invoking the given
-        C{route}.
+        Register this authorization to inject a parameter.
         """
-        def toroute(thunk):
-            # type: (_kleinCallable) -> _kleinCallable
-            # FIXME: this should probably inspect the signature of 'thunk' to
-            # see if it has default arguments, rather than relying upon people
-            # to pass in Optional instances
-            optified = dict([(k, Required.maybe(v))
-                             for k, v in requestedRequirements.items()])
-            anyRequired = any(v._required for v in optified.values())
-            sessionSet = set([NoneIfAbsent(ISession), Required(ISession)])
-            toAuthorize = set(x._interface for x in
-                              (set(optified.values()) - sessionSet))
+        return self
 
-            @modified("requirer", thunk, route)
-            @bindable
-            @inlineCallbacks
-            def routed(instance, request, *args, **kwargs):
-                # type: (object, IRequest, *Any, **Any) -> Any
-                newkw = kwargs.copy()
-                procu = _call(instance, self._procureProcurer)
-                session = yield (
-                    procu.procureSession(request, alwaysCreate=anyRequired)
-                )
-                values = ({} if session is None else
-                          (yield session.authorize(toAuthorize)))
-                values[ISession] = session
-                for k, v in optified.items():
-                    oneval = v.retrieve(values)
-                    newkw[k] = oneval
-                returnValue(
-                    (yield _call(instance, thunk, request, *args, **newkw))
-                )
-            return thunk
-        return toroute
+
+    @inlineCallbacks
+    def injectValue(self, request):
+        """
+        Inject a value by asking the request's session.
+        """
+        # TODO: this could be optimized to do fewer calls to 'authorize' by
+        # collecting all the interfaces that are necessary and then using
+        # addBeforeHook; the interface would not need to change.
+        provider = ((yield ISession(request).authorize([self._interface]))
+                    .get(self._interface))
+        if self._required and provider is None:
+            raise EarlyExit(AuthorizationDenied(self._interface))
+        return provider
+
+
+    def finalize(self):
+        """
+        Nothing to finalize when registering.
+        """
+

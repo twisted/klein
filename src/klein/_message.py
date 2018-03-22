@@ -14,78 +14,15 @@ from tubes.itube import IFount
 
 from twisted.internet.defer import Deferred, succeed
 
-from zope.interface import Attribute, Interface
-
-from ._headers import IHTTPHeaders
+from ._imessage import FountAlreadyAccessedError
+from ._interfaces import IHTTPMessage
 from ._tubes import bytesToFount, fountToBytes
 
-Any, Deferred, IFount, IHTTPHeaders, Optional  # Silence linter
+Any, Deferred, IHTTPMessage, Optional  # Silence linter
 
 
 __all__ = ()
 
-
-
-# Interfaces
-
-class FountAlreadyAccessedError(Exception):
-    """
-    The HTTP message's fount has already been accessed and is no longer
-    available.
-    """
-
-
-
-class IHTTPMessage(Interface):
-    """
-    HTTP entity.
-    """
-
-    headers = Attribute("Entity headers.")  # type: IHTTPHeaders
-
-
-    def bodyAsFount():
-        # type: () -> IFount
-        """
-        The entity body, as a fount.
-
-        @note: The fount may only be accessed once.
-            It provides a mechanism for accessing the body as a stream of data,
-            potentially as it is read from the network, without having to cache
-            the entire body, which may be large.
-            Because there is no caching, it is not possible to "start over" by
-            accessing the fount a second time.
-            Attempting to do so will raise L{FountAlreadyAccessedError}.
-
-        @raise FountAlreadyAccessedError: If the fount has previously been
-            accessed.
-        """
-
-
-    def bodyAsBytes():
-        # type: () -> Deferred[bytes]
-        """
-        The entity body, as bytes.
-
-        @note: This necessarily reads the entire entity body into memory,
-            which may be a problem if the body is large.
-
-        @note: This method caches the body, which means that unlike
-            C{self.bodyAsFount}, calling it repeatedly will return the same
-            data.
-
-        @note: This method accesses the fount (via C{self.bodyAsFount}), which
-            means the fount will not be available afterwards, and that if
-            C{self.bodyAsFount} has previously been called directly, this
-            method will raise L{FountAlreadyAccessedError}.
-
-        @raise FountAlreadyAccessedError: If the fount has previously been
-            accessed.
-        """
-
-
-
-# Code shared by internal implementations of IHTTPMessage
 
 InternalBody = Union[bytes, IFount]
 

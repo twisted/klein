@@ -14,26 +14,15 @@ from tubes.itube import IFount
 
 from twisted.internet.defer import Deferred
 
-from zope.interface import Attribute, implementer
+from zope.interface import implementer
 
-from ._headers import IHTTPHeaders
-from ._message import (
-    IHTTPMessage, MessageState, bodyAsBytes, bodyAsFount, validateBody
-)
+from ._interfaces import IHTTPHeaders, IHTTPResponse
+from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 
 Deferred, IFount, Union  # Silence linter
 
 
 __all__ = ()
-
-
-
-class IHTTPResponse(IHTTPMessage):
-    """
-    HTTP response.
-    """
-
-    status = Attribute("Response status code.")  # type: int
 
 
 

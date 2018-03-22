@@ -107,6 +107,7 @@ class Field(object):
             return that if it is None else it
         return attr.assoc(
             self,
+            pythonArgumentName=maybe(self.pythonArgumentName),
             formFieldName=maybe(self.formFieldName),
             formLabel=maybe(self.formLabel,
                             name.capitalize() if not self.noLabel else None),

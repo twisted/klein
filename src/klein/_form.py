@@ -522,6 +522,26 @@ class IValidationFailureHandler(Interface):
     """
 
 
+def checkCSRF(request):
+    """
+    Check the request for cross-site request forgery, raising an EarlyExit if
+    it is found.
+    """
+    # TODO: optionalize CSRF protection for GET forms
+    session = ISession(request)
+    if session.authenticatedBy == SessionMechanism.Cookie:
+        token = request.args.get(CSRF_PROTECTION.encode("ascii"),
+                                 [b""])[0]
+        token = token.decode("ascii")
+        if token != session.identifier:
+            # leak only the value passed, not the actual token, just in
+            # case there's some additional threat vector there
+            raise EarlyExit(CrossSiteRequestForgery(
+                "CSRF token mismatch: {!r}".format(token)
+            ))
+
+
+
 @attr.s(hash=False)
 class Form(object):
     """
@@ -581,18 +601,7 @@ class Form(object):
         prevalidationValues = {}
         arguments = {}
 
-        # TODO: optionalize CSRF protection for GET forms
-        session = ISession(request)
-        if session.authenticatedBy == SessionMechanism.Cookie:
-            token = request.args.get(CSRF_PROTECTION.encode("ascii"),
-                                     [b""])[0]
-            token = token.decode("ascii")
-            if token != session.identifier:
-                # leak only the value passed, not the actual token, just in
-                # case there's some additional threat vector there
-                raise EarlyExit(CrossSiteRequestForgery(
-                    "CSRF token mismatch: {!r}".format(token)
-                ))
+        checkCSRF(request)
 
         for field in self._fields:
             text = field.extractValue(request)

@@ -20,12 +20,7 @@ class TestObject(object):
     sessionStore = attr.ib(type=ISessionStore)
     calls = attr.ib(attr.Factory(list), type=List)
 
-    if TYPE_CHECKING:
-        def __init__(self, sessionStore):
-            # type: (ISessionStore) -> None
-            pass
     router = Klein()
-
     requirer = Requirer()
 
     @requirer.prerequisite(ISession)

@@ -101,3 +101,21 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'yay')
         self.assertEqual(to.calls, [(u'hello', 1234)])
+
+
+    def test_protectionFromCSRF(self):
+        # type: () -> None
+        """
+        An unauthenticated, CSRF-protected form should return a 403 Forbidden
+        status code.
+        """
+        mem = MemorySessionStore()
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/handle',
+            data=dict(name='hello', value='1234')
+        ))
+        self.assertEqual(to.calls, [])
+        self.assertEqual(response.code, 403)
+        self.assertIn(b'CSRF', self.successResultOf(content(response)))

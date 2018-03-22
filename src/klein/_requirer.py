@@ -122,7 +122,7 @@ class Requirer(object):
             def router(instance, request, *args, **kw):
                 injected = {}
                 try:
-                    lifecycle.runBeforeHooks(instance, request)
+                    yield lifecycle.runBeforeHooks(instance, request)
                     for (k, injector) in injectors.items():
                         injected[k] = yield injector.injectValue(request)
                 except EarlyExit as ee:

@@ -15,6 +15,8 @@ from twisted.python.compat import unicode
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.template import Element, Tag, TagLoader, tags
+from twisted.web.resource import Resource
+from twisted.web.http import FORBIDDEN
 
 from zope.interface import implementer, Interface
 
@@ -31,10 +33,20 @@ else:
     def DefaultNamedArg(*ignore):
         pass
 
-class CrossSiteRequestForgery(Exception):
+class CrossSiteRequestForgery(Resource, object):
     """
     Cross site request forgery detected.  Request aborted.
     """
+    def __init__(self, message):
+        super(CrossSiteRequestForgery, self).__init__()
+        self.message = message
+
+    def render(self, request):
+        """
+        For all HTTP methods, return a 403.
+        """
+        request.setResponseCode(FORBIDDEN, b"FAILURECSRF")
+        return ("CSRF TOKEN FAILURE: " + self.message).encode("utf-8")
 
 CSRF_PROTECTION = "__csrf_protection__"
 
@@ -578,9 +590,9 @@ class Form(object):
             if token != session.identifier:
                 # leak only the value passed, not the actual token, just in
                 # case there's some additional threat vector there
-                raise CrossSiteRequestForgery(
-                    "token mismatch: {!r}".format(token)
-                )
+                raise EarlyExit(CrossSiteRequestForgery(
+                    "CSRF token mismatch: {!r}".format(token)
+                ))
 
         for field in self._fields:
             text = field.extractValue(request)

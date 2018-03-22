@@ -58,27 +58,6 @@ class TestForms(SynchronousTestCase):
     Tests for L{klein.Form} and associated tools.
     """
 
-    def test_rendering(self):
-        # type: () -> None
-        """
-        Render the given Form.
-        """
-        mem = MemorySessionStore()
-
-        session = self.successResultOf(
-            mem.newSession(True, SessionMechanism.Header)
-        )
-
-        stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get(
-            'https://localhost/render',
-            headers={b'X-Test-Session': session.identifier}
-        ))
-        self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
-
-
     def test_handling(self):
         # type: () -> None
         """
@@ -103,10 +82,48 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(to.calls, [(u'hello', 1234)])
 
 
+    def test_rendering(self):
+        # type: () -> None
+        """
+        When a route requires form fields, it renders a form with those fields.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        stub = StubTreq(TestObject(mem).router.resource())
+        response = self.successResultOf(stub.get(
+            'https://localhost/render',
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
+                      b"text/html")
+
+
+    def test_renderingWithNoSessionYet(self):
+        # type: () -> None
+        """
+        When a route is rendered with no session, it sets a cookie to establish
+        a new session.
+        """
+        mem = MemorySessionStore()
+        stub = StubTreq(TestObject(mem).router.resource())
+        response = self.successResultOf(stub.get('https://localhost/render'))
+        setCookie = response.cookies()['Klein-Secure-Session']
+        self.assertIn(
+            u'<input type="hidden" name="__csrf_protection__" value="{}"'
+            .format(setCookie),
+            self.successResultOf(content(response)).decode("utf-8")
+        )
+
+
     def test_protectionFromCSRF(self):
         # type: () -> None
         """
-        An unauthenticated, CSRF-protected form should return a 403 Forbidden
+        An unauthenticated, CSRF-protected form will return a 403 Forbidden
         status code.
         """
         mem = MemorySessionStore()
@@ -119,3 +136,46 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(to.calls, [])
         self.assertEqual(response.code, 403)
         self.assertIn(b'CSRF', self.successResultOf(content(response)))
+
+
+    def test_cookieNoToken(self):
+        """
+        A cookie-authenticated, CSRF-protected form will return a 403 Forbidden
+        status code when a CSRF protection token is not supplied.
+        """
+        mem = MemorySessionStore()
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Cookie)
+        )
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/handle',
+            data=dict(name='hello', value='1234', ignoreme='extraneous'),
+            cookies={"Klein-Secure-Session": session.identifier}
+        ))
+        self.assertEqual(to.calls, [])
+        self.assertEqual(response.code, 403)
+        self.assertIn(b'CSRF', self.successResultOf(content(response)))
+
+
+    def test_cookieWithToken(self):
+        """
+        A cookie-authenticated, CRSF-protected form will call the form as
+        expected.
+        """
+        mem = MemorySessionStore()
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Cookie)
+        )
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/handle',
+            data=dict(name='hello', value='1234', ignoreme='extraneous',
+                      __csrf_protection__=session.identifier),
+            cookies={"Klein-Secure-Session": session.identifier}
+        ))
+        self.assertEqual(to.calls, [('hello', 1234)])
+        self.assertEqual(response.code, 200)
+        self.assertIn(b'yay', self.successResultOf(content(response)))

@@ -74,12 +74,17 @@ class Requirer(object):
     _prerequisites = attr.ib(
         default=attr.Factory(list))  # type: List[_finalizish]
 
-    def prerequisite(self, providesComponents, requiresComponents=()):
-        # type: (_finalizish) -> _finalizish
+    def prerequisite(
+            self,
+            providesComponents,   # type: Sequence[IInterface]
+            requiresComponents=()  # type: Sequence[IInterface]
+    ):
+        # type: (...) -> Callable[[Callable], Callable]
         """
         Prerequisite.
         """
         def decorator(prerequisiteMethod):
+            # type(Callable) -> Callable
             self._prerequisites.append(
                 lambda lifecycle: lifecycle.addBeforeHook(
                     prerequisiteMethod, requires=requiresComponents,

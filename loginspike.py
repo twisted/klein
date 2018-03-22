@@ -186,7 +186,7 @@ procurer = procurerFromDataStore(
 
 @requirer.prerequisite(ISession)
 def getSessionProcurer(request):
-    # type: () -> ISessionProcurer
+    # type: (IRequest) -> ISessionProcurer
     return procurer.procureSession(request)
 
 @requirer.require(

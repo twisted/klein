@@ -98,7 +98,7 @@ class Field(object):
     # IRequiredParameter
     def registerInjector(self, injectionComponents, parameterName,
                          requestLifecycle):
-        # type: (Componentized, str) -> IDependencyInjector
+        # type: (Componentized, str, RequestLifecycle) -> IDependencyInjector
         """
         Register this form field as a dependency injector.
         """

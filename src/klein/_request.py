@@ -16,12 +16,10 @@ from tubes.itube import IFount
 
 from twisted.internet.defer import Deferred
 
-from zope.interface import Attribute, implementer
+from zope.interface import implementer
 
-from ._headers import IHTTPHeaders
-from ._message import (
-    IHTTPMessage, MessageState, bodyAsBytes, bodyAsFount, validateBody
-)
+from ._interfaces import IHTTPHeaders, IHTTPRequest
+from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 
 # Silence linter
 Deferred, IFount, IHTTPHeaders, Text, Union
@@ -30,20 +28,6 @@ Deferred, IFount, IHTTPHeaders, Text, Union
 __all__ = ()
 
 
-
-# Interfaces
-
-class IHTTPRequest(IHTTPMessage):
-    """
-    HTTP request.
-    """
-
-    method = Attribute("Request method.")  # type: Text
-    uri    = Attribute("Request URI.")     # type: URL
-
-
-
-# Implementation
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)

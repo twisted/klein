@@ -2,6 +2,9 @@ from typing import TYPE_CHECKING
 
 from ._interfaces import (
     IKleinRequest,
+)
+
+from ._isession import (
     ISQLAuthorizer,
     ISession as _ISession,
     ISessionProcurer as _ISessionProcurer,
@@ -17,7 +20,6 @@ from ._interfaces import (
     TooLateForCookies,
     TransactionEnded,
 )
-
 
 if TYPE_CHECKING:
     from ._storage.memory import MemorySessionStore, MemorySession

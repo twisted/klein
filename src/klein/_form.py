@@ -420,9 +420,9 @@ class ProtoForm(object):
     """
     Form-builder.
     """
-    _componentized = attr.ib()
-    _lifecycle = attr.ib()
-    _fields = attr.ib(default=attr.Factory(list))
+    _componentized = attr.ib(type=Componentized)
+    _lifecycle = attr.ib(type='RequestLifecycle')
+    _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
     def fromComponentized(cls, componentized):

@@ -25,6 +25,9 @@ tmp="$(mktemp -t mypy.XXXX)";
 #   annotations are used, but we ignore the errors for files that are not yet
 #   participating.
 #
+# * "Type alias to Union" not callable is telling us that our zope.interface
+#   compatibility hack doesn't support adaptation.  Real ZI support in mypy
+#   should obviate this.
 
 mypy "$@"      \
     | grep -v  \
@@ -46,6 +49,7 @@ mypy "$@"      \
         -e '^src/klein/test/test_resource.py:[0-9:]*: error: Function is missing a type annotation'               \
         -e '^src/klein/test/util.py:[0-9:]*: error: Function is missing a type annotation'                        \
         -e '^src/klein/test/util.py:[0-9:]*: error: Name .* already defined'                                      \
+        -e 'error: "Type alias to Union" not callable$'                                                           \
         > "${tmp}" || true;
 
 sort < "${tmp}";

@@ -32,6 +32,7 @@ from twisted.web.util import Redirect
 app = Klein()
 
 def bootstrap(x):
+    # type: (str) -> str
     return "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/" + x
 
 requirer = Requirer()
@@ -395,6 +396,8 @@ widget = Plating(
 
 @widget.widgeted
 def one_session(session_info, form, current):
+    # type: (Any, RenderableForm, bool) -> Dict
+    # session_info is the private 'SessionIPInformation'
     return dict(
         id=session_info.id,
         ip=session_info.ip,
@@ -418,16 +421,21 @@ def one_session(session_info, form, current):
 )
 @inlineCallbacks
 def sessions(request, binding, form):
+    # type: (IRequest, ISimpleAccountBinding, Form) -> Deferred
     from klein.interfaces import ISession
     if binding is None:
         returnValue({"sessions": []})
-    dump = {
-        "sessions": [one_session.widget(
-            session_info, form, ISession(request).identifier == session_info.id
-        )
-                     for session_info in (yield binding.attached_sessions())]
-    }
-    returnValue(dump)
+    else:
+        dump = {
+            "sessions": [
+                one_session.widget(
+                    session_info, form,
+                    ISession(request).identifier == session_info.id
+                )
+            for session_info in (yield binding.attached_sessions())
+            ]
+        }
+        returnValue(dump)
 
 
 
@@ -446,6 +454,7 @@ def sessions(request, binding, form):
 )
 @inlineCallbacks
 def do_signup(request, username, email, password, binding):
+    # type: (IRequest, str, str, str, ISimpleAccountBinding) -> Deferred
     acct = yield binding.createAccount(username, email, password)
     result = {
         "signupActive": "active",
@@ -507,6 +516,7 @@ def do_signup(request, username, email, password, binding):
                   the_form=Form.rendererFor(do_signup, action="/signup")
 )
 def signup_page(request, the_form):
+    # type: (IRequest, RenderableForm) -> Dict
     return {
         "glue_here": the_form.glue(),
         "signupActive": "active"

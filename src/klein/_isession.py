@@ -1,10 +1,18 @@
 import attr
 
+from typing import TYPE_CHECKING
+
 from constantly import NamedConstant, Names
 
 from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
+
+if TYPE_CHECKING:
+    from twisted.internet.defer import Deferred
+    from twisted.python.components import Componentized
+    from typing import Any, Text, Sequence
+    Deferred, Text, Any, Componentized, Sequence
 
 class NoSuchSession(Exception):
     """
@@ -32,6 +40,7 @@ class ISessionStore(Interface):
 
     @ifmethod
     def newSession(isConfidential, authenticatedBy):
+        # type: (bool, SessionMechanism) -> Deferred
         """
         Create a new L{ISession}.
 
@@ -42,6 +51,7 @@ class ISessionStore(Interface):
 
     @ifmethod
     def loadSession(identifier, isConfidential, authenticatedBy):
+        # type: (Text, bool, SessionMechanism) -> Deferred
         """
         Load a session given the given identifier and security properties.
 
@@ -63,6 +73,7 @@ class ISessionStore(Interface):
 
     @ifmethod
     def sentInsecurely(identifiers):
+        # type: (Sequence[Text]) -> None
         """
         The transport layer has detected that the given identifiers have been
         sent over an unauthenticated transport.
@@ -82,6 +93,7 @@ class ISimpleAccountBinding(Interface):
 
     @ifmethod
     def log_in(username, password):
+        # type: (Text, Text) -> None
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
@@ -90,6 +102,7 @@ class ISimpleAccountBinding(Interface):
 
     @ifmethod
     def authenticated_accounts():
+        # type: () -> Deferred
         """
         Retrieve the accounts currently associated with the session this is a
         component of.
@@ -99,6 +112,7 @@ class ISimpleAccountBinding(Interface):
 
     @ifmethod
     def log_out():
+        # type: () -> None
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
@@ -106,6 +120,7 @@ class ISimpleAccountBinding(Interface):
 
     @ifmethod
     def createAccount(username, email, password):
+        # type: (Text, Text, Text) -> None
         """
         Create a new account with the given username, email and password.
         """
@@ -130,12 +145,14 @@ class ISimpleAccount(Interface):
     )
 
     def add_session(self, session):
+        # type: (ISession) -> None
         """
         Add the given session to this account.
         """
 
 
     def change_password(self, new_password):
+        # type: (Text) -> None
         """
         Change the password of this account.
         """
@@ -156,6 +173,7 @@ class ISQLAuthorizer(Interface):
     )
 
     def authzn_for_session(session_store, transaction, session):
+        # type: (AlchimiaSessionStore, Transaction, ISession) -> Deferred
         """
         Get a data object that the session has access to.
 
@@ -185,6 +203,7 @@ class ISessionProcurer(Interface):
 
     def procureSession(self, request, forceInsecure=False,
                        alwaysCreate=True):
+        # type: (IRequest, bool, bool) -> Deferred
         """
         Retrieve a session using whatever technique is necessary.
 
@@ -278,6 +297,7 @@ class ISession(Interface):
 
     @ifmethod
     def authorize(interfaces):
+        # type: (List[Type]) -> Deferred
         """
         Retrieve other objects from this session.
 
@@ -302,6 +322,7 @@ class IDependencyInjector(Interface):
     An injector for a given dependency.
     """
 
+    @ifmethod
     def injectValue(request):
         # type: (request) -> Any
         """
@@ -310,6 +331,7 @@ class IDependencyInjector(Interface):
         object directly providing the relevant interface.
         """
 
+    @ifmethod
     def finalize():
         # type: () -> None
         """
@@ -373,4 +395,4 @@ class EarlyExit(Exception):
     @type alternateReturnValue: Any type that's acceptable to return from a
         Klein route.
     """
-    alternateReturnValue = attr.ib()
+    alternateReturnValue = attr.ib(type=Any)

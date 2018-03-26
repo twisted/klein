@@ -27,11 +27,10 @@ from .interfaces import (EarlyExit, IDependencyInjector, IRequestLifecycle,
                          IRequiredParameter, ISession, SessionMechanism)
 
 if TYPE_CHECKING:
-    from ._requirer import RequestLifecycle
     from mypy_extensions import DefaultNamedArg, NoReturn
     from twisted.internet.defer import Deferred
     (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
-     Text, DefaultNamedArg, Union, NoReturn, RequestLifecycle, Deferred)
+     Text, DefaultNamedArg, Union, NoReturn, Deferred)
 else:
     def DefaultNamedArg(*ignore):
         pass
@@ -411,7 +410,7 @@ class ProtoForm(object):
     Form-builder.
     """
     _componentized = attr.ib(type=Componentized)
-    _lifecycle = attr.ib(type='RequestLifecycle')
+    _lifecycle = attr.ib(type=IRequestLifecycle)
     _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
@@ -480,7 +479,7 @@ class FieldInjector(object):
     """
     _componentized = attr.ib(type=Componentized)
     _field = attr.ib(type=Field)
-    _lifecycle = attr.ib(type=RequestLifecycle)
+    _lifecycle = attr.ib(type=IRequestLifecycle)
 
     def injectValue(self, request):
         # type: (IRequest) -> Any
@@ -497,8 +496,7 @@ class FieldInjector(object):
         finalForm = IForm(self._componentized, None)
         if finalForm is not None:
             return
-        finalForm = Form(IProtoForm(self._componentized)._fields,
-                         self._componentized)
+        finalForm = Form(IProtoForm(self._componentized)._fields)
         self._componentized.setComponent(IForm, finalForm)
 
         # XXX set requiresComponents argument here to ISession if CSRF is
@@ -508,7 +506,7 @@ class FieldInjector(object):
         @bindable
         def populateValuesHook(instance, request):
             # type: (Any, IRequest) -> None
-            finalForm.populateRequestValues(request)
+            finalForm.populateRequestValues(self._componentized, request)
         self._lifecycle.addBeforeHook(
             populateValuesHook, provides=[IFieldValues],
             requires=[ISession]

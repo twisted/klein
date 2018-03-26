@@ -172,8 +172,7 @@ class ISessionProcurer(Interface):
     that store, given HTTP request objects.
     """
 
-    def procureSession(self, request, forceInsecure=False,
-                       alwaysCreate=True):
+    def procureSession(self, request, forceInsecure=False):
         # type: (IRequest, bool, bool) -> Deferred
         """
         Retrieve a session using whatever technique is necessary.
@@ -182,7 +181,7 @@ class ISessionProcurer(Interface):
         retrieve it.  If not, create a new session and retrieve that.
 
         @param request: The request to procure a session from.
-        @type request:  L{twisted.web.server.Request}
+        @type request: L{twisted.web.server.Request}
 
         @param forceInsecure: Even if the request was transmitted securely
             (i.e. over HTTPS), retrieve the session that would be used by the
@@ -190,10 +189,6 @@ class ISessionProcurer(Interface):
             request; by default, this is False, and the session's security will
             match that of the request.
         @type forceInsecure: L{bool}
-
-        @param alwaysCreate: Create a session if one is not associated with
-            the request.
-        @param alwaysCreate: L{bool}
 
         @raise TooLateForCookies: if the request bound to this procurer has
             already sent the headers and therefore we can no longer set a

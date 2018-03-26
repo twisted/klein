@@ -51,22 +51,27 @@ class SessionProcurer(object):
         protected with TLS (i.e. HTTP).
     @type _insecureCookie: L{bytes}
 
-    @ivar _cookieDomain: If set, the domain name to restrict the session
-        cookie to.
+    @ivar _cookieDomain: If set, the domain name to restrict the session cookie
+        to.
     @type _cookieDomain: L{None} or L{bytes}
 
     @ivar _cookiePath: If set, the URL path to restrict the session cookie to.
     @type _cookiePath: L{bytes}
 
-    @ivar _secureTokenHeader: The name of the HTTPS header to try to extract
-        a session token from; API clients should use this header, rather than a
+    @ivar _secureTokenHeader: The name of the HTTPS header to try to extract a
+        session token from; API clients should use this header, rather than a
         cookie.
     @type _secureTokenHeader: L{bytes}
 
-    @ivar _insecureTokenHeader: The name of the HTTP header to try to extract
-        a session token from; API clients should use this header, rather than a
+    @ivar _insecureTokenHeader: The name of the HTTP header to try to extract a
+        session token from; API clients should use this header, rather than a
         cookie.
     @type _insecureTokenHeader: L{bytes}
+
+    @ivar _setCookieOnGET: Automatically request that the session store create
+        a session if one is not already associated with the request and the
+        request is a GET.
+    @type _setCookieOnGET: L{bool}
     """
 
     _store = attr.ib(type=ISessionStore)
@@ -80,26 +85,11 @@ class SessionProcurer(object):
     _secureTokenHeader = attr.ib(type=bytes, default=b"X-Auth-Token")
     _insecureTokenHeader = attr.ib(type=bytes,
                                    default=b"X-INSECURE-Auth-Token")
-
-    if TYPE_CHECKING:
-
-        def __init__(
-                self,
-                store,                                    # type: ISessionStore
-                maxAge=3600,                              # type: int
-                secureCookie=b"Klein-Secure-Session",      # type: bytes
-                insecureCookie=b"Klein-INSECURE-Session",  # type: bytes
-                cookieDomain=None,                 # type: _Optional[bytes]
-                cookiePath=b'/',                   # type: bytes
-                secureTokenHeader=b"X-Auth-Token",  # type: bytes
-                insecureTokenHeader=b"X-INSECURE-Auth-Token"  # type: bytes
-        ):
-            # type: (...) -> None
-            pass
+    _setCookieOnGET = attr.ib(type=bool, default=True)
 
     @inlineCallbacks
-    def procureSession(self, request, forceInsecure=False, alwaysCreate=True):
-        # type: (IRequest, bool, bool) -> Any
+    def procureSession(self, request, forceInsecure=False):
+        # type: (IRequest, bool) -> Any
         alreadyProcured = request.getComponent(ISession)
         if alreadyProcured is not None:
             returnValue(alreadyProcured)
@@ -151,20 +141,31 @@ class SessionProcurer(object):
                     raise
                 sessionID = None
         if sessionID is None:
-            if alwaysCreate:
-                if request.startedWriting:
-                    # At this point, if the mechanism is Header, we either have
-                    # a valid session or we bailed after NoSuchSession above.
-                    raise TooLateForCookies(
-                        "You tried initializing a cookie-based session too"
-                        " late in the request pipeline; the headers"
-                        " were already sent."
-                    )
-                session = yield self._store.newSession(sentSecurely,
-                                                       mechanism)
-            else:
+            if request.method != 'GET' or not self._setCookieOnGET:
+                # If we don't have a session ID at all, and we're not allowed
+                # to set a cookie on the client, don't waste session-store
+                # resources by allocating one.
                 returnValue(None)
-        if sessionID != session.identifier:
+            if request.startedWriting:
+                # At this point, if the mechanism is Header, we either have
+                # a valid session or we bailed after NoSuchSession above.
+                raise TooLateForCookies(
+                    "You tried initializing a cookie-based session too"
+                    " late in the request pipeline; the headers"
+                    " were already sent."
+                )
+            session = yield self._store.newSession(sentSecurely, mechanism)
+        if (
+                sessionID != session.identifier and
+                request.method == 'GET' and
+                self._setCookieOnGET
+        ):
+            # sessionID is the input session ID from the request;
+            # session.identifier is the created or loaded session from the
+            # session store.  This cookie is set when setCookiesOnGET is
+            # allowed, either when the session store has informed of us of a
+            # changed session identifier or when a new session has been created
+            # (sessionID is None)
             if request.startedWriting:
                 raise TooLateForCookies(
                     "You tried changing a session ID to a new session ID too"
@@ -176,7 +177,7 @@ class SessionProcurer(object):
                 domain=self._cookieDomain, path=self._cookiePath,
                 secure=sentSecurely, httpOnly=True,
             )
-        if not forceInsecure:
+        if request.isSecure() and not sentSecurely:
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
         returnValue(session)

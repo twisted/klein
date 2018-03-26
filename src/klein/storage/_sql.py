@@ -516,9 +516,8 @@ class IPTrackingProcurer(object):
 
 
     @inlineCallbacks
-    def procureSession(self, request, forceInsecure=False,
-                       alwaysCreate=True):
-        # type: (IRequest, bool, bool) -> Deferred
+    def procureSession(self, request, forceInsecure=False):
+        # type: (IRequest, bool) -> Deferred
         """
         Procure a session from the underlying procurer, keeping track of the IP
         of the request object.
@@ -531,8 +530,7 @@ class IPTrackingProcurer(object):
         # request.requesting = True
         transaction = yield requestBoundTransaction(request, self._dataStore)
         procurer = yield self._procurerFromTransaction(transaction)
-        session = yield procurer.procureSession(request, forceInsecure,
-                                                alwaysCreate)
+        session = yield procurer.procureSession(request, forceInsecure)
         if session is None:
             return
         try:

@@ -23,8 +23,9 @@ class TestObject(object):
     router = Klein()
     requirer = Requirer()
 
-    @requirer.prerequisite(ISession)
+    @requirer.prerequisite([ISession])
     def procureASession(self, request):
+        # type: (IRequest) -> ISession
         return (SessionProcurer(self.sessionStore,
                                 secureTokenHeader=b'X-Test-Session')
                 .procureSession(request))
@@ -40,7 +41,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/render", methods=['GET']),
-        form=Form.rendererFor(handler, action=b'/handle')
+        form=Form.rendererFor(handler, action=u'/handle')
     )
     def renderer(self, request, form):
         # type: (IRequest, Form) -> Form
@@ -134,6 +135,7 @@ class TestForms(SynchronousTestCase):
 
 
     def test_cookieNoToken(self):
+        # type: () -> None
         """
         A cookie-authenticated, CSRF-protected form will return a 403 Forbidden
         status code when a CSRF protection token is not supplied.
@@ -155,6 +157,7 @@ class TestForms(SynchronousTestCase):
 
 
     def test_cookieWithToken(self):
+        # type: () -> None
         """
         A cookie-authenticated, CRSF-protected form will call the form as
         expected.

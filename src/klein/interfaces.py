@@ -5,10 +5,9 @@ from ._interfaces import (
 )
 from ._isession import (
     EarlyExit,
-    IDependencyInjector,
-    IRequestLifecycle,
-    IRequiredParameter,
-    ISQLAuthorizer,
+    IDependencyInjector as _IDependencyInjector,
+    IRequestLifecycle as _IRequestLifecycle,
+    IRequiredParameter as _IRequiredParameter,
     ISession as _ISession,
     ISessionProcurer as _ISessionProcurer,
     ISessionStore as _ISessionStore,
@@ -24,7 +23,10 @@ if TYPE_CHECKING:
     from ._storage.memory import MemorySessionStore, MemorySession
     from ._storage.sql import (SessionStore, SQLAccount, IPTrackingProcurer,
                                AccountSessionBinding)
-    from ._session import SessionProcurer
+    from ._session import SessionProcurer, Authorization
+    from ._form import Field, RenderableFormParam, FieldInjector
+    from ._requirer import RequestLifecycle
+
     from typing import Union
 
     ISessionStore = Union[_ISessionStore, MemorySessionStore,
@@ -35,12 +37,20 @@ if TYPE_CHECKING:
     ISimpleAccount = Union[_ISimpleAccount, SQLAccount]
     ISimpleAccountBinding = Union[_ISimpleAccountBinding,
                                   AccountSessionBinding]
+    IDependencyInjector = Union[_IDependencyInjector, Authorization,
+                                RenderableFormParam, FieldInjector]
+    IRequiredParameter = Union[_IRequiredParameter, Authorization, Field,
+                               RenderableFormParam]
+    IRequestLifecycle = Union[_IRequestLifecycle, RequestLifecycle]
 else:
     ISession = _ISession
     ISessionStore = _ISessionStore
     ISimpleAccount = _ISimpleAccount
     ISessionProcurer = _ISessionProcurer
     ISimpleAccountBinding = _ISimpleAccountBinding
+    IDependencyInjector = _IDependencyInjector
+    IRequiredParameter = _IRequiredParameter
+    IRequestLifecycle = _IRequestLifecycle
 
 __all__ = (
     "IKleinRequest",
@@ -51,7 +61,6 @@ __all__ = (
     "ISimpleAccountBinding",
     "ISimpleAccount",
     "ISessionProcurer",
-    "ISQLAuthorizer",
     "IDependencyInjector",
     "IRequiredParameter",
     "IRequestLifecycle",

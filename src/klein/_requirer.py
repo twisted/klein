@@ -1,5 +1,5 @@
 
-from typing import Callable, List
+from typing import Any, Callable, List, TYPE_CHECKING
 
 import attr
 
@@ -8,9 +8,18 @@ from twisted.python.components import Componentized
 
 from zope.interface import implementer
 
-from klein._app import _call
-from klein._decorators import bindable, modified
-from klein._interfaces import EarlyExit, IRequestLifecycle
+from ._app import _call
+from ._decorators import bindable, modified
+from .interfaces import EarlyExit, IRequestLifecycle
+
+if TYPE_CHECKING:
+    from typing import Dict, Tuple, Sequence
+    from twisted.web.iweb import IRequest
+    from twisted.internet.defer import Deferred
+    from zope.interface.interfaces import IInterface
+    from .interfaces import IDependencyInjector, IRequiredParameter
+    IDependencyInjector, IRequiredParameter, IRequest, Dict, Tuple
+    Deferred, IInterface, Sequence
 
 @implementer(IRequestLifecycle)
 @attr.s
@@ -18,10 +27,11 @@ class RequestLifecycle(object):
     """
     Before and after hooks.
     """
-    _before = attr.ib(default=attr.Factory(list))
-    _after = attr.ib(default=attr.Factory(list))
+    _before = attr.ib(type=List, default=attr.Factory(list))
+    _after = attr.ib(type=List, default=attr.Factory(list))
 
     def addBeforeHook(self, beforeHook, requires=(), provides=()):
+        # type: (Callable, Sequence[IInterface], Sequence[IInterface]) -> None
         """
         Add a hook that promises to supply the given interfaces as components
         on the request, and requires the given requirements.
@@ -31,6 +41,7 @@ class RequestLifecycle(object):
 
 
     def addAfterHook(self, afterHook):
+        # type: (Callable) -> None
         """
         Add a hook that will execute after the request has completed.
         """
@@ -39,6 +50,7 @@ class RequestLifecycle(object):
 
     @inlineCallbacks
     def runBeforeHooks(self, instance, request):
+        # type: (Any, IRequest) -> Deferred
         """
         Execute all the "before" hooks.
 
@@ -51,6 +63,7 @@ class RequestLifecycle(object):
 
     @inlineCallbacks
     def runAfterHooks(self, instance, request, result):
+        # type: (Any, IRequest, Any) -> Deferred
         """
         Execute all "after" hooks.
 
@@ -63,8 +76,10 @@ class RequestLifecycle(object):
         for hook in self._after:
             yield _call(instance, hook, request, result)
 
+_routeDecorator = Any           # a decorator like @route
+_routeT = Any                   # a thing decorated by a decorator like @route
 
-_finalizish = List[Callable[[Componentized, RequestLifecycle], None]]
+_prerequisiteCallback = Callable[[IRequestLifecycle], None]
 
 @attr.s
 class Requirer(object):
@@ -72,7 +87,9 @@ class Requirer(object):
     Dependency injection for required parameters.
     """
     _prerequisites = attr.ib(
-        default=attr.Factory(list))  # type: List[_finalizish]
+        type=List[_prerequisiteCallback],
+        default=attr.Factory(list)
+    )
 
     def prerequisite(
             self,
@@ -84,29 +101,31 @@ class Requirer(object):
         Prerequisite.
         """
         def decorator(prerequisiteMethod):
-            # type(Callable) -> Callable
-            self._prerequisites.append(
-                lambda lifecycle: lifecycle.addBeforeHook(
+            # type: (Callable) -> Callable
+            def oneHook(lifecycle):
+                # type: (IRequestLifecycle) -> None
+                lifecycle.addBeforeHook(
                     prerequisiteMethod, requires=requiresComponents,
                     provides=providesComponents
                 )
-            )
+            self._prerequisites.append(oneHook)
             return prerequisiteMethod
         return decorator
 
 
     def require(self, routeDecorator, **requiredParameters):
-        # type: (_routeT, **IDependencyInjector) -> _routeDecorator
+        # type: (_routeT, **IRequiredParameter) -> _routeDecorator
         """
         Inject the given dependencies while running the given route.
         """
 
         def decorator(functionWithRequirements):
+            # type: (Any) -> Callable
             injectionComponents = Componentized()
             lifecycle = RequestLifecycle()
             injectionComponents.setComponent(IRequestLifecycle, lifecycle)
 
-            injectors = {}
+            injectors = {}      # type: Dict[str, IDependencyInjector]
 
             for parameterName, required in requiredParameters.items():
                 injectors[parameterName] = required.registerInjector(
@@ -123,6 +142,7 @@ class Requirer(object):
             @bindable
             @inlineCallbacks
             def router(instance, request, *args, **kw):
+                # type: (Any, IRequest, *Any, **Any) -> Any
                 injected = {}
                 try:
                     yield lifecycle.runBeforeHooks(instance, request)

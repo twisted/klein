@@ -197,7 +197,7 @@ procurer = procurerFromDataStore(
     [authorize_chirper.authorizer, auth_for_reading.authorizer]
 )  # type: ISessionProcurer
 
-@requirer.prerequisite(ISession)
+@requirer.prerequisite([ISession])
 def getSessionProcurer(request):
     # type: (IRequest) -> ISessionProcurer
     return procurer.procureSession(request)

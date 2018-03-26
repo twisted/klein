@@ -1,6 +1,7 @@
-import attr
 
 from typing import TYPE_CHECKING
+
+import attr
 
 from constantly import NamedConstant, Names
 
@@ -11,8 +12,13 @@ from ._typing import ifmethod
 if TYPE_CHECKING:
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
-    from typing import Any, Text, Sequence
-    Deferred, Text, Any, Componentized, Sequence
+    from typing import Any, Iterable, List, Text, Type, Sequence
+    from twisted.web.iweb import IRequest
+    from zope.interface.interfaces import IInterface
+    from ..interfaces import IRequestLifecycle as _FwdLifecycle
+
+    Deferred, Text, Any, Componentized, Sequence, IRequest, List, Type
+    Iterable, IInterface, _FwdLifecycle
 
 class NoSuchSession(Exception):
     """
@@ -159,42 +165,6 @@ class ISimpleAccount(Interface):
 
 
 
-class ISQLAuthorizer(Interface):
-    """
-    An add-on for an L{AlchimiaDataStore} that can populate data on an Alchimia
-    session.
-    """
-
-    authzn_for = Attribute(
-        """
-        The interface or class for which a session can be authorized by this
-        L{ISQLAuthorizer}.
-        """
-    )
-
-    def authzn_for_session(session_store, transaction, session):
-        # type: (AlchimiaSessionStore, Transaction, ISession) -> Deferred
-        """
-        Get a data object that the session has access to.
-
-        If necessary, load related data first.
-
-        @param session_store: the store where the session is stored.
-        @type session_store: L{AlchimiaSessionStore}
-
-        @param transaction: The transaction that loaded the session.
-        @type transaction: L{klein.storage.sql.Transaction}
-
-        @param session: The session that said this data will be attached to.
-        @type session: L{ISession}
-
-        @return: the object the session is authorized to access
-        @rtype: a providier of C{self.authzn_for}, or a L{Deferred} firing the
-            same.
-        """
-
-
-
 class ISessionProcurer(Interface):
     """
     An L{ISessionProcurer} wraps an L{ISessionStore} and can procure sessions
@@ -297,7 +267,7 @@ class ISession(Interface):
 
     @ifmethod
     def authorize(interfaces):
-        # type: (List[Type]) -> Deferred
+        # type: (Iterable[IInterface]) -> Deferred
         """
         Retrieve other objects from this session.
 
@@ -324,7 +294,7 @@ class IDependencyInjector(Interface):
 
     @ifmethod
     def injectValue(request):
-        # type: (request) -> Any
+        # type: (IRequest) -> Any
         """
         Return a value to be injected into the parameter name specified by the
         IRequiredParameter.  This may return a Deferred, or an object, or an
@@ -355,8 +325,9 @@ class IRequiredParameter(Interface):
     dependency at request-handling time.
     """
 
+    @ifmethod
     def registerInjector(injectionComponents, parameterName, lifecycle):
-        # type: (Componentized, str, RequestLifecycle) -> IDependencyInjector
+        # type: (Componentized, str, _FwdLifecycle) -> IDependencyInjector
         """
         Register the given injector at method-decoration time, informing it of
         its Python parameter name.

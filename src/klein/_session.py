@@ -12,17 +12,19 @@ from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from .interfaces import (
-    EarlyExit, IDependencyInjector, IRequiredParameter, ISession,
-    ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
+    EarlyExit, IDependencyInjector, IRequestLifecycle, IRequiredParameter,
+    ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
     TooLateForCookies
 )
 
 if TYPE_CHECKING:
     from twisted.web.iweb import IRequest
+    from twisted.python.components import Componentized
     from mypy_extensions import KwArg, VarArg, Arg
     from typing import TypeVar, Awaitable, Dict
     T = TypeVar('T')
-    (IRequest, Arg, KwArg, VarArg, Callable, Dict, IInterface, Awaitable)
+    (IRequest, Arg, KwArg, VarArg, Callable, Dict, IInterface, Awaitable,
+     Componentized, IRequestLifecycle)
 else:
     Arg = KwArg = lambda t, *x: t
 
@@ -195,10 +197,12 @@ _requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
 
 class AuthorizationDenied(Resource, object):
     def __init__(self, interface):
+        # type: (IInterface) -> None
         self._interface = interface
         super(AuthorizationDenied, self).__init__()
 
     def render(self, request):
+        # type: (IRequest) -> bytes
         request.setResponseCode(UNAUTHORIZED)
         return "{} DENIED".format(qual(self._interface)).encode('utf-8')
 
@@ -214,7 +218,7 @@ class Authorization(object):
 
     @classmethod
     def optional(cls, interface):
-        # type: (Type[Any]) -> NoneIfAbsent
+        # type: (IInterface) -> Authorization
         """
         Make a requirement passed to L{Authorizer.require}.
         """
@@ -222,6 +226,7 @@ class Authorization(object):
 
 
     def registerInjector(self, injectionComponents, parameterName, lifecycle):
+        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
         """
         Register this authorization to inject a parameter.
         """
@@ -230,6 +235,7 @@ class Authorization(object):
 
     @inlineCallbacks
     def injectValue(self, request):
+        # type: (IRequest) -> Any
         """
         Inject a value by asking the request's session.
         """
@@ -244,6 +250,7 @@ class Authorization(object):
 
 
     def finalize(self):
+        # type: () -> None
         """
         Nothing to finalize when registering.
         """

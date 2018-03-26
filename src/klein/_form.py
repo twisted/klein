@@ -80,7 +80,7 @@ def textConverter(value):
 
 
 
-@implementer(IDependencyInjector, IRequiredParameter)
+@implementer(IRequiredParameter)
 @attr.s(frozen=True)
 class Field(object):
     """
@@ -102,7 +102,7 @@ class Field(object):
     # IRequiredParameter
     def registerInjector(self, injectionComponents, parameterName,
                          requestLifecycle):
-        # type: (Componentized, str, RequestLifecycle) -> IDependencyInjector
+        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
         """
         Register this form field as a dependency injector.
         """
@@ -685,7 +685,7 @@ class RenderableFormParam(object):
 
     def registerInjector(self, injectionComponents, parameterName,
                          requestLifecycle):
-        # type: (Componentized, str, RequestLifecycle) -> RenderableFormParam
+        # type: (Componentized, str, IRequestLifecycle) -> RenderableFormParam
         return self
 
     def injectValue(self, request):

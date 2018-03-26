@@ -31,9 +31,10 @@ from zope.interface.interfaces import IInterface
 
 from ._security import checkAndReset, computeKeyText
 from ._sql_generic import Transaction, requestBoundTransaction
+from .interfaces import ISQLAuthorizer
 from .. import SessionProcurer
 from ..interfaces import (
-    ISQLAuthorizer, ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
+    ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
     ISimpleAccountBinding, NoSuchSession, SessionMechanism
 )
 
@@ -64,14 +65,14 @@ class SQLSession(object):
         for a in self._sessionStore._authorizers:
             # This should probably do something smart with interface
             # priority, checking isOrExtends or something similar.
-            if a.authzn_for in interfaces:
-                v = maybeDeferred(a.authzn_for_session,
+            if a.authorizationInterface in interfaces:
+                v = maybeDeferred(a.authorizationForSession,
                                   self._sessionStore, txn, self)
                 ds.append(v)
-                result[a.authzn_for] = v
+                result[a.authorizationInterface] = v
                 v.addCallback(
                     lambda value, ai: result.__setitem__(ai, value),
-                    ai=a.authzn_for
+                    ai=a.authorizationInterface
                 )
 
         def r(ignored):
@@ -607,17 +608,17 @@ _authorizerFunction = Callable[
 @implementer(ISQLAuthorizer)
 @attr.s
 class SimpleSQLAuthorizer(object):
-    authzn_for = attr.ib(type=Type)
+    authorizationInterface = attr.ib(type=Type)
     _decorated = attr.ib(type=_authorizerFunction)
 
-    def authzn_for_session(self, sessionStore, transaction, session):
+    def authorizationForSession(self, sessionStore, transaction, session):
         # type: (SessionStore, Transaction, ISession) -> Any
         cb = cast(_authorizerFunction, self._decorated)  # type: ignore
         return cb(sessionStore, transaction, session)
 
 
 def authorizerFor(
-        authzn_for,                        # type: IInterface
+        authorizationInterface,                        # type: IInterface
 ):
     # type: (...) -> Callable[[Callable], _FunctionWithAuthorizer]
     """
@@ -627,7 +628,7 @@ def authorizerFor(
         def authorizeFoo(dataStore, sessionStore, transaction, session):
             return Foo(metadata, metadata.tables["foo"])
 
-    @param authzn_for: The type we are creating an authorizer for.
+    @param authorizationInterface: The type we are creating an authorizer for.
 
     @return: a decorator that can decorate a function with the signature
         C{(metadata, dataStore, sessionStore, transaction, session)}
@@ -635,7 +636,8 @@ def authorizerFor(
     def decorator(decorated):
         # type: (_authorizerFunction) -> _FunctionWithAuthorizer
         result = cast(_FunctionWithAuthorizer, decorated)
-        result.authorizer = SimpleSQLAuthorizer(authzn_for, decorated)
+        result.authorizer = SimpleSQLAuthorizer(authorizationInterface,
+                                                decorated)
         return result
     return decorator
 

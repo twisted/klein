@@ -423,7 +423,7 @@ def oneSession(session_info, form, current):
 )
 @inlineCallbacks
 def sessions(request, binding, form, session):
-    # type: (IRequest, ISimpleAccountBinding, Form) -> Deferred
+    # type: (IRequest, ISimpleAccountBinding, Form, ISession) -> Deferred
     if binding is None:
         returnValue({"sessions": []})
     else:

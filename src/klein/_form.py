@@ -344,10 +344,10 @@ def defaultValidationFailureHandler(
 ):
     # type: (...) -> Element
     """
-    This is the default validation failure handler, which will be used by
-    L{Form.handler} in the case of any input validation failure when no other
-    validation failure handler is registered via
-    L{Form.onValidationFailureFor}.
+    This is the default validation failure handler, which will be used by form
+    handlers (i.e. any routes which use L{klein.Requirer} to require a field)
+    in the case of any input validation failure when no other validation
+    failure handler is registered via L{Form.onValidationFailureFor}.
 
     Its behavior is to simply return an HTML rendering of the form object,
     which includes inline information about fields which failed to validate.
@@ -563,14 +563,17 @@ class Form(object):
 
         Generally used like so::
 
-            myForm = Form(...).authorizedUsing(...)
+            requirer = Requirer(...)
+            @requirer.prerequisite([ISession])
+            def procureSession(request):
+                return SessionProcurer(...).procureSession(request)
             router = Klein()
-            @myForm.handler(router.route("/", methods=['POST']))
-            def handleForm(request, ...):
+            @requirer.require(router.route("/", methods=['POST']),
+                              someField=Field.text())
+            def formHandler(request, someField):
                 ...
-
             # Handle input validation failures for handleForm
-            @myForm.onValidationFailureFor(handleForm)
+            @Form.onValidationFailureFor(formHandler)
             def handleValidationFailures(request, formWithErrors,
                                          values, errors):
                 return "Your inputs didn't validate."
@@ -602,8 +605,6 @@ class Form(object):
         """
         assert IFieldValues(request, None) is None
 
-        print("attempting to populate request values")
-
         validationErrors = {}
         prevalidationValues = {}
         arguments = {}
@@ -611,21 +612,17 @@ class Form(object):
         checkCSRF(request)
 
         for field in self._fields:
-            print("populating", field)
             text = field.extractValue(request)
             prevalidationValues[field] = text
             try:
                 value = field.validateValue(text)
                 argName = field.pythonArgumentName
                 if argName is None:
-                    raise ValidationError(
-                        "Form fields must all have names."
-                    )
+                    raise ValidationError("Form fields must all have names.")
             except ValidationError as ve:
                 validationErrors[field] = ve
             else:
                 arguments[argName] = value
-        print("FV:", prevalidationValues, validationErrors)
         values = FieldValues(arguments, prevalidationValues, validationErrors,
                              injectionComponents)
         yield values.validate(instance, request)

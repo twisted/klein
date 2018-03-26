@@ -33,12 +33,12 @@ def postHandler(request, foo, bar):
 @requirer.require(
     style.routed(
         app.route("/", methods=["GET"]),
-        tags.div(slot("an_form"))
+        tags.div(slot("anForm"))
     ),
-    the_form=Form.rendererFor(postHandler, action=u"/?post=yes")
+    theForm=Form.rendererFor(postHandler, action=u"/?post=yes")
 )
-def formRenderer(request, the_form):
-    return {"an_form": the_form}
+def formRenderer(request, theForm):
+    return {"anForm": theForm}
 
 @requirer.require(
     style.routed(Form.onValidationFailureFor(postHandler),

@@ -6,7 +6,7 @@ from sqlalchemy import Table, MetaData
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError
 
-from twisted.web.iweb import IRequest, ISessionStore
+from twisted.web.iweb import IRequest
 from twisted.web.template import tags, slot, Tag
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 
@@ -16,7 +16,7 @@ from klein import (Klein, Plating, Form, Field, RenderableForm, Requirer,
                    Authorization)
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer,
-    ISession
+    ISessionStore, ISession
 )
 
 from klein.storage.sql import (
@@ -26,8 +26,8 @@ from klein.storage.sql import (
 from twisted.web.util import Redirect
 
 # silence flake8 for type-checking
-(ISessionProcurer, Deferred, ISessionStore, IRequest, Dict, Tag, Any,
- RenderableForm)
+(ISessionProcurer, Deferred, IRequest, Dict, Tag, Any,
+ RenderableForm, ISessionStore)
 
 app = Klein()
 

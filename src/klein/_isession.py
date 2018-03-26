@@ -1,5 +1,5 @@
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 import attr
 
@@ -12,12 +12,12 @@ from ._typing import ifmethod
 if TYPE_CHECKING:
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
-    from typing import Any, Iterable, List, Text, Type, Sequence
+    from typing import Iterable, List, Text, Type, Sequence
     from twisted.web.iweb import IRequest
     from zope.interface.interfaces import IInterface
     from ..interfaces import IRequestLifecycle as _FwdLifecycle
 
-    Deferred, Text, Any, Componentized, Sequence, IRequest, List, Type
+    Deferred, Text, Componentized, Sequence, IRequest, List, Type
     Iterable, IInterface, _FwdLifecycle
 
 class NoSuchSession(Exception):

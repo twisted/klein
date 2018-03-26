@@ -58,17 +58,17 @@ style = Plating(
                         tags.a(Class="nav-link",
                                href="/")(
                                    "Home", tags.span(Class="sr-only")("(current)"))),
-                    tags.li(render="if_logged_out",
+                    tags.li(render="ifLoggedOut",
                             Class=["nav-item ", slot("loginActive")])(
                                     tags.a("Login",
                                Class="nav-link",
                                            href="/login")),
-                    tags.li(render="if_logged_out",
+                    tags.li(render="ifLoggedOut",
                             Class=["nav-item ", slot("signupActive")])(
                                     tags.a("Signup", Class="nav-link", href="/signup")),
                 ),
                 tags.ul(Class="nav navbar-nav ml-auto")(
-                    tags.transparent(render="if_logged_in")(
+                    tags.transparent(render="ifLoggedIn")(
                         tags.li(Class="nav-item")(
                             tags.a(Class="nav-link active",
                                    href=[
@@ -81,7 +81,7 @@ style = Plating(
                             tags.a("Sessions", Class="nav-link",
                                    href="/sessions")),
                         tags.li(Class="nav-item pull-xs-right")(
-                            tags.form(render="logout_glue",
+                            tags.form(render="logoutGlue",
                                       action="/logout",
                                       method="POST")(
                                           tags.button("Logout", Class="btn"),
@@ -142,7 +142,7 @@ chirpTable = Table(
 
 @authorizerFor(Chirper)
 @inlineCallbacks
-def authorize_chirper(session_store, transaction, session):
+def authorizeChirper(session_store, transaction, session):
     # type: (ISessionStore, Transaction, ISession) -> Deferred
     account = (yield session.authorize([ISimpleAccount]))[ISimpleAccount]
     if account is not None:
@@ -155,7 +155,7 @@ class ChirpReader(object):
     transaction = attr.ib(type=Transaction)
 
     @inlineCallbacks
-    def read_chirps(self, username):
+    def readChirps(self, username):
         # type: (str) -> Deferred
         result = yield ((yield self.transaction.execute(chirpTable.select(
             (chirpTable.c.account_id ==
@@ -165,7 +165,7 @@ class ChirpReader(object):
         returnValue([row[chirpTable.c.chirp] for row in result])
 
 @authorizerFor(ChirpReader)
-def auth_for_reading(session_store, transaction, session):
+def authForReading(sessionStore, transaction, session):
     # type: (ISessionStore, Transaction, ISession) -> ChirpReader
     return ChirpReader(transaction)
 
@@ -194,7 +194,7 @@ initSchema.addErrback(log.failure)
 
 procurer = procurerFromDataStore(
     dataStore,
-    [authorize_chirper.authorizer, auth_for_reading.authorizer]
+    [authorizeChirper.authorizer, authForReading.authorizer]
 )  # type: ISessionProcurer
 
 @requirer.prerequisite([ISession])
@@ -211,9 +211,9 @@ def getSessionProcurer(request):
     reader=Authorization(ChirpReader)
 )
 @inlineCallbacks
-def read_some_chirps(request, user, reader):
+def readSomeChirps(request, user, reader):
     # type: (IRequest, str, ChirpReader) -> Deferred
-    chirps = yield reader.read_chirps(user)
+    chirps = yield reader.readChirps(user)
     returnValue({
         "user": user,
         "chirps": chirps,
@@ -258,7 +258,7 @@ def bye(request, binding):
     """
     Log out.
     """
-    yield binding.log_out()
+    yield binding.unbindThisSession()
     returnValue(Redirect(b"/"))
 
 
@@ -266,7 +266,7 @@ def bye(request, binding):
 @requirer.require(
     style.render, account=Authorization.optional(ISimpleAccount)
 )
-def if_logged_in(request, tag, account):
+def ifLoggedIn(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -279,7 +279,7 @@ def if_logged_in(request, tag, account):
 
 
 @requirer.require(style.render, account=Authorization.optional(ISimpleAccount))
-def if_logged_out(request, tag, account):
+def ifLoggedOut(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -293,7 +293,7 @@ def if_logged_out(request, tag, account):
 @requirer.require(
     style.render, form=Form.rendererFor(bye, "/logout")
 )
-def logout_glue(request, tag, form):
+def logoutGlue(request, tag, form):
     # type: (IRequest, Tag, RenderableForm) -> Tag
     return tag(form.glue())
 
@@ -313,7 +313,7 @@ def username(request, tag, account):
 @inlineCallbacks
 def dologin(request, username, password, binding):
     # type: (IRequest, str, str, ISimpleAccountBinding) -> Deferred
-    account = yield binding.log_in(username, password)
+    account = yield binding.bindIfCredentialsMatch(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
     else:
@@ -368,14 +368,15 @@ def loginform(request, login_form):
     sessionID=Field.text(),
 )
 @inlineCallbacks
-def log_other_out(request, sessionID, binding):
+def logOtherOut(request, sessionID, binding):
     # type: (IRequest, str, ISimpleAccountBinding) -> Deferred
     from attr import assoc
+    # TODO: public API for getting to this?
     session = yield binding._session._sessionStore.loadSession(
         sessionID, request.isSecure(), SessionMechanism.Header
     )
     other_binding = assoc(binding, _session=session)
-    yield other_binding.log_out()
+    yield other_binding.unbindThisSession()
     returnValue(Redirect(b"/sessions"))
 
 
@@ -395,7 +396,7 @@ widget = Plating(
 )
 
 @widget.widgeted
-def one_session(session_info, form, current):
+def oneSession(session_info, form, current):
     # type: (Any, RenderableForm, bool) -> Dict
     # session_info is the private 'SessionIPInformation'
     return dict(
@@ -416,23 +417,22 @@ def one_session(session_info, form, current):
          (tags.transparent(render="sessions:list")
           (slot("item")))]
     ),
-    form=Form.rendererFor(log_other_out, action="/sessions/logout"),
+    form=Form.rendererFor(logOtherOut, action="/sessions/logout"),
     binding=Authorization.optional(ISimpleAccountBinding),
+    session=Authorization(ISession),
 )
 @inlineCallbacks
-def sessions(request, binding, form):
+def sessions(request, binding, form, session):
     # type: (IRequest, ISimpleAccountBinding, Form) -> Deferred
-    from klein.interfaces import ISession
     if binding is None:
         returnValue({"sessions": []})
     else:
         dump = {
             "sessions": [
-                one_session.widget(
-                    session_info, form,
-                    ISession(request).identifier == session_info.id
+                oneSession.widget(
+                    session_info, form, session.identifier == session_info.id
                 )
-            for session_info in (yield binding.attached_sessions())
+                for session_info in (yield binding.boundSessionInformation())
             ]
         }
         returnValue(dump)
@@ -453,7 +453,7 @@ def sessions(request, binding, form):
     password=Field.password(),
 )
 @inlineCallbacks
-def do_signup(request, username, email, password, binding):
+def doSignup(request, username, email, password, binding):
     # type: (IRequest, str, str, str, ISimpleAccountBinding) -> Deferred
     acct = yield binding.createAccount(username, email, password)
     result = {
@@ -513,12 +513,12 @@ def do_signup(request, username, email, password, binding):
        (tags.div(Class="offset-sm-3 col-sm-8")
         (tags.button(type="submit", Class="btn btn-primary col-sm-4")
          ("Sign Up")))))]),
-                  the_form=Form.rendererFor(do_signup, action="/signup")
+                  theForm=Form.rendererFor(doSignup, action="/signup")
 )
-def signup_page(request, the_form):
+def signupPage(request, theForm):
     # type: (IRequest, RenderableForm) -> Dict
     return {
-        "glue_here": the_form.glue(),
+        "glue_here": theForm.glue(),
         "signupActive": "active"
     }
 

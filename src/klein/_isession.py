@@ -98,7 +98,7 @@ class ISimpleAccountBinding(Interface):
     """
 
     @ifmethod
-    def log_in(username, password):
+    def bindIfCredentialsMatch(username, password):
         # type: (Text, Text) -> None
         """
         Attach the session this is a component of to an account with the given
@@ -107,7 +107,7 @@ class ISimpleAccountBinding(Interface):
         """
 
     @ifmethod
-    def authenticated_accounts():
+    def boundAccounts():
         # type: () -> Deferred
         """
         Retrieve the accounts currently associated with the session this is a
@@ -117,7 +117,7 @@ class ISimpleAccountBinding(Interface):
         """
 
     @ifmethod
-    def log_out():
+    def unbindThisSession():
         # type: () -> None
         """
         Disassociate the session this is a component of from any accounts it's
@@ -150,14 +150,15 @@ class ISimpleAccount(Interface):
         """
     )
 
-    def add_session(self, session):
+    def bindSession(self, session):
         # type: (ISession) -> None
         """
-        Add the given session to this account.
+        Bind the given session to this account; i.e. authorize the given
+        session to act on behalf of this account.
         """
 
 
-    def change_password(self, new_password):
+    def changePassword(self, newPassword):
         # type: (Text) -> None
         """
         Change the password of this account.

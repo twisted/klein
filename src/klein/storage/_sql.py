@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.schema import CreateTable
+from sqlalchemy.sql.expression import select
 
 from twisted.internet.defer import (
     gatherResults, inlineCallbacks, maybeDeferred, returnValue
@@ -200,7 +201,7 @@ class AccountSessionBinding(object):
 
 
     @inlineCallbacks
-    def log_in(self, username, password):
+    def bindIfCredentialsMatch(self, username, password):
         # type: (Text, Text) -> Any
         """
         Associate this session with a given user account, if the password
@@ -241,12 +242,12 @@ class AccountSessionBinding(object):
                                 reset_password)):
             account = self._account(accountID, row[acc.c.username],
                                     row[acc.c.email])
-            yield account.add_session(self._session)
+            yield account.bindSession(self._session)
             returnValue(account)
 
 
     @inlineCallbacks
-    def authenticated_accounts(self):
+    def boundAccounts(self):
         # type: () -> Deferred
         """
         Retrieve the accounts currently associated with this session.
@@ -268,7 +269,7 @@ class AccountSessionBinding(object):
 
 
     @inlineCallbacks
-    def attached_sessions(self):
+    def boundSessionInformation(self):
         # type: () -> Any
         """
         Retrieve information about all sessions attached to the same account
@@ -277,12 +278,9 @@ class AccountSessionBinding(object):
         @return: L{Deferred} firing a L{list} of L{SessionIPInformation}
         """
         acs = sessionSchema.sessionAccount
-        # XXX FIXME this is a bad way to access the table, since the table
-        # is not actually part of the interface passed here
         sipt = sessionSchema.sessionIP
 
         acs2 = acs.alias()
-        from sqlalchemy.sql.expression import select
         result = yield self._transaction.execute(
             select([sipt], use_labels=True)
             .where(
@@ -300,7 +298,7 @@ class AccountSessionBinding(object):
         ])
 
 
-    def log_out(self):
+    def unbindThisSession(self):
         # type: () -> Any
         """
         Disassociate this session from any accounts it's logged in to.
@@ -327,7 +325,7 @@ class SQLAccount(object):
     email = attr.ib(type=Text)
 
 
-    def add_session(self, session):
+    def bindSession(self, session):
         # type: (ISession) -> Deferred
         """
         Add a session to the database.
@@ -340,17 +338,17 @@ class SQLAccount(object):
 
 
     @inlineCallbacks
-    def change_password(self, new_password):
+    def changePassword(self, newPassword):
         # type: (Text) -> Any
         """
-        @param new_password: The text of the new password.
-        @type new_password: L{unicode}
+        @param newPassword: The text of the new password.
+        @type newPassword: L{unicode}
         """
-        computed_hash = yield computeKeyText(new_password)
+        computedHash = yield computeKeyText(newPassword)
         result = yield self._transaction.execute(
             sessionSchema.account.update()
             .where(account_id=self.accountID)
-            .values(password_blob=computed_hash)
+            .values(password_blob=computedHash)
         )
         returnValue(result)
 
@@ -670,5 +668,5 @@ def logMeIn(
     """
     binding = ((yield session.authorize([ISimpleAccountBinding]))
                [ISimpleAccountBinding])
-    returnValue(next(iter((yield binding.authenticated_accounts())),
+    returnValue(next(iter((yield binding.boundAccounts())),
                      None))

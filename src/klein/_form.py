@@ -532,17 +532,32 @@ def checkCSRF(request):
     it is found.
     """
     # TODO: optionalize CSRF protection for GET forms
-    session = ISession(request)
-    if session.authenticatedBy == SessionMechanism.Cookie:
-        token = request.args.get(CSRF_PROTECTION.encode("ascii"),
-                                 [b""])[0]
-        token = token.decode("ascii")
-        if token != session.identifier:
-            # leak only the value passed, not the actual token, just in
-            # case there's some additional threat vector there
-            raise EarlyExit(CrossSiteRequestForgery(
-                "CSRF token mismatch: {!r}".format(token)
-            ))
+    session = ISession(request, None)
+    token = None
+    if request.method in (b'GET', b'HEAD'):
+        # Idempotent requests don't require CRSF validation.  (Don't have
+        # destructive GETs or bad stuff will happen to you in general!)
+        return
+    if session is not None:
+        if session.authenticatedBy == SessionMechanism.Header:
+            # CSRF is possible because browsers automatically send cookies when
+            # foreign domains provoke them into sending requests.  If a request
+            # is authenticated by a header, then no checking is necessary.
+            return
+        # We have a session, we weren't authenticated by a header... time to
+        # check that token.
+        token = (request.args.get(CSRF_PROTECTION.encode("ascii"), [b""])[0]
+                 .decode("ascii"))
+        if token == session.identifier:
+            # The token matches.  We're OK.
+            return
+    else:
+        token = None
+    # leak only the value passed, not the actual token, just in
+    # case there's some additional threat vector there
+    raise EarlyExit(CrossSiteRequestForgery(
+        "Invalid CSRF token: {!r}".format(token)
+    ))
 
 
 

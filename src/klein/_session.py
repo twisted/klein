@@ -141,7 +141,7 @@ class SessionProcurer(object):
                     raise
                 sessionID = None
         if sessionID is None:
-            if request.method != 'GET' or not self._setCookieOnGET:
+            if request.method != b'GET' or not self._setCookieOnGET:
                 # If we don't have a session ID at all, and we're not allowed
                 # to set a cookie on the client, don't waste session-store
                 # resources by allocating one.
@@ -157,7 +157,7 @@ class SessionProcurer(object):
             session = yield self._store.newSession(sentSecurely, mechanism)
         if (
                 sessionID != session.identifier and
-                request.method == 'GET' and
+                request.method == b'GET' and
                 self._setCookieOnGET
         ):
             # sessionID is the input session ID from the request;
@@ -177,7 +177,7 @@ class SessionProcurer(object):
                 domain=self._cookieDomain, path=self._cookiePath,
                 secure=sentSecurely, httpOnly=True,
             )
-        if request.isSecure() and not sentSecurely:
+        if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
         returnValue(session)

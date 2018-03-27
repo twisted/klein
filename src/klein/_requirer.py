@@ -149,7 +149,7 @@ class Requirer(object):
                     for (k, injector) in injectors.items():
                         injected[k] = yield injector.injectValue(request)
                 except EarlyExit as ee:
-                    return ee.alternateReturnValue
+                    returnValue(ee.alternateReturnValue)
                 kw.update(injected)
                 result = yield _call(instance, functionWithRequirements,
                                      request, *args, **kw)

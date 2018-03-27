@@ -248,7 +248,7 @@ class Authorization(object):
         if self._required and provider is None:
             raise EarlyExit(AuthorizationDenied(self._interface))
         # TODO: CSRF protection should probably go here
-        return provider
+        returnValue(provider)
 
 
     def finalize(self):

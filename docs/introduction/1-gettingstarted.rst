@@ -117,7 +117,7 @@ Klein provides for this general pattern with ``klein.Plating``.
 
 Let's build a little app that gives us some fake (random) information about
 places you can go and foods you can get there. You can download the full
-example :download:`here <codeexamples/html.py>` in order to run it.
+example :download:`here <codeexamples/template.py>` in order to run it.
 
 First, we'll create a top-level Plating for the site.  This takes a
 ``twisted.web.template`` template, defined with the objects from
@@ -125,7 +125,7 @@ First, we'll create a top-level Plating for the site.  This takes a
 ``Plating.CONTENT``, in the spot where you want the content of each page to
 appear.  That'll look something like this:
 
-.. literalinclude:: codeexamples/html.py
+.. literalinclude:: codeexamples/template.py
     :lines: 13-24
 
 Notice that we have defined a ``"pageTitle"`` slot in the template - individual
@@ -145,7 +145,7 @@ template with.
 Let's start with a really simple page that just has a static template to fill
 the content slot.
 
-.. literalinclude:: codeexamples/html.py
+.. literalinclude:: codeexamples/template.py
     :lines: 26-37
 
 This page generates some links to various sub-pages which we'll get to in a
@@ -155,7 +155,7 @@ template specified for ``root`` is inserted at the point in the template for
 
 Next, we should actually try injecting some data.
 
-.. literalinclude:: codeexamples/html.py
+.. literalinclude:: codeexamples/template.py
     :lines: 39-50
 
 Here you can see the ``/foods/...`` route for showing information about a food.
@@ -168,7 +168,7 @@ Each of these slots is only filled with a single item, though.  What if you
 need to put multiple items into the template?  The route for ``/places/...``
 can show us:
 
-.. literalinclude:: codeexamples/html.py
+.. literalinclude:: codeexamples/template.py
     :lines: 52-68
 
 Here you can see the special ``<slotname>:list`` renderer in use.  By

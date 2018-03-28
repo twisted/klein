@@ -5,8 +5,8 @@ from __future__ import print_function, unicode_literals
 import json
 from itertools import count
 from typing import (
-    Any, AnyStr, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Text,
-    Union, cast
+    Any, AnyStr, Callable, Dict, Iterable, List, Optional, Sequence,
+    TYPE_CHECKING, Text, Union, cast
 )
 
 import attr
@@ -286,7 +286,7 @@ class RenderableForm(object):
                   be submitted.
         """
         anySubmit = False
-        for field in self._form._fields:
+        for field in self._form.fields:
             yield attr.assoc(
                 field,
                 value=self.prevalidationValues.get(field, field.value),
@@ -575,8 +575,7 @@ class Form(object):
     """
     A L{Form} is a collection of fields attached to a function.
     """
-    _fields = attr.ib(default=cast(List[Field], attr.Factory(list)),
-                      type=List[Field])
+    fields = attr.ib(type=Sequence[Field])
 
     @staticmethod
     def onValidationFailureFor(handler):
@@ -635,7 +634,7 @@ class Form(object):
 
         checkCSRF(request)
 
-        for field in self._fields:
+        for field in self.fields:
             text = field.extractValue(request)
             prevalidationValues[field] = text
             try:
@@ -691,7 +690,7 @@ class Form(object):
         """
         form = IForm(decoratedFunction.injectionComponents, None)
         if form is None:
-            form = Form()
+            form = Form([])
         return RenderableFormParam(form, action, method, enctype, encoding)
 
 

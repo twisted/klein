@@ -2,6 +2,7 @@
 
 from __future__ import print_function, unicode_literals
 
+import json
 from itertools import count
 from typing import (
     Any, AnyStr, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Text,
@@ -157,6 +158,14 @@ class Field(object):
         fieldName = self.formFieldName
         if fieldName is None:
             raise ValueError("Cannot extract unnamed form field.")
+        contentType = request.getHeader(b"content-type")
+        if (
+                contentType is not None and
+                contentType.startswith(b'application/json')
+        ):
+            # TODO: parse only once, please.
+            request.content.seek(0)
+            return json.loads(request.content.read())[fieldName]
         return (
             (request.args.get(fieldName.encode("utf-8")) or [b""])[0]
             .decode("utf-8")
@@ -338,7 +347,7 @@ class RenderableForm(object):
 def defaultValidationFailureHandler(
         instance,               # type: Optional[object]
         request,                # type: IRequest
-        form,                   # type: Form
+        fieldValues,            # type: FieldValues
         prevalidationValues,    # type: Dict[Field, List[str]]
         validationErrors        # type: Dict[Field, ValidationError]
 ):
@@ -363,7 +372,7 @@ def defaultValidationFailureHandler(
     """
     session = request.getComponent(ISession)
     renderable = RenderableForm(
-        form, session, u"/".join(
+        fieldValues.form, session, u"/".join(
             segment.decode("utf-8", errors='replace')
             for segment in request.prepath
         ),
@@ -445,6 +454,7 @@ class FieldValues(object):
     Reified post-parsing values for HTTP form submission.
     """
 
+    form = attr.ib(type='Form')
     arguments = attr.ib(type=Dict[str, Any])
     prevalidationValues = attr.ib(type=Dict[Field, Text])
     validationErrors = attr.ib(type=Dict[Field, ValidationError])
@@ -459,7 +469,8 @@ class FieldValues(object):
         if self.validationErrors:
             result = yield _call(
                 instance,
-                IValidationFailureHandler(self._injectionComponents),
+                IValidationFailureHandler(self._injectionComponents,
+                                          defaultValidationFailureHandler),
                 request, self, self.prevalidationValues, self.validationErrors
             )
             raise EarlyExit(result)
@@ -638,8 +649,8 @@ class Form(object):
                 validationErrors[field] = ve
             else:
                 arguments[argName] = value
-        values = FieldValues(arguments, prevalidationValues, validationErrors,
-                             injectionComponents)
+        values = FieldValues(self, arguments, prevalidationValues,
+                             validationErrors, injectionComponents)
         yield values.validate(instance, request)
         request.setComponent(IFieldValues, values)
 

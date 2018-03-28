@@ -108,6 +108,57 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(to.calls, [(u'hello', 1234)])
 
 
+    def test_handlingGET(self):
+        # type: () -> None
+        """
+        A GET handler for a Form with Fields receives query parameters matching
+        those field names as input.
+        """
+        router = Klein()
+        requirer = Requirer()
+        calls = []
+
+        @requirer.require(router.route("/getme", methods=['GET']),
+                          name=Field.text(), value=Field.integer())
+        def justGet(request, name, value):
+            # type: (IRequest, str, int) -> bytes
+            calls.append((name, value))
+            return b'got'
+
+        stub = StubTreq(router.resource())
+
+        response = self.successResultOf(stub.get(
+            b"https://localhost/getme?name=hello,%20big+world&value=4321"
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(self.successResultOf(content(response)), b'got')
+        self.assertEqual(calls, [(u'hello, big world', 4321)])
+
+
+    def test_handlingJSON(self):
+        # type: () -> None
+        """
+        A handler for a form with Fields receives those fields as input, as
+        passed by an HTTP client that submits a JSON POST body.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/handle',
+            json=dict(name='hello', value='1234', ignoreme='extraneous'),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(self.successResultOf(content(response)), b'yay')
+        self.assertEqual(to.calls, [(u'hello', 1234)])
+
+
     def test_rendering(self):
         # type: () -> None
         """

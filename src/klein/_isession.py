@@ -12,13 +12,13 @@ from ._typing import ifmethod
 if TYPE_CHECKING:
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
-    from typing import Iterable, List, Text, Type, Sequence
+    from typing import Dict, Iterable, List, Text, Type, Sequence
     from twisted.web.iweb import IRequest
     from zope.interface.interfaces import IInterface
     from ..interfaces import IRequestLifecycle as _FwdLifecycle
 
     Deferred, Text, Componentized, Sequence, IRequest, List, Type
-    Iterable, IInterface, _FwdLifecycle
+    Iterable, IInterface, _FwdLifecycle, Dict
 
 class NoSuchSession(Exception):
     """
@@ -289,8 +289,8 @@ class IDependencyInjector(Interface):
     """
 
     @ifmethod
-    def injectValue(request):
-        # type: (IRequest) -> Any
+    def injectValue(request, routeParams):
+        # type: (IRequest, Dict[str, Any]) -> Any
         """
         Return a value to be injected into the parameter name specified by the
         IRequiredParameter.  This may return a Deferred, or an object, or an

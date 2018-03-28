@@ -141,18 +141,19 @@ class Requirer(object):
             @modified("dependency-injecting route", functionWithRequirements)
             @bindable
             @inlineCallbacks
-            def router(instance, request, *args, **kw):
+            def router(instance, request, *args, **routeParams):
                 # type: (Any, IRequest, *Any, **Any) -> Any
-                injected = {}
+                injected = routeParams.copy()
                 try:
                     yield lifecycle.runBeforeHooks(instance, request)
                     for (k, injector) in injectors.items():
-                        injected[k] = yield injector.injectValue(request)
+                        injected[k] = yield injector.injectValue(
+                            request, routeParams
+                        )
                 except EarlyExit as ee:
                     returnValue(ee.alternateReturnValue)
-                kw.update(injected)
                 result = yield _call(instance, functionWithRequirements,
-                                     request, *args, **kw)
+                                     request, *args, **injected)
                 lifecycle.runAfterHooks(instance, request, result)
                 returnValue(result)
 

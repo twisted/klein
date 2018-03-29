@@ -94,6 +94,8 @@ class Field(object):
     pythonArgumentName = attr.ib(type=Optional[str], default=None)
     formFieldName = attr.ib(type=Optional[str], default=None)
     formLabel = attr.ib(type=Optional[str], default=None)
+    default = attr.ib(type=Optional[Any], default=None)
+    required = attr.ib(type=bool, default=True)
     noLabel = attr.ib(type=bool, default=False)
     value = attr.ib(type=Text, default=u"")
     error = attr.ib(type=ValidationError, default=None)
@@ -182,38 +184,38 @@ class Field(object):
 
 
     @classmethod
-    def text(cls):              # type: () -> Field
+    def text(cls, **kw):              # type: (**Any) -> Field
         """
         Shorthand for a form field that contains a short string, and will be
         rendered as a plain <input>.
         """
-        return cls(converter=textConverter, formInputType="text")
+        return cls(converter=textConverter, formInputType="text", **kw)
 
     @classmethod
-    def password(cls):          # type: () -> Field
+    def password(cls, **kw):          # type: (**Any) -> Field
         """
         Shorthand for a form field that, like L{text}, contains a short string,
         but should be obscured when typed (and, to the extent possible,
         obscured in other sensitive contexts, such as logging.)
         """
         return cls(converter=textConverter,
-                   formInputType="password")
+                   formInputType="password", **kw)
 
     @classmethod
-    def hidden(cls, name, value):
-        # type: (str, Text) -> Field
+    def hidden(cls, name, value, **kw):
+        # type: (str, Text, **Any) -> Field
         """
         Shorthand for a hidden field.
         """
         return cls(converter=textConverter,
                    formInputType="hidden",
                    noLabel=True,
-                   value=value).maybeNamed(name)
+                   value=value, **kw).maybeNamed(name)
 
 
     @classmethod
-    def integer(cls, minimum=None, maximum=None):
-        # type: (Optional[int], Optional[int]) -> Field
+    def integer(cls, minimum=None, maximum=None, **kw):
+        # type: (Optional[int], Optional[int], **Any) -> Field
         """
         An integer within the range [minimum, maximum].
         """
@@ -229,7 +231,7 @@ class Field(object):
                 if maximum is not None and value > maximum:
                     raise ValidationError("value must be <=" + repr(maximum))
                 return value
-        return cls(converter=bounded_int, formInputType="number")
+        return cls(converter=bounded_int, formInputType="number", **kw)
 
 
 @implementer(IRenderable)
@@ -652,8 +654,9 @@ class Form(object):
         request.setComponent(IFieldValues, values)
 
 
-    @staticmethod
+    @classmethod
     def rendererFor(
+            cls,
             decoratedFunction,  # type: _requirerFunctionWithForm
             action,             # type: Text
             method=u"POST",     # type: Text

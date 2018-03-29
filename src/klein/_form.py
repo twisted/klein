@@ -69,6 +69,12 @@ class ValidationError(Exception):
         self.message = message
 
 
+class ValueAbsent(ValidationError):
+    """
+    A value was required but none was supplied.
+    """
+
+
 def textConverter(value):
     # type: (AnyStr) -> Text
     """
@@ -153,7 +159,7 @@ class Field(object):
 
 
     def extractValue(self, request):
-        # type: (IRequest) -> Text
+        # type: (IRequest) -> Optional[Text]
         """
         Extract a text value from the request.
         """
@@ -168,10 +174,11 @@ class Field(object):
             # TODO: parse only once, please.
             request.content.seek(0)
             return json.loads(request.content.read())[fieldName]
-        return (
-            (request.args.get(fieldName.encode("utf-8")) or [b""])[0]
-            .decode("utf-8")
-        )
+        allValues = request.args.get(fieldName.encode("utf-8"))
+        if allValues:
+            return allValues[0].decode('utf-8')
+        else:
+            return None
 
 
     def validateValue(self, value):
@@ -180,7 +187,15 @@ class Field(object):
         Validate the given text and return a converted Python object to use, or
         fail with L{ValidationError}.
         """
-        return self.converter(value)
+        if value is None:
+            if self.required:
+                raise ValueAbsent("a value was required but none was supplied")
+            else:
+                return value
+        try:
+            return self.converter(value)
+        except ValueError as ve:
+            raise ValidationError(str(value))
 
 
     @classmethod

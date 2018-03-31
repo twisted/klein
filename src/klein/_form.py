@@ -159,9 +159,14 @@ class Field(object):
 
 
     def extractValue(self, request):
-        # type: (IRequest) -> Optional[Text]
+        # type: (IRequest) -> Any
         """
-        Extract a text value from the request.
+        Extract a value from the request.
+
+        In the case of key/value form posts, this attempts to reliably make the
+        value into Text.  In the case of a JSON post, however, it will simply
+        extract the value from the top-level dictionary, which means it could
+        be any arrangement of JSON-serializiable objects.
         """
         fieldName = self.formFieldName
         if fieldName is None:
@@ -182,10 +187,14 @@ class Field(object):
 
 
     def validateValue(self, value):
-        # type: (AnyStr) -> Any
+        # type: (Any) -> Any
         """
         Validate the given text and return a converted Python object to use, or
         fail with L{ValidationError}.
+
+        @param value: The value that was extracted by L{Field.extractValue}.
+
+        @return: The converted value.
         """
         if value is None:
             if self.required:
@@ -473,7 +482,7 @@ class FieldValues(object):
 
     form = attr.ib(type='Form')
     arguments = attr.ib(type=Dict[str, Any])
-    prevalidationValues = attr.ib(type=Dict[Field, Text])
+    prevalidationValues = attr.ib(type=Dict[Field, Optional[Text]])
     validationErrors = attr.ib(type=Dict[Field, ValidationError])
     _injectionComponents = attr.ib(type=Componentized)
 

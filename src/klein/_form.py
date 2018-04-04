@@ -513,8 +513,8 @@ class FieldInjector(object):
     _field = attr.ib(type=Field)
     _lifecycle = attr.ib(type=IRequestLifecycle)
 
-    def injectValue(self, request, routeParams):
-        # type: (IRequest, Dict[str, Any]) -> Any
+    def injectValue(self, instance, request, routeParams):
+        # type: (Any, IRequest, Dict[str, Any]) -> Any
         """
         Inject the given value into the form.
         """
@@ -741,8 +741,8 @@ class RenderableFormParam(object):
         # type: (Componentized, str, IRequestLifecycle) -> RenderableFormParam
         return self
 
-    def injectValue(self, request, routeParams):
-        # type: (IRequest, Dict[str, Any]) -> RenderableForm
+    def injectValue(self, instance, request, routeParams):
+        # type: (Any, IRequest, Dict[str, Any]) -> RenderableForm
         """
         Create the renderable form from the request.
         """

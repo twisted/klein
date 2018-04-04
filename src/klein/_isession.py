@@ -289,12 +289,21 @@ class IDependencyInjector(Interface):
     """
 
     @ifmethod
-    def injectValue(request, routeParams):
-        # type: (IRequest, Dict[str, Any]) -> Any
+    def injectValue(instance, request, routeParams):
+        # type: (Any, IRequest, Dict[str, Any]) -> Any
         """
         Return a value to be injected into the parameter name specified by the
         IRequiredParameter.  This may return a Deferred, or an object, or an
         object directly providing the relevant interface.
+
+        @param instance: The instance to which the Klein router processing this
+            request is bound.
+
+        @param request: The request being processed.
+
+        @param routeParams: A (read-only) copy of the the arguments passed to
+            the route by the layer below dependency injection (for example, URL
+            parameters).
         """
 
     @ifmethod

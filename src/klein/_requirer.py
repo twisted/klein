@@ -148,7 +148,7 @@ class Requirer(object):
                     yield lifecycle.runBeforeHooks(instance, request)
                     for (k, injector) in injectors.items():
                         injected[k] = yield injector.injectValue(
-                            request, routeParams
+                            instance, request, routeParams
                         )
                 except EarlyExit as ee:
                     returnValue(ee.alternateReturnValue)

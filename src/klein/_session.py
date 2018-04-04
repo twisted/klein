@@ -235,8 +235,8 @@ class Authorization(object):
 
 
     @inlineCallbacks
-    def injectValue(self, request, routeParams):
-        # type: (IRequest, Dict[str, Any]) -> Any
+    def injectValue(self, instance, request, routeParams):
+        # type: (Any, IRequest, Dict[str, Any]) -> Any
         """
         Inject a value by asking the request's session.
         """

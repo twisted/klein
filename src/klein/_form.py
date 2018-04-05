@@ -621,8 +621,7 @@ class Form(object):
                 ...
             # Handle input validation failures for handleForm
             @Form.onValidationFailureFor(formHandler)
-            def handleValidationFailures(request, formWithErrors,
-                                         values, errors):
+            def handleValidationFailures(request, fieldValues):
                 return "Your inputs didn't validate."
 
         @see: L{defaultValidationFailureHandler} for a more detailed

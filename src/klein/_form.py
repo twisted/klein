@@ -25,7 +25,8 @@ from zope.interface import Interface, implementer
 from ._app import _call
 from ._decorators import bindable
 from .interfaces import (EarlyExit, IDependencyInjector, IRequestLifecycle,
-                         IRequiredParameter, ISession, SessionMechanism)
+                         IRequiredParameter, ISession, SessionMechanism,
+                         ValidationError, ValueAbsent)
 
 if TYPE_CHECKING:
     from mypy_extensions import DefaultNamedArg, NoReturn
@@ -54,26 +55,6 @@ class CrossSiteRequestForgery(Resource, object):
         return ("CSRF TOKEN FAILURE: " + self.message).encode("utf-8")
 
 CSRF_PROTECTION = "__csrf_protection__"
-
-class ValidationError(Exception):
-    """
-    A L{ValidationError} is raised by L{Field.extractValue}.
-    """
-
-    def __init__(self, message):
-        # type: (str) -> None
-        """
-        Initialize a L{ValidationError} with a message to show to the user.
-        """
-        super(ValidationError, self).__init__(message)
-        self.message = message
-
-
-class ValueAbsent(ValidationError):
-    """
-    A value was required but none was supplied.
-    """
-
 
 def textConverter(value):
     # type: (AnyStr) -> Text
@@ -625,7 +606,8 @@ class Form(object):
                 return "Your inputs didn't validate."
 
         @see: L{defaultValidationFailureHandler} for a more detailed
-            description of the decorated function's expected signature.
+            description of the decorated function's expected signature.  The
+            additional parameter it is passed is a L{FieldValues} instance.
 
         @param handler: The form handler - i.e. function decorated by
             L{Form.handler} - for which the decorated function will handle

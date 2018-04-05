@@ -1,5 +1,9 @@
 from typing import TYPE_CHECKING
 
+from ._iform import (
+    ValidationError,
+    ValueAbsent,
+)
 from ._interfaces import (
     IKleinRequest,
 )
@@ -67,4 +71,6 @@ __all__ = (
     "EarlyExit",
     "SessionMechanism",
     "ISession",
+    "ValidationError",
+    "ValueAbsent",
 )

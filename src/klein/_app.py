@@ -36,10 +36,12 @@ from ._resource import KleinResource
 
 
 
-def _call(instance, f, *args, **kwargs):
-    if instance is not None or getattr(f, "__klein_bound__", False):
-        args = (instance,) + args
-    result = f(*args, **kwargs)
+def _call(__klein_instance__, __klein_f__, *args, **kwargs):
+    if __klein_instance__ is not None or getattr(
+            __klein_f__, "__klein_bound__", False
+    ):
+        args = (__klein_instance__,) + args
+    result = __klein_f__(*args, **kwargs)
     if iscoroutine(result):
         result = ensureDeferred(result)
     return result

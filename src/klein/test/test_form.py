@@ -62,7 +62,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/handle", methods=['POST']),
-        name=Field.text(), value=Field.integer(),
+        name=Field.text(), value=Field.number(),
     )
     def handler(self, request, name, value):
         # type: (IRequest, Text, Text) -> bytes
@@ -119,7 +119,7 @@ class TestForms(SynchronousTestCase):
         calls = []
 
         @requirer.require(router.route("/getme", methods=['GET']),
-                          name=Field.text(), value=Field.integer())
+                          name=Field.text(), value=Field.number())
         def justGet(request, name, value):
             # type: (IRequest, str, int) -> bytes
             calls.append((name, value))

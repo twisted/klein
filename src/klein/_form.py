@@ -238,24 +238,24 @@ class Field(object):
 
 
     @classmethod
-    def integer(cls, minimum=None, maximum=None, **kw):
+    def number(cls, minimum=None, maximum=None, kind=float, **kw):
         # type: (Optional[int], Optional[int], **Any) -> Field
         """
         An integer within the range [minimum, maximum].
         """
-        def bounded_int(text):
+        def bounded_number(text):
             # type: (AnyStr) -> Any
             try:
-                value = int(text)
-            except ValueError:
-                raise ValidationError("must be an integer")
+                value = kind(text)
+            except (ValueError, ArithmeticError):
+                raise ValidationError("not a valid number")
             else:
                 if minimum is not None and value < minimum:
                     raise ValidationError("value must be >=" + repr(minimum))
                 if maximum is not None and value > maximum:
                     raise ValidationError("value must be <=" + repr(maximum))
                 return value
-        return cls(converter=bounded_int, formInputType="number", **kw)
+        return cls(converter=bounded_number, formInputType="number", **kw)
 
 
 @implementer(IRenderable)

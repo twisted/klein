@@ -374,8 +374,6 @@ def defaultValidationFailureHandler(
         instance,               # type: Optional[object]
         request,                # type: IRequest
         fieldValues,            # type: FieldValues
-        prevalidationValues,    # type: Dict[Field, List[str]]
-        validationErrors        # type: Dict[Field, ValidationError]
 ):
     # type: (...) -> Element
     """
@@ -405,7 +403,7 @@ def defaultValidationFailureHandler(
         request.method,
         request.getHeader(b'content-type').split(b';')[0]
         .decode("charmap"),
-        "utf-8", prevalidationValues, validationErrors,
+        "utf-8", fieldValues.prevalidationValues, fieldValues.validationErrors,
     )
 
     return Element(TagLoader(renderable))
@@ -497,7 +495,7 @@ class FieldValues(object):
                 instance,
                 IValidationFailureHandler(self._injectionComponents,
                                           defaultValidationFailureHandler),
-                request, self, self.prevalidationValues, self.validationErrors
+                request, self
             )
             raise EarlyExit(result)
 

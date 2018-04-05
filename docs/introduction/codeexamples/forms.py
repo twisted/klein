@@ -46,9 +46,9 @@ def formRenderer(request, theForm):
                   tags.div(slot('the-invalid-form'))]),
     renderer=Form.rendererFor(postHandler, action=u"/?post=yes"),
 )
-def validationFailed(request, form, values, errors, renderer):
-    renderer.prevalidationValues = values
-    renderer.validationErrors = errors
+def validationFailed(request, values, renderer):
+    renderer.prevalidationValues = values.prevalidationValues
+    renderer.validationErrors = values.validationErrors
     return {'the-invalid-form': renderer}
 
 

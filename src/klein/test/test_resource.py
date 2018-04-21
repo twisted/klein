@@ -1166,6 +1166,29 @@ class KleinResourceTests(TestCase):
         self.assertEqual(reported_length, actual_length)
 
 
+    def test_branchRoot(self):
+        """
+        Return the '/' path of a branched resource
+        """
+        expected_result = b'foo'
+        app = self.app
+        branch = Klein()
+
+        @app.route('/foo')
+        def branched_resource(req):
+            return branch.resource()
+
+        # branched resource with a '/' route
+        @branch.route('/')
+        def foo(req):
+            return expected_result
+
+        request = requestMock(b'/foo')
+        d = _render(app.resource(), request)
+        self.assertFired(d)
+        self.assertEqual(request.getWrittenData(), expected_result)
+
+
 class ExtractURLpartsTests(TestCase):
     """
     Tests for L{klein.resource._extractURLparts}.

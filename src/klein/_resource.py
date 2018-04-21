@@ -155,6 +155,10 @@ class KleinResource(Resource):
             request.setResponseCode(400)
             return b"Non-UTF-8 encoding in URL."
 
+        # Set empty string paths to '/'
+        if path_info == '':
+            path_info = '/'
+
         # Bind our mapper.
         mapper = self._app.url_map.bind(
             server_name,

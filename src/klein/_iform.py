@@ -18,5 +18,3 @@ class ValueAbsent(ValidationError):
     """
     A value was required but none was supplied.
     """
-
-

@@ -10,8 +10,8 @@ from ._interfaces import (
 from ._isession import (
     EarlyExit,
     IDependencyInjector as _IDependencyInjector,
-    IRequestLifecycleT as _IRequestLifecycleT,
     IRequestLifecycle as _IRequestLifecycle,
+    IRequestLifecycleT as _IRequestLifecycleT,
     IRequiredParameter as _IRequiredParameter,
     ISession as _ISession,
     ISessionProcurer as _ISessionProcurer,

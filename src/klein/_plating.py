@@ -7,7 +7,7 @@ Templating wrapper support for Klein.
 from functools import partial
 from json import dumps
 from operator import setitem
-from typing import Any, Callable, Tuple, cast, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING, Tuple, cast
 
 import attr
 

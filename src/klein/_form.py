@@ -160,7 +160,9 @@ class Field(object):
         ):
             # TODO: parse only once, please.
             request.content.seek(0)
-            return json.loads(request.content.read())[fieldName]
+            octets = request.content.read()
+            characters = octets.decode("utf-8")
+            return json.loads(characters)[fieldName]
         allValues = request.args.get(fieldName.encode("utf-8"))
         if allValues:
             return allValues[0].decode('utf-8')

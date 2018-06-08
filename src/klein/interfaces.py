@@ -11,7 +11,6 @@ from ._isession import (
     EarlyExit,
     IDependencyInjector as _IDependencyInjector,
     IRequestLifecycle as _IRequestLifecycle,
-    IRequestLifecycleT as _IRequestLifecycleT,
     IRequiredParameter as _IRequiredParameter,
     ISession as _ISession,
     ISessionProcurer as _ISessionProcurer,
@@ -30,6 +29,7 @@ if TYPE_CHECKING:
                                AccountSessionBinding)
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
+    from ._isession import IRequestLifecycleT as _IRequestLifecycleT
 
     from typing import Union
 

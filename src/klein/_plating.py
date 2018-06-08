@@ -7,7 +7,7 @@ Templating wrapper support for Klein.
 from functools import partial
 from json import dumps
 from operator import setitem
-from typing import Any, Callable, Tuple, cast
+from typing import Any, Callable, Tuple, cast, TYPE_CHECKING
 
 import attr
 
@@ -20,6 +20,14 @@ from twisted.web.template import Element, TagLoader
 from ._app import _call
 from ._decorators import bindable, modified, originalName
 
+if TYPE_CHECKING:
+    from twisted.internet.defer import Deferred
+    from twisted.web.iweb import IRequest
+    from twisted.web.template import Tag
+    from typing import List
+    Deferred, IRequest, Tag
+    StackType = List[Tuple[Any, Callable[[Any], None]]]
+
 # https://github.com/python/mypy/issues/224
 ATOM_TYPES = (
     cast(Tuple[Any, ...], integer_types) +
@@ -28,6 +36,7 @@ ATOM_TYPES = (
 )
 
 def _should_return_json(request):
+    # type: (IRequest) -> bool
     """
     Should the given request result in a JSON entity-body?
     """
@@ -36,6 +45,7 @@ def _should_return_json(request):
 
 @inlineCallbacks
 def resolveDeferredObjects(root):
+    # type: (Any) -> Deferred
     """
     Wait on possibly nested L{Deferred}s that represent a JSON
     serializable object.
@@ -51,7 +61,7 @@ def resolveDeferredObjects(root):
 
     result = [None]
     setResult = partial(setitem, result, 0)
-    stack = [(root, setResult)]
+    stack = [(root, setResult)]  # type: StackType
 
     while stack:
         mightBeDeferred, setter = stack.pop()
@@ -62,7 +72,7 @@ def resolveDeferredObjects(root):
         if isinstance(obj, ATOM_TYPES):
             setter(obj)
         elif isinstance(obj, list):
-            parent = [None] * len(obj)
+            parent = [None] * len(obj)  # type: Any
             setter(parent)
             stack.extend(
                 reversed([
@@ -162,6 +172,7 @@ class PlatedElement(Element):
 
             @modified("plated render wrapper", wrapped)
             def renderWrapper(request, tag, *args, **kw):
+                # type: (IRequest, Tag, *Any, **Any) -> Any
                 return _call(self._boundInstance, wrapped,
                              request, tag, *args, **kw)
             return renderWrapper
@@ -220,6 +231,7 @@ class Plating(object):
             @bindable
             @inlineCallbacks
             def mymethod(instance, request, *args, **kw):
+                # type: (Any, IRequest, *Any, **Any) -> Any
                 data = yield _call(instance, method, request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()

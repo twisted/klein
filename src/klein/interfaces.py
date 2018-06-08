@@ -10,6 +10,7 @@ from ._interfaces import (
 from ._isession import (
     EarlyExit,
     IDependencyInjector as _IDependencyInjector,
+    IRequestLifecycleT as _IRequestLifecycleT,
     IRequestLifecycle as _IRequestLifecycle,
     IRequiredParameter as _IRequiredParameter,
     ISession as _ISession,
@@ -29,7 +30,6 @@ if TYPE_CHECKING:
                                AccountSessionBinding)
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
-    from ._requirer import RequestLifecycle
 
     from typing import Union
 
@@ -45,7 +45,7 @@ if TYPE_CHECKING:
                                 RenderableFormParam, FieldInjector]
     IRequiredParameter = Union[_IRequiredParameter, Authorization, Field,
                                RenderableFormParam]
-    IRequestLifecycle = Union[_IRequestLifecycle, RequestLifecycle]
+    IRequestLifecycle = _IRequestLifecycleT
 else:
     ISession = _ISession
     ISessionStore = _ISessionStore

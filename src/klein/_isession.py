@@ -15,10 +15,9 @@ if TYPE_CHECKING:
     from typing import Dict, Iterable, List, Text, Type, Sequence
     from twisted.web.iweb import IRequest
     from zope.interface.interfaces import IInterface
-    from ..interfaces import IRequestLifecycle as _FwdLifecycle
 
     Deferred, Text, Componentized, Sequence, IRequest, List, Type
-    Iterable, IInterface, _FwdLifecycle, Dict
+    Iterable, IInterface, Dict
 
 class NoSuchSession(Exception):
     """
@@ -332,7 +331,7 @@ class IRequiredParameter(Interface):
 
     @ifmethod
     def registerInjector(injectionComponents, parameterName, lifecycle):
-        # type: (Componentized, str, _FwdLifecycle) -> IDependencyInjector
+        # type: (Componentized, str, IRequestLifecycleT) -> IDependencyInjector
         """
         Register the given injector at method-decoration time, informing it of
         its Python parameter name.
@@ -357,6 +356,12 @@ class IRequestLifecycle(Interface):
     """
     Interface for adding hooks to the phases of a request's lifecycle.
     """
+
+
+if TYPE_CHECKING:
+    from typing import Union
+    from ._requirer import RequestLifecycle
+    IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]
 
 
 @attr.s

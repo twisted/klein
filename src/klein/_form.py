@@ -29,10 +29,11 @@ from .interfaces import (EarlyExit, IDependencyInjector, IRequestLifecycle,
                          ValidationError, ValueAbsent)
 
 if TYPE_CHECKING:
+    from typing import Type
     from mypy_extensions import DefaultNamedArg, NoReturn
     from twisted.internet.defer import Deferred
     (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
-     Text, DefaultNamedArg, Union, NoReturn, Deferred)
+     Text, DefaultNamedArg, Union, NoReturn, Deferred, Type)
 else:
     def DefaultNamedArg(*ignore):
         pass
@@ -185,7 +186,7 @@ class Field(object):
         try:
             return self.converter(value)
         except ValueError as ve:
-            raise ValidationError(str(value))
+            raise ValidationError(str(ve))
 
 
     @classmethod
@@ -220,7 +221,7 @@ class Field(object):
 
     @classmethod
     def number(cls, minimum=None, maximum=None, kind=float, **kw):
-        # type: (Optional[int], Optional[int], **Any) -> Field
+        # type: (Optional[int], Optional[int], Type, **Any) -> Field
         """
         An integer within the range [minimum, maximum].
         """
@@ -258,8 +259,8 @@ class RenderableForm(object):
     _enctype = attr.ib(type=str)
     _encoding = attr.ib(type=str)
     prevalidationValues = attr.ib(
-        type=Dict[Field, List[Text]],
-        default=cast(Dict[Field, List[Text]], attr.Factory(dict))
+        type=Dict[Field, Optional[Text]],
+        default=cast(Dict[Field, Optional[Text]], attr.Factory(dict))
     )
     validationErrors = attr.ib(
         type=Dict[Field, ValidationError],

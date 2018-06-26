@@ -32,7 +32,7 @@ class _SpecialModuleObject(object):
         "ensure_utf8_bytes",
     )
 
-    KleinResource = KleinResource
+    KleinResource = _KleinResource
 
     @property
     def ensure_utf8_bytes(self):

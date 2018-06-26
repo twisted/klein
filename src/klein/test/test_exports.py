@@ -36,7 +36,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
         import klein as k
         import klein._app as a
 
-        self.assertIdentical(k.resource(), a.resource())
+        self.assertIdentical(k.resource()._app, a.resource()._app)
 
 
     def test_app(self):

@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from typing import AnyStr, Callable, Text
     AnyStr, Callable, Text
     KleinResource = _KleinResource
-    resource = resource
 
 class _SpecialModuleObject(object):
     """
@@ -59,4 +58,6 @@ class _SpecialModuleObject(object):
         return "<special bound method/module klein.resource>"
 
 
+preserve = modules[__name__]
 modules[__name__] = _SpecialModuleObject()
+modules[__name__].__preserve__ = preserve

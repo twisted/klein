@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from ._app import resource
 from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from typing import AnyStr, Callable, Text
     AnyStr, Callable, Text
     KleinResource = _KleinResource

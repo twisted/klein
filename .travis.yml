@@ -28,42 +28,30 @@ matrix:
       env: TOXENV=mypy
 
     - python: 2.7
-      env: TOXENV=coverage-py27-tw160,codecov
-    - python: 2.7
       env: TOXENV=coverage-py27-tw171,codecov
     - python: 2.7
       env: TOXENV=coverage-py27-twcurrent,codecov
 
-    - python: 3.4
-      env: TOXENV=coverage-py34-tw160,codecov
     - python: 3.4
       env: TOXENV=coverage-py34-tw171,codecov
     - python: 3.4
       env: TOXENV=coverage-py34-twcurrent,codecov
 
     - python: 3.5
-      env: TOXENV=coverage-py35-tw160,codecov
-    - python: 3.5
       env: TOXENV=coverage-py35-tw171,codecov
     - python: 3.5
       env: TOXENV=coverage-py35-twcurrent,codecov
 
-    - python: 3.6
-      env: TOXENV=coverage-py36-tw160,codecov
     - python: 3.6
       env: TOXENV=coverage-py36-tw171,codecov
     - python: 3.6
       env: TOXENV=coverage-py36-twcurrent,codecov
 
     - python: pypy
-      env: TOXENV=coverage-pypy2-tw160,codecov
-    - python: pypy
       env: TOXENV=coverage-pypy2-tw171,codecov
     - python: pypy
       env: TOXENV=coverage-pypy2-twcurrent,codecov
 
-    - python: pypy3
-      env: TOXENV=coverage-pypy3-tw160,codecov
     - python: pypy3
       env: TOXENV=coverage-pypy3-tw171,codecov
     - python: pypy3

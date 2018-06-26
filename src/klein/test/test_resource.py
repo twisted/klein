@@ -1306,7 +1306,8 @@ class GlobalAppTests(TestCase):
         """
         from klein import resource
         from klein.resource import KleinResource, ensure_utf8_bytes
-        self.assertEqual(repr(resource), "<special bound method/module klein.resource>")
+        self.assertEqual(repr(resource),
+                         "<special bound method/module klein.resource>")
         self.assertIdentical(resource.KleinResource, KleinResource)
         self.assertIdentical(resource.ensure_utf8_bytes, ensure_utf8_bytes)
 

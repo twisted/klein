@@ -1,4 +1,4 @@
-# -*- test-case-name: klein.test.test_resource.GlobalAppTests.test_weird_resource_situation -*-
+# -*- test-case-name: klein.test.test_resource.GlobalAppTests -*-
 
 """
 This module, L{klein.resource}, serves two purposes:
@@ -8,10 +8,17 @@ This module, L{klein.resource}, serves two purposes:
 
     - It's the module where L{KleinResource} is defined.
 """
-
-from ._resource import KleinResource, ensure_utf8_bytes
-from ._app import resource
 from sys import modules
+from typing import TYPE_CHECKING
+
+from ._app import resource
+from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
+
+if TYPE_CHECKING:
+    from typing import AnyStr, Callable, Text
+    AnyStr, Callable, Text
+    KleinResource = _KleinResource
+    resource = resource
 
 class _SpecialModuleObject(object):
     """
@@ -29,9 +36,11 @@ class _SpecialModuleObject(object):
 
     @property
     def ensure_utf8_bytes(self):
+        # type: () -> Callable[[AnyStr], Text]
         return ensure_utf8_bytes
 
     def __call__(self):
+        # type: () -> _KleinResource
         """
         Return an L{IResource} which suitably wraps this app.
 
@@ -43,6 +52,7 @@ class _SpecialModuleObject(object):
 
 
     def __repr__(self):
+        # type: () -> str
         """
         Give a special C{repr()} to make the dual purpose of this object clear.
         """

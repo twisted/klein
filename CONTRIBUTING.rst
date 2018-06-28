@@ -58,7 +58,7 @@ Code
 Documentation
 -------------
 
-Klein uses `Epydoc <http://epydoc.sourceforge.net/manual-epytext.html>`_ for docstrings in code and uses `Sphinx <http://sphinx-doc.org/latest/index.html>`_ for standalone documentation.
+Klein uses `Epydoc <http://epydoc.sourceforge.net/manual-epytext.html>`_ for docstrings in code and uses `Sphinx <https://sphinx.readthedocs.io/>`_ for standalone documentation.
 
 - In documents with headers, use this format and order for headers::
 

@@ -7,13 +7,22 @@ from __future__ import (
 )
 
 import json
+from string import printable
 
+import attr
+
+from hypothesis import given, settings, strategies as st
+
+from twisted.internet.defer import Deferred, succeed
+from twisted.trial import unittest
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
 
-from klein import Klein, Plating
-from klein.test.test_resource import _render, requestMock
-from klein.test.util import TestCase
+from .test_resource import _render, requestMock
+from .util import TestCase
+from .. import Klein, Plating
+from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
+
 
 page = Plating(
     defaults={
@@ -43,9 +52,256 @@ element = Plating(
 @element.widgeted
 def enwidget(a, b):
     """
-    Provide some values for the L{widget} template.
+    Provide some values for the L{element} template.
     """
     return {"a": a, "b": b}
+
+
+@element.widgeted
+def deferredEnwidget(a, b):
+    """
+    Provide some L{Deferred} values for the L{element} template.
+    """
+    return {"a": succeed(a), "b": succeed(b)}
+
+
+class InstanceWidget(object):
+    """
+    A class with a method that's a L{Plating.widget}.
+    """
+
+    @element.widgeted
+    def enwidget(self, a, b):
+        """
+        Provide some values for the L{element} template.
+        """
+        return {"a": a, "b": b}
+
+    @element.widgeted
+    def deferredEnwidget(self, a, b):
+        """
+        Provide some L{Deferred} values for the L{element} template.
+        """
+        return {"a": succeed(a), "b": succeed(b)}
+
+
+@attr.s
+class DeferredValue(object):
+    """
+    A value within a JSON serializable object that is deferred.
+
+    @param value: The value.
+
+    @param deferred: The L{Deferred} representing the value.
+    """
+    value = attr.ib()
+    deferred = attr.ib(attr.Factory(Deferred))
+
+    def resolve(self):
+        """
+        Resolve the L{Deferred} that represents the value with the
+        value itself.
+        """
+        self.deferred.callback(self.value)
+
+
+jsonAtoms = (st.none() |
+             st.booleans() |
+             st.integers() |
+             st.floats(allow_nan=False) |
+             st.text(printable))
+
+
+def jsonComposites(children):
+    """
+    Creates a Hypothesis strategy that constructs composite
+    JSON-serializable objects (e.g., lists).
+
+    @param children: A strategy from which each composite object's
+        children will be drawn.
+
+    @return: The composite objects strategy.
+    """
+    return (st.lists(children) |
+            st.dictionaries(st.text(printable), children) |
+            st.tuples(children))
+
+
+jsonObjects = st.recursive(jsonAtoms, jsonComposites, max_leaves=200)
+
+
+def transformJSONObject(jsonObject, transformer):
+    """
+    Recursively apply a transforming function to a JSON serializable
+    object, returning a new, transformed object.
+
+    @param json_object: A JSON serializable object to transform.
+
+    @param transformer: A one-argument callable that will be applied
+        to each member of the object.
+
+    @return: A transformed copy of C{jsonObject}.
+    """
+
+    def visit(obj):
+        """
+        Recur through the object, sometimes replacing values with
+        L{Deferred}s
+        """
+        if isinstance(obj, ATOM_TYPES):
+            return transformer(obj)
+        elif isinstance(obj, tuple):
+            return tuple(transformer(child) for child in obj)
+        elif isinstance(obj, list):
+            return [transformer(child) for child in obj]
+        elif isinstance(obj, dict):
+            return {transformer(k): transformer(v) for k, v in obj.items()}
+        else:
+            assert False, "Object of unknown type {!r}".format(obj)
+
+    return visit(jsonObject)
+
+
+class TransformJSONObjectTests(unittest.SynchronousTestCase):
+    """
+    Tests for L{transform_json_object}.
+    """
+
+    def test_transform_atom(self):
+        """
+        L{transform_json_object} transforms a representative atomic
+        JSON data types.
+        """
+        def inc(value):
+            return value + 1
+
+        self.assertEqual(transformJSONObject(1, inc), 2)
+
+    def test_transform_tuple(self):
+        """
+        L{transformJSONObject} transforms L{tuple}s.
+        """
+        def inc(value):
+            return value + 1
+
+        self.assertEqual(transformJSONObject((1, 1), inc), (2, 2))
+
+    def test_transform_list(self):
+        """
+        L{transformJSONObject} transforms L{list}s.
+        """
+        def inc(value):
+            return value + 1
+
+        self.assertEqual(transformJSONObject([1, 1], inc), [2, 2])
+
+    def test_transform_dict(self):
+        """
+        L{transformJSONObject} transforms L{dict}s.
+        """
+        def inc(value):
+            return value + 1
+
+        self.assertEqual(transformJSONObject({2: 2}, inc), {3: 3})
+
+    def test_transform_unserializable(self):
+        """
+        L{transformJSONObject} will not transform objects that are
+        not JSON serializable.
+        """
+        self.assertRaises(AssertionError,
+                          transformJSONObject,
+                          set(), list.append)
+
+
+class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
+    """
+    Tests for L{resolve_deferred_objects}.
+    """
+
+    @settings(max_examples=500)
+    @given(
+        jsonObject=jsonObjects,
+        data=st.data(),
+    )
+    def test_resolveObjects(self, jsonObject, data):
+        """
+        A JSON serializable object that may contain L{Deferred}s or a
+        L{Deferred} that resolves to a JSON serializable object
+        resolves to an object that contains no L{Deferred}s.
+        """
+        deferredValues = []
+        choose = st.booleans()
+
+        def maybeWrapInDeferred(value):
+            if data.draw(choose):
+                deferredValues.append(DeferredValue(value))
+                return deferredValues[-1].deferred
+            else:
+                return value
+
+        deferredJSONObject = transformJSONObject(
+            jsonObject,
+            maybeWrapInDeferred,
+        )
+
+        resolved = resolveDeferredObjects(deferredJSONObject)
+
+        for value in deferredValues:
+            value.resolve()
+
+        self.assertEqual(self.successResultOf(resolved), jsonObject)
+
+
+    @given(
+        jsonObject=jsonObjects,
+        data=st.data(),
+    )
+    def test_elementSerialized(self, jsonObject, data):
+        """
+        A L{PlatedElement} within a JSON serializable object replaced
+        by its JSON representation.
+        """
+        choose = st.booleans()
+
+        def injectPlatingElements(value):
+            if data.draw(choose) and isinstance(value, dict):
+                return PlatedElement(slot_data=value,
+                                     preloaded=tags.html(),
+                                     boundInstance=None,
+                                     presentationSlots={})
+            else:
+                return value
+
+        withPlatingElements = transformJSONObject(
+            jsonObject,
+            injectPlatingElements,
+        )
+
+        resolved = resolveDeferredObjects(withPlatingElements)
+
+        self.assertEqual(self.successResultOf(resolved), jsonObject)
+
+
+    def test_unserializableObject(self):
+        """
+        An object that cannot be serialized causes the L{Deferred} to
+        fail with an informative L{TypeError}.
+
+        """
+
+        @attr.s
+        class ConsistentRepr(object):
+            """
+            Objects with a predictable repr
+            """
+
+        exception = self.failureResultOf(
+            resolveDeferredObjects(ConsistentRepr())
+        ).value
+        self.assertIsInstance(exception, TypeError)
+        self.assertIn("ConsistentRepr() not JSON serializable",
+                      str(exception))
 
 
 class PlatingTests(TestCase):
@@ -125,6 +381,27 @@ class PlatingTests(TestCase):
                            "title": "default title unchanged"},
                           json.loads(written.decode('utf-8')))
 
+
+    def test_template_json_contains_deferred(self):
+        """
+        Rendering a L{Plating.routed} decorated route with a query
+        parameter asking for JSON waits until the L{Deferred}s
+        returned by the route have fired.
+        """
+        @page.routed(self.app.route("/"), tags.span(slot("ok")))
+        def plateMe(request):
+            return {"ok": succeed("an-plating-test")}
+
+        request, written = self.get(b"/?json=true")
+        self.assertEqual(
+            request.responseHeaders.getRawHeaders(b'content-type')[0],
+            b'text/json; charset=utf-8'
+        )
+        self.assertEquals({"ok": "an-plating-test",
+                           "title": "default title unchanged"},
+                          json.loads(written.decode('utf-8')))
+
+
     def test_template_numbers(self):
         """
         Data returned from a plated method may include numeric types (integers,
@@ -168,6 +445,14 @@ class PlatingTests(TestCase):
         self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
 
+    def test_widget_function(self):
+        """
+        A function decorated with L{Plating.wigeted} can be directly
+        invoked.
+        """
+        self.assertEqual(enwidget(5, 6), {"a": 5, "b": 6})
+        self.assertEqual(InstanceWidget().enwidget(7, 8), {"a": 7, "b": 8})
+
     def test_widget_html(self):
         """
         When L{Plating.widgeted} is applied as a decorator, it gives the
@@ -175,14 +460,19 @@ class PlatingTests(TestCase):
         function with a modified return type that turns it into a renderable
         HTML sub-element that may fill a slot.
         """
-        @page.routed(self.app.route("/"), tags.div(slot("widget")))
+        @page.routed(self.app.route("/"),
+                     tags.div(tags.div(slot("widget")),
+                              tags.div(slot("instance-widget"))))
         def rsrc(request):
-            return {"widget": enwidget.widget(3, 4)}
+            return {"widget": enwidget.widget(a=3, b=4),
+                    "instance-widget": InstanceWidget().enwidget.widget(5, 6)}
 
         request, written = self.get(b"/")
 
         self.assertIn(b"<span>a: 3</span>", written)
         self.assertIn(b"<span>b: 4</span>", written)
+        self.assertIn(b"<span>a: 5</span>", written)
+        self.assertIn(b"<span>b: 6</span>", written)
 
     def test_widget_json(self):
         """
@@ -190,13 +480,38 @@ class PlatingTests(TestCase):
         serialized to JSON, it appears the same as the returned value despite
         the HTML-friendly wrapping described above.
         """
-        @page.routed(self.app.route("/"), tags.div(slot("widget")))
+        @page.routed(self.app.route("/"),
+                     tags.div(tags.div(slot("widget")),
+                              tags.div(slot("instance-widget"))))
         def rsrc(request):
-            return {"widget": enwidget.widget(3, 4)}
+            return {"widget": enwidget.widget(a=3, b=4),
+                    "instance-widget": InstanceWidget().enwidget.widget(5, 6)}
 
         request, written = self.get(b"/?json=1")
         self.assertEqual(json.loads(written.decode('utf-8')),
                          {"widget": {"a": 3, "b": 4},
+                          "instance-widget": {"a": 5, "b": 6},
+                          "title": "default title unchanged"})
+
+    def test_widget_json_deferred(self):
+        """
+        When L{Plating.widgeted} is applied as a decorator, and the result is
+        serialized to JSON, it appears the same as the returned value despite
+        the HTML-friendly wrapping described above.
+        """
+
+        @page.routed(self.app.route("/"),
+                     tags.div(tags.div(slot("widget")),
+                              tags.div(slot("instance-widget"))))
+        def rsrc(request):
+            instance = InstanceWidget()
+            return {"widget": deferredEnwidget.widget(a=3, b=4),
+                    "instance-widget": instance.deferredEnwidget.widget(5, 6)}
+
+        request, written = self.get(b"/?json=1")
+        self.assertEqual(json.loads(written.decode('utf-8')),
+                         {"widget": {"a": 3, "b": 4},
+                          "instance-widget": {"a": 5, "b": 6},
                           "title": "default title unchanged"})
 
     def test_prime_directive_return(self):
@@ -272,17 +587,3 @@ class PlatingTests(TestCase):
 
         test("garbage")
         test("garbage:missing")
-
-    def test_json_serialize_unknown_type(self):
-        """
-        The JSON serializer will raise a L{TypeError} when it can't find an
-        appropriate type.
-        """
-        from klein._plating import json_serialize
-
-        class Reprish(object):
-            def __repr__(self):
-                return '<blub>'
-
-        te = self.assertRaises(TypeError, json_serialize, {"an": Reprish()})
-        self.assertIn("<blub>", str(te))

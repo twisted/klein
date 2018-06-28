@@ -3,12 +3,6 @@
 set -e
 set -u
 
-case "${TOXENV}" in
-    *-pypy*)
-        PYENV_ROOT="${HOME}/.pyenv";
-        pyenv="${PYENV_ROOT}/bin/pyenv";
-        eval "$("${pyenv}" init -)";
-        ;;
-esac;
+export TOX_SKIP_MISSING_INTERPRETERS="False";
 
 exec "$@";

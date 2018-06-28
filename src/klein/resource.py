@@ -11,7 +11,7 @@ This module, L{klein.resource}, serves two purposes:
 from sys import modules
 from typing import TYPE_CHECKING
 
-from ._app import resource
+from ._app import resource as _globalResourceMethod
 from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 
 if TYPE_CHECKING:               # pragma: no cover
@@ -47,7 +47,7 @@ class _SpecialModuleObject(object):
         """
         # Use the same docstring as the real implementation to reduce
         # confusion.
-        return resource()
+        return _globalResourceMethod()
 
 
     def __repr__(self):

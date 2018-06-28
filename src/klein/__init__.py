@@ -1,12 +1,20 @@
 from __future__ import absolute_import, division
 
-from ._app import Klein, handle_errors, resource, route, run, urlFor, url_for
+from typing import TYPE_CHECKING
+
+from ._app import Klein, handle_errors, route, run, urlFor, url_for
 from ._form import Field, FieldValues, Form, RenderableForm
 from ._plating import Plating
 from ._requirer import Requirer
 from ._session import Authorization, SessionProcurer
 from ._version import __version__ as _incremental_version
 
+if TYPE_CHECKING:               # pragma: no cover
+    # Inform mypy of import shenanigans.
+    from .resource import _SpecialModuleObject
+    resource = _SpecialModuleObject()
+else:
+    from . import resource
 
 __all__ = (
     "Klein",

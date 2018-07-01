@@ -1309,6 +1309,32 @@ class GlobalAppTests(TestCase):
         self.assertEqual(request.getWrittenData(), b'alive')
 
 
+    def test_weird_resource_situation(self):
+        """
+        Historically, the object named "C{klein.resource}" has had two
+        meanings:
+
+            - One is "C{klein.*} is sort of like a C{klein.Klein} instance, so
+              C{klein.resource()} is sort of like C{klein.Klein.resource()}".
+
+            - The other is "the public module in which
+              C{klein.resource.KleinResource} is defined".
+
+        This used to only work by accident; these meanings both sort of worked
+        but only as long as you followed a certain import convention (C{from
+        klein import resource} for the former, C{from klein.resource import
+        KleinResource} for the latter).  This test ensures that
+        C{klein.resource} is a special object, callable as you would expect
+        from the former, but also having the attributes of the latter.
+        """
+        from klein import resource
+        from klein.resource import KleinResource, ensure_utf8_bytes
+        self.assertEqual(repr(resource),
+                         "<special bound method/module klein.resource>")
+        self.assertIdentical(resource.KleinResource, KleinResource)
+        self.assertIdentical(resource.ensure_utf8_bytes, ensure_utf8_bytes)
+
+
 if _PY3:
     import sys
     if sys.version_info >= (3, 5):

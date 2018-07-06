@@ -162,7 +162,10 @@ class Field(object):
             request.content.seek(0)
             octets = request.content.read()
             characters = octets.decode("utf-8")
-            return json.loads(characters)[fieldName]
+            parsed = json.loads(characters)
+            if fieldName not in parsed:
+                return None
+            return parsed[fieldName]
         allValues = request.args.get(fieldName.encode("utf-8"))
         if allValues:
             return allValues[0].decode('utf-8')

@@ -187,7 +187,7 @@ class Field(object):
             if self.required:
                 raise ValueAbsent("a value was required but none was supplied")
             else:
-                return value
+                return self.default
         try:
             return self.converter(value)
         except ValueError as ve:

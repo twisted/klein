@@ -65,9 +65,18 @@ class TestObject(object):
         name=Field.text(), value=Field.number(),
     )
     def handler(self, request, name, value):
-        # type: (IRequest, Text, Text) -> bytes
+        # type: (IRequest, Text, float) -> bytes
         self.calls.append((name, value))
         return b'yay'
+
+    @requirer.require(
+        router.route("/notrequired", methods=['POST']),
+        name=Field.text(), value=Field.number(required=False, default=7.0)
+    )
+    def notRequired(self, request, name, value):
+        # type: (IRequest, Text, float) -> bytes
+        self.calls.append((name, value))
+        return b'okay'
 
     @requirer.require(
         router.route("/render", methods=['GET']),
@@ -157,6 +166,36 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'yay')
         self.assertEqual(to.calls, [(u'hello', 1234)])
+
+
+    def test_missingOptionalParameterJSON(self):
+        # type: () -> None
+        """
+        If a required Field is missing from the JSON body, its default value is used.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/notrequired',
+            json=dict(name='one'),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        response2 = self.successResultOf(stub.post(
+            'https://localhost/notrequired',
+            json=dict(name='two', value=2),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(response2.code, 200)
+        self.assertEqual(self.successResultOf(content(response)), b'okay')
+        self.assertEqual(self.successResultOf(content(response2)), b'okay')
+        self.assertEqual(to.calls, [(u'one', 7.0), (u'two', 2.0)])
 
 
     def test_rendering(self):

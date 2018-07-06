@@ -171,7 +171,8 @@ class TestForms(SynchronousTestCase):
     def test_missingOptionalParameterJSON(self):
         # type: () -> None
         """
-        If a required Field is missing from the JSON body, its default value is used.
+        If a required Field is missing from the JSON body, its default value is
+        used.
         """
         mem = MemorySessionStore()
 

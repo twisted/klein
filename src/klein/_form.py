@@ -82,7 +82,7 @@ class Field(object):
     pythonArgumentName = attr.ib(type=Optional[str], default=None)
     formFieldName = attr.ib(type=Optional[str], default=None)
     formLabel = attr.ib(type=Optional[str], default=None)
-    default = attr.ib(type=Optional[Any], default=None)
+    default = attr.ib(type=Optional[Any], default=None, cmp=False)
     required = attr.ib(type=bool, default=True)
     noLabel = attr.ib(type=bool, default=False)
     value = attr.ib(type=Text, default=u"")

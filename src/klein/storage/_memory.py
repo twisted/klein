@@ -17,7 +17,7 @@ from klein.interfaces import (
     ISession, ISessionStore, NoSuchSession, SessionMechanism
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     List, Deferred, IInterface, Any, Callable, Dict, SessionMechanism
 
 _authCB = Callable[[IInterface, ISession, Componentized], Any]

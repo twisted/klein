@@ -9,7 +9,7 @@ from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
     from typing import Dict, Iterable, List, Text, Type, Sequence
@@ -358,7 +358,7 @@ class IRequestLifecycle(Interface):
     """
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from typing import Union
     from ._requirer import RequestLifecycle
     IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]

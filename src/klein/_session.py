@@ -17,7 +17,7 @@ from .interfaces import (
     TooLateForCookies
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
     from mypy_extensions import KwArg, VarArg, Arg

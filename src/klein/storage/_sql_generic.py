@@ -30,7 +30,7 @@ ROLLING_BACK = "rolling back"
 ROLLED_BACK = "rolled back"
 ROLLBACK_FAILED = "rollback failed"
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     T = TypeVar('T')
     from twisted.internet.interfaces import IReactorThreads
     IReactorThreads

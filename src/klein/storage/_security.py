@@ -8,7 +8,7 @@ from passlib.context import CryptContext
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.internet.threads import deferToThread
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     Text, Callable, Deferred, Optional, Tuple, Any
 
 

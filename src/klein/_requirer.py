@@ -12,7 +12,7 @@ from ._app import _call
 from ._decorators import bindable, modified
 from .interfaces import EarlyExit, IRequestLifecycle
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from typing import Dict, Tuple, Sequence
     from twisted.web.iweb import IRequest
     from twisted.internet.defer import Deferred

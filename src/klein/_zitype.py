@@ -7,7 +7,7 @@ from typing import Any, TYPE_CHECKING, Type, TypeVar, cast
 
 from zope.interface.interfaces import IInterface
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     IInterface, Type, Any
 
 T = TypeVar("T")

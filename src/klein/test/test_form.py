@@ -11,7 +11,7 @@ from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from typing import Dict, Union
     from twisted.web.iweb import IRequest
     IRequest, Text, Union, Dict

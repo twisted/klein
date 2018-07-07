@@ -5,7 +5,7 @@ from zope.interface import Attribute, Interface
 
 from .._typing import ifmethod
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from twisted.internet.defer import Deferred
     from ..interfaces import ISessionStore, ISession
     from ._sql_generic import Transaction

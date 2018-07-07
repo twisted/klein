@@ -20,7 +20,7 @@ from twisted.web.template import Element, TagLoader
 from ._app import _call
 from ._decorators import bindable, modified, originalName
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from twisted.internet.defer import Deferred
     from twisted.web.iweb import IRequest
     from twisted.web.template import Tag

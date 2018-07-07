@@ -39,7 +39,7 @@ from ..interfaces import (
     ISimpleAccountBinding, NoSuchSession, SessionMechanism
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     import sqlalchemy
     from twisted.internet.defer import Deferred
     from twisted.internet.interfaces import IReactorThreads

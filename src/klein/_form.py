@@ -28,7 +28,7 @@ from .interfaces import (EarlyExit, IDependencyInjector, IRequestLifecycle,
                          IRequiredParameter, ISession, SessionMechanism,
                          ValidationError, ValueAbsent)
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from typing import Type
     from mypy_extensions import DefaultNamedArg, NoReturn
     from twisted.internet.defer import Deferred

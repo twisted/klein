@@ -23,7 +23,7 @@ from ._isession import (
     TransactionEnded,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:               # pragma: no cover
     from ._storage.memory import MemorySessionStore, MemorySession
     from ._storage.sql import (SessionStore, SQLAccount, IPTrackingProcurer,
                                AccountSessionBinding)

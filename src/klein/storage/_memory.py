@@ -105,10 +105,6 @@ class MemorySessionStore(object):
             return interfaceToCallable[interface](interface, session, data)
         return cls(authorizationCallback)
 
-    def procurer(self):
-        # type: () -> SessionProcurer
-        return SessionProcurer(self)
-
 
     def _storage(self, isConfidential):
         # type: (bool) -> Dict[str, Any]

@@ -132,13 +132,15 @@ class Field(object):
         """
         input_tag = tags.input(type=self.formInputType,
                                name=self.formFieldName, value=self.value)
+        error_tags = []
+        if self.error:
+            error_tags.append(tags.div(class_="klein-form-validation-error")
+                              (self.error.message))
         if self.formLabel:
-            yield tags.label(self.formLabel, ": ", input_tag)
+            yield tags.label(self.formLabel, ": ", input_tag, *error_tags)
         else:
             yield input_tag
-        if self.error:
-            yield tags.div(self.error.message)
-
+            yield error_tags
 
     def extractValue(self, request):
         # type: (IRequest) -> Any
@@ -310,7 +312,8 @@ class RenderableForm(object):
         if not anySubmit:
             yield Field(converter=str, formInputType="submit", value=u"submit",
                         formFieldName="__klein_auto_submit__")
-        yield self._fieldForCSRF()
+        if self._method.lower() == 'post':
+            yield self._fieldForCSRF()
 
     # Public interface below.
 
@@ -328,10 +331,14 @@ class RenderableForm(object):
         """
         Render this form to the given request.
         """
+        formAttributes = {"accept-charset": self._encoding,
+                          "class": "klein-form"}
+        if self._method.lower() == 'post':
+            # Enctype has no meaning on method="GET" forms.
+            formAttributes.update(enctype=self._enctype)
         return (
             tags.form(action=self._action, method=self._method,
-                      enctype=self._enctype,
-                      **{"accept-charset": self._encoding})
+                      **formAttributes)
             (
                 field.asTags() for field in self._fieldsToRender()
             )
@@ -382,15 +389,19 @@ def defaultValidationFailureHandler(
     @return: Any object acceptable from a Klein route.
     """
     session = request.getComponent(ISession)
+    request.setResponseCode(400)
+    enctype = (
+        (request.getHeader(b'content-type') or
+         RenderableForm.ENCTYPE_URL_ENCODED.encode("ascii"))
+        .split(b';')[0].decode("charmap")
+    )
     renderable = RenderableForm(
         fieldValues.form, session, u"/".join(
             segment.decode("utf-8", errors='replace')
             for segment in request.prepath
         ),
-        request.method,
-        request.getHeader(b'content-type').split(b';')[0]
-        .decode("charmap"),
-        "utf-8", fieldValues.prevalidationValues, fieldValues.validationErrors,
+        request.method, enctype, "utf-8", fieldValues.prevalidationValues,
+        fieldValues.validationErrors,
     )
 
     return Element(TagLoader(renderable))

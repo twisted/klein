@@ -1,3 +1,5 @@
+
+import xml.etree.ElementTree as ET
 from typing import List, TYPE_CHECKING, Text
 
 import attr
@@ -12,9 +14,9 @@ from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
-    from typing import Dict, Union
+    from typing import Dict, Tuple, Union
     from twisted.web.iweb import IRequest
-    IRequest, Text, Union, Dict
+    IRequest, Text, Union, Dict, Tuple
 
 
 
@@ -87,6 +89,23 @@ class TestObject(object):
         return form
 
 
+def simpleFormRouter():
+    # type: () -> Tuple[Klein, List[Tuple[str, int]]]
+    """
+    Create a simple router hooked up to a field handler.
+    """
+    router = Klein()
+    requirer = Requirer()
+    calls = []
+
+    @requirer.require(router.route("/getme", methods=['GET']),
+                      name=Field.text(), value=Field.number())
+    def justGet(request, name, value):
+        # type: (IRequest, str, int) -> bytes
+        calls.append((name, value))
+        return b'got'
+
+    return router, calls
 
 class TestForms(SynchronousTestCase):
     """
@@ -123,16 +142,7 @@ class TestForms(SynchronousTestCase):
         A GET handler for a Form with Fields receives query parameters matching
         those field names as input.
         """
-        router = Klein()
-        requirer = Requirer()
-        calls = []
-
-        @requirer.require(router.route("/getme", methods=['GET']),
-                          name=Field.text(), value=Field.number())
-        def justGet(request, name, value):
-            # type: (IRequest, str, int) -> bytes
-            calls.append((name, value))
-            return b'got'
+        router, calls = simpleFormRouter()
 
         stub = StubTreq(router.resource())
 
@@ -142,6 +152,32 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'got')
         self.assertEqual(calls, [(u'hello, big world', 4321)])
+
+
+    def test_validatingParameters(self):
+        # type: () -> None
+        """
+        When a parameter fails to validate - for example, a non-number passed
+        to a numeric Field, the request fails with a 400 and the default
+        validation failure handler displays a form which explains the error.
+        """
+        router, calls = simpleFormRouter()
+
+        stub = StubTreq(router.resource())
+
+        response = self.successResultOf(stub.get(
+            b"https://localhost/getme?"
+            b"name=hello,%20big+world&value=not+a+number"
+        ))
+        responseForm = self.successResultOf(content(response))
+        self.assertEqual(response.code, 400)
+        self.assertEqual(calls, [])
+        responseForm = self.successResultOf(content(response))
+        responseDom = ET.fromstring(responseForm)
+        errors = responseDom.findall(
+            ".//*[@class='klein-form-validation-error']")
+        self.assertEqual(len(errors), 1)
+        self.assertEquals(errors[0].text, "not a valid number")
 
 
     def test_handlingJSON(self):

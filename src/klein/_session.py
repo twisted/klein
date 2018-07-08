@@ -1,3 +1,4 @@
+# -*- test-case-name: klein.test.test_session -*-
 
 from typing import Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
 
@@ -92,7 +93,8 @@ class SessionProcurer(object):
         # type: (IRequest, bool) -> Any
         alreadyProcured = request.getComponent(ISession)
         if alreadyProcured is not None:
-            returnValue(alreadyProcured)
+            if not forceInsecure or not request.isSecure():
+                returnValue(alreadyProcured)
 
         if request.isSecure():
             if forceInsecure:

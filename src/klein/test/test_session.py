@@ -30,9 +30,10 @@ def simpleSessionRouter():
     exceptions = []
     mss = MemorySessionStore()
     router = Klein()
-    token = b"X-Test-Session-Token"
-    cookie = b"X-Test-Session-Cookie"
-    sproc = SessionProcurer(mss, secureTokenHeader=token, secureCookie=cookie)
+    token = "X-Test-Session-Token"
+    cookie = "X-Test-Session-Cookie"
+    sproc = SessionProcurer(mss, secureTokenHeader=b"X-Test-Session-Token",
+                            secureCookie=b"X-Test-Session-Cookie")
 
     @router.route("/")
     @inlineCallbacks
@@ -45,10 +46,7 @@ def simpleSessionRouter():
         returnValue(b'ok')
 
     treq = StubTreq(router.resource())
-    if bytes is not str:
-        return sessions, exceptions, token.decode(), cookie.decode(), treq
-    else:
-        return sessions, exceptions, token, cookie, treq
+    return sessions, exceptions, token, cookie, treq
 
 class ProcurementTests(SynchronousTestCase):
     """

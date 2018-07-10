@@ -16,13 +16,13 @@ from klein.storage.memory import MemorySessionStore
 if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.internet.defer import Deferred
-    from typing import Tuple, List, Text
+    from typing import Tuple, List
     sessions = List[ISession]
     errors = List[NoSuchSession]
-    IRequest, Deferred, sessions, errors, Tuple, Text
+    IRequest, Deferred, sessions, errors, Tuple
 
 def simpleSessionRouter():
-    # type: () -> Tuple[sessions, errors, Text, Text, StubTreq]
+    # type: () -> Tuple[sessions, errors, str, str, StubTreq]
     """
     Construct a simple router.
     """
@@ -30,10 +30,9 @@ def simpleSessionRouter():
     exceptions = []
     mss = MemorySessionStore()
     router = Klein()
-    token = u"X-Test-Session-Token"
-    cookie = u"X-Test-Session-Cookie"
-    sproc = SessionProcurer(mss, secureTokenHeader=token.encode("ascii"),
-                            secureCookie=cookie.encode("ascii"))
+    token = b"X-Test-Session-Token"
+    cookie = b"X-Test-Session-Cookie"
+    sproc = SessionProcurer(mss, secureTokenHeader=token, secureCookie=cookie)
 
     @router.route("/")
     @inlineCallbacks
@@ -46,6 +45,9 @@ def simpleSessionRouter():
         returnValue(b'ok')
 
     treq = StubTreq(router.resource())
+    if bytes is not str:
+        token = token.decode()
+        cookie = cookie.decode()
     return sessions, exceptions, token, cookie, treq
 
 class ProcurementTests(SynchronousTestCase):
@@ -109,7 +111,7 @@ class ProcurementTests(SynchronousTestCase):
         Unknown session IDs in cookies will result in a new session being
         created.
         """
-        badSessionID = u"bad"
+        badSessionID = "bad"
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
         response = self.successResultOf(treq.get(
             'https://unittest.example.com/', cookies={cookie: badSessionID}
@@ -126,7 +128,7 @@ class ProcurementTests(SynchronousTestCase):
         Unknown session IDs in cookies for POST requests will result in a
         NoSuchSession error.
         """
-        badSessionID = u"bad"
+        badSessionID = "bad"
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
         response = self.successResultOf(treq.post(
             'https://unittest.example.com/', cookies={cookie: badSessionID}

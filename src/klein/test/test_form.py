@@ -54,6 +54,7 @@ def strdict(adict):
 
 class NoSessionResource(Data):
     def render_POST(self, request):
+        # type: (IRequest) -> bytes
         request.setResponseCode(403)
         return self.render_GET(request)
 

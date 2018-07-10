@@ -7,10 +7,15 @@ import attr
 from treq import content
 from treq.testing import StubTreq
 
+from twisted.internet.defer import inlineCallbacks
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.web.static import Data
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
-from klein.interfaces import ISession, ISessionStore, SessionMechanism
+from klein.interfaces import (
+    ISession, ISessionStore, SessionMechanism, NoSuchSession
+)
+from klein._isession import EarlyExit
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
@@ -47,6 +52,12 @@ def strdict(adict):
 
 
 
+class NoSessionResource(Data):
+    def render_POST(self, request):
+        request.setResponseCode(403)
+        return self.render_GET(request)
+
+
 @attr.s(hash=False)
 class TestObject(object):
     sessionStore = attr.ib(type=ISessionStore)
@@ -56,11 +67,16 @@ class TestObject(object):
     requirer = Requirer()
 
     @requirer.prerequisite([ISession])
+    @inlineCallbacks
     def procureASession(self, request):
         # type: (IRequest) -> ISession
-        return (SessionProcurer(self.sessionStore,
-                                secureTokenHeader=b'X-Test-Session')
-                .procureSession(request))
+        try:
+            yield (SessionProcurer(self.sessionStore,
+                                   secureTokenHeader=b'X-Test-Session')
+                   .procureSession(request))
+        except NoSuchSession:
+            # TODO: this should probably be a bit more frameworky.
+            raise EarlyExit(NoSessionResource(b"CSRF failure", "text/plain"))
 
     @requirer.require(
         router.route("/handle", methods=['POST']),
@@ -197,7 +213,7 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(stub.post(
             'https://localhost/handle',
             json=dict(name='hello', value='1234', ignoreme='extraneous'),
-            headers={b'X-Test-Session': session.identifier}
+            headers={u'X-Test-Session': session.identifier}
         ))
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'yay')
@@ -265,7 +281,8 @@ class TestForms(SynchronousTestCase):
         mem = MemorySessionStore()
         stub = StubTreq(TestObject(mem).router.resource())
         response = self.successResultOf(stub.get('https://localhost/render'))
-        setCookie = response.cookies()['Klein-Secure-Session']
+        self.assertEqual(response.code, 200)
+        setCookie = response.cookies()[u'Klein-Secure-Session']
         self.assertIn(
             u'value="{}"'
             .format(setCookie),
@@ -273,7 +290,7 @@ class TestForms(SynchronousTestCase):
         )
 
 
-    def test_protectionFromCSRF(self):
+    def test_noSessionPOST(self):
         # type: () -> None
         """
         An unauthenticated, CSRF-protected form will return a 403 Forbidden

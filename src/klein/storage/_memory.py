@@ -133,10 +133,11 @@ class MemorySessionStore(object):
             result = storage[identifier]
             if isConfidential != result.isConfidential:
                 storage.pop(identifier)
-                return fail(NoSuchSession(identifier))
+                return fail(NoSuchSession("Session sent via wrong scheme"))
             return succeed(result)
         else:
-            return fail(NoSuchSession(identifier))
+            return fail(NoSuchSession(u"Session not found in memory store {id!r}".format(
+                                      id=identifier)))
 
 
     def sentInsecurely(self, tokens):

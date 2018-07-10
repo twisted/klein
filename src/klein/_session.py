@@ -126,13 +126,13 @@ class SessionProcurer(object):
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        sentHeader = request.getHeader(tokenHeader)
-        sentCookie = request.getCookie(cookieName)
-        if sentHeader is None:
-            mechanism = SessionMechanism.Cookie
-        else:
+        sentHeader = (request.getHeader(tokenHeader) or b"").decode("utf-8")
+        sentCookie = (request.getCookie(cookieName) or b"").decode("utf-8")
+        if sentHeader:
             mechanism = SessionMechanism.Header
-        if sentHeader is None and sentCookie is None:
+        else:
+            mechanism = SessionMechanism.Cookie
+        if not (sentHeader or sentCookie):
             session = None
         else:
             try:

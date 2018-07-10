@@ -147,7 +147,7 @@ class SessionStore(object):
                      (s.c.confidential == isConfidential)))
         results = yield result.fetchall()
         if not results:
-            raise NoSuchSession()
+            raise NoSuchSession(u"Session not present in SQL store.")
         fetched_identifier = results[0][s.c.session_id]
         returnValue(SQLSession(self,
                                identifier=fetched_identifier,
@@ -531,8 +531,6 @@ class IPTrackingProcurer(object):
         transaction = yield requestBoundTransaction(request, self._dataStore)
         procurer = yield self._procurerFromTransaction(transaction)
         session = yield procurer.procureSession(request, forceInsecure)
-        if session is None:
-            return
         try:
             ipAddress = (request.client.host or b"").decode("ascii")
         except BaseException:

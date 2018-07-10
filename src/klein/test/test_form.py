@@ -13,9 +13,8 @@ from twisted.web.static import Data
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
-    ISession, ISessionStore, SessionMechanism, NoSuchSession
+    EarlyExit, ISession, ISessionStore, NoSuchSession, SessionMechanism
 )
-from klein._isession import EarlyExit
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover

@@ -46,9 +46,9 @@ def simpleSessionRouter():
 
     treq = StubTreq(router.resource())
     if bytes is not str:
-        token = token.decode()
-        cookie = cookie.decode()
-    return sessions, exceptions, token, cookie, treq
+        return sessions, exceptions, token.decode(), cookie.decode(), treq
+    else:
+        return sessions, exceptions, token, cookie, treq
 
 class ProcurementTests(SynchronousTestCase):
     """

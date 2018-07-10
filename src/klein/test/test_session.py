@@ -10,12 +10,43 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.trial.unittest import SynchronousTestCase
 
 from klein import Klein, SessionProcurer
+from klein.interfaces import ISession, NoSuchSession
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.internet.defer import Deferred
-    IRequest, Deferred
+    from typing import Tuple, List, Text
+    sessions = List[ISession]
+    errors = List[NoSuchSession]
+    IRequest, Deferred, sessions, errors, Tuple, Text
+
+def simpleSessionRouter():
+    # type: () -> Tuple[sessions, errors, Text, Text, StubTreq]
+    """
+    Construct a simple router.
+    """
+    sessions = []
+    exceptions = []
+    mss = MemorySessionStore()
+    router = Klein()
+    token = u"X-Test-Session-Token"
+    cookie = u"X-Test-Session-Cookie"
+    sproc = SessionProcurer(mss, secureTokenHeader=token.encode("ascii"),
+                            secureCookie=cookie.encode("ascii"))
+
+    @router.route("/")
+    @inlineCallbacks
+    def route(request):
+        # type: (IRequest) -> Deferred
+        try:
+            sessions.append((yield sproc.procureSession(request)))
+        except NoSuchSession as nss:
+            exceptions.append(nss)
+        returnValue(b'ok')
+
+    treq = StubTreq(router.resource())
+    return sessions, exceptions, token, cookie, treq
 
 class ProcurementTests(SynchronousTestCase):
     """
@@ -54,3 +85,52 @@ class ProcurementTests(SynchronousTestCase):
         self.successResultOf(treq.get('https://unittest.example.com/'))
         self.assertIs(sessions[3], sessions[4])
         self.assertIsNot(sessions[3], sessions[5])
+
+
+    def test_unknownSessionHeader(self):
+        # type: () -> None
+        """
+        Unknown session IDs in auth headers will be immediately rejected with
+        L{NoSuchSession}.
+        """
+        sessions, exceptions, token, cookie, treq = simpleSessionRouter()
+
+        response = self.successResultOf(
+            treq.get('https://unittest.example.com/', headers={token: u"bad"})
+        )
+        self.assertEqual(response.code, 200)
+        self.assertEqual(len(sessions), 0)
+        self.assertEqual(len(exceptions), 1)
+
+
+    def test_unknownSessionCookieGET(self):
+        # type: () -> None
+        """
+        Unknown session IDs in cookies will result in a new session being
+        created.
+        """
+        badSessionID = u"bad"
+        sessions, exceptions, token, cookie, treq = simpleSessionRouter()
+        response = self.successResultOf(treq.get(
+            'https://unittest.example.com/', cookies={cookie: badSessionID}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(len(exceptions), 0)
+        self.assertEqual(len(sessions), 1)
+        self.assertNotEqual(sessions[0].identifier, badSessionID)
+
+
+    def test_unknownSessionCookiePOST(self):
+        # type: () -> None
+        """
+        Unknown session IDs in cookies for POST requests will result in a
+        NoSuchSession error.
+        """
+        badSessionID = u"bad"
+        sessions, exceptions, token, cookie, treq = simpleSessionRouter()
+        response = self.successResultOf(treq.post(
+            'https://unittest.example.com/', cookies={cookie: badSessionID}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(len(exceptions), 1)
+        self.assertEqual(len(sessions), 0)

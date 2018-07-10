@@ -189,12 +189,25 @@ class ISessionProcurer(Interface):
             match that of the request.
         @type forceInsecure: L{bool}
 
-        @raise TooLateForCookies: if the request bound to this procurer has
-            already sent the headers and therefore we can no longer set a
-            cookie, and we need to set a cookie.
+        @return: a L{Deferred} that:
 
-        @return: a new or loaded session from this the a L{Deferred} that fires
-            with an L{ISession} provider.
+                - fires with an L{ISession} provider if the request describes
+                  an existing, valid session, or, if the intersection of the
+                  data in the request and the configuration of this
+                  L{ISessionProcurer} allow for a cookie to be set immediately,
+                  or
+
+                - fails with L{NoSuchSession} if the request is unable to
+                  negotiate a session based on the current request: this is
+                  generally if the client is trying to use header-based
+                  authentication (and therefore does not want a new cookie set)
+                  or if this procurer is configured not to automatically create
+                  new sessions on the fly, or
+
+                - fails with L{TooLateForCookies} if the request bound to this
+                  procurer has already sent the headers and therefore we can no
+                  longer set a cookie, and we need to set a cookie.
+
         @rtype: L{Session}
         """
 

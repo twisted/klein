@@ -126,54 +126,52 @@ class SessionProcurer(object):
             # isSecure() to return false because it serves up a cert for the
             # wrong hostname or an invalid cert, to keep API clients honest
             # about chain validation.
-        sessionID = request.getHeader(tokenHeader)
-        if sessionID is not None:
-            mechanism = SessionMechanism.Header
-        else:
+        sentHeader = request.getHeader(tokenHeader)
+        sentCookie = request.getCookie(cookieName)
+        if sentHeader is None:
             mechanism = SessionMechanism.Cookie
-            sessionID = request.getCookie(cookieName)
-        if sessionID is not None:
-            sessionID = sessionID.decode('ascii')
+        else:
+            mechanism = SessionMechanism.Header
+        if sentHeader is None and sentCookie is None:
+            session = None
+        else:
             try:
                 session = yield self._store.loadSession(
-                    sessionID, sentSecurely, mechanism
+                    sentHeader or sentCookie, sentSecurely, mechanism
                 )
             except NoSuchSession:
                 if mechanism == SessionMechanism.Header:
                     raise
-                sessionID = None
-        if sessionID is None:
-            if request.method != b'GET' or not self._setCookieOnGET:
-                # If we don't have a session ID at all, and we're not allowed
-                # to set a cookie on the client, don't waste session-store
-                # resources by allocating one.
-                returnValue(None)
-            if request.startedWriting:
-                # At this point, if the mechanism is Header, we either have
-                # a valid session or we bailed after NoSuchSession above.
-                raise TooLateForCookies(
-                    "You tried initializing a cookie-based session too"
-                    " late in the request pipeline; the headers"
-                    " were already sent."
-                )
-            session = yield self._store.newSession(sentSecurely, mechanism)
+                session = None
         if (
-                sessionID != session.identifier and
-                request.method == b'GET' and
-                self._setCookieOnGET
+            mechanism == SessionMechanism.Cookie and
+            (session is None or session.identifier != sentCookie)
         ):
-            # sessionID is the input session ID from the request;
-            # session.identifier is the created or loaded session from the
-            # session store.  This cookie is set when setCookiesOnGET is
-            # allowed, either when the session store has informed of us of a
-            # changed session identifier or when a new session has been created
-            # (sessionID is None)
-            if request.startedWriting:
-                raise TooLateForCookies(
-                    "You tried changing a session ID to a new session ID too"
-                    " late in the request pipeline; the headers were already"
-                    " sent."
-                )
+            if session is None:
+                if request.startedWriting:
+                    # At this point, if the mechanism is Header, we either have
+                    # a valid session or we bailed after NoSuchSession above.
+                    raise TooLateForCookies(
+                        "You tried initializing a cookie-based session too"
+                        " late in the request pipeline; the headers"
+                        " were already sent."
+                    )
+                if request.method != b'GET':
+                    # Sessions should only ever be auto-created by GET
+                    # requests; there's no way that any meaningful data
+                    # manipulation could succeed (no CSRF token check could
+                    # ever succeed, for example).
+                    raise NoSuchSession(
+                        u"Can't initialize a session on a {method} request."
+                        .format(method=request.method.decode("ascii"))
+                    )
+                if not self._setCookieOnGET:
+                    # We don't have a session ID at all, and we're not allowed
+                    # by policy to set a cookie on the client.
+                    raise NoSuchSession(
+                        u"Cannot auto-initialize a session for this request."
+                    )
+                session = yield self._store.newSession(sentSecurely, mechanism)
             request.addCookie(
                 cookieName, session.identifier, max_age=self._maxAge,
                 domain=self._cookieDomain, path=self._cookiePath,

@@ -136,8 +136,10 @@ class MemorySessionStore(object):
                 return fail(NoSuchSession("Session sent via wrong scheme"))
             return succeed(result)
         else:
-            return fail(NoSuchSession(u"Session not found in memory store {id!r}".format(
-                                      id=identifier)))
+            return fail(NoSuchSession(
+                u"Session not found in memory store {id!r}"
+                .format(id=identifier)
+            ))
 
 
     def sentInsecurely(self, tokens):

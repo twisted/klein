@@ -67,11 +67,15 @@ def deferredEnwidget(a, b):
 
 
 @page.renderMethod
-def registeredRenderMethod(request, tag):
+def registeredRenderMethod(*args):
     """
     Register a render method with the page so that the template can use it.
     """
-    return tag("some text!")
+    # Variable signature because since it's for testing, 'page' here has the
+    # unusual property that is used in both bound (i.e. "has self") and unbound
+    # contexts.
+    tag = args[-1]
+    return tag("(self)" if len(args) == 3 else "", "some text!")
 
 
 class InstanceWidget(object):
@@ -372,6 +376,8 @@ class PlatingTests(TestCase):
 
         self.assertIn(b'<span>test-instance-data-confirmed</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
+        self.assertIn(b'<div id="rendermethod">(self)some text!</div>', written)
+
 
     def test_template_json(self):
         """

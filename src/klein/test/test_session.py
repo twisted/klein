@@ -10,7 +10,7 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.trial.unittest import SynchronousTestCase
 
 from klein import Klein, SessionProcurer
-from klein.interfaces import ISession, NoSuchSession
+from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
@@ -85,6 +85,32 @@ class ProcurementTests(SynchronousTestCase):
         self.successResultOf(treq.get('https://unittest.example.com/'))
         self.assertIs(sessions[3], sessions[4])
         self.assertIsNot(sessions[3], sessions[5])
+
+
+    def test_procuredTooLate(self):
+        """
+        If you start writing stuff to the response before procuring the
+        session, when cookies need to be set, you will get a comprehensible
+        error.
+        """
+        mss = MemorySessionStore()
+        router = Klein()
+
+        @router.route("/")
+        @inlineCallbacks
+        def route(request):
+            # type: (IRequest) -> Deferred
+            sproc = SessionProcurer(mss)
+            request.write(b"oops...")
+            with self.assertRaises(TooLateForCookies):
+                yield sproc.procureSession(request)
+            request.write(b"bye")
+            request.finish()
+
+        treq = StubTreq(router.resource())
+        result = self.successResultOf(treq.get('http://unittest.example.com/'))
+        self.assertEqual(self.successResultOf(result.content()), b'oops...bye')
+
 
 
     def test_unknownSessionHeader(self):

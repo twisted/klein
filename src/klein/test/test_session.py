@@ -113,6 +113,28 @@ class ProcurementTests(SynchronousTestCase):
         self.assertEqual(self.successResultOf(result.content()), b'oops...bye')
 
 
+    def test_cookiesTurnedOff(self):
+        # type: () -> None
+        """
+        If cookies can't be set, then C{procureSession} raises
+        L{NoSuchSession}.
+        """
+        mss = MemorySessionStore()
+        router = Klein()
+
+        @router.route("/")
+        @inlineCallbacks
+        def route(request):
+            # type: (IRequest) -> Deferred
+            sproc = SessionProcurer(mss, setCookieOnGET=False)
+            with self.assertRaises(NoSuchSession):
+                yield sproc.procureSession(request)
+            return b'no session'
+
+        treq = StubTreq(router.resource())
+        result = self.successResultOf(treq.get('http://unittest.example.com/'))
+        self.assertEqual(self.successResultOf(result.content()), b'no session')
+
 
     def test_unknownSessionHeader(self):
         # type: () -> None

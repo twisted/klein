@@ -88,6 +88,7 @@ class ProcurementTests(SynchronousTestCase):
 
 
     def test_procuredTooLate(self):
+        # type: () -> None
         """
         If you start writing stuff to the response before procuring the
         session, when cookies need to be set, you will get a comprehensible

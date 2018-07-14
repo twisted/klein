@@ -376,7 +376,8 @@ class PlatingTests(TestCase):
 
         self.assertIn(b'<span>test-instance-data-confirmed</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
-        self.assertIn(b'<div id="rendermethod">(self)some text!</div>', written)
+        self.assertIn(b'<div id="rendermethod">(self)some text!</div>',
+                      written)
 
 
     def test_template_json(self):

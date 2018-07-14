@@ -34,6 +34,7 @@ page = Plating(
         tags.body(
             tags.h1(slot("title")),
             tags.div(slot(Plating.CONTENT), Class="content"),
+            tags.div(id="rendermethod", render="registeredRenderMethod")
         ),
     ),
 )
@@ -63,6 +64,14 @@ def deferredEnwidget(a, b):
     Provide some L{Deferred} values for the L{element} template.
     """
     return {"a": succeed(a), "b": succeed(b)}
+
+
+@page.renderMethod
+def registeredRenderMethod(request, tag):
+    """
+    Register a render method with the page so that the template can use it.
+    """
+    return tag("some text!")
 
 
 class InstanceWidget(object):
@@ -453,6 +462,20 @@ class PlatingTests(TestCase):
         """
         self.assertEqual(enwidget(5, 6), {"a": 5, "b": 6})
         self.assertEqual(InstanceWidget().enwidget(7, 8), {"a": 7, "b": 8})
+
+
+    def test_renderMethod(self):
+        """
+        L{Plating.renderMethod} registers a renderer that may be used by the
+        L{Plating}'s template.
+        """
+        @page.routed(self.app.route("/"), [])
+        def rsrc(request):
+            return {}
+
+        request, written = self.get(b"/")
+        self.assertIn(b'<div id="rendermethod">some text!</div>', written)
+
 
     def test_widget_html(self):
         """

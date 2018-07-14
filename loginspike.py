@@ -264,7 +264,7 @@ def bye(request, binding):
 
 
 @requirer.require(
-    style.render, account=Authorization.optional(ISimpleAccount)
+    style.renderMethod, account=Authorization.optional(ISimpleAccount)
 )
 def ifLoggedIn(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
@@ -278,7 +278,7 @@ def ifLoggedIn(request, tag, account):
 
 
 
-@requirer.require(style.render, account=Authorization.optional(ISimpleAccount))
+@requirer.require(style.renderMethod, account=Authorization.optional(ISimpleAccount))
 def ifLoggedOut(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
@@ -291,13 +291,13 @@ def ifLoggedOut(request, tag, account):
 
 
 @requirer.require(
-    style.render, form=Form.rendererFor(bye, "/logout")
+    style.renderMethod, form=Form.rendererFor(bye, "/logout")
 )
 def logoutGlue(request, tag, form):
     # type: (IRequest, Tag, RenderableForm) -> Tag
     return tag(form.glue())
 
-@requirer.require(style.render, account=Authorization(ISimpleAccount))
+@requirer.require(style.renderMethod, account=Authorization(ISimpleAccount))
 def username(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Tag
     return tag(account.username)

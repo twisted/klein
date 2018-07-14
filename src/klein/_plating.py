@@ -212,10 +212,13 @@ class Plating(object):
         self._renderers = {}
 
 
-    def render(self, renderer):
+    def renderMethod(self, renderer):
         """
-        Add a renderer to this L{Plating} object that can be used in the
+        Add a render method to this L{Plating} object that can be used in the
         top-level template.
+
+        The name of the renderer to use within the template is the name of the
+        decorated function.
         """
         self._renderers[text_type(originalName(renderer))] = renderer
         return renderer

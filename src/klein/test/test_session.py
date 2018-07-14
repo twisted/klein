@@ -129,7 +129,7 @@ class ProcurementTests(SynchronousTestCase):
             sproc = SessionProcurer(mss, setCookieOnGET=False)
             with self.assertRaises(NoSuchSession):
                 yield sproc.procureSession(request)
-            return b'no session'
+            returnValue(b'no session')
 
         treq = StubTreq(router.resource())
         result = self.successResultOf(treq.get('http://unittest.example.com/'))

@@ -45,13 +45,17 @@ class MemoryTests(SynchronousTestCase):
 
 
     def test_noAuthorizers(self):
+        # type: () -> None
         """
         By default, L{MemorySessionStore} contains no authorizers and the
         sessions it returns will authorize any supplied interfaces as None.
         """
         store = MemorySessionStore()
-        session = self.successResultOf(store.newSession(True, SessionMechanism.Header))
-        self.assertEqual(self.successResultOf(session.authorize([IFoo, IBar])), {})
+        session = self.successResultOf(
+            store.newSession(True, SessionMechanism.Header)
+        )
+        self.assertEqual(self.successResultOf(session.authorize([IFoo, IBar])),
+                         {})
 
 
     def test_simpleAuthorization(self):

@@ -1,6 +1,8 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
+from typing import (
+    Any, Callable, Optional as _Optional, TYPE_CHECKING, Union, cast
+)
 
 import attr
 
@@ -264,7 +266,8 @@ class Authorization(object):
     """
     _interface = attr.ib(type=IInterface)
     _required = attr.ib(type=bool, default=True)
-    _whenDenied = attr.ib(type=Callable[[IInterface, Any], Any], default=AuthorizationDenied)
+    _whenDenied = attr.ib(type=Callable[[IInterface, Any], Any],
+                          default=AuthorizationDenied)
 
     def registerInjector(self, injectionComponents, parameterName, lifecycle):
         # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
@@ -286,7 +289,8 @@ class Authorization(object):
         provider = ((yield ISession(request).authorize([self._interface]))
                     .get(self._interface))
         if self._required and provider is None:
-            raise EarlyExit(self._whenDenied(self._interface, instance))
+            denied = cast(Callable[[IInterface, Any], Any], self._whenDenied)
+            raise EarlyExit(denied(self._interface, instance))
         # TODO: CSRF protection should probably go here
         returnValue(provider)
 

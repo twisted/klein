@@ -12,17 +12,19 @@ from twisted.trial.unittest import SynchronousTestCase
 from zope.interface import Interface, implementer
 
 from klein import Authorization, Klein, Requirer, SessionProcurer
+from klein._typing import ifmethod
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
-from klein._typing import ifmethod
 
 if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.internet.defer import Deferred
+    from twisted.python.components import Componentized
+    from zope.interface.interfaces import IInterface
     from typing import Tuple, List
     sessions = List[ISession]
     errors = List[NoSuchSession]
-    IRequest, Deferred, sessions, errors, Tuple
+    IRequest, Deferred, sessions, errors, Tuple, Componentized, IInterface
 
 class ISimpleTest(Interface):
     """
@@ -55,6 +57,7 @@ class SimpleTest(object):
 
 @declareMemoryAuthorizer(ISimpleTest)
 def memoryAuthorizer(interface, session, data):
+    # type: (IInterface, ISession, Componentized) -> SimpleTest
     """
     Authorize the ISimpleTest interface; it always works.
     """
@@ -87,12 +90,15 @@ def simpleSessionRouter():
         returnValue(b'ok')
 
     requirer = Requirer()
+
     @requirer.prerequisite([ISession])
     def procure(request):
+        # type: (IRequest) -> Deferred
         return sproc.procureSession(request)
 
     @requirer.require(router.route("/test"), simple=Authorization(ISimpleTest))
     def testRoute(request, simple):
+        # type: (IRequest, SimpleTest) -> str
         return "ok: " + str(simple.doTest() + 4)
 
     treq = StubTreq(router.resource())
@@ -236,6 +242,7 @@ class ProcurementTests(SynchronousTestCase):
 
 
     def test_authorization(self):
+        # type: () -> None
         """
         When L{Requirer.require} is used with L{Authorization} and the session
         knows how to supply that authorization, it is passed to the object.
@@ -245,4 +252,3 @@ class ProcurementTests(SynchronousTestCase):
             'https://unittest.example.com/test'
         ))
         self.assertEqual(self.successResultOf(response.content()), b"ok: 7")
-

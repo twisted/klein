@@ -236,7 +236,7 @@ def addChirp(request, chirper, value):
     style.routed(app.route("/"),
                  [tags.h1(slot('result')),
                   tags.div(slot("chirp_form"))]),
-    account=Authorization.optional(ISimpleAccount),
+    account=Authorization(ISimpleAccount, required=False),
     chirp_form=Form.rendererFor(addChirp, "/chirp")
 )
 def root(request, chirp_form, account):
@@ -264,7 +264,7 @@ def bye(request, binding):
 
 
 @requirer.require(
-    style.renderMethod, account=Authorization.optional(ISimpleAccount)
+    style.renderMethod, account=Authorization(ISimpleAccount, required=False)
 )
 def ifLoggedIn(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
@@ -278,7 +278,7 @@ def ifLoggedIn(request, tag, account):
 
 
 
-@requirer.require(style.renderMethod, account=Authorization.optional(ISimpleAccount))
+@requirer.require(style.renderMethod, account=Authorization(ISimpleAccount, required=False))
 def ifLoggedOut(request, tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
@@ -418,7 +418,7 @@ def oneSession(session_info, form, current):
           (slot("item")))]
     ),
     form=Form.rendererFor(logOtherOut, action="/sessions/logout"),
-    binding=Authorization.optional(ISimpleAccountBinding),
+    binding=Authorization(ISimpleAccountBinding, required=False),
     session=Authorization(ISession),
 )
 @inlineCallbacks

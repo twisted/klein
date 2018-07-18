@@ -217,15 +217,6 @@ class Authorization(object):
     _interface = attr.ib(type=IInterface)
     _required = attr.ib(type=bool, default=True)
 
-    @classmethod
-    def optional(cls, interface):
-        # type: (IInterface) -> Authorization
-        """
-        Make a requirement passed to L{Authorizer.require}.
-        """
-        return cls(interface, required=False)
-
-
     def registerInjector(self, injectionComponents, parameterName, lifecycle):
         # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
         """

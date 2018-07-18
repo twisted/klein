@@ -13,7 +13,7 @@ from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from typing import Dict, Any
 
 from klein import (Klein, Plating, Form, Field, RenderableForm, Requirer,
-                   Authorization)
+                   Authorization, RequestURL, RequestComponent)
 from klein.interfaces import (
     ISimpleAccountBinding, SessionMechanism, ISimpleAccount, ISessionProcurer,
     ISessionStore, ISession
@@ -211,8 +211,8 @@ def getSessionProcurer(request):
     reader=Authorization(ChirpReader)
 )
 @inlineCallbacks
-def readSomeChirps(request, user, reader):
-    # type: (IRequest, str, ChirpReader) -> Deferred
+def readSomeChirps(user, reader):
+    # type: (str, ChirpReader) -> Deferred
     chirps = yield reader.readChirps(user)
     returnValue({
         "user": user,
@@ -226,8 +226,8 @@ def readSomeChirps(request, user, reader):
     chirper=Authorization(Chirper),
 )
 @inlineCallbacks
-def addChirp(request, chirper, value):
-    # type: (IRequest, Chirper, str) -> Deferred
+def addChirp(chirper, value):
+    # type: (Chirper, str) -> Deferred
     yield chirper.chirp(value)
     returnValue(Redirect(b"/"))
 
@@ -239,7 +239,7 @@ def addChirp(request, chirper, value):
     account=Authorization(ISimpleAccount, required=False),
     chirp_form=Form.rendererFor(addChirp, "/chirp")
 )
-def root(request, chirp_form, account):
+def root(chirp_form, account):
     # type: (IRequest, Chirper, ISimpleAccount) -> Dict
     return {
         "result": "hello world",
@@ -253,7 +253,7 @@ def root(request, chirp_form, account):
     binding=Authorization(ISimpleAccountBinding)
 )
 @inlineCallbacks
-def bye(request, binding):
+def bye(binding):
     # type: (IRequest, ISimpleAccountBinding) -> Deferred
     """
     Log out.
@@ -266,7 +266,7 @@ def bye(request, binding):
 @requirer.require(
     style.renderMethod, account=Authorization(ISimpleAccount, required=False)
 )
-def ifLoggedIn(request, tag, account):
+def ifLoggedIn(tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -279,7 +279,7 @@ def ifLoggedIn(request, tag, account):
 
 
 @requirer.require(style.renderMethod, account=Authorization(ISimpleAccount, required=False))
-def ifLoggedOut(request, tag, account):
+def ifLoggedOut(tag, account):
     # type: (IRequest, Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
@@ -293,13 +293,13 @@ def ifLoggedOut(request, tag, account):
 @requirer.require(
     style.renderMethod, form=Form.rendererFor(bye, "/logout")
 )
-def logoutGlue(request, tag, form):
-    # type: (IRequest, Tag, RenderableForm) -> Tag
+def logoutGlue(tag, form):
+    # type: (Tag, RenderableForm) -> Tag
     return tag(form.glue())
 
 @requirer.require(style.renderMethod, account=Authorization(ISimpleAccount))
-def username(request, tag, account):
-    # type: (IRequest, Tag, ISimpleAccount) -> Tag
+def username(tag, account):
+    # type: (Tag, ISimpleAccount) -> Tag
     return tag(account.username)
 
 
@@ -311,8 +311,8 @@ def username(request, tag, account):
     password=Field.password(),
 )
 @inlineCallbacks
-def dologin(request, username, password, binding):
-    # type: (IRequest, str, str, ISimpleAccountBinding) -> Deferred
+def dologin(username, password, binding):
+    # type: (str, str, ISimpleAccountBinding) -> Deferred
     account = yield binding.bindIfCredentialsMatch(username, password)
     if account is None:
         an_id = 'naaaahtthiiiing'
@@ -353,7 +353,7 @@ def dologin(request, username, password, binding):
          ("Log In")))))]),
                   login_form=Form.rendererFor(dologin, action="/login")
 )
-def loginform(request, login_form):
+def loginform(login_form):
     # type: (IRequest, RenderableForm) -> Dict
     return {
         "loginActive": "active",
@@ -366,14 +366,15 @@ def loginform(request, login_form):
     app.route("/sessions/logout", methods=["POST"]),
     binding=Authorization(ISimpleAccountBinding),
     sessionID=Field.text(),
+    url=RequestURL(),
 )
 @inlineCallbacks
-def logOtherOut(request, sessionID, binding):
-    # type: (IRequest, str, ISimpleAccountBinding) -> Deferred
+def logOtherOut(sessionID, binding, url):
+    # type: (str, ISimpleAccountBinding, DecodedURL) -> Deferred
     from attr import assoc
     # TODO: public API for getting to this?
     session = yield binding._session._sessionStore.loadSession(
-        sessionID, request.isSecure(), SessionMechanism.Header
+        sessionID, url.scheme == u'https', SessionMechanism.Header
     )
     other_binding = assoc(binding, _session=session)
     yield other_binding.unbindThisSession()
@@ -419,11 +420,11 @@ def oneSession(session_info, form, current):
     ),
     form=Form.rendererFor(logOtherOut, action="/sessions/logout"),
     binding=Authorization(ISimpleAccountBinding, required=False),
-    session=Authorization(ISession),
+    session=RequestComponent(ISession),
 )
 @inlineCallbacks
-def sessions(request, binding, form, session):
-    # type: (IRequest, ISimpleAccountBinding, Form, ISession) -> Deferred
+def sessions(binding, form, session):
+    # type: (ISimpleAccountBinding, Form, ISession) -> Deferred
     if binding is None:
         returnValue({"sessions": []})
     else:
@@ -453,8 +454,8 @@ def sessions(request, binding, form, session):
     password=Field.password(),
 )
 @inlineCallbacks
-def doSignup(request, username, email, password, binding):
-    # type: (IRequest, str, str, str, ISimpleAccountBinding) -> Deferred
+def doSignup(username, email, password, binding):
+    # type: (str, str, str, ISimpleAccountBinding) -> Deferred
     acct = yield binding.createAccount(username, email, password)
     result = {
         "signupActive": "active",
@@ -515,8 +516,8 @@ def doSignup(request, username, email, password, binding):
          ("Sign Up")))))]),
                   theForm=Form.rendererFor(doSignup, action="/signup")
 )
-def signupPage(request, theForm):
-    # type: (IRequest, RenderableForm) -> Dict
+def signupPage(theForm):
+    # type: (RenderableForm) -> Dict
     return {
         "glue_here": theForm.glue(),
         "signupActive": "active"

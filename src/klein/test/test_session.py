@@ -39,6 +39,12 @@ class ISimpleTest(Interface):
         """
 
 
+class IDenyMe(Interface):
+    """
+    Interface that is never provided.
+    """
+
+
 
 @implementer(ISimpleTest)
 class SimpleTest(object):
@@ -97,12 +103,19 @@ def simpleSessionRouter():
         return sproc.procureSession(request)
 
     @requirer.require(router.route("/test"), simple=Authorization(ISimpleTest))
-    def testRoute(request, simple):
-        # type: (IRequest, SimpleTest) -> str
+    def testRoute(simple):
+        # type: (SimpleTest) -> str
         return "ok: " + str(simple.doTest() + 4)
+
+    @requirer.require(router.route("/denied"), nope=Authorization(IDenyMe))
+    def testDenied(nope):
+        # type: (IDenyMe) -> str
+        return "bad"
 
     treq = StubTreq(router.resource())
     return sessions, exceptions, token, cookie, treq
+
+
 
 class ProcurementTests(SynchronousTestCase):
     """
@@ -252,3 +265,18 @@ class ProcurementTests(SynchronousTestCase):
             'https://unittest.example.com/test'
         ))
         self.assertEqual(self.successResultOf(response.content()), b"ok: 7")
+
+
+    def test_authorizationDenied(self):
+        # type: () -> None
+        """
+        When L{Requirer.require} is used with an L{Authorization} and the
+        session does I{not} know how to supply that authorization, the callable
+        is not invoked.
+        """
+        sessions, exceptions, token, cookie, treq = simpleSessionRouter()
+        response = self.successResultOf(treq.get(
+            'https://unittest.example.com/denied'
+        ))
+        self.assertEqual(self.successResultOf(response.content()), b'klein.test.test_session.IDenyMe DENIED')
+

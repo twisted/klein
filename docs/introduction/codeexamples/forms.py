@@ -27,7 +27,7 @@ style = Plating(tags=tags.html(
     ),
     tags.h1('u did it: ', slot("an-form-arg"))
 )
-def postHandler(request, foo, bar):
+def postHandler(foo, bar):
     return {"an-form-arg": foo}
 
 @requirer.require(
@@ -37,7 +37,7 @@ def postHandler(request, foo, bar):
     ),
     theForm=Form.rendererFor(postHandler, action=u"/?post=yes")
 )
-def formRenderer(request, theForm):
+def formRenderer(theForm):
     return {"anForm": theForm}
 
 @requirer.require(
@@ -46,7 +46,7 @@ def formRenderer(request, theForm):
                   tags.div(slot('the-invalid-form'))]),
     renderer=Form.rendererFor(postHandler, action=u"/?post=yes"),
 )
-def validationFailed(request, values, renderer):
+def validationFailed(values, renderer):
     renderer.prevalidationValues = values.prevalidationValues
     renderer.validationErrors = values.validationErrors
     return {'the-invalid-form': renderer}

@@ -77,12 +77,15 @@ def declareMemoryAuthorizer(forInterface):
         return decoratee
     return decorate
 
+def _noAuthorization(interface, session, data) -> None:
+    return None
+
 @implementer(ISessionStore)
 @attr.s
 class MemorySessionStore(object):
     authorizationCallback = attr.ib(
         type=_authFn,
-        default=lambda interface, session, data: None
+        default=_noAuthorization
     )
     _secureStorage = attr.ib(type=Dict[str, Any],
                              default=cast(Dict[str, Any], Factory(dict)))
@@ -103,7 +106,7 @@ class MemorySessionStore(object):
 
         def authorizationCallback(interface, session, data):
             # type: (IInterface, ISession, Componentized) -> Any
-            return interfaceToCallable[interface](interface, session, data)
+            return interfaceToCallable.get(interface, _noAuthorization)(interface, session, data)
         return cls(authorizationCallback)
 
 

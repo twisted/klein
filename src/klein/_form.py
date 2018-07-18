@@ -615,7 +615,7 @@ class Form(object):
             router = Klein()
             @requirer.require(router.route("/", methods=['POST']),
                               someField=Field.text())
-            def formHandler(request, someField):
+            def formHandler(someField):
                 ...
             # Handle input validation failures for handleForm
             @Form.onValidationFailureFor(formHandler)
@@ -698,14 +698,14 @@ class Form(object):
                     router.route("/handle-form", methods=["POST"]),
                     name=Field.text(), value=Field.integer(),
                 )
-                def formRoute(self, request, name, value):
+                def formRoute(self, name, value):
                     ...
 
                 @requirer.require(
                     router.route("/show-form", methods=["GET"]),
                     form=Form.rendererFor(formRoute)
                 )
-                def showForm(self, request, form):
+                def showForm(self, form):
                     return form
 
         As a L{RenderableForm} provides L{IRenderable}, you may return the

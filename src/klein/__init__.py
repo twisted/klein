@@ -3,6 +3,7 @@ from __future__ import absolute_import, division
 from typing import TYPE_CHECKING
 
 from ._app import Klein, handle_errors, route, run, urlFor, url_for
+from ._dihttp import Response, RequestURL, RequestComponent
 from ._form import Field, FieldValues, Form, RenderableForm
 from ._plating import Plating
 from ._requirer import Requirer
@@ -22,6 +23,9 @@ __all__ = (
     'Field',
     'FieldValues',
     'Form',
+    'RequestComponent',
+    'RequestURL',
+    'Response',
     'RenderableForm',
     'SessionProcurer',
     'Authorization',

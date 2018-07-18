@@ -199,8 +199,8 @@ _requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
 
 
 class AuthorizationDenied(Resource, object):
-    def __init__(self, interface):
-        # type: (IInterface) -> None
+    def __init__(self, interface, instance):
+        # type: (IInterface, Any) -> None
         self._interface = interface
         super(AuthorizationDenied, self).__init__()
 

@@ -56,8 +56,8 @@ class TestObject(object):
         router.route("/handle", methods=['POST']),
         name=Field.text(), value=Field.number(),
     )
-    def handler(self, request, name, value):
-        # type: (IRequest, Text, float) -> bytes
+    def handler(self, name, value):
+        # type: (Text, float) -> bytes
         self.calls.append((name, value))
         return b'yay'
 
@@ -90,7 +90,7 @@ def simpleFormRouter():
 
     @requirer.require(router.route("/getme", methods=['GET']),
                       name=Field.text(), value=Field.number())
-    def justGet(request, name, value):
+    def justGet(name, value):
         # type: (IRequest, str, int) -> bytes
         calls.append((name, value))
         return b'got'

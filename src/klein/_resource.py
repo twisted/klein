@@ -13,6 +13,7 @@ from twisted.web.template import renderElement
 
 from werkzeug.exceptions import HTTPException
 
+from ._dihttp import Response
 from ._interfaces import IKleinRequest
 
 
@@ -208,6 +209,8 @@ class KleinResource(Resource):
             returns an IRenderable, then render it and let the result of that
             bubble back up.
             """
+            if isinstance(r, Response):
+                r = r._applyToRequest(request)
 
             if IResource.providedBy(r):
                 request.render(getChildForRequest(r, request))

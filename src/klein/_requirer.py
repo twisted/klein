@@ -152,8 +152,7 @@ class Requirer(object):
                         )
                 except EarlyExit as ee:
                     returnValue(ee.alternateReturnValue)
-                result = yield _call(instance, functionWithRequirements,
-                                     request, *args, **injected)
+                result = yield _call(instance, functionWithRequirements, *args, **injected)
                 lifecycle.runAfterHooks(instance, request, result)
                 returnValue(result)
 

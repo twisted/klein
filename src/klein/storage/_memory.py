@@ -130,11 +130,7 @@ class MemorySessionStore(object):
         # type: (str, bool, SessionMechanism) -> Deferred
         storage = self._storage(isConfidential)
         if identifier in storage:
-            result = storage[identifier]
-            if isConfidential != result.isConfidential:
-                storage.pop(identifier)
-                return fail(NoSuchSession("Session sent via wrong scheme"))
-            return succeed(result)
+            return succeed(storage[identifier])
         else:
             return fail(NoSuchSession(
                 u"Session not found in memory store {id!r}"

@@ -9,6 +9,7 @@ from treq.testing import StubTreq
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.python.compat import nativeString
 from twisted.web.static import Data
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
@@ -21,33 +22,6 @@ if TYPE_CHECKING:               # pragma: no cover
     from typing import Dict, Tuple, Union
     from twisted.web.iweb import IRequest
     IRequest, Text, Union, Dict, Tuple
-
-
-
-def strdict(adict):
-    # type: (Dict[Union[bytes, Text], Union[bytes, Text]]) -> Dict[str, str]
-    """
-    Workaround for a bug in Treq and Twisted where cookie jars cannot
-    consistently be text or bytes, but I{must} be native C{str}s on both Python
-    versions.
-
-    @type adict: A dictionary which might have bytes or strs or unicodes in it.
-
-    @return: A dictionary with only strs in it.
-    """
-    strs = {}
-
-    def strify(s):
-        # type: (Union[bytes, Text]) -> str
-        if isinstance(s, str):
-            return s
-        elif isinstance(s, bytes):
-            return s.decode('utf-8')
-        else:
-            return s.encode('utf-8')
-    for k, v in adict.items():
-        strs[strify(k)] = strify(v)
-    return strs
 
 
 
@@ -323,7 +297,7 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(stub.post(
             'https://localhost/handle',
             data=dict(name='hello', value='1234', ignoreme='extraneous'),
-            cookies=strdict({"Klein-Secure-Session": session.identifier})
+            cookies={"Klein-Secure-Session": nativeString(session.identifier)}
         ))
         self.assertEqual(to.calls, [])
         self.assertEqual(response.code, 403)
@@ -346,7 +320,7 @@ class TestForms(SynchronousTestCase):
             'https://localhost/handle',
             data=dict(name='hello', value='1234', ignoreme='extraneous',
                       __csrf_protection__=session.identifier),
-            cookies=strdict({"Klein-Secure-Session": session.identifier})
+            cookies={"Klein-Secure-Session": nativeString(session.identifier)}
         ))
         self.assertEqual(to.calls, [('hello', 1234)])
         self.assertEqual(response.code, 200)

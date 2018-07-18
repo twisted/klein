@@ -9,9 +9,12 @@ from treq.testing import StubTreq
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.trial.unittest import SynchronousTestCase
 
-from klein import Klein, SessionProcurer
+from zope.interface import Interface, implementer
+
+from klein import Authorization, Klein, Requirer, SessionProcurer
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
-from klein.storage.memory import MemorySessionStore
+from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
+from klein._typing import ifmethod
 
 if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
@@ -21,6 +24,44 @@ if TYPE_CHECKING:               # pragma: no cover
     errors = List[NoSuchSession]
     IRequest, Deferred, sessions, errors, Tuple
 
+class ISimpleTest(Interface):
+    """
+    Interface for testing.
+    """
+
+    @ifmethod
+    def doTest():
+        # type: () -> None
+        """
+        Test method.
+        """
+
+
+
+@implementer(ISimpleTest)
+class SimpleTest(object):
+    """
+    Implementation of L{ISimpleTest} for testing.
+    """
+
+    def doTest(self):
+        # type: () -> int
+        """
+        Implementation of L{ISimpleTest}.  Returns 3.
+        """
+        return 3
+
+
+
+@declareMemoryAuthorizer(ISimpleTest)
+def memoryAuthorizer(interface, session, data):
+    """
+    Authorize the ISimpleTest interface; it always works.
+    """
+    return SimpleTest()
+
+
+
 def simpleSessionRouter():
     # type: () -> Tuple[sessions, errors, str, str, StubTreq]
     """
@@ -28,7 +69,7 @@ def simpleSessionRouter():
     """
     sessions = []
     exceptions = []
-    mss = MemorySessionStore()
+    mss = MemorySessionStore.fromAuthorizers([memoryAuthorizer])
     router = Klein()
     token = "X-Test-Session-Token"
     cookie = "X-Test-Session-Cookie"
@@ -44,6 +85,15 @@ def simpleSessionRouter():
         except NoSuchSession as nss:
             exceptions.append(nss)
         returnValue(b'ok')
+
+    requirer = Requirer()
+    @requirer.prerequisite([ISession])
+    def procure(request):
+        return sproc.procureSession(request)
+
+    @requirer.require(router.route("/test"), simple=Authorization(ISimpleTest))
+    def testRoute(request, simple):
+        return "ok: " + str(simple.doTest() + 4)
 
     treq = StubTreq(router.resource())
     return sessions, exceptions, token, cookie, treq
@@ -183,3 +233,16 @@ class ProcurementTests(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(len(exceptions), 1)
         self.assertEqual(len(sessions), 0)
+
+
+    def test_authorization(self):
+        """
+        When L{Requirer.require} is used with L{Authorization} and the session
+        knows how to supply that authorization, it is passed to the object.
+        """
+        sessions, exceptions, token, cookie, treq = simpleSessionRouter()
+        response = self.successResultOf(treq.get(
+            'https://unittest.example.com/test'
+        ))
+        self.assertEqual(self.successResultOf(response.content()), b"ok: 7")
+

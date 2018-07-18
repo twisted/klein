@@ -212,10 +212,59 @@ class AuthorizationDenied(Resource, object):
 @attr.s
 class Authorization(object):
     """
-    Authorize.
+    Declare that a C{require}-decorated function requires a certain interface
+    be authorized from the session.
+
+    This is a dependnecy injector used in conjunction with a L{klein.Requirer},
+    like so::
+
+        from klein import Requirer, SesssionProcurer
+        from klein.interfaces import ISession
+
+        from myapp import ISuperDuperAdmin
+
+        requirer = Requirer()
+        procurer = SessionProcurer(store=someSessionStore)
+        @requirer.prerequisite(ISession)
+        def sessionize(request):
+            return procurer.procureSession(request)
+
+        app = Klein()
+
+        @requirer.require(
+            app.route("/admin"),
+            adminPowers=Authorization(ISuperDuperAdmin)
+        )
+        def myRoute(adminPowers):
+            return 'ok admin: ' + adminPowers.doAdminThing()
+
+    In this example, ISuperDuperAdmin is an interface known to your
+    application, and (via authorization plugins depending on your session
+    storage backend) to your session store.  It has a doAdminThing method.
+    When a user hits /admin in their browser, if they are duly authorized,
+    they'll see 'ok admin: ' and whatever the super-secret result of
+    doAdminThing is.  If not, by default, they'll simply get an HTTP
+    UNAUTHORIZED response that says "myapp.ISuperDuperAdmin DENIED".  (This
+    behavior can be customized via the C{whenDenied} parameter to
+    L{Authorization}.)
+
+    @ivar _interface: the interface that is required.  a provider of this
+        interface is what will be dependency-injected.
+
+    @ivar _required: is this authorization required?  If so (the default),
+        don't invoke the application code if it cannot be authorized by the
+        procured session, and instead return the object specified by whenDenied
+        from the dependency-injection process.  If not, then just pass None if
+        it is not on the session.
+
+    @ivar _whenDenied: when this authorization is denied, what object - usually
+        an IResource - should be returned to the route decorator that was
+        passed to L{Requirer.require}?  Note that this will never be used if
+        C{required} is set to C{False}.
     """
     _interface = attr.ib(type=IInterface)
     _required = attr.ib(type=bool, default=True)
+    _whenDenied = attr.ib(type=Callable[[IInterface, Any], Any], default=AuthorizationDenied)
 
     def registerInjector(self, injectionComponents, parameterName, lifecycle):
         # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
@@ -237,7 +286,7 @@ class Authorization(object):
         provider = ((yield ISession(request).authorize([self._interface]))
                     .get(self._interface))
         if self._required and provider is None:
-            raise EarlyExit(AuthorizationDenied(self._interface))
+            raise EarlyExit(self._whenDenied(self._interface, instance))
         # TODO: CSRF protection should probably go here
         returnValue(provider)
 

@@ -8,8 +8,8 @@ from treq import content
 from treq.testing import StubTreq
 
 from twisted.internet.defer import inlineCallbacks
-from twisted.trial.unittest import SynchronousTestCase
 from twisted.python.compat import nativeString
+from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.static import Data
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer

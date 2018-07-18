@@ -291,7 +291,8 @@ class ISession(Interface):
         @return: all of the providers that could be retrieved from the session.
         @rtype: L{Deferred} firing with L{dict} mapping
             L{zope.interface.interfaces.IInterface} to providers of each
-            interface.
+            interface.  Interfaces which cannot be authorized will not be
+            present as keys in this dictionary.
         """
 
 

@@ -44,7 +44,9 @@ class MemorySession(object):
         result = {}
         for interface in interfaces:
             authCB = cast(_authCB, self._authorizationCallback)
-            result[interface] = authCB(interface, self, self._components)
+            provider = authCB(interface, self, self._components)
+            if provider is not None:
+                result[interface] = provider
         return succeed(result)
 
 

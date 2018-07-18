@@ -11,6 +11,19 @@ from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
 Any
 
+class IFoo(Interface):
+    """
+    Testing interface 1.
+    """
+
+
+
+class IBar(Interface):
+    """
+    Testing interface 2.
+    """
+
+
 
 class MemoryTests(SynchronousTestCase):
     """
@@ -30,6 +43,17 @@ class MemoryTests(SynchronousTestCase):
             )
         )
 
+
+    def test_noAuthorizers(self):
+        """
+        By default, L{MemorySessionStore} contains no authorizers and the
+        sessions it returns will authorize any supplied interfaces as None.
+        """
+        store = MemorySessionStore()
+        session = self.successResultOf(store.newSession(True, SessionMechanism.Header))
+        self.assertEqual(self.successResultOf(session.authorize([IFoo, IBar])), {})
+
+
     def test_simpleAuthorization(self):
         # type: () -> None
         """
@@ -37,12 +61,6 @@ class MemoryTests(SynchronousTestCase):
         decorated with L{declareMemoryAuthorizer} and constructs a session
         store that can authorize for those interfaces.
         """
-        class IFoo(Interface):
-            pass
-
-        class IBar(Interface):
-            pass
-
         @declareMemoryAuthorizer(IFoo)
         def fooMe(interface, session, componentized):
             # type: (Any, Any, Any) -> int

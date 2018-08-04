@@ -13,9 +13,11 @@ from zope.interface.interfaces import IInterface
 
 if TYPE_CHECKING:               # pragma: no cover
     from hyperlink import DecodedURL
+    from typing import Dict
+    from klein.interfaces import IRequestLifecycle
     from twisted.web.iweb import IRequest
-    DecodedURL, IRequest
-
+    from twisted.python.components import Componentized
+    Componentized, DecodedURL, IRequest, IRequestLifecycle, Dict
 def urlFromRequest(request):
     # type: (IRequest) -> DecodedURL
     sentHeader = request.getHeader(b"host")
@@ -131,10 +133,10 @@ class Response(object):
         """
         request.setResponseCode(self.code)
         for headerName, headerValueOrValues in self.headers.items():
-            if isinstance(headerValueOrValues, (text_type, bytes)):
-                headerValues = [headerValueOrValues]
-            else:
+            if not isinstance(headerValueOrValues, (text_type, bytes)):
                 headerValues = headerValueOrValues
+            else:
+                headerValues = [headerValueOrValues]
             request.setRawHeaders(headerName, headerValues)
         return self.body
 

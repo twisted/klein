@@ -1,7 +1,6 @@
 
 from __future__ import print_function, unicode_literals, absolute_import
 
-
 from sqlalchemy import Table, MetaData
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.exc import OperationalError
@@ -10,7 +9,7 @@ from twisted.web.iweb import IRequest
 from twisted.web.template import tags, slot, Tag
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
 
 from klein import (Klein, Plating, Form, Field, RenderableForm, Requirer,
                    Authorization, RequestURL, RequestComponent)
@@ -25,9 +24,11 @@ from klein.storage.sql import (
 
 from twisted.web.util import Redirect
 
-# silence flake8 for type-checking
-(ISessionProcurer, Deferred, IRequest, Dict, Tag, Any,
- RenderableForm, ISessionStore)
+if TYPE_CHECKING:
+    from hyperlink import DecodedURL
+    # silence flake8 for type-checking
+    (ISessionProcurer, Deferred, IRequest, Dict, Tag, Any, RenderableForm,
+     ISessionStore, DecodedURL)
 
 app = Klein()
 
@@ -240,7 +241,7 @@ def addChirp(chirper, value):
     chirp_form=Form.rendererFor(addChirp, "/chirp")
 )
 def root(chirp_form, account):
-    # type: (IRequest, Chirper, ISimpleAccount) -> Dict
+    # type: (Chirper, ISimpleAccount) -> Dict
     return {
         "result": "hello world",
         "homeActive": "active",
@@ -254,7 +255,7 @@ def root(chirp_form, account):
 )
 @inlineCallbacks
 def bye(binding):
-    # type: (IRequest, ISimpleAccountBinding) -> Deferred
+    # type: (ISimpleAccountBinding) -> Deferred
     """
     Log out.
     """
@@ -267,7 +268,7 @@ def bye(binding):
     style.renderMethod, account=Authorization(ISimpleAccount, required=False)
 )
 def ifLoggedIn(tag, account):
-    # type: (IRequest, Tag, ISimpleAccount) -> Any
+    # type: (Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
@@ -280,7 +281,7 @@ def ifLoggedIn(tag, account):
 
 @requirer.require(style.renderMethod, account=Authorization(ISimpleAccount, required=False))
 def ifLoggedOut(tag, account):
-    # type: (IRequest, Tag, ISimpleAccount) -> Any
+    # type: (Tag, ISimpleAccount) -> Any
     """
     Render the given tag if the user is logged in, otherwise don't.
     """
@@ -354,7 +355,7 @@ def dologin(username, password, binding):
                   login_form=Form.rendererFor(dologin, action="/login")
 )
 def loginform(login_form):
-    # type: (IRequest, RenderableForm) -> Dict
+    # type: (RenderableForm) -> Dict
     return {
         "loginActive": "active",
         "glue_here": login_form.glue()

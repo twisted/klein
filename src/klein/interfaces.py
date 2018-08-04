@@ -30,6 +30,7 @@ if TYPE_CHECKING:               # pragma: no cover
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
     from ._isession import IRequestLifecycleT as _IRequestLifecycleT
+    from ._dihttp import RequestURL, RequestComponent
 
     from typing import Union
 
@@ -42,9 +43,11 @@ if TYPE_CHECKING:               # pragma: no cover
     ISimpleAccountBinding = Union[_ISimpleAccountBinding,
                                   AccountSessionBinding]
     IDependencyInjector = Union[_IDependencyInjector, Authorization,
-                                RenderableFormParam, FieldInjector]
+                                RenderableFormParam, FieldInjector, RequestURL,
+                                RequestComponent]
     IRequiredParameter = Union[_IRequiredParameter, Authorization, Field,
-                               RenderableFormParam]
+                               RenderableFormParam, RequestURL,
+                               RequestComponent]
     IRequestLifecycle = _IRequestLifecycleT
 else:
     ISession = _ISession

@@ -65,7 +65,7 @@ class TestObject(object):
         router.route("/notrequired", methods=['POST']),
         name=Field.text(), value=Field.number(required=False, default=7.0)
     )
-    def notRequired(self, request, name, value):
+    def notRequired(self, name, value):
         # type: (IRequest, Text, float) -> bytes
         self.calls.append((name, value))
         return b'okay'
@@ -74,7 +74,7 @@ class TestObject(object):
         router.route("/render", methods=['GET']),
         form=Form.rendererFor(handler, action=u'/handle')
     )
-    def renderer(self, request, form):
+    def renderer(self, form):
         # type: (IRequest, Form) -> Form
         return form
 
@@ -91,7 +91,7 @@ def simpleFormRouter():
     @requirer.require(router.route("/getme", methods=['GET']),
                       name=Field.text(), value=Field.number())
     def justGet(name, value):
-        # type: (IRequest, str, int) -> bytes
+        # type: (str, int) -> bytes
         calls.append((name, value))
         return b'got'
 

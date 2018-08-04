@@ -77,7 +77,8 @@ def declareMemoryAuthorizer(forInterface):
         return decoratee
     return decorate
 
-def _noAuthorization(interface, session, data) -> None:
+def _noAuthorization(interface, session, data):
+    # type: (IInterface, ISession, Componentized) -> None
     return None
 
 @implementer(ISessionStore)

@@ -278,5 +278,5 @@ class ProcurementTests(SynchronousTestCase):
         response = self.successResultOf(treq.get(
             'https://unittest.example.com/denied'
         ))
-        self.assertEqual(self.successResultOf(response.content()), b'klein.test.test_session.IDenyMe DENIED')
-
+        self.assertEqual(self.successResultOf(response.content()),
+                         b'klein.test.test_session.IDenyMe DENIED')

@@ -3,13 +3,18 @@
 Dependency-Injected HTTP metadata.
 """
 
+from typing import Any, Mapping, Sequence, TYPE_CHECKING, Text, Union
+
 import attr
-from six import text_type
+
 from hyperlink import parse
-from typing import TYPE_CHECKING, Union, Text, Mapping, Sequence, Any
-from klein.interfaces import IRequiredParameter, IDependencyInjector
-from zope.interface import provider, implementer
+
+from six import text_type
+
+from zope.interface import implementer, provider
 from zope.interface.interfaces import IInterface
+
+from .interfaces import IDependencyInjector, IRequiredParameter
 
 if TYPE_CHECKING:               # pragma: no cover
     from hyperlink import DecodedURL
@@ -18,6 +23,8 @@ if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
     Componentized, DecodedURL, IRequest, IRequestLifecycle, Dict
+
+
 def urlFromRequest(request):
     # type: (IRequest) -> DecodedURL
     sentHeader = request.getHeader(b"host")
@@ -139,4 +146,3 @@ class Response(object):
                 headerValues = [headerValueOrValues]
             request.setRawHeaders(headerName, headerValues)
         return self.body
-

@@ -107,7 +107,9 @@ class MemorySessionStore(object):
 
         def authorizationCallback(interface, session, data):
             # type: (IInterface, ISession, Componentized) -> Any
-            return interfaceToCallable.get(interface, _noAuthorization)(interface, session, data)
+            return interfaceToCallable.get(interface, _noAuthorization)(
+                interface, session, data
+            )
         return cls(authorizationCallback)
 
 

@@ -6,12 +6,15 @@ from treq.testing import StubTreq
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.http_headers import Headers
 
-from klein import Klein, RequestURL, Requirer
+from zope.interface import Interface
+
+from klein import Klein, RequestComponent, RequestURL, Requirer
 
 if TYPE_CHECKING:               # pragma: no cover
     from typing import Text, Iterable, List, Tuple
     from hyperlink import DecodedURL
-    DecodedURL, Text, Iterable, List, Tuple
+    from twisted.web.iweb import IRequest
+    DecodedURL, Text, Iterable, List, Tuple, IRequest
 
 class BadlyBehavedHeaders(Headers):
     """
@@ -39,6 +42,28 @@ def requiresURL(url):
     This is a route that requires a URL.
     """
     return url.child("hello/ world").asText()
+
+class ISample(Interface):
+    """
+    Interface for testing.
+    """
+
+@requirer.prerequisite([ISample])
+def provideSample(request):
+    # type: (IRequest) -> None
+    """
+    This requirer prerequisite installs a string as the provider of ISample.
+    """
+    request.setComponent(ISample, "sample component")
+
+@requirer.require(router.route("/retrieve/component", methods=['GET']),
+                  component=RequestComponent(ISample))
+def needsComponent(component):
+    # type: (Text) -> Text
+    """
+    This route requires and returns an L{ISample}.
+    """
+    return component
 
 class RequireURLTests(SynchronousTestCase):
     """
@@ -68,13 +93,13 @@ class RequireURLTests(SynchronousTestCase):
         """
         response = self.successResultOf(
             self.successResultOf(StubTreq(router.resource()).get(
-                "https://example.com:8443/hello/world"
+                "http://example.com:8080/hello/world"
             )).text()
         )
 
         self.assertEqual(
             response,
-            "https://example.com:8443/hello/world/hello%2F%20world"
+            "http://example.com:8080/hello/world/hello%2F%20world"
         )
 
     def test_requiresURLBadlyBehavedClient(self):
@@ -92,4 +117,24 @@ class RequireURLTests(SynchronousTestCase):
             response,
             # Static values from StubTreq - this should probably be tunable.
             "https://127.0.0.1:31337/hello/world/hello%2F%20world"
+        )
+
+class RequireComponentTests(SynchronousTestCase):
+    """
+    Tests for RequestComponent.
+    """
+
+    def test_requestComponent(self):
+        # type: () -> None
+        """
+        Test for requiring a component installed on the request.
+        """
+        response = self.successResultOf(
+            self.successResultOf(StubTreq(router.resource()).get(
+                "https://example.com/retrieve/component",
+                headers=BadlyBehavedHeaders()
+            )).text()
+        )
+        self.assertEqual(
+            response, "sample component"
         )

@@ -67,10 +67,10 @@ def needsComponent(component):
 
 @requirer.require(router.route("/set/headers"))
 def someHeaders():
+    # type: () -> Response
     """
     Set some response attributes.
     """
-    # type: () -> Response
     return Response(
         209, {'x-single-header': b'one',
               'x-multi-header': [b'two', b'three']},

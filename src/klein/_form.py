@@ -68,6 +68,15 @@ def textConverter(value):
 
 
 
+class IParsedJSONBody(Interface):
+    """
+    Marker interface for the dict parsed from the request body's JSON contents.
+    """
+    # TODO: how to allow applications to pass options to loads, such as
+    # parse_float?
+
+
+
 @implementer(IRequiredParameter)
 @attr.s(frozen=True)
 class Field(object):
@@ -161,10 +170,13 @@ class Field(object):
                 contentType.startswith(b'application/json')
         ):
             # TODO: parse only once, please.
-            request.content.seek(0)
-            octets = request.content.read()
-            characters = octets.decode("utf-8")
-            parsed = json.loads(characters)
+            parsed = request.getComponent(IParsedJSONBody)
+            if parsed is None:
+                request.content.seek(0)
+                octets = request.content.read()
+                characters = octets.decode("utf-8")
+                parsed = json.loads(characters)
+                request.setComponent(IParsedJSONBody, parsed)
             if fieldName not in parsed:
                 return None
             return parsed[fieldName]

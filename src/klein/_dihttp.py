@@ -144,5 +144,5 @@ class Response(object):
                 headerValues = headerValueOrValues
             else:
                 headerValues = [headerValueOrValues]
-            request.setRawHeaders(headerName, headerValues)
+            request.responseHeaders.setRawHeaders(headerName, headerValues)
         return self.body

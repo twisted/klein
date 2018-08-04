@@ -8,7 +8,7 @@ from twisted.web.http_headers import Headers
 
 from zope.interface import Interface
 
-from klein import Klein, RequestComponent, RequestURL, Requirer
+from klein import Klein, RequestComponent, RequestURL, Requirer, Response
 
 if TYPE_CHECKING:               # pragma: no cover
     from typing import Text, Iterable, List, Tuple
@@ -64,6 +64,19 @@ def needsComponent(component):
     This route requires and returns an L{ISample}.
     """
     return component
+
+@requirer.require(router.route("/set/headers"))
+def someHeaders():
+    """
+    Set some response attributes.
+    """
+    # type: () -> Response
+    return Response(
+        209, {'x-single-header': b'one',
+              'x-multi-header': [b'two', b'three']},
+        "this is the response body"
+    )
+
 
 class RequireURLTests(SynchronousTestCase):
     """
@@ -132,9 +145,30 @@ class RequireComponentTests(SynchronousTestCase):
         response = self.successResultOf(
             self.successResultOf(StubTreq(router.resource()).get(
                 "https://example.com/retrieve/component",
-                headers=BadlyBehavedHeaders()
             )).text()
         )
         self.assertEqual(
             response, "sample component"
         )
+
+
+class ResponseTests(SynchronousTestCase):
+    """
+    Tests for L{klein.Response}.
+    """
+
+    def test_basicResponse(self):
+        # type: () -> None
+        """
+        Since methods decorated with C{@require} don't receive the request and
+        can't access it to set headers and response codes, instead, they can
+        return a Response object that has those attributes.
+        """
+        response = self.successResultOf(StubTreq(router.resource()).get(
+            "https://example.com/set/headers",
+        ))
+        self.assertEqual(response.code, 209)
+        self.assertEqual(response.headers.getRawHeaders(b"X-Single-Header"),
+                         [b'one'])
+        self.assertEqual(response.headers.getRawHeaders(b"X-Multi-Header"),
+                         [b'two', b'three'])

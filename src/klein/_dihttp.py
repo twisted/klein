@@ -39,9 +39,11 @@ def urlFromRequest(request):
     else:
         host = request.client.host
         port = request.client.port
+        if not isinstance(host, text_type):
+            host = host.decode("ascii")
 
     return parse(request.uri.decode("charmap")).replace(
-        scheme="https" if request.isSecure() else "http",
+        scheme=u"https" if request.isSecure() else u"http",
         host=host,
         port=port,
     )

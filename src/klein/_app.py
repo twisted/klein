@@ -374,7 +374,7 @@ class Klein(object):
 
 
     def run(self, host=None, port=None, logFile=None,
-            endpoint_description=None):
+            endpoint_description=None, displayTracebacks=True):
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -399,6 +399,10 @@ class Klein(object):
             protocol, port and interface. May contain other optional arguments,
              e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
         @type endpoint_description: str
+
+        @param displayTracebacks: Weather a processing error will result in
+            a page displaying the traceback with debugging information or not.
+        @type displayTracebacks: bool
         """
         if logFile is None:
             logFile = sys.stdout
@@ -410,7 +414,11 @@ class Klein(object):
                                                                        host)
 
         endpoint = endpoints.serverFromString(reactor, endpoint_description)
-        endpoint.listen(Site(self.resource()))
+
+        site = Site(self.resource())
+        site.displayTracebacks = displayTracebacks
+
+        endpoint.listen(site)
         reactor.run()
 
 

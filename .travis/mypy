@@ -31,20 +31,20 @@ tmp="$(mktemp -t mypy.XXXX)";
 
 mypy "$@"      \
     | grep -v  \
-        -e ': error: The type alias to [A-Za-z]* is invalid in runtime context'                                              \
-        -e '^src/klein/_app.py:[0-9:]*: error: Function is missing a type annotation'                                        \
-        -e '^src/klein/_decorators.py:[0-9:]*: error: Function is missing a type annotation'                                 \
-        -e '^src/klein/_iapp.py:[0-9:]*: error: Function is missing a type annotation'                                       \
-        -e '^src/klein/_plating.py:.* error: Function is missing a type annotation'                                          \
-        -e '^src/klein/_plating.py:[0-9:]*: error: Need type annotation for '                                                \
-        -e '^src/klein/_resource.py:[0-9:]*: error: Function is missing a type annotation'                                   \
-        -e '^src/klein/test/_trial.py:[0-9:]*: error: Function is missing a type annotation'                                 \
-        -e '^src/klein/test/py3_test_resource.py:[0-9:]*: error: Function is missing a type annotation'                      \
-        -e '^src/klein/test/test_app.py:[0-9:]*: error: Function is missing a type annotation'                               \
-        -e '^src/klein/test/test_plating.py:[0-9:]*: error: Function is missing a type annotation'                           \
-        -e '^src/klein/test/test_plating.py:[0-9:]*: error: Need type annotation for '                                       \
-        -e '^src/klein/test/test_resource.py:[0-9:]*: error: Function is missing a type annotation'                          \
-        -e '^src/klein/test/util.py:[0-9:]*: error: Function is missing a type annotation'                                   \
+        -e ': error: The type alias to [A-Za-z]* is invalid in runtime context'                          \
+        -e '^src/klein/_app.py:[0-9:]*: error: Function is missing a type annotation'                    \
+        -e '^src/klein/_decorators.py:[0-9:]*: error: Function is missing a type annotation'             \
+        -e '^src/klein/_iapp.py:[0-9:]*: error: Function is missing a type annotation'                   \
+        -e '^src/klein/_plating.py:.* error: Function is missing a type annotation'                      \
+        -e '^src/klein/_plating.py:[0-9:]*: error: Need type annotation for '                            \
+        -e '^src/klein/_resource.py:[0-9:]*: error: Function is missing a type annotation'               \
+        -e '^src/klein/test/_trial.py:[0-9:]*: error: Function is missing a type annotation'             \
+        -e '^src/klein/test/py3_test_resource.py:[0-9:]*: error: Function is missing a type annotation'  \
+        -e '^src/klein/test/test_app.py:[0-9:]*: error: Function is missing a type annotation'           \
+        -e '^src/klein/test/test_plating.py:[0-9:]*: error: Function is missing a type annotation'       \
+        -e '^src/klein/test/test_plating.py:[0-9:]*: error: Need type annotation for '                   \
+        -e '^src/klein/test/test_resource.py:[0-9:]*: error: Function is missing a type annotation'      \
+        -e '^src/klein/test/util.py:[0-9:]*: error: Function is missing a type annotation'               \
         > "${tmp}" || true;
 
 sort < "${tmp}";

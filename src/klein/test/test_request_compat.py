@@ -8,15 +8,15 @@ Tests for L{klein._irequest}.
 from string import ascii_uppercase
 from typing import Optional, Text
 
-from hyperlink import URL
+from hyperlink import DecodedURL
 
-from hypothesis import HealthCheck, assume, given, note, settings
+from hypothesis import given
 from hypothesis.strategies import binary, text
 
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
 
-from ._strategies import http_urls
+from ._strategies import decoded_urls
 from ._trial import TestCase
 from .test_resource import requestMock
 from .._headers import IHTTPHeaders
@@ -24,7 +24,7 @@ from .._message import FountAlreadyAccessedError
 from .._request import IHTTPRequest
 from .._request_compat import HTTPRequestWrappingIRequest
 
-Headers, IRequest, Optional, Text, URL  # Silence linter
+DecodedURL, Headers, IRequest, Optional, Text  # Silence linter
 
 
 __all__ = ()
@@ -74,29 +74,18 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         self.assertEqual(request.method, methodText)
 
 
-    @settings(suppress_health_check=[
-        HealthCheck.too_slow, HealthCheck.filter_too_much,
-    ])
-    @given(http_urls())
+    @given(decoded_urls())
     def test_uri(self, url):
-        # type: (URL) -> None
+        # type: (DecodedURL) -> None
         """
         L{HTTPRequestWrappingIRequest.uri} matches the underlying legacy
         request URI.
         """
-        try:
-            uri = url.asURI()  # Normalize as (network-friendly) URI
-        except UnicodeError:
-            # This happens due to a bug in hyperlink:
-            #   https://github.com/python-hyper/hyperlink/issues/19
-            # For now, all we can do is tell hypothesis to skip the sample that
-            # got us here.
-            assume(False)
+        uri = url.asURI()  # Normalize as (network-friendly) URI
 
         path = (
             uri.replace(scheme=u"", host=u"", port=None)
-            .asText()
-            .encode("ascii")
+            .asText().encode("ascii")
         )
         legacyRequest = self.legacyRequest(
             isSecure=(uri.scheme == u"https"),
@@ -104,20 +93,12 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         )
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
 
-        # Work around for https://github.com/mahmoud/hyperlink/issues/5
-        def normalize(uri):
-            # type: (URL) -> URL
-            return uri.replace(path=(s for s in uri.path if s))
-
-        note("_request.uri: {!r}".format(path))
-        note("request.uri: {!r}".format(request.uri))
-
-        uriNormalized = normalize(uri)
-        requestURINormalized = normalize(request.uri)
+        uriNormalized = uri
+        requestURINormalized = request.uri.asURI()
 
         # Needed because non-equal URLs can render as the same strings
         def strURL(url):
-            # type: (URL) -> Text
+            # type: (DecodedURL) -> Text
             return (
                 u"URL(scheme={url.scheme!r}, "
                 u"userinfo={url.userinfo!r}, "

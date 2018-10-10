@@ -5,7 +5,7 @@
 Tests for L{klein._request}.
 """
 
-from hyperlink import URL
+from hyperlink import DecodedURL
 
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
@@ -30,7 +30,7 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         # type: (bytes) -> FrozenHTTPRequest
         return FrozenHTTPRequest(
             method=u"GET",
-            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            uri=DecodedURL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
             body=data,
         )
@@ -61,7 +61,7 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
             TypeError,
             FrozenHTTPRequest,
             method=u"GET",
-            uri=URL.fromText(u"https://twistedmatrix.com/"),
+            uri=DecodedURL.fromText(u"https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
             body=object(),
         )

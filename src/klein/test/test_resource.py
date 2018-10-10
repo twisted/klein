@@ -6,7 +6,7 @@ from io import BytesIO
 try:
     from unittest.mock import Mock, call
 except Exception:
-    from mock import Mock, call  # type:ignore
+    from mock import Mock, call
 
 from six.moves.urllib.parse import parse_qs
 
@@ -1116,9 +1116,9 @@ class KleinResourceTests(TestCase):
         )
 
     if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"
+        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
     else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"
+        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
 
 
     def test_subroutedBranch(self):

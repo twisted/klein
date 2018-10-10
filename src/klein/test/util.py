@@ -5,12 +5,13 @@ Shared tools for Klein's test suite.
 import twisted
 from twisted.python import failure
 from twisted.python.versions import Version
-from twisted.trial.unittest import TestCase
 
 
 
 if twisted.version < Version('twisted', 13, 1, 0):
-    class TestCase(TestCase):
+    from twisted.trial.unittest import TestCase as _TestCase
+
+    class TestCase(_TestCase):
         def successResultOf(self, deferred):
             result = []
             deferred.addBoth(result.append)
@@ -66,6 +67,10 @@ if twisted.version < Version('twisted', 13, 1, 0):
                 )
 
             return result[0]
+else:
+    from twisted.trial.unittest import TestCase  # type: ignore
+
+    TestCase  # Silence linter
 
 
 

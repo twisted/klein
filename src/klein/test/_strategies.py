@@ -84,7 +84,7 @@ _idnaCharacters = None  # type: Optional[str]
 
 
 @composite
-def ascii_text(draw, min_size=None, max_size=None):  # pragma: no cover
+def ascii_text(draw, min_size=0, max_size=None):  # pragma: no cover
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ASCII-encodable text.
@@ -101,7 +101,7 @@ def ascii_text(draw, min_size=None, max_size=None):  # pragma: no cover
 
 
 @composite  # pragma: no cover
-def latin1_text(draw, min_size=None, max_size=None):
+def latin1_text(draw, min_size=0, max_size=None):
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ISO-8859-1-encodable text.
@@ -119,7 +119,7 @@ def latin1_text(draw, min_size=None, max_size=None):
 
 
 @composite
-def idna_text(draw, min_size=None, max_size=None):  # pragma: no cover
+def idna_text(draw, min_size=0, max_size=None):  # pragma: no cover
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates IDNA-encodable text.
@@ -186,10 +186,7 @@ def hostnames(
         internationalized domain names (IDNs).
     """
     labels = draw(
-        lists(
-            hostname_labels(allow_idn=allow_idn),
-            min_size=1, max_size=5, average_size=2
-        )
+        lists(hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5)
         .filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
     )
 
@@ -210,10 +207,7 @@ def path_segments(draw):  # pragma: no cover
     A strategy which generates URL path segments.
     """
     return draw(
-        iterables(
-            text(min_size=1, alphabet=_path_characters),
-            max_size=10, average_size=3,
-        )
+        iterables(text(min_size=1, alphabet=_path_characters), max_size=10)
     )
 
 

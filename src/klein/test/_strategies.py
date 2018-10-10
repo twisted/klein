@@ -12,7 +12,6 @@ from typing import Callable, Optional, Text, TypeVar
 
 from hyperlink import URL
 
-from hypothesis import HealthCheck, settings
 from hypothesis.strategies import (
     characters, composite, integers, iterables, lists, sampled_from, text
 )
@@ -23,12 +22,6 @@ Optional, Text  # Silence linter
 
 
 __all__ = ()
-
-
-settings.register_profile(
-    "patience", settings(suppress_health_check=[HealthCheck.too_slow])
-)
-settings.load_profile("patience")
 
 
 T = TypeVar('T')

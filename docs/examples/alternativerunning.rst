@@ -57,7 +57,8 @@ the same reactor or you want to run multiple Klein apps in the same reactor.
 A way to get around that is to manually setup the endpoint (see above)
 and manually start the reactor when it is convenient.
 
-Notice that, since ``Klein.run`` sets up logging to stdout for you, you will need to set that up manually as well.
+Notice that, since ``Klein.run`` sets up logging to stdout for you,
+you will need to set that up manually as well.
 Read more about logging with Twisted here:
 https://twistedmatrix.com/documents/current/core/howto/logger.html
 

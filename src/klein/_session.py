@@ -174,8 +174,11 @@ class SessionProcurer(object):
                         u"Cannot auto-initialize a session for this request."
                     )
                 session = yield self._store.newSession(sentSecurely, mechanism)
+            identifierInCookie = session.identifier
+            if not isinstance(identifierInCookie, str):
+                identifierInCookie = identifierInCookie.encode("ascii")
             request.addCookie(
-                cookieName, session.identifier, max_age=self._maxAge,
+                cookieName, identifierInCookie, max_age=self._maxAge,
                 domain=self._cookieDomain, path=self._cookiePath,
                 secure=sentSecurely, httpOnly=True,
             )

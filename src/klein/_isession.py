@@ -3,7 +3,10 @@ from typing import Any, TYPE_CHECKING
 
 import attr
 
-from constantly import NamedConstant, Names
+try:
+    from constantly import NamedConstant, Names
+except:
+    from twisted.python.constants import NamedConstant, Names
 
 from zope.interface import Attribute, Interface
 

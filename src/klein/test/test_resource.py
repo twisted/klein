@@ -6,7 +6,7 @@ from io import BytesIO
 try:
     from unittest.mock import Mock, call
 except Exception:
-    from mock import Mock, call  # type:ignore
+    from mock import Mock, call
 
 from six.moves.urllib.parse import parse_qs
 
@@ -14,6 +14,7 @@ from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
 from twisted.python.compat import _PY3, unicode
+from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
 from twisted.web.resource import Resource
@@ -23,7 +24,7 @@ from twisted.web.test.test_web import DummyChannel
 
 from werkzeug.exceptions import NotFound
 
-from .util import EqualityTestsMixin, TestCase
+from .util import EqualityTestsMixin
 from .. import Klein
 from .._interfaces import IKleinRequest
 from .._resource import (
@@ -199,7 +200,7 @@ class MockProducer(object):
 
 
 
-class KleinResourceEqualityTests(TestCase, EqualityTestsMixin):
+class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
     """
     Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
     """
@@ -232,7 +233,7 @@ class KleinResourceEqualityTests(TestCase, EqualityTestsMixin):
 
 
 
-class KleinResourceTests(TestCase):
+class KleinResourceTests(SynchronousTestCase):
     def setUp(self):
         self.app = Klein()
         self.kr = KleinResource(self.app)
@@ -1116,9 +1117,9 @@ class KleinResourceTests(TestCase):
         )
 
     if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"
+        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
     else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"
+        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
 
 
     def test_subroutedBranch(self):
@@ -1166,7 +1167,7 @@ class KleinResourceTests(TestCase):
         self.assertEqual(reported_length, actual_length)
 
 
-class ExtractURLpartsTests(TestCase):
+class ExtractURLpartsTests(SynchronousTestCase):
     """
     Tests for L{klein.resource._extractURLparts}.
     """
@@ -1258,7 +1259,7 @@ class ExtractURLpartsTests(TestCase):
         self.assertIsInstance(script_name, unicode)
 
 
-class GlobalAppTests(TestCase):
+class GlobalAppTests(SynchronousTestCase):
     """
     Tests for the global app object
     """

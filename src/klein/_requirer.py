@@ -72,6 +72,7 @@ class RequestLifecycle(object):
 
 
     def addFailureHook(self, failureHook):
+        # type: (Callable) -> None
         """
         Add a hook that will execute after a route has exited with some kind of
         exception.  This is for performing any cleanup or reporting which needs

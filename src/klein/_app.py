@@ -11,7 +11,7 @@ from contextlib import contextmanager
 try:
     from inspect import iscoroutine
 except ImportError:
-    def iscoroutine(*args, **kwargs):
+    def iscoroutine(*args, **kwargs):  # type: ignore
         return False
 from weakref import ref
 

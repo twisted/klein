@@ -5,6 +5,7 @@ import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.python.components import Componentized
+from twisted.python.failure import Failure
 
 from zope.interface import implementer
 
@@ -27,45 +28,68 @@ class RequestLifecycle(object):
     """
     Before and after hooks.
     """
-    _before = attr.ib(type=List, default=attr.Factory(list))
-    _after = attr.ib(type=List, default=attr.Factory(list))
+    _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
+    _commitHooks = attr.ib(type=List, default=attr.Factory(list))
 
-    def addBeforeHook(self, beforeHook, requires=(), provides=()):
+    def addPrepareHook(self, beforeHook, requires=(), provides=()):
         # type: (Callable, Sequence[IInterface], Sequence[IInterface]) -> None
         """
-        Add a hook that promises to supply the given interfaces as components
-        on the request, and requires the given requirements.
+        Add a hook that promises to prepare the request by supplying the given
+        interfaces as components on the request, and requires the given
+        requirements.
+
+        Prepare hooks are run I{before any} L{IDependencyInjector}s I{inject
+        their values}.
         """
         # TODO: topological requirements sort
-        self._before.append(beforeHook)
+        self._prepareHooks.append(beforeHook)
 
 
-    def addAfterHook(self, afterHook):
+    def addCommitHook(self, afterHook):
         # type: (Callable) -> None
         """
-        Add a hook that will execute after the request has completed.
+        Add a hook that will execute after the route has been successfully
+        invoked.  It is I{intended} to be invoked at the point after the
+        response has been computed, but before it has been sent to the client.
+        The name "commit" has a double meaning here:
+
+            - we are "committed" to sending the response at this point - it has
+              been
+
+            - this is the point at which where framework code might want to
+              "commit" any results to a backing store, such as committing a
+              database transaction started in a prepare hook.
+
+        However, given the wide API surface of Twisted's API request, it is
+        unfortunately impossible to provide strong guarantees about the timing
+        of this hook with respect to the HTTP protocol.  Application code
+        I{may} have written the headers and started the repsonse with
+        C{response.write}.
         """
-        self._after.append(afterHook)
+        self._commitHooks.append(afterHook)
 
 
     @inlineCallbacks
-    def runBeforeHooks(self, instance, request):
+    def runPrepareHooks(self, instance, request):
         # type: (Any, IRequest) -> Deferred
         """
-        Execute all the "before" hooks.
+        Execute all the hooks added with L{RequestLifecycle.addPrepareHook}.
+        This is invoked by the L{requires} route machinery.
 
         @param instance: The instance bound to the Klein route.
 
         @param request: The IRequest being processed.
         """
-        for hook in self._before:
+        for hook in self._prepareHooks:
             yield _call(instance, hook, request)
 
+
     @inlineCallbacks
-    def runAfterHooks(self, instance, request, result):
+    def runCommitHooks(self, instance, request, result):
         # type: (Any, IRequest, Any) -> Deferred
         """
-        Execute all "after" hooks.
+        Execute all the hooks added with L{RequestLifecycle.addCommitHook}.
+        This is invoked by the L{requires} route machinery.
 
         @param instance: The instance bound to the Klein route.
 
@@ -73,8 +97,26 @@ class RequestLifecycle(object):
 
         @param result: The result produced by the route.
         """
-        for hook in self._after:
+        for hook in self._commitHooks:
             yield _call(instance, hook, request, result)
+
+
+    @inlineCallbacks
+    def runFailureHooks(self, instance, request, failure):
+        # type: (Any, IRequest, Failure) -> Deferred
+        """
+        Execute all the hooks added with L{RequestLifecycle.addFailureHook}
+        This is invoked by the L{requires} route machinery.
+
+        @param instance: The instance bound to the Klein route.
+
+        @param request: The IRequest being processed.
+
+        @param failure: The failure which caused an error.
+        """
+        
+
+
 
 _routeDecorator = Any           # a decorator like @route
 _routeT = Any                   # a thing decorated by a decorator like @route
@@ -104,7 +146,7 @@ class Requirer(object):
             # type: (Callable) -> Callable
             def oneHook(lifecycle):
                 # type: (IRequestLifecycle) -> None
-                lifecycle.addBeforeHook(
+                lifecycle.addPrepareHook(
                     prerequisiteMethod, requires=requiresComponents,
                     provides=providesComponents
                 )
@@ -145,17 +187,23 @@ class Requirer(object):
                 # type: (Any, IRequest, *Any, **Any) -> Any
                 injected = routeParams.copy()
                 try:
-                    yield lifecycle.runBeforeHooks(instance, request)
-                    for (k, injector) in injectors.items():
-                        injected[k] = yield injector.injectValue(
-                            instance, request, routeParams
-                        )
-                except EarlyExit as ee:
-                    returnValue(ee.alternateReturnValue)
-                result = yield _call(instance, functionWithRequirements, *args,
-                                     **injected)
-                lifecycle.runAfterHooks(instance, request, result)
-                returnValue(result)
+                    try:
+                        yield lifecycle.runPrepareHooks(instance, request)
+                        for (k, injector) in injectors.items():
+                            injected[k] = yield injector.injectValue(
+                                instance, request, routeParams
+                            )
+                    except EarlyExit as ee:
+                        result = ee.alternateReturnValue
+                    else:
+                        result = yield _call(instance, functionWithRequirements, *args,
+                                             **injected)
+                except Exception:
+                    lifecycle.runFailureHooks(instance, request, result, Failure())
+                    raise
+                else:
+                    lifecycle.runCommitHooks(instance, request, result)
+                    returnValue(result)
 
             functionWithRequirements.injectionComponents = injectionComponents
             routeDecorator(router)

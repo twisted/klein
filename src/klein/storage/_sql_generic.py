@@ -172,7 +172,7 @@ class Transactor(object):
         """
         Start a transaction.
         """
-        self._transaction = yield self._newTransaction()  # type: ignore
+        self._transaction = yield self._newTransaction()
         # ^ https://github.com/python/mypy/issues/4688
         returnValue(self._transaction)
 

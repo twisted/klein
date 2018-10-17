@@ -43,8 +43,7 @@ class MemorySession(object):
         """
         result = {}
         for interface in interfaces:
-            authCB = cast(_authCB, self._authorizationCallback)
-            provider = authCB(interface, self, self._components)
+            provider = self._authorizationCallback(interface, self, self._components)
             if provider is not None:
                 result[interface] = provider
         return succeed(result)
@@ -129,7 +128,7 @@ class MemorySessionStore(object):
         storage = self._storage(isConfidential)
         identifier = hexlify(urandom(32)).decode('ascii')
         session = MemorySession(identifier, isConfidential, authenticatedBy,
-                                cast(_authFn, self.authorizationCallback))
+                                self.authorizationCallback)
         storage[identifier] = session
         return succeed(session)
 

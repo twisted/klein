@@ -32,8 +32,9 @@ if TYPE_CHECKING:               # pragma: no cover
     from typing import Type
     from mypy_extensions import DefaultNamedArg, NoReturn
     from twisted.internet.defer import Deferred
-    (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
-     Text, DefaultNamedArg, Union, NoReturn, Deferred, Type)
+    if not TYPE_CHECKING:
+        (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
+         Text, DefaultNamedArg, Union, NoReturn, Deferred, Type)
 else:
     def DefaultNamedArg(*ignore):
         pass
@@ -551,7 +552,7 @@ class FieldInjector(object):
             return finalForm.populateRequestValues(
                 self._componentized, instance, request
             )
-        self._lifecycle.addBeforeHook(
+        self._lifecycle.addPrepareHook(
             populateValuesHook, provides=[IFieldValues],
             requires=[ISession]
         )

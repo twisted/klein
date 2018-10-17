@@ -14,12 +14,13 @@ import attr
 from hypothesis import given, settings, strategies as st
 
 from twisted.internet.defer import Deferred, succeed
-from twisted.trial import unittest
+from twisted.trial.unittest import (
+    SynchronousTestCase, TestCase as AsynchronousTestCase
+)
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
 
 from .test_resource import _render, requestMock
-from .util import TestCase
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
 
@@ -175,7 +176,7 @@ def transformJSONObject(jsonObject, transformer):
     return visit(jsonObject)
 
 
-class TransformJSONObjectTests(unittest.SynchronousTestCase):
+class TransformJSONObjectTests(SynchronousTestCase):
     """
     Tests for L{transform_json_object}.
     """
@@ -227,7 +228,7 @@ class TransformJSONObjectTests(unittest.SynchronousTestCase):
                           set(), list.append)
 
 
-class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
+class ResolveDeferredObjectsTests(SynchronousTestCase):
     """
     Tests for L{resolve_deferred_objects}.
     """
@@ -318,7 +319,8 @@ class ResolveDeferredObjectsTests(unittest.SynchronousTestCase):
                       str(exception))
 
 
-class PlatingTests(TestCase):
+
+class PlatingTests(AsynchronousTestCase):
     """
     Tests for L{Plating}.
     """

@@ -30,6 +30,7 @@ class RequestLifecycle(object):
     """
     _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
     _commitHooks = attr.ib(type=List, default=attr.Factory(list))
+    _failureHooks = attr.ib(type=List, default=attr.Factory(list))
 
     def addPrepareHook(self, beforeHook, requires=(), provides=()):
         # type: (Callable, Sequence[IInterface], Sequence[IInterface]) -> None
@@ -54,7 +55,8 @@ class RequestLifecycle(object):
         The name "commit" has a double meaning here:
 
             - we are "committed" to sending the response at this point - it has
-              been
+              been computed by the routing layer, and all that remains is to
+              render it.
 
             - this is the point at which where framework code might want to
               "commit" any results to a backing store, such as committing a
@@ -67,6 +69,15 @@ class RequestLifecycle(object):
         C{response.write}.
         """
         self._commitHooks.append(afterHook)
+
+
+    def addFailureHook(self, failureHook):
+        """
+        Add a hook that will execute after a route has exited with some kind of
+        exception.  This is for performing any cleanup or reporting which needs
+        to happen after the fact in an error case.
+        """
+        self._failureHooks.append(failureHook)
 
 
     @inlineCallbacks
@@ -114,7 +125,8 @@ class RequestLifecycle(object):
 
         @param failure: The failure which caused an error.
         """
-        
+        for hook in self._failureHooks:
+            yield _call(instance, hook, request, failure)
 
 
 

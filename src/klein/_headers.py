@@ -23,6 +23,7 @@ __all__ = ()
 
 String = Union[bytes, Text]
 
+
 # Encoding/decoding header data
 
 HEADER_NAME_ENCODING  = "iso-8859-1"

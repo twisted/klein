@@ -5,7 +5,7 @@ Contributing to Klein
 Klein is an open source project that welcomes contributions of all kinds coming from the community, including:
 
 - code patches,
-- `documentation <https://klein.readthedocs.io/>`_ improvements,
+- `documentation <http://klein.readthedocs.org/>`_ improvements,
 - `bug reports <https://github.com/twisted/klein/issues>`_,
 - reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
 

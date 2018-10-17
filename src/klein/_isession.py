@@ -5,7 +5,7 @@ import attr
 
 try:
     from constantly import NamedConstant, Names
-except:
+except ImportError:
     from twisted.python.constants import NamedConstant, Names
 
 from zope.interface import Attribute, Interface

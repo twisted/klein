@@ -208,10 +208,13 @@ class Requirer(object):
                     except EarlyExit as ee:
                         result = ee.alternateReturnValue
                     else:
-                        result = yield _call(instance, functionWithRequirements, *args,
-                                             **injected)
+                        result = yield _call(
+                            instance, functionWithRequirements, *args,
+                            **injected
+                        )
                 except Exception:
-                    lifecycle.runFailureHooks(instance, request, result, Failure())
+                    lifecycle.runFailureHooks(instance, request, result,
+                                              Failure())
                     raise
                 else:
                     lifecycle.runCommitHooks(instance, request, result)

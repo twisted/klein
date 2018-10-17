@@ -43,7 +43,8 @@ class MemorySession(object):
         """
         result = {}
         for interface in interfaces:
-            provider = self._authorizationCallback(interface, self, self._components)
+            provider = self._authorizationCallback(interface, self,
+                                                   self._components)
             if provider is not None:
                 result[interface] = provider
         return succeed(result)

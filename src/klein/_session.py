@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_session -*-
 
 from typing import (
-    Any, Callable, Optional as _Optional, TYPE_CHECKING, Union, cast
+    Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
 )
 
 import attr

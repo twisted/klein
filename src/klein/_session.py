@@ -24,10 +24,10 @@ if TYPE_CHECKING:               # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
     from mypy_extensions import KwArg, VarArg, Arg
-    from typing import TypeVar, Awaitable, Dict
+    from typing import TypeVar, Awaitable, Dict, Text
     T = TypeVar('T')
     (IRequest, Arg, KwArg, VarArg, Callable, Dict, IInterface, Awaitable,
-     Componentized, IRequestLifecycle)
+     Componentized, IRequestLifecycle, Text)
 else:
     Arg = KwArg = lambda t, *x: t
 
@@ -101,7 +101,7 @@ class SessionProcurer(object):
         if request.isSecure():
             if forceInsecure:
                 tokenHeader = self._insecureTokenHeader
-                cookieName = self._insecureCookie
+                cookieName = self._insecureCookie  # type: Union[Text, bytes]
                 sentSecurely = False
             else:
                 tokenHeader = self._secureTokenHeader

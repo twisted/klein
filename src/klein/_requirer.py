@@ -214,8 +214,7 @@ class Requirer(object):
                             **injected
                         )
                 except Exception:
-                    lifecycle.runFailureHooks(instance, request, result,
-                                              Failure())
+                    lifecycle.runFailureHooks(instance, request, Failure())
                     raise
                 else:
                     lifecycle.runCommitHooks(instance, request, result)

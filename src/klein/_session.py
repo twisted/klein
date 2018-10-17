@@ -177,6 +177,8 @@ class SessionProcurer(object):
             identifierInCookie = session.identifier
             if not isinstance(identifierInCookie, str):
                 identifierInCookie = identifierInCookie.encode("ascii")
+            if not isinstance(cookieName, str):
+                cookieName = cookieName.decode("ascii")
             request.addCookie(
                 cookieName, identifierInCookie, max_age=self._maxAge,
                 domain=self._cookieDomain, path=self._cookiePath,

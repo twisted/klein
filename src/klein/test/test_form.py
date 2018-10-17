@@ -258,12 +258,12 @@ class TestForms(SynchronousTestCase):
         stub = StubTreq(TestObject(mem).router.resource())
         response = self.successResultOf(stub.get('https://localhost/render'))
         self.assertEqual(response.code, 200)
-        setCookie = response.cookies()[u'Klein-Secure-Session']
-        self.assertIn(
-            u'value="{}"'
-            .format(setCookie),
-            self.successResultOf(content(response)).decode("utf-8")
-        )
+        setCookie = response.cookies()['Klein-Secure-Session']
+        expected = 'value="{}"'.format(setCookie)
+        actual = self.successResultOf(content(response))
+        if not isinstance(expected, bytes):
+            actual = actual.decode("utf-8")
+        self.assertIn(expected, actual)
 
 
     def test_noSessionPOST(self):

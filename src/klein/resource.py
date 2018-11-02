@@ -59,5 +59,5 @@ class _SpecialModuleObject(object):
 
 
 preserve = modules[__name__]
-modules[__name__] = _SpecialModuleObject()
-modules[__name__].__preserve__ = preserve
+modules[__name__] = _SpecialModuleObject()  # type: ignore
+modules[__name__].__preserve__ = preserve   # type: ignore

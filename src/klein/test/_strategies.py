@@ -12,7 +12,6 @@ from typing import Callable, Iterable, Optional, Sequence, Text, TypeVar
 
 from hyperlink import DecodedURL, EncodedURL
 
-from hypothesis import HealthCheck, settings
 from hypothesis.strategies import (
     assume, characters, composite, integers, lists, sampled_from, text
 )
@@ -25,12 +24,6 @@ Iterable, Optional, Sequence, Text  # Silence linter
 
 
 __all__ = ()
-
-
-settings.register_profile(
-    "patience", settings(suppress_health_check=[HealthCheck.too_slow])
-)
-settings.load_profile("patience")
 
 
 T = TypeVar('T')
@@ -86,7 +79,7 @@ _idnaCharacters = None  # type: Optional[str]
 
 
 @composite
-def ascii_text(draw, min_size=None, max_size=None):  # pragma: no cover
+def ascii_text(draw, min_size=0, max_size=None):  # pragma: no cover
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ASCII-encodable text.
@@ -103,7 +96,7 @@ def ascii_text(draw, min_size=None, max_size=None):  # pragma: no cover
 
 
 @composite  # pragma: no cover
-def latin1_text(draw, min_size=None, max_size=None):
+def latin1_text(draw, min_size=0, max_size=None):
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates ISO-8859-1-encodable text.
@@ -121,7 +114,7 @@ def latin1_text(draw, min_size=None, max_size=None):
 
 
 @composite
-def idna_text(draw, min_size=None, max_size=None):  # pragma: no cover
+def idna_text(draw, min_size=0, max_size=None):  # pragma: no cover
     # type: (DrawCallable, Optional[int], Optional[int]) -> Text
     """
     A strategy which generates IDNA-encodable text.
@@ -209,10 +202,7 @@ def hostnames(
         internationalized domain names (IDNs).
     """
     labels = draw(
-        lists(
-            hostname_labels(allow_idn=allow_idn),
-            min_size=1, max_size=5, average_size=2
-        )
+        lists(hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5)
         .filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
     )
 

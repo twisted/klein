@@ -255,10 +255,7 @@ _path_characters = None  # type: Optional[str]
 def paths(draw):  # pragma: no cover
     # type: (DrawCallable) -> Sequence[Text]
     return draw(
-        lists(
-            text(min_size=1, alphabet=path_characters()),
-            max_size=10, average_size=3,
-        )
+        lists(text(min_size=1, alphabet=path_characters()), max_size=10)
     )
 
 

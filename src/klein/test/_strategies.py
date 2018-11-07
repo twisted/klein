@@ -16,7 +16,7 @@ from hypothesis.strategies import (
     assume, characters, composite, integers, lists, sampled_from, text
 )
 
-from idna import check_label
+from idna import IDNAError, check_label, encode as idna_encode
 
 from twisted.python.compat import _PY3, unicode
 
@@ -207,6 +207,14 @@ def hostnames(
     )
 
     name = u".".join(labels)
+
+    # Filter names that are not IDNA-encodable.
+    # We try pretty hard not to generate bogus names in the first place... but
+    # catching all cases is not trivial.
+    try:
+        idna_encode(name)
+    except IDNAError:
+        assume(False)
 
     return name
 

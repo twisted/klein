@@ -10,7 +10,7 @@ from typing import Optional, Text
 
 from hyperlink import DecodedURL
 
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis.strategies import binary, text
 
 from twisted.web.http_headers import Headers
@@ -81,10 +81,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         L{HTTPRequestWrappingIRequest.uri} matches the underlying legacy
         request URI.
         """
-        try:
-            uri = url.asURI()  # Normalize as (network-friendly) URI
-        except UnicodeError:
-            assume(False)  # url isn't encodable as a URI; toss it
+        uri = url.asURI()  # Normalize as (computer-friendly) URI
 
         path = (
             uri.replace(scheme=u"", host=u"", port=None)

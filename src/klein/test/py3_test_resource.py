@@ -1,12 +1,12 @@
 import twisted
+from twisted.trial.unittest import TestCase as AsynchronousTestCase
 
 from .test_resource import LeafResource, _render, requestMock
-from .util import TestCase
 from .. import Klein
 from .._resource import KleinResource
 
 
-class PY3KleinResourceTests(TestCase):
+class PY3KleinResourceTests(AsynchronousTestCase):
 
     def assertFired(self, deferred, result=None):
         """

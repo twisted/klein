@@ -1,4 +1,4 @@
-# -*- test-case-name: klein.test.test_irequest -*-
+# -*- test-case-name: klein.test.test_request_compat -*-
 # Copyright (c) 2017-2018. See LICENSE for details.
 
 """

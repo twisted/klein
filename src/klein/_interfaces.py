@@ -1,16 +1,74 @@
-from __future__ import absolute_import, division
+# Copyright (c) 2018. See LICENSE for details.
 
-from zope.interface import Attribute, Interface
+"""
+Internal interface definitions.
+
+All Zope Interface classes should be imported from here so that type checking
+works, since mypy doesn't otherwise get along with Zope Interface.
+"""
+
+from typing import TYPE_CHECKING
+
+from ._iapp import IKleinRequest
+from ._imessage import (
+    IHTTPHeaders as _IHTTPHeaders,
+    IHTTPMessage as _IHTTPMessage,
+    IHTTPRequest as _IHTTPRequest,
+    IHTTPResponse as _IHTTPResponse,
+    IMutableHTTPHeaders as _IMutableHTTPHeaders,
+)
+
+IKleinRequest  # Silence linter
 
 
-class IKleinRequest(Interface):
-    branch_segments = Attribute("Segments consumed by a branch route.")
-    mapper = Attribute("L{werkzeug.routing.MapAdapter}")
+if TYPE_CHECKING:
+    from typing import Union
 
-    def url_for(
-        self, endpoint, values=None, method=None,
-        force_external=False, append_unknown=True,
-    ):
-        """
-        L{werkzeug.routing.MapAdapter.build}
-        """
+    from ._headers import FrozenHTTPHeaders, MutableHTTPHeaders
+    from ._headers_compat import HTTPHeadersWrappingHeaders
+    from ._request import FrozenHTTPRequest
+    from ._request_compat import HTTPRequestWrappingIRequest
+    from ._response import FrozenHTTPResponse
+
+    IHTTPHeaders = Union[
+        _IHTTPHeaders,
+        _IMutableHTTPHeaders,
+        FrozenHTTPHeaders,
+        HTTPHeadersWrappingHeaders,
+        MutableHTTPHeaders,
+    ]
+
+    IMutableHTTPHeaders = Union[
+        _IMutableHTTPHeaders,
+        HTTPHeadersWrappingHeaders,
+        MutableHTTPHeaders,
+    ]
+
+    IHTTPMessage = Union[
+        _IHTTPMessage,
+        _IHTTPRequest,
+        _IHTTPResponse,
+        FrozenHTTPRequest,
+        FrozenHTTPResponse,
+    ]
+
+    IHTTPRequest = Union[
+        _IHTTPRequest,
+        FrozenHTTPRequest,
+        HTTPRequestWrappingIRequest,
+    ]
+
+    IHTTPResponse = Union[
+        _IHTTPResponse,
+        FrozenHTTPResponse,
+    ]
+
+else:
+    IHTTPHeaders        = _IHTTPHeaders
+    IMutableHTTPHeaders = _IMutableHTTPHeaders
+    IHTTPMessage        = _IHTTPMessage
+    IHTTPRequest        = _IHTTPRequest
+    IHTTPResponse       = _IHTTPResponse
+
+
+__all__ = ()

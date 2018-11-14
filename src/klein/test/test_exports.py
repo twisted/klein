@@ -32,14 +32,11 @@ class PublicSymbolsTestCase(unittest.TestCase):
         # type: () -> None
         """
         Test export of C{resource} from L{klein}.
-        (Move this into C{test_klein} after #224 is fixed.)
         """
         import klein as k
         import klein._app as a
 
-        self.assertIdentical(k.resource, a.resource)
-
-    test_klein_resource.todo = "See #224"
+        self.assertIdentical(k.resource()._app, a.resource()._app)
 
 
     def test_app(self):
@@ -78,5 +75,3 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
         self.assertIdentical(r.KleinResource, _r.KleinResource)
         self.assertIdentical(r.ensure_utf8_bytes, _r.ensure_utf8_bytes)
-
-    test_resource.todo = "See #224"

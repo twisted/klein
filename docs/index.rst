@@ -40,6 +40,7 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/nonglobalstate
     examples/extendandcompose
     examples/handlingerrors
+    examples/alternativerunning
 
 
 Contributing

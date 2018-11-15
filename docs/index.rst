@@ -39,6 +39,7 @@ These are examples that show how to use different parts of Klein, or use things 
     examples/subroutes
     examples/nonglobalstate
     examples/handlingerrors
+    examples/alternativerunning
     examples/disablingtracebacks
 
 

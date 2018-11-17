@@ -36,6 +36,11 @@ The following example implements a web server that will respond with "Hello, wor
 .. literalinclude:: codeexamples/helloWorld.py
 
 This imports ``run`` and ``route`` from the Klein package, and uses them directly.
+
+If your file is called ``app.py``, you can start the server by running::
+
+    python app.py
+
 It then starts a Twisted Web server on port 8080, listening on the loopback address.
 
 This works fine for basic applications.

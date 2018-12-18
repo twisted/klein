@@ -13,7 +13,7 @@ This will ensure that type checking works.
 
 from typing import AnyStr, Iterable, MutableSequence, Sequence, Text, Tuple
 
-from hyperlink import URL
+from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
@@ -23,7 +23,7 @@ from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
 
-AnyStr, Deferred, Iterable, IFount, Text, URL  # Silence linter
+AnyStr, DecodedURL, Deferred, Iterable, IFount, Text  # Silence linter
 
 
 __all__ = ()
@@ -192,7 +192,7 @@ class IHTTPRequest(IHTTPMessage):
     """
 
     method = Attribute("Request method.")  # type: Text
-    uri    = Attribute("Request URI.")     # type: URL
+    uri    = Attribute("Request URI.")     # type: DecodedURL
 
 
 

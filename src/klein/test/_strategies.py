@@ -8,17 +8,19 @@ from csv import reader as csvReader
 from os.path import dirname, join
 from string import ascii_letters, digits
 from sys import maxunicode
-from typing import Callable, Optional, Text, TypeVar
+from typing import Callable, Iterable, Optional, Sequence, Text, TypeVar
 
-from hyperlink import URL
+from hyperlink import DecodedURL, EncodedURL
 
 from hypothesis.strategies import (
-    characters, composite, integers, iterables, lists, sampled_from, text
+    assume, characters, composite, integers, lists, sampled_from, text
 )
+
+from idna import IDNAError, check_label, encode as idna_encode
 
 from twisted.python.compat import _PY3, unicode
 
-Optional, Text  # Silence linter
+Iterable, Optional, Sequence, Text  # Silence linter
 
 
 __all__ = ()
@@ -155,11 +157,32 @@ def hostname_labels(draw, allow_idn=True):  # pragma: no cover
     """
     if allow_idn:
         label = draw(idna_text(min_size=1, max_size=63))
+
+        try:
+            label.encode("ascii")
+        except UnicodeEncodeError:
+            # If the label doesn't encode to ASCII, then we need to check the
+            # length of the label after encoding to punycode and adding the
+            # xn-- prefix.
+            while len(label.encode("punycode")) > 63 - len("xn--"):
+                # Rather than bombing out, just trim from the end until it is
+                # short enough, so hypothesis doesn't have to generate new
+                # data.
+                label = label[:-1]
+
     else:
         label = draw(text(
             min_size=1, max_size=63,
             alphabet=unicode(ascii_letters + digits + u"-")
         ))
+
+    # Filter invalid labels.
+    # It would be better not to generate bogus labels in the first place... but
+    # that's not trivial.
+    try:
+        check_label(label)
+    except UnicodeError:
+        assume(False)
 
     return label
 
@@ -185,36 +208,68 @@ def hostnames(
 
     name = u".".join(labels)
 
+    # Filter names that are not IDNA-encodable.
+    # We try pretty hard not to generate bogus names in the first place... but
+    # catching all cases is not trivial.
+    try:
+        idna_encode(name)
+    except IDNAError:
+        assume(False)
+
     return name
 
 
-_path_characters = tuple(
-    unichr(i)
-    for i in range(maxunicode) if i not in (ord(c) for c in "#/?")
-)
+def path_characters():
+    # type: () -> str
+    """
+    Returns a string containing valid URL path characters.
+    """
+    global _path_characters
+
+    if _path_characters is None:
+        def chars():
+            # type: () -> Iterable[Text]
+            for i in range(maxunicode):
+                c = unichr(i)
+
+                # Exclude reserved characters
+                if c in "#/?":
+                    continue
+
+                # Exclude anything not UTF-8 compatible
+                try:
+                    c.encode("utf-8")
+                except UnicodeEncodeError:
+                    continue
+
+                yield c
+
+        _path_characters = "".join(chars())
+
+    return _path_characters
+
+_path_characters = None  # type: Optional[str]
+
 
 @composite
-def path_segments(draw):  # pragma: no cover
-    # type: (DrawCallable) -> Text
-    """
-    A strategy which generates URL path segments.
-    """
+def paths(draw):  # pragma: no cover
+    # type: (DrawCallable) -> Sequence[Text]
     return draw(
-        iterables(text(min_size=1, alphabet=_path_characters), max_size=10)
+        lists(text(min_size=1, alphabet=path_characters()), max_size=10)
     )
 
 
 @composite
-def http_urls(draw):  # pragma: no cover
-    # type: (DrawCallable) -> URL
+def encoded_urls(draw):  # pragma: no cover
+    # type: (DrawCallable) -> EncodedURL
     """
-    A strategy which generates (human-friendly, unicode) IRI-form L{URL}s.
-    Call the C{asURI} method on each URL to get a (network-friendly, ASCII)
-    URI.
+    A strategy which generates L{EncodedURL}s.
+    Call the L{EncodedURL.to_uri} method on each URL to get an HTTP
+    protocol-friendly URI.
     """
     port = draw(port_numbers(allow_zero=True))
     host = draw(hostnames())
-    path = draw(path_segments())
+    path = draw(paths())
 
     if port == 0:
         port = None
@@ -224,4 +279,15 @@ def http_urls(draw):  # pragma: no cover
         host=host, port=port, path=path,
     )
 
-    return URL(**args)
+    return EncodedURL(**args)
+
+
+@composite
+def decoded_urls(draw):  # pragma: no cover
+    # type: (DrawCallable) -> DecodedURL
+    """
+    A strategy which generates L{DecodedURL}s.
+    Call the L{EncodedURL.to_uri} method on each URL to get an HTTP
+    protocol-friendly URI.
+    """
+    return DecodedURL(draw(encoded_urls()))

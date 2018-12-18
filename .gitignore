@@ -3,6 +3,7 @@
 .DS_Store
 /.coverage
 /.coverage.*
+/.eggs
 /.hypothesis/
 /.mypy_cache
 /.tox/

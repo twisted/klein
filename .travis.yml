@@ -62,18 +62,18 @@ matrix:
     - python: 3.7
       env: TOXENV=coverage-py37-twcurrent,codecov
 
-    - python: pypy
+    - python: pypy2.7-6.0
       env: TOXENV=coverage-pypy2-tw160,codecov
-    - python: pypy
+    - python: pypy2.7-6.0
       env: TOXENV=coverage-pypy2-tw171,codecov
-    - python: pypy
+    - python: pypy2.7-6.0
       env: TOXENV=coverage-pypy2-twcurrent,codecov
 
-    - python: pypy3
+    - python: pypy3.5-6.0
       env: TOXENV=coverage-pypy3-tw160,codecov
-    - python: pypy3
+    - python: pypy3.5-6.0
       env: TOXENV=coverage-pypy3-tw171,codecov
-    - python: pypy3
+    - python: pypy3.5-6.0
       env: TOXENV=coverage-pypy3-twcurrent,codecov
 
     # Test against Twisted trunk in case something in development breaks us.

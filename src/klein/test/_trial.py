@@ -8,9 +8,9 @@ import sys
 from typing import Any
 
 from twisted import version as twistedVersion
-from twisted.trial.unittest import SynchronousTestCase as _TestCase
+from twisted.trial.unittest import SynchronousTestCase
 
-from zope.interface import Interface
+from zope.interface import Interface, implementer
 from zope.interface.exceptions import Invalid
 from zope.interface.verify import verifyObject
 
@@ -21,9 +21,9 @@ __all__ = ()
 
 
 
-class TestCase(_TestCase):
+class TestCase(SynchronousTestCase):
     """
-    Extensions to L{TestCase}.
+    Extensions to L{SynchronousTestCase}.
     """
 
     if (twistedVersion.major, twistedVersion.minor) < (16, 4):
@@ -59,3 +59,54 @@ class TestCase(_TestCase):
             self.assertTrue(verifyObject(interface, obj))
         except Invalid:
             self.fail("{} does not provide {}".format(obj, interface))
+
+
+
+class TestCaseTests(TestCase):
+    """
+    Tests for L{TestCase}.
+    """
+
+    class IFrobbable(Interface):
+        """
+        Frobbable object.
+        """
+        def frob():
+            """
+            Frob the object.
+            """
+
+
+    @implementer(IFrobbable)
+    class Frobbable(object):
+        """
+        Implements L{IFrobbable}.
+        """
+        def frob(self):
+            pass
+
+
+    @implementer(IFrobbable)
+    class NotFrobbable(object):
+        """
+        Does not implement L{IFrobbable}, despite declaring.
+        """
+
+
+    def testAssertProvidesPass(self):
+        """
+        L{TestCase.assertProvides} does not raise when C{interface} is provided
+        by C{obj}.
+        """
+        self.assertProvides(self.IFrobbable, self.Frobbable())
+
+
+    def testAssertProvidesFail(self):
+        """
+        L{TestCase.assertProvides} does not raise when C{interface} is not
+        provided by C{obj}.
+        """
+        self.assertRaises(
+            self.failureException,
+            self.assertProvides, self.IFrobbable, self.NotFrobbable(),
+        )

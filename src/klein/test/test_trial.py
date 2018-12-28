@@ -52,7 +52,9 @@ class TestCaseTests(TestCase):
         L{TestCase.assertProvides} does not raise when C{interface} is provided
         by C{obj}.
         """
-        self.assertProvides(self.IFrobbable, self.Frobbable())
+        frobbable = self.Frobbable()
+        self.assertProvides(self.IFrobbable, frobbable)
+        frobbable.frob()  # Coverage
 
 
     def test_assertProvidesFail(self):

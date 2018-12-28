@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "incremental",
             "six",
             "Tubes",
-            "Twisted>=15.5",
+            "Twisted>=15.5",  # 15.5 is the first version to support Py3.3+
             "typing",
             "Werkzeug",
             "zope.interface",

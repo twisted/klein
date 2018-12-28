@@ -57,5 +57,5 @@ class TestCase(_TestCase):
         """
         try:
             self.assertTrue(verifyObject(interface, obj))
-        except Invalid as e:
+        except Invalid:
             self.fail("{} does not provide {}".format(obj, interface))

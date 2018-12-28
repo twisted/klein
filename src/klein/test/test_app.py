@@ -466,7 +466,7 @@ class KleinTestCase(unittest.TestCase):
         L{Klein.run} called with tcp6 endpoint description.
         """
         app = Klein()
-        interface = "2001\:0DB8\:f00e\:eb00\:\:1"
+        interface = "2001\\:0DB8\\:f00e\\:eb00\\:\\:1"
         spec = "tcp6:8080:interface={0}".format(interface)
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()

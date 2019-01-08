@@ -6,7 +6,7 @@ from ._app import Klein, handle_errors, route, run, urlFor, url_for
 from ._plating import Plating
 from ._version import __version__ as _incremental_version
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     # Inform mypy of import shenanigans.
     from .resource import _SpecialModuleObject
     resource = _SpecialModuleObject()

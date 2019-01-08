@@ -21,7 +21,7 @@ from ._imessage import (
 IKleinRequest  # Silence linter
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from typing import Union
 
     from ._headers import FrozenHTTPHeaders, MutableHTTPHeaders

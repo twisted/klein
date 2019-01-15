@@ -178,6 +178,25 @@ class KleinTestCase(unittest.TestCase):
         self.assertIs(tr.app2, tr.app2)
 
 
+    def test_bindInstanceIgnoresBlankProperties(self):
+        """
+        L{Klein.__get__} doesn't propagate L{AttributeError} when
+        searching for the bound L{Klein} instance.
+        """
+
+        class ClassProperty(object):
+            def __get__(self, oself, owner):
+                raise AttributeError(
+                    "you just don't have that special something"
+                )
+
+        class Oddment(object):
+            __something__ = ClassProperty()
+            app = Klein()
+
+        self.assertIsInstance(Oddment().app, Klein)
+
+
     def test_submountedRoute(self):
         """
         L{Klein.subroute} adds functions as routable endpoints.

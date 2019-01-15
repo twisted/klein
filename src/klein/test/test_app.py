@@ -186,7 +186,9 @@ class KleinTestCase(unittest.TestCase):
 
         class ClassProperty(object):
             def __get__(self, oself, owner):
-                raise AttributeError("you just don't have that special something")
+                raise AttributeError(
+                    "you just don't have that special something"
+                )
 
         class Oddment(object):
             __something__ = ClassProperty()

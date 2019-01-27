@@ -10,7 +10,7 @@ from typing import Text, Union
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of, provides
 
-from hyperlink import URL
+from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
@@ -36,9 +36,9 @@ class FrozenHTTPRequest(object):
     Immutable HTTP request.
     """
 
-    method  = attrib(validator=instance_of(Text))       # type: Text
-    uri     = attrib(validator=instance_of(URL))        # type: URL
-    headers = attrib(validator=provides(IHTTPHeaders))  # type: IHTTPHeaders
+    method  = attrib(validator=instance_of(Text))        # type: Text
+    uri     = attrib(validator=instance_of(DecodedURL))  # type: DecodedURL
+    headers = attrib(validator=provides(IHTTPHeaders))   # type: IHTTPHeaders
 
     _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
 

@@ -16,6 +16,7 @@ if __name__ == "__main__":
             'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
             'Programming Language :: Python :: Implementation :: CPython',
             'Programming Language :: Python :: Implementation :: PyPy',
             'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
@@ -32,7 +33,7 @@ if __name__ == "__main__":
             "incremental",
             "six",
             "Tubes",
-            "Twisted>=15.5",
+            "Twisted>=15.5",  # 15.5 is the first version to support Py3.3+
             "typing",
             "Werkzeug",
             "zope.interface",

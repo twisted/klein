@@ -11,7 +11,7 @@ from typing import Text
 from attr import Factory, attrib, attrs
 from attr.validators import provides
 
-from hyperlink import URL
+from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
@@ -62,7 +62,7 @@ class HTTPRequestWrappingIRequest(object):
 
     @property
     def uri(self):
-        # type: () -> URL
+        # type: () -> DecodedURL
         request = self._request
 
         # This code borrows from t.w.server.Request._prePathURL.
@@ -86,7 +86,7 @@ class HTTPRequestWrappingIRequest(object):
         if path and path[0] == u"/":
             path = path[1:]
 
-        return URL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
+        return DecodedURL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
 
 
     @property

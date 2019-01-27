@@ -1,5 +1,4 @@
-dist: trusty
-sudo: false
+dist: xenial
 
 
 language: python
@@ -22,9 +21,9 @@ branches:
 #
 matrix:
   include:
-    - python: 3.6
+    - python: 3.7
       env: TOXENV=flake8
-    - python: 3.6
+    - python: 3.7
       env: TOXENV=mypy
 
     - python: 2.7
@@ -55,26 +54,33 @@ matrix:
     - python: 3.6
       env: TOXENV=coverage-py36-twcurrent,codecov
 
-    - python: pypy
+    - python: 3.7
+      env: TOXENV=coverage-py37-tw160,codecov
+    - python: 3.7
+      env: TOXENV=coverage-py37-tw171,codecov
+    - python: 3.7
+      env: TOXENV=coverage-py37-twcurrent,codecov
+
+    - python: pypy2.7-6.0
       env: TOXENV=coverage-pypy2-tw160,codecov
-    - python: pypy
+    - python: pypy2.7-6.0
       env: TOXENV=coverage-pypy2-tw171,codecov
-    - python: pypy
+    - python: pypy2.7-6.0
       env: TOXENV=coverage-pypy2-twcurrent,codecov
 
-    - python: pypy3
+    - python: pypy3.5-6.0
       env: TOXENV=coverage-pypy3-tw160,codecov
-    - python: pypy3
+    - python: pypy3.5-6.0
       env: TOXENV=coverage-pypy3-tw171,codecov
-    - python: pypy3
+    - python: pypy3.5-6.0
       env: TOXENV=coverage-pypy3-twcurrent,codecov
 
     # Test against Twisted trunk in case something in development breaks us.
     # This is allowed to fail below, since the bug may be in Twisted.
     - python: 2.7
       env: TOXENV=coverage-py27-twtrunk,codecov
-    - python: 3.6
-      env: TOXENV=coverage-py36-twtrunk,codecov
+    - python: 3.7
+      env: TOXENV=coverage-py37-twtrunk,codecov
 
     - python: 2.7
       env: TOXENV=twistedchecker-diff
@@ -86,7 +92,7 @@ matrix:
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
     - env: TOXENV=coverage-py27-twtrunk,codecov
-    - env: TOXENV=coverage-py36-twtrunk,codecov
+    - env: TOXENV=coverage-py37-twtrunk,codecov
 
     # This is not yet required.
     - env: TOXENV=twistedchecker-diff

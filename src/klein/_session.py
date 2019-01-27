@@ -180,7 +180,7 @@ class SessionProcurer(object):
             if not isinstance(cookieName, str):
                 cookieName = cookieName.decode("ascii")
             request.addCookie(
-                cookieName, identifierInCookie, max_age=self._maxAge,
+                cookieName, identifierInCookie, max_age=str(self._maxAge),
                 domain=self._cookieDomain, path=self._cookiePath,
                 secure=sentSecurely, httpOnly=True,
             )

@@ -23,6 +23,11 @@ from .._headers import (
     normalizeHeaderName, normalizeRawHeaders, normalizeRawHeadersFrozen,
 )
 
+try:
+    from twisted.web.http_headers import _sanitizeLinearWhitespace
+except ImportError:
+    _sanitizeLinearWhitespace = None
+
 # Silence linter
 AnyStr, Dict, Iterable, List, Optional, RawHeaders, Text, Tuple
 
@@ -50,6 +55,17 @@ def decodeValue(name):
     # type: (bytes) -> Text
     return name.decode(HEADER_VALUE_ENCODING)
 
+
+def _twistedHeaderNormalize(value):
+    # type: (Text) -> Text
+    """
+    Normalize the given header value according to the rules of the installed
+    Twisted version.
+    """
+    if _sanitizeLinearWhitespace is None:
+        return value
+    else:
+        return _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
 
 
 class EncodingTests(TestCase):
@@ -263,7 +279,8 @@ class GetValuesTestsMixIn(object):
 
         for name, _values in textValues.items():
             cast(TestCase, self).assertEqual(
-                list(self.getValues(rawHeaders, name)), _values,
+                list(self.getValues(rawHeaders, name)),
+                [_twistedHeaderNormalize(value) for value in _values],
                 "header name: {!r}".format(name)
             )
 
@@ -294,7 +311,8 @@ class GetValuesTestsMixIn(object):
         for textName, values in binaryValues.items():
             cast(TestCase, self).assertEqual(
                 tuple(self.getValues(rawHeaders, textName)),
-                tuple(headerValueAsText(value) for value in values),
+                tuple(_twistedHeaderNormalize(headerValueAsText(value))
+                      for value in values),
                 "header name: {!r}".format(textName)
             )
 

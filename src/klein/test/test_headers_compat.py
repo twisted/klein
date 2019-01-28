@@ -5,6 +5,8 @@
 Tests for L{klein._headers}.
 """
 
+from typing import Text
+
 from twisted.web.http_headers import Headers
 
 from ._trial import TestCase
@@ -15,7 +17,7 @@ from .._headers import (
 from .._headers_compat import HTTPHeadersWrappingHeaders
 
 # Silence linter
-IMutableHTTPHeaders, RawHeaders
+IMutableHTTPHeaders, RawHeaders, Text
 
 
 try:

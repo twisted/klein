@@ -12,8 +12,9 @@ from typing import Callable, Iterable, Optional, Sequence, Text, TypeVar
 
 from hyperlink import DecodedURL, EncodedURL
 
+from hypothesis import assume
 from hypothesis.strategies import (
-    assume, characters, composite, integers, lists, sampled_from, text
+    characters, composite, integers, lists, sampled_from, text
 )
 
 from idna import IDNAError, check_label, encode as idna_encode

@@ -8,7 +8,7 @@ import sys
 from typing import Any
 
 from twisted import version as twistedVersion
-from twisted.trial.unittest import SynchronousTestCase as _TestCase
+from twisted.trial.unittest import SynchronousTestCase
 
 from zope.interface import Interface
 from zope.interface.exceptions import Invalid
@@ -21,9 +21,9 @@ __all__ = ()
 
 
 
-class TestCase(_TestCase):
+class TestCase(SynchronousTestCase):
     """
-    Extensions to L{TestCase}.
+    Extensions to L{SynchronousTestCase}.
     """
 
     if (twistedVersion.major, twistedVersion.minor) < (16, 4):
@@ -57,5 +57,5 @@ class TestCase(_TestCase):
         """
         try:
             self.assertTrue(verifyObject(interface, obj))
-        except Invalid as e:
+        except Invalid:
             self.fail("{} does not provide {}".format(obj, interface))

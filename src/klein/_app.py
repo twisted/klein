@@ -147,7 +147,10 @@ class Klein(object):
 
         if self._boundAs is None:
             for name in dir(owner):
-                obj = getattr(owner, name)
+                # Properties may raise an AttributeError on access even though
+                # they're visible on the instance, we can ignore those because
+                # Klein instances won't raise AttributeError.
+                obj = getattr(owner, name, None)
                 if obj is self:
                     self._boundAs = name
                     break

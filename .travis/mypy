@@ -14,15 +14,18 @@ tmp="$(mktemp -t mypy.XXXX)";
 #
 # Notes:
 #
-# * mypy notices trial's use of a skip marker attribute on functions and
-#   complains that it's not part of a function object's interface, so we
-#   ignore: has no attribute "skip". Same with "todo".
-#
 # * Filters applied only to specific files are things to fix in either Klein or
 #   in mypy.
 #
 # * "type alias is invalid in runtime context" is a bug in mypy:
 #   https://github.com/python/mypy/issues/5354
+#
+# * "Method must have at least one argument" is because Zope Interface classes
+#    don't include 'self' in method arguments.
+#
+# * 'Argument "converter" to "attrib"...' is a bug in `mypy`:
+#   https://github.com/python/mypy/pull/6006
+#   https://github.com/python-attrs/attrs/issues/474
 #
 # * We run mypy with disallow_untyped_defs=True to require that type
 #   annotations are used, but we ignore the errors for files that are not yet
@@ -31,6 +34,8 @@ tmp="$(mktemp -t mypy.XXXX)";
 
 mypy "$@"      \
     | grep -v  \
+        -e ': error: Argument "converter" to "attrib" has incompatible type'                             \
+        -e ': error: Method must have at least one argument'                                             \
         -e ': error: The type alias to [A-Za-z]* is invalid in runtime context'                          \
         -e '^src/klein/_app.py:[0-9:]*: error: Function is missing a type annotation'                    \
         -e '^src/klein/_decorators.py:[0-9:]*: error: Function is missing a type annotation'             \

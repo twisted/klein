@@ -18,6 +18,23 @@ from .._headers_compat import HTTPHeadersWrappingHeaders
 IMutableHTTPHeaders, RawHeaders
 
 
+try:
+    from twisted.web.http_headers import _sanitizeLinearWhitespace
+except ImportError:
+    _sanitizeLinearWhitespace = None
+
+def _twistedHeaderNormalize(value):
+    # type: (Text) -> Text
+    """
+    Normalize the given header value according to the rules of the installed
+    Twisted version.
+    """
+    if _sanitizeLinearWhitespace is None:
+        return value
+    else:
+        return _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
+
+
 __all__ = ()
 
 
@@ -32,6 +49,11 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
         super(HTTPHeadersWrappingHeadersTests, self).assertRawHeadersEqual(
             sorted(rawHeaders1), sorted(rawHeaders2)
         )
+
+
+    def headerNormalize(self, value):
+        # type: (Text) -> Text
+        return _twistedHeaderNormalize(value)
 
 
     def headers(self, rawHeaders):

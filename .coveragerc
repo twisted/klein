@@ -1,3 +1,8 @@
 [run]
 branch = True
 source = klein
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:

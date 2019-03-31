@@ -174,7 +174,7 @@ need to put multiple items into the template?  The route for ``/places/...``
 can show us:
 
 .. literalinclude:: codeexamples/html.py
-    :lines: 52-68
+    :lines: 53-70
 
 Here you can see the special ``<slotname>:list`` renderer in use.  By
 specifying the ``render=`` attribute of a tag (in this case, a ``li`` tag) to

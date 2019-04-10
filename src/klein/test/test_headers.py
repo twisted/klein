@@ -51,6 +51,21 @@ def decodeValue(name):
     return name.decode(HEADER_VALUE_ENCODING)
 
 
+def headerValueSanitize(value):
+    # type: (AnyStr) -> AnyStr
+    """
+    Sanitize a header value by replacing linear whitespace with spaces.
+    """
+    if isinstance(value, bytes):
+        lws = [b'\r\n', b'\r', b'\n']
+        space = b' '
+    else:
+        lws = ['\r\n', '\r', '\n']
+        space = ' '
+    for l in lws:
+        value = value.replace(l, space)
+    return value
+
 
 class EncodingTests(TestCase):
     """
@@ -250,7 +265,8 @@ class GetValuesTestsMixIn(object):
         This test only inserts Latin1 text into the header values, which is
         valid data.
         """
-        textHeaders = tuple((name, value) for name, value in textPairs)
+        textHeaders = tuple((name, headerValueSanitize(value))
+                            for name, value in textPairs)
 
         textValues = defaultdict(list)  # type: Dict[Text, List[Text]]
         for name, value in textHeaders:
@@ -282,7 +298,7 @@ class GetValuesTestsMixIn(object):
         of.
         """
         rawHeaders = tuple(
-            (headerNameAsBytes(name), value) for name, value in pairs
+            (headerNameAsBytes(name), headerValueSanitize(value)) for name, value in pairs
         )
 
         binaryValues = defaultdict(list)  # type: Dict[Text, List[bytes]]

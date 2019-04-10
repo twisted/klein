@@ -298,7 +298,8 @@ class GetValuesTestsMixIn(object):
         of.
         """
         rawHeaders = tuple(
-            (headerNameAsBytes(name), headerValueSanitize(value)) for name, value in pairs
+            (headerNameAsBytes(name), headerValueSanitize(value))
+            for name, value in pairs
         )
 
         binaryValues = defaultdict(list)  # type: Dict[Text, List[bytes]]

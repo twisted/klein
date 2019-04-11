@@ -38,7 +38,7 @@ matrix:
     - python: 3.4
       env: TOXENV=coverage-py34-tw171,codecov
     - python: 3.4
-      env: TOXENV=coverage-py34-twcurrent,codecov
+      env: TOXENV=coverage-py34-tw189,codecov
 
     - python: 3.5
       env: TOXENV=coverage-py35-tw160,codecov

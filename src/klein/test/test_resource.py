@@ -1158,7 +1158,9 @@ class KleinResourceTests(SynchronousTestCase):
         request = requestMock(b'/alias')
         d = _render(self.kr, request)
         self.assertFired(d)
-        request.setResponseCode.assert_called_with(301)
+        # Werkzeug switched the redirect status code used from 301 to 308.
+        # Both are valid here.
+        self.assertIn(request.setResponseCode.call_args[0], [(301,), (308,)])
 
         actual_length = len(request.getWrittenData())
         reported_length = int(

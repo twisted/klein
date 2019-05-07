@@ -147,6 +147,33 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(to.calls, [(u'hello', 1234)])
 
 
+    def test_missingRequiredParameter(self):
+        # type: () -> None
+        """
+        If required fields are missing, a default error form is presented and
+        the form's handler is not called.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/handle',
+            data=dict(),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 400)
+        self.assertIn(
+            b"a value was required but none was supplied",
+            self.successResultOf(content(response))
+        )
+        self.assertEqual(to.calls, [])
+
+
     def test_noName(self):
         # type: () -> None
         """

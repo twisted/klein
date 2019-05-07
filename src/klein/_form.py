@@ -140,8 +140,10 @@ class Field(object):
         @return: A new set of tags to include in a template.
         @rtype: iterable of L{twisted.web.template.Tag}
         """
-        input_tag = tags.input(type=self.formInputType,
-                               name=self.formFieldName, value=self.value)
+        input_tag = tags.input(
+            type=self.formInputType, name=self.formFieldName,
+            value=(self.value if self.value is not None else "")
+        )
         error_tags = []
         if self.error:
             error_tags.append(tags.div(class_="klein-form-validation-error")

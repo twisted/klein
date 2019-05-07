@@ -5,7 +5,6 @@ import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.python.components import Componentized
-from twisted.python.failure import Failure
 
 from zope.interface import implementer
 
@@ -26,11 +25,9 @@ if TYPE_CHECKING:               # pragma: no cover
 @attr.s
 class RequestLifecycle(object):
     """
-    Before and after hooks.
+    Mechanism to run hooks at the start of a request managed by a L{Requirer}.
     """
     _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
-    _commitHooks = attr.ib(type=List, default=attr.Factory(list))
-    _failureHooks = attr.ib(type=List, default=attr.Factory(list))
 
     def addPrepareHook(self, beforeHook, requires=(), provides=()):
         # type: (Callable, Sequence[IInterface], Sequence[IInterface]) -> None
@@ -46,41 +43,6 @@ class RequestLifecycle(object):
         self._prepareHooks.append(beforeHook)
 
 
-    def addCommitHook(self, afterHook):
-        # type: (Callable) -> None
-        """
-        Add a hook that will execute after the route has been successfully
-        invoked.  It is I{intended} to be invoked at the point after the
-        response has been computed, but before it has been sent to the client.
-        The name "commit" has a double meaning here:
-
-            - we are "committed" to sending the response at this point - it has
-              been computed by the routing layer, and all that remains is to
-              render it.
-
-            - this is the point at which where framework code might want to
-              "commit" any results to a backing store, such as committing a
-              database transaction started in a prepare hook.
-
-        However, given the wide API surface of Twisted's API request, it is
-        unfortunately impossible to provide strong guarantees about the timing
-        of this hook with respect to the HTTP protocol.  Application code
-        I{may} have written the headers and started the repsonse with
-        C{response.write}.
-        """
-        self._commitHooks.append(afterHook)
-
-
-    def addFailureHook(self, failureHook):
-        # type: (Callable) -> None
-        """
-        Add a hook that will execute after a route has exited with some kind of
-        exception.  This is for performing any cleanup or reporting which needs
-        to happen after the fact in an error case.
-        """
-        self._failureHooks.append(failureHook)
-
-
     @inlineCallbacks
     def runPrepareHooks(self, instance, request):
         # type: (Any, IRequest) -> Deferred
@@ -94,41 +56,6 @@ class RequestLifecycle(object):
         """
         for hook in self._prepareHooks:
             yield _call(instance, hook, request)
-
-
-    @inlineCallbacks
-    def runCommitHooks(self, instance, request, result):
-        # type: (Any, IRequest, Any) -> Deferred
-        """
-        Execute all the hooks added with L{RequestLifecycle.addCommitHook}.
-        This is invoked by the L{requires} route machinery.
-
-        @param instance: The instance bound to the Klein route.
-
-        @param request: The IRequest being processed.
-
-        @param result: The result produced by the route.
-        """
-        for hook in self._commitHooks:
-            yield _call(instance, hook, request, result)
-
-
-    @inlineCallbacks
-    def runFailureHooks(self, instance, request, failure):
-        # type: (Any, IRequest, Failure) -> Deferred
-        """
-        Execute all the hooks added with L{RequestLifecycle.addFailureHook}
-        This is invoked by the L{requires} route machinery.
-
-        @param instance: The instance bound to the Klein route.
-
-        @param request: The IRequest being processed.
-
-        @param failure: The failure which caused an error.
-        """
-        for hook in self._failureHooks:
-            yield _call(instance, hook, request, failure)
-
 
 
 _routeDecorator = Any           # a decorator like @route
@@ -200,25 +127,19 @@ class Requirer(object):
                 # type: (Any, IRequest, *Any, **Any) -> Any
                 injected = routeParams.copy()
                 try:
-                    try:
-                        yield lifecycle.runPrepareHooks(instance, request)
-                        for (k, injector) in injectors.items():
-                            injected[k] = yield injector.injectValue(
-                                instance, request, routeParams
-                            )
-                    except EarlyExit as ee:
-                        result = ee.alternateReturnValue
-                    else:
-                        result = yield _call(
-                            instance, functionWithRequirements, *args,
-                            **injected
+                    yield lifecycle.runPrepareHooks(instance, request)
+                    for (k, injector) in injectors.items():
+                        injected[k] = yield injector.injectValue(
+                            instance, request, routeParams
                         )
-                except Exception:
-                    lifecycle.runFailureHooks(instance, request, Failure())
-                    raise
+                except EarlyExit as ee:
+                    result = ee.alternateReturnValue
                 else:
-                    lifecycle.runCommitHooks(instance, request, result)
-                    returnValue(result)
+                    result = yield _call(
+                        instance, functionWithRequirements, *args,
+                        **injected
+                    )
+                returnValue(result)
 
             functionWithRequirements.injectionComponents = injectionComponents
             routeDecorator(router)

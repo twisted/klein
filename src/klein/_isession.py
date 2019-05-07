@@ -5,7 +5,7 @@ import attr
 
 try:
     from constantly import NamedConstant, Names
-except ImportError:
+except ImportError:             # pragma: no cover
     from twisted.python.constants import NamedConstant, Names
 
 from zope.interface import Attribute, Interface

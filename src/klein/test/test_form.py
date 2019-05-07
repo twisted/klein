@@ -125,11 +125,14 @@ def simpleFormRouter():
     requirer = Requirer()
     calls = []
 
-    @requirer.require(router.route("/getme", methods=['GET']),
-                      name=Field.text(), value=Field.number())
-    def justGet(name, value):
+    @requirer.require(
+        router.route("/getme", methods=['GET']),
+        name=Field.text(), value=Field.number(),
+        custom=Field(formInputType='number', converter=int, required=False),
+    )
+    def justGet(name, value, custom):
         # type: (str, int) -> bytes
-        calls.append((name, value))
+        calls.append((name, value or custom))
         return b'got'
 
     return router, calls
@@ -321,6 +324,35 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(errors), 1)
         self.assertEquals(errors[0].text, "not a valid number")
 
+
+    def test_customParameterValidation(self):
+        # type: () -> None
+        """
+        When a custom parameter fails to validate by raising ValueError - for
+        example, a non-number passed to a numeric Field, the request fails with
+        a 400 and the default validation failure handler displays a form which
+        explains the error.
+        """
+        router, calls = simpleFormRouter()
+
+        stub = StubTreq(router.resource())
+
+        response = self.successResultOf(stub.get(
+            b"https://localhost/getme?"
+            b"name=hello,%20big+world&value=0&custom=not+a+number"
+        ))
+        responseForm = self.successResultOf(content(response))
+        self.assertEqual(response.code, 400)
+        self.assertEqual(calls, [])
+        responseForm = self.successResultOf(content(response))
+        responseDom = ET.fromstring(responseForm)
+        errors = responseDom.findall(
+            ".//*[@class='klein-form-validation-error']")
+        self.assertEqual(len(errors), 1)
+        self.assertEquals(
+            errors[0].text,
+            "invalid literal for int() with base 10: 'not a number'"
+        )
 
     def test_handlingJSON(self):
         # type: () -> None

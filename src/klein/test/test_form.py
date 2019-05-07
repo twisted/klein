@@ -69,7 +69,7 @@ class TestObject(object):
     )
     def danglingParameter(self, dangling):
         # type: (str) -> None
-        ...
+        "..."
 
     @requirer.require(
         router.route("/handle", methods=['POST']),

@@ -81,6 +81,15 @@ class TestObject(object):
         return b'yay'
 
     @requirer.require(
+        router.route("/password-field", methods=["POST"]),
+        pw=Field.password()
+    )
+    def gotPassword(self, pw):
+        # type: (Text) -> bytes
+        self.calls.append(("password", pw))
+        return b'password received'
+
+    @requirer.require(
         router.route("/notrequired", methods=['POST']),
         name=Field.text(), value=Field.number(required=False, default=7.0)
     )
@@ -154,6 +163,31 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'yay')
         self.assertEqual(to.calls, [(u'hello', 1234)])
+
+
+    def test_handlingPassword(self):
+        # type: () -> None
+        """
+        From the perspective of form handling, passwords are handled like
+        strings.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/password-field',
+            data=dict(pw='asdfjkl;'),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertEqual(self.successResultOf(content(response)),
+                         b'password received')
+        self.assertEqual(to.calls, [(u'password', u'asdfjkl;')])
 
 
     def test_numberConstraints(self):

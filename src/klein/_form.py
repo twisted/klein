@@ -691,12 +691,12 @@ class Form(object):
 
     @classmethod
     def rendererFor(
-            cls,
-            decoratedFunction,  # type: _requirerFunctionWithForm
-            action,             # type: Text
-            method=u"POST",     # type: Text
-            enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
-            encoding="utf-8"                           # type: str
+        cls,
+        decoratedFunction,  # type: _requirerFunctionWithForm
+        action,             # type: Text
+        method=u"POST",     # type: Text
+        enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
+        encoding="utf-8"                           # type: str
     ):
         # type: (...) -> RenderableFormParam
         """

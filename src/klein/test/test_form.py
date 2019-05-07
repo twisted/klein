@@ -90,6 +90,15 @@ class TestObject(object):
         return b'okay'
 
     @requirer.require(
+        router.route("/constrained", methods=['POST']),
+        goldilocks=Field.number(minimum=3, maximum=9)
+    )
+    def constrained(self, goldilocks):
+        # type: (int) -> bytes
+        self.calls.append(('constrained', goldilocks))
+        return b'got it'
+
+    @requirer.require(
         router.route("/render", methods=['GET']),
         form=Form.rendererFor(handler, action=u'/handle')
     )
@@ -145,6 +154,43 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'yay')
         self.assertEqual(to.calls, [(u'hello', 1234)])
+
+
+    def test_numberConstraints(self):
+        # type: () -> None
+        """
+        Number parameters have minimum and maximum validations and the object
+        will not be called when the values exceed them.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        tooLow = self.successResultOf(stub.post(
+            'https://localhost/constrained',
+            data=dict(goldilocks='1'),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        tooHigh = self.successResultOf(stub.post(
+            'https://localhost/constrained',
+            data=dict(goldilocks='20'),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        justRight = self.successResultOf(stub.post(
+            'https://localhost/constrained',
+            data=dict(goldilocks='7'),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+
+        self.assertEqual(tooHigh.code, 400)
+        self.assertEqual(tooLow.code, 400)
+        self.assertEqual(justRight.code, 200)
+        self.assertEqual(self.successResultOf(content(justRight)), b'got it')
+        self.assertEqual(to.calls, [(u'constrained', 7)])
 
 
     def test_missingRequiredParameter(self):

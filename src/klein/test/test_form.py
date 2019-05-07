@@ -240,7 +240,8 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 500)
         errors = self.flushLoggedErrors(ValueError)
         self.assertEqual(len(errors), 1)
-        self.assertIn(str(errors[0].value), "Cannot extract unnamed form field.")
+        self.assertIn(str(errors[0].value),
+                      "Cannot extract unnamed form field.")
 
 
     def test_handlingGET(self):

@@ -32,6 +32,17 @@ class NoSessionResource(Data):
         return self.render_GET(request)
 
 
+class DanglingField(Field):
+    """
+    A dangling field that, for some reason, doesn't remember its own name when
+    told.
+    """
+
+    def maybeNamed(self, name):
+        # type: (Text) -> Field
+        return self
+
+
 @attr.s(hash=False)
 class TestObject(object):
     sessionStore = attr.ib(type=ISessionStore)
@@ -51,6 +62,14 @@ class TestObject(object):
         except NoSuchSession:
             # TODO: this should probably be a bit more frameworky.
             raise EarlyExit(NoSessionResource(b"CSRF failure", "text/plain"))
+
+    @requirer.require(
+        router.route("/dangling-param", methods=["POST"]),
+        dangling=DanglingField(lambda x: x, "text"),
+    )
+    def danglingParameter(self, dangling):
+        # type: (str) -> None
+        ...
 
     @requirer.require(
         router.route("/handle", methods=['POST']),
@@ -126,6 +145,29 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b'yay')
         self.assertEqual(to.calls, [(u'hello', 1234)])
+
+
+    def test_noName(self):
+        # type: () -> None
+        """
+        A handler for a Form with a Field that doesn't have a name will return
+        an error explaining the problem.
+        """
+        mem = MemorySessionStore()
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+        to = TestObject(mem)
+        stub = StubTreq(to.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/dangling-param',
+            data=dict(),
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 500)
+        errors = self.flushLoggedErrors(ValueError)
+        self.assertEqual(len(errors), 1)
+        self.assertIn(str(errors[0].value), "Cannot extract unnamed form field.")
 
 
     def test_handlingGET(self):

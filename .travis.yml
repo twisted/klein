@@ -62,18 +62,18 @@ matrix:
       env: TOXENV=coverage-py37-twcurrent,codecov
 
     - python: pypy2.7-6.0
-      env: TOXENV=coverage-pypy2-tw160,codecov
+      env: TOXENV=coverage-pypy2-tw160,codecov-pypy2
     - python: pypy2.7-6.0
-      env: TOXENV=coverage-pypy2-tw171,codecov
+      env: TOXENV=coverage-pypy2-tw171,codecov-pypy2
     - python: pypy2.7-6.0
-      env: TOXENV=coverage-pypy2-twcurrent,codecov
+      env: TOXENV=coverage-pypy2-twcurrent,codecov-pypy2
 
     - python: pypy3.5-6.0
-      env: TOXENV=coverage-pypy3-tw160,codecov
+      env: TOXENV=coverage-pypy3-tw160,codecov-pypy3
     - python: pypy3.5-6.0
-      env: TOXENV=coverage-pypy3-tw171,codecov
+      env: TOXENV=coverage-pypy3-tw171,codecov-pypy3
     - python: pypy3.5-6.0
-      env: TOXENV=coverage-pypy3-twcurrent,codecov
+      env: TOXENV=coverage-pypy3-twcurrent,codecov-pypy3
 
     # Test against Twisted trunk in case something in development breaks us.
     # This is allowed to fail below, since the bug may be in Twisted.

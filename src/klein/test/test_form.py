@@ -131,7 +131,7 @@ def simpleFormRouter():
         custom=Field(formInputType='number', converter=int, required=False),
     )
     def justGet(name, value, custom):
-        # type: (str, int) -> bytes
+        # type: (str, int, int) -> bytes
         calls.append((name, value or custom))
         return b'got'
 

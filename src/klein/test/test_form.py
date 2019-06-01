@@ -11,17 +11,20 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import nativeString
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.static import Data
+from twisted.web.template import Element, TagLoader, tags
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
     EarlyExit, ISession, ISessionStore, NoSuchSession, SessionMechanism
 )
+from twisted.web._element import renderer
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
-    from typing import Dict, Tuple, Union
+    from typing import Any, Dict, Tuple, Union
     from twisted.web.iweb import IRequest
-    IRequest, Text, Union, Dict, Tuple
+    from klein import RenderableForm
+    Any, IRequest, Text, Union, Dict, Tuple, RenderableForm
 
 
 
@@ -54,14 +57,16 @@ class TestObject(object):
     @requirer.prerequisite([ISession])
     @inlineCallbacks
     def procureASession(self, request):
-        # type: (IRequest) -> ISession
+        # type: (IRequest) -> Any
         try:
             yield (SessionProcurer(self.sessionStore,
                                    secureTokenHeader=b'X-Test-Session')
                    .procureSession(request))
         except NoSuchSession:
-            # TODO: this should probably be a bit more frameworky.
-            raise EarlyExit(NoSessionResource(b"CSRF failure", "text/plain"))
+            # Intentionally slightly buggy - if a session can't be procured,
+            # simply leave it out and rely on checkCSRF to ensure the session
+            # component is present before proceeding.
+            pass
 
     @requirer.require(
         router.route("/dangling-param", methods=["POST"]),
@@ -131,7 +136,60 @@ class TestObject(object):
         form=Form.rendererFor(handlerWithSubmit, action=u'/handle-submit')
     )
     def submitRenderer(self, form):
-        # type: (IRequest, Form) -> Form
+        # type: (IRequest, RenderableForm) -> RenderableForm
+        return form
+
+
+    @requirer.require(
+        router.route("/render-custom", methods=["GET"]),
+        form=Form.rendererFor(handler, action=u"/handle")
+    )
+    def customFormRender(self, form):
+        # type: (RenderableForm) -> Any
+        """
+        Include just the glue necessary for CSRF protection and let the
+        application render the rest of the form.
+        """
+        return Element(loader=TagLoader(tags.html(tags.body(form.glue()))))
+
+
+    @requirer.require(
+        router.route("/render-cascade", methods=["GET"]),
+        form=Form.rendererFor(handler, action=u"/handle")
+    )
+    def cascadeRenderer(self, form):
+        # type: (RenderableForm) -> RenderableForm
+
+        class CustomElement(Element):
+
+            @renderer
+            def customize(self, request, tag):
+                # type: (IRequest, Any) -> Any
+                return tag("customized")
+
+        return CustomElement(
+            loader=TagLoader(
+                form.render(None)(
+                    tags.div(class_="checkme", render="customize")
+                )
+            )
+        )
+
+
+    @requirer.require(
+        router.route("/handle-empty", methods=['POST']),
+    )
+    def emptyHandler(self):
+        # type: () -> bytes
+        return b'empty yay'     # pragma: no-cover
+
+
+    @requirer.require(
+        router.route("/render-empty", methods=['GET']),
+        form=Form.rendererFor(emptyHandler, action=u'/handle-empty')
+    )
+    def emptyRenderer(self, form):
+        # type: (RenderableForm) -> RenderableForm
         return form
 
 
@@ -460,7 +518,8 @@ class TestForms(SynchronousTestCase):
         responseDom = ET.fromstring(self.successResultOf(content(response)))
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'], '__klein_auto_submit__')
+        self.assertEqual(submitButton[0].attrib['name'],
+                         '__klein_auto_submit__')
 
 
     def test_renderingExplicitSubmit(self):
@@ -488,6 +547,88 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(submitButton), 1)
         self.assertEqual(submitButton[0].attrib['name'], 'button')
 
+
+    def test_renderingFormGlue(self):
+        # type: () -> None
+        """
+        When a form renderer renders just the glue, none of the rest of the
+        form is included.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        stub = StubTreq(TestObject(mem).router.resource())
+        response = self.successResultOf(stub.get(
+            'https://localhost/render-custom',
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
+                      b"text/html")
+        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        submitButton = responseDom.findall(".//*[@type='submit']")
+        self.assertEqual(len(submitButton), 0)
+        protectionField = responseDom.findall(".//*[@name='__csrf_protection__']")
+        self.assertEqual(protectionField[0].attrib['value'], session.identifier)
+
+
+    def test_renderingEmptyForm(self):
+        # type: () -> None
+        """
+        When a form renderer specifies a submit button, no automatic submit
+        button is rendered.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        stub = StubTreq(TestObject(mem).router.resource())
+        response = self.successResultOf(stub.get(
+            'https://localhost/render-empty',
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
+                      b"text/html")
+        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        submitButton = responseDom.findall(".//*[@type='submit']")
+        self.assertEqual(len(submitButton), 1)
+        self.assertEqual(submitButton[0].attrib['name'], '__klein_auto_submit__')
+        protectionField = responseDom.findall(".//*[@name='__csrf_protection__']")
+        self.assertEqual(protectionField[0].attrib['value'], session.identifier)
+
+
+    def test_renderLookupCascading(self):
+        """
+        RenderableForm doesn't interfere with normal renderer lookups.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        stub = StubTreq(TestObject(mem).router.resource())
+        response = self.successResultOf(stub.get(
+            'https://localhost/render-cascade',
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
+                      b"text/html")
+        responseText = self.successResultOf(content(response))
+        responseDom = ET.fromstring(responseText)
+        submitButton = responseDom.findall(".//*[@type='submit']")
+        self.assertEqual(len(submitButton), 1)
+        self.assertEqual(submitButton[0].attrib['name'], '__klein_auto_submit__')
+        sampleText = responseDom.findall(".//*[@class='checkme']")
+        self.assertEqual(len(sampleText), 1)
+        self.assertEqual(sampleText[0].text, "customized")
 
 
     def test_renderingWithNoSessionYet(self):

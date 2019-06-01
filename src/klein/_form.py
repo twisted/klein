@@ -3,7 +3,6 @@
 from __future__ import print_function, unicode_literals
 
 import json
-from itertools import count
 from typing import (
     Any, AnyStr, Callable, Dict, Iterable, List, Optional, Sequence,
     TYPE_CHECKING, Text, Union, cast
@@ -608,8 +607,6 @@ def checkCSRF(request):
         if token == session.identifier:
             # The token matches.  We're OK.
             return
-    else:
-        token = None
     # leak only the value passed, not the actual token, just in
     # case there's some additional threat vector there
     raise EarlyExit(CrossSiteRequestForgery(

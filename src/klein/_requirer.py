@@ -80,7 +80,20 @@ class Requirer(object):
     ):
         # type: (...) -> Callable[[Callable], Callable]
         """
-        Prerequisite.
+        Specify a component that is a pre-requisite of every request routed
+        through this requirer's C{require} method.  Used like so::
+
+            requirer = Requirer()
+
+            @requirer.prerequisite([IFoo])
+            @inlineCallbacks
+            def fooForRequest(request):
+                request.setComponent(IFoo, someFooComponent)
+
+        @note: C{requiresComponents} is, at this point, for the reader's
+            interest only, the framework will not topologically sort
+            dependencies; you must presently register prerequisites in the
+            order you want them to be called.
         """
         def decorator(prerequisiteMethod):
             # type: (Callable) -> Callable

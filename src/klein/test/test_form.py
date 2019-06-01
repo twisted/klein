@@ -17,7 +17,6 @@ from klein.interfaces import (
     ISession, ISessionStore, NoSuchSession, SessionMechanism,
     ValidationError
 )
-from twisted.web.error import MissingRenderMethod
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover

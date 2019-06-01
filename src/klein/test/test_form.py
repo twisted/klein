@@ -11,13 +11,12 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import nativeString
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.static import Data
-from twisted.web.template import Element, TagLoader, tags
+from twisted.web.template import Element, TagLoader, renderer, tags
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
     ISession, ISessionStore, NoSuchSession, SessionMechanism
 )
-from twisted.web._element import renderer
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
@@ -592,8 +591,11 @@ class TestForms(SynchronousTestCase):
         responseDom = ET.fromstring(self.successResultOf(content(response)))
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 0)
-        protectionField = responseDom.findall(".//*[@name='__csrf_protection__']")
-        self.assertEqual(protectionField[0].attrib['value'], session.identifier)
+        protectionField = responseDom.findall(
+            ".//*[@name='__csrf_protection__']"
+        )
+        self.assertEqual(protectionField[0].attrib['value'],
+                         session.identifier)
 
 
     def test_renderingEmptyForm(self):
@@ -619,9 +621,13 @@ class TestForms(SynchronousTestCase):
         responseDom = ET.fromstring(self.successResultOf(content(response)))
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'], '__klein_auto_submit__')
-        protectionField = responseDom.findall(".//*[@name='__csrf_protection__']")
-        self.assertEqual(protectionField[0].attrib['value'], session.identifier)
+        self.assertEqual(submitButton[0].attrib['name'],
+                         '__klein_auto_submit__')
+        protectionField = responseDom.findall(
+            ".//*[@name='__csrf_protection__']"
+        )
+        self.assertEqual(protectionField[0].attrib['value'],
+                         session.identifier)
 
 
     def test_renderLookupCascading(self):
@@ -647,7 +653,8 @@ class TestForms(SynchronousTestCase):
         responseDom = ET.fromstring(responseText)
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'], '__klein_auto_submit__')
+        self.assertEqual(submitButton[0].attrib['name'],
+                         '__klein_auto_submit__')
         sampleText = responseDom.findall(".//*[@class='checkme']")
         self.assertEqual(len(sampleText), 1)
         self.assertEqual(sampleText[0].text, "customized")
@@ -669,7 +676,8 @@ class TestForms(SynchronousTestCase):
         stub = StubTreq(testobj.router.resource())
         response = self.successResultOf(stub.post(
             'https://localhost/handle-validation',
-            headers={b'X-Test-Session': session.identifier}, json={"value": 300}
+            headers={b'X-Test-Session': session.identifier},
+            json={"value": 300}
         ))
         self.assertEqual(response.code, 200)
         self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
@@ -677,7 +685,8 @@ class TestForms(SynchronousTestCase):
         responseText = self.successResultOf(content(response))
         self.assertEqual(responseText, b"~special~")
         self.assertEqual(
-            [(k.pythonArgumentName, v) for k, v in testobj.calls[-1][1].prevalidationValues.items()],
+            [(k.pythonArgumentName, v) for k, v
+             in testobj.calls[-1][1].prevalidationValues.items()],
             [('value', 300)]
         )
 

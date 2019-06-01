@@ -348,7 +348,7 @@ class RenderableForm(object):
         Form renderers don't supply any render methods, so this just always
         raises L{MissingRenderMethod}.
         """
-        raise MissingRenderMethod(name)
+        raise MissingRenderMethod(self, name)
 
 
     def render(self, request):

@@ -10,13 +10,14 @@ from treq.testing import StubTreq
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import nativeString
 from twisted.trial.unittest import SynchronousTestCase
-from twisted.web.static import Data
 from twisted.web.template import Element, TagLoader, renderer, tags
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
-    ISession, ISessionStore, NoSuchSession, SessionMechanism
+    ISession, ISessionStore, NoSuchSession, SessionMechanism,
+    ValidationError
 )
+from twisted.web.error import MissingRenderMethod
 from klein.storage.memory import MemorySessionStore
 
 if TYPE_CHECKING:               # pragma: no cover
@@ -25,13 +26,6 @@ if TYPE_CHECKING:               # pragma: no cover
     from klein import RenderableForm
     Any, IRequest, Text, Union, Dict, Tuple, RenderableForm
 
-
-
-class NoSessionResource(Data):
-    def render_POST(self, request):
-        # type: (IRequest) -> bytes
-        request.setResponseCode(403)
-        return self.render_GET(request)
 
 
 class DanglingField(Field):
@@ -89,11 +83,10 @@ class TestObject(object):
         name=Field.text(), button=Field.submit(u"OK")
     )
     def handlerWithSubmit(self, name, button):
-        # type: (str, str) -> bytes
+        # type: (str, str) -> None
         """
         Form with a submit button.
         """
-        return b'yay with submit'
 
     @requirer.require(
         router.route("/password-field", methods=["POST"]),
@@ -166,12 +159,12 @@ class TestObject(object):
                 # type: (IRequest, Any) -> Any
                 return tag("customized")
 
+        form.validationErrors[form._form.fields[0]] = ValidationError(message=(
+            tags.div(class_="checkme", render="customize")
+        ))
+
         return CustomElement(
-            loader=TagLoader(
-                form.render(None)(
-                    tags.div(class_="checkme", render="customize")
-                )
-            )
+            loader=TagLoader(form)
         )
 
     @requirer.require(
@@ -201,7 +194,9 @@ class TestObject(object):
     )
     def emptyHandler(self):
         # type: () -> bytes
-        return b'empty yay'     # pragma: no-cover
+        """
+        Empty form handler; just for testing rendering.
+        """
 
 
     @requirer.require(
@@ -630,10 +625,11 @@ class TestForms(SynchronousTestCase):
                          session.identifier)
 
 
-    def test_renderLookupCascading(self):
+    def test_renderLookupError(self):
         # type: () -> None
         """
-        RenderableForm doesn't interfere with normal renderer lookups.
+        RenderableForm raises L{MissingRenderMethod} if anything attempst to
+        look up a render method on it.
         """
         mem = MemorySessionStore()
 
@@ -647,17 +643,10 @@ class TestForms(SynchronousTestCase):
             headers={b'X-Test-Session': session.identifier}
         ))
         self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
-        responseText = self.successResultOf(content(response))
-        responseDom = ET.fromstring(responseText)
-        submitButton = responseDom.findall(".//*[@type='submit']")
-        self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'],
-                         '__klein_auto_submit__')
-        sampleText = responseDom.findall(".//*[@class='checkme']")
-        self.assertEqual(len(sampleText), 1)
-        self.assertEqual(sampleText[0].text, "customized")
+        # print(self.successResultOf(response.content()).decode('utf-8'))
+        failures = self.flushLoggedErrors()
+        self.assertEqual(len(failures), 1)
+        self.assertIn("MissingRenderMethod", str(failures[0]))
 
 
     def test_customValidationHandling(self):

@@ -25,8 +25,6 @@ from ._isession import (
 
 if TYPE_CHECKING:               # pragma: no cover
     from ._storage.memory import MemorySessionStore, MemorySession
-    from ._storage.sql import (SessionStore, SQLAccount, IPTrackingProcurer,
-                               AccountSessionBinding)
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
     from ._isession import IRequestLifecycleT as _IRequestLifecycleT
@@ -34,14 +32,11 @@ if TYPE_CHECKING:               # pragma: no cover
 
     from typing import Union
 
-    ISessionStore = Union[_ISessionStore, MemorySessionStore,
-                          SessionStore]
-    ISessionProcurer = Union[_ISessionProcurer, SessionProcurer,
-                             IPTrackingProcurer]
+    ISessionStore = Union[_ISessionStore, MemorySessionStore]
+    ISessionProcurer = Union[_ISessionProcurer, SessionProcurer]
     ISession = Union[_ISession, MemorySession]
-    ISimpleAccount = Union[_ISimpleAccount, SQLAccount]
-    ISimpleAccountBinding = Union[_ISimpleAccountBinding,
-                                  AccountSessionBinding]
+    ISimpleAccount = _ISimpleAccount
+    ISimpleAccountBinding = _ISimpleAccountBinding
     IDependencyInjector = Union[_IDependencyInjector, Authorization,
                                 RenderableFormParam, FieldInjector, RequestURL,
                                 RequestComponent]

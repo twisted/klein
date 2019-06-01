@@ -36,10 +36,23 @@ from ._resource import KleinResource
 
 
 
-def _call(instance, f, *args, **kwargs):
-    if instance is not None or getattr(f, "__klein_bound__", False):
-        args = (instance,) + args
-    result = f(*args, **kwargs)
+def _call(__klein_instance__, __klein_f__, *args, **kwargs):
+    """
+    Call C{__klein_f__} with the given C{*args} and C{**kwargs}.
+
+    Insert C{__klein_instance__} as the first positional argument to
+    C{__klein_f__} if C{__klein_f__} is not decorated with
+    L{klein._decorators.bindable}.
+
+    @return: The result of C{__klein_f__}; additionally, if C{__klein_f__}
+        returns a coroutine, instead return the Deferred created by calling
+        C{ensureDeferred} on it.
+    """
+    if __klein_instance__ is not None or getattr(
+            __klein_f__, "__klein_bound__", False
+    ):
+        args = (__klein_instance__,) + args
+    result = __klein_f__(*args, **kwargs)
     if iscoroutine(result):
         result = ensureDeferred(result)
     return result

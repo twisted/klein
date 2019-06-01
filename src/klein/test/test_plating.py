@@ -35,6 +35,7 @@ page = Plating(
         tags.body(
             tags.h1(slot("title")),
             tags.div(slot(Plating.CONTENT), Class="content"),
+            tags.div(id="rendermethod", render="registeredRenderMethod")
         ),
     ),
 )
@@ -66,6 +67,18 @@ def deferredEnwidget(a, b):
     return {"a": succeed(a), "b": succeed(b)}
 
 
+@page.renderMethod
+def registeredRenderMethod(*args):
+    """
+    Register a render method with the page so that the template can use it.
+    """
+    # Variable signature because since it's for testing, 'page' here has the
+    # unusual property that is used in both bound (i.e. "has self") and unbound
+    # contexts.
+    tag = args[-1]
+    return tag("(self)" if len(args) == 3 else "", "some text!")
+
+
 class InstanceWidget(object):
     """
     A class with a method that's a L{Plating.widget}.
@@ -95,8 +108,8 @@ class DeferredValue(object):
 
     @param deferred: The L{Deferred} representing the value.
     """
-    value = attr.ib()
-    deferred = attr.ib(attr.Factory(Deferred))
+    value = attr.ib()  # type: object
+    deferred = attr.ib(attr.Factory(Deferred))  # type: Deferred
 
     def resolve(self):
         """
@@ -270,7 +283,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return PlatedElement(slot_data=value,
                                      preloaded=tags.html(),
                                      boundInstance=None,
-                                     presentationSlots={})
+                                     presentationSlots={},
+                                     renderers={})
             else:
                 return value
 
@@ -364,6 +378,9 @@ class PlatingTests(AsynchronousTestCase):
 
         self.assertIn(b'<span>test-instance-data-confirmed</span>', written)
         self.assertIn(b'<title>default title unchanged</title>', written)
+        self.assertIn(b'<div id="rendermethod">(self)some text!</div>',
+                      written)
+
 
     def test_template_json(self):
         """
@@ -454,6 +471,20 @@ class PlatingTests(AsynchronousTestCase):
         """
         self.assertEqual(enwidget(5, 6), {"a": 5, "b": 6})
         self.assertEqual(InstanceWidget().enwidget(7, 8), {"a": 7, "b": 8})
+
+
+    def test_renderMethod(self):
+        """
+        L{Plating.renderMethod} registers a renderer that may be used by the
+        L{Plating}'s template.
+        """
+        @page.routed(self.app.route("/"), [])
+        def rsrc(request):
+            return {}
+
+        request, written = self.get(b"/")
+        self.assertIn(b'<div id="rendermethod">some text!</div>', written)
+
 
     def test_widget_html(self):
         """

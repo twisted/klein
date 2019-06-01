@@ -255,6 +255,15 @@ class GetValuesTestsMixIn(object):
             )
 
 
+    def headerNormalize(self, value):
+        # type: (Text) -> Text
+        """
+        Test hook for the normalization of header text values, which is a
+        behavior Twisted has changed after version 18.9.0.
+        """
+        return value
+
+
     @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
     def test_getTextName(self, textPairs):
         # type: (Iterable[Tuple[Text, Text]]) -> None
@@ -279,7 +288,8 @@ class GetValuesTestsMixIn(object):
 
         for name, _values in textValues.items():
             cast(TestCase, self).assertEqual(
-                list(self.getValues(rawHeaders, name)), _values,
+                list(self.getValues(rawHeaders, name)),
+                [self.headerNormalize(value) for value in _values],
                 "header name: {!r}".format(name)
             )
 
@@ -311,7 +321,8 @@ class GetValuesTestsMixIn(object):
         for textName, values in binaryValues.items():
             cast(TestCase, self).assertEqual(
                 tuple(self.getValues(rawHeaders, textName)),
-                tuple(headerValueAsText(value) for value in values),
+                tuple(self.headerNormalize(headerValueAsText(value))
+                      for value in values),
                 "header name: {!r}".format(textName)
             )
 

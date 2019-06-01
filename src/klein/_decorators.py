@@ -12,10 +12,9 @@ def bindable(bindable):
     C{request}.  However, for decorators that must be able to live between
     C{@route} and the user's function, but still need to manipulate the
     C{request} object, they need to be invoked with a consistent argument
-    signature.  A method decorated with C{@klein_bindable} will therefore
-    always take C{instance, request} as its first two arguments, even if
-    C{instance} is C{None} when the L{Klein} object is not bound to an
-    instance.
+    signature.  A method decorated with C{@bindable} will therefore always take
+    C{instance, request} as its first two arguments, even if C{instance} is
+    C{None} when the L{Klein} object is not bound to an instance.
 
     @return: its argument, modified to mark it as unconditinally requiring an
         instance argument.

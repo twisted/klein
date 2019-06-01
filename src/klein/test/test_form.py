@@ -15,7 +15,7 @@ from twisted.web.template import Element, TagLoader, tags
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
-    EarlyExit, ISession, ISessionStore, NoSuchSession, SessionMechanism
+    ISession, ISessionStore, NoSuchSession, SessionMechanism
 )
 from twisted.web._element import renderer
 from klein.storage.memory import MemorySessionStore
@@ -174,6 +174,27 @@ class TestObject(object):
                 )
             )
         )
+
+    @requirer.require(
+        router.route("/handle-validation", methods=['POST']),
+        value=Field.number(maximum=10),
+    )
+    def customValidation(self, value):
+        # type: (int) -> None
+        """
+        never called.
+        """
+
+    @requirer.require(
+        Form.onValidationFailureFor(customValidation)
+    )
+    def customFailureHandling(self, values):
+        # type: (RenderableForm) -> bytes
+        """
+        Handle validation failure.
+        """
+        self.calls.append(('validation', values))
+        return b'~special~'
 
 
     @requirer.require(
@@ -604,6 +625,7 @@ class TestForms(SynchronousTestCase):
 
 
     def test_renderLookupCascading(self):
+        # type: () -> None
         """
         RenderableForm doesn't interfere with normal renderer lookups.
         """
@@ -629,6 +651,35 @@ class TestForms(SynchronousTestCase):
         sampleText = responseDom.findall(".//*[@class='checkme']")
         self.assertEqual(len(sampleText), 1)
         self.assertEqual(sampleText[0].text, "customized")
+
+
+    def test_customValidationHandling(self):
+        # type: () -> None
+        """
+        L{Form.onValidationFailureFor} handles form validation failures by
+        handing its thing a renderable form.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        testobj = TestObject(mem)
+        stub = StubTreq(testobj.router.resource())
+        response = self.successResultOf(stub.post(
+            'https://localhost/handle-validation',
+            headers={b'X-Test-Session': session.identifier}, json={"value": 300}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
+                      b"text/html")
+        responseText = self.successResultOf(content(response))
+        self.assertEqual(responseText, b"~special~")
+        self.assertEqual(
+            [(k.pythonArgumentName, v) for k, v in testobj.calls[-1][1].prevalidationValues.items()],
+            [('value', 300)]
+        )
 
 
     def test_renderingWithNoSessionYet(self):

@@ -262,6 +262,18 @@ class Field(object):
         return cls(converter=bounded_number, formInputType="number", **kw)
 
 
+    @classmethod
+    def submit(cls, value):
+        # type: (Text) -> Field
+        """
+        A field representing a submit button, with a value (displayed on the
+        button).
+        """
+        return cls(converter=textConverter, formInputType="submit",
+                   noLabel=True, default=value)
+
+
+
 @implementer(IRenderable)
 @attr.s
 class RenderableForm(object):

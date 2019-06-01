@@ -81,6 +81,17 @@ class TestObject(object):
         return b'yay'
 
     @requirer.require(
+        router.route("/handle-submit", methods=['POST']),
+        name=Field.text(), button=Field.submit(u"OK")
+    )
+    def handlerWithSubmit(self, name, button):
+        # type: (str, str) -> bytes
+        """
+        Form with a submit button.
+        """
+        return b'yay with submit'
+
+    @requirer.require(
         router.route("/password-field", methods=["POST"]),
         pw=Field.password()
     )
@@ -112,6 +123,14 @@ class TestObject(object):
         form=Form.rendererFor(handler, action=u'/handle')
     )
     def renderer(self, form):
+        # type: (IRequest, Form) -> Form
+        return form
+
+    @requirer.require(
+        router.route("/render-submit", methods=['GET']),
+        form=Form.rendererFor(handlerWithSubmit, action=u'/handle-submit')
+    )
+    def submitRenderer(self, form):
         # type: (IRequest, Form) -> Form
         return form
 
@@ -438,6 +457,37 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
                       b"text/html")
+        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        submitButton = responseDom.findall(".//*[@type='submit']")
+        self.assertEqual(len(submitButton), 1)
+        self.assertEqual(submitButton[0].attrib['name'], '__klein_auto_submit__')
+
+
+    def test_renderingExplicitSubmit(self):
+        # type: () -> None
+        """
+        When a form renderer specifies a submit button, no automatic submit
+        button is rendered.
+        """
+        mem = MemorySessionStore()
+
+        session = self.successResultOf(
+            mem.newSession(True, SessionMechanism.Header)
+        )
+
+        stub = StubTreq(TestObject(mem).router.resource())
+        response = self.successResultOf(stub.get(
+            'https://localhost/render-submit',
+            headers={b'X-Test-Session': session.identifier}
+        ))
+        self.assertEqual(response.code, 200)
+        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
+                      b"text/html")
+        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        submitButton = responseDom.findall(".//*[@type='submit']")
+        self.assertEqual(len(submitButton), 1)
+        self.assertEqual(submitButton[0].attrib['name'], 'button')
+
 
 
     def test_renderingWithNoSessionYet(self):

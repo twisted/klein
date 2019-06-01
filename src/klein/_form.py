@@ -97,7 +97,6 @@ class Field(object):
     noLabel = attr.ib(type=bool, default=False)
     value = attr.ib(type=Text, default=u"")
     error = attr.ib(type=ValidationError, default=None)
-    order = attr.ib(type=int, default=attr.Factory(lambda: next(count())))
 
     # IRequiredParameter
     def registerInjector(self, injectionComponents, parameterName,

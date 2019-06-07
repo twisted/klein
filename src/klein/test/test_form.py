@@ -1,6 +1,6 @@
 
-import xml.etree.ElementTree as ET
 from typing import List, TYPE_CHECKING, Text, cast
+from xml.etree import ElementTree
 
 import attr
 
@@ -409,7 +409,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 400)
         self.assertEqual(calls, [])
         responseForm = self.successResultOf(content(response))
-        responseDom = ET.fromstring(responseForm)
+        responseDom = ElementTree.fromstring(responseForm)
         errors = responseDom.findall(
             ".//*[@class='klein-form-validation-error']")
         self.assertEqual(len(errors), 1)
@@ -436,7 +436,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 400)
         self.assertEqual(calls, [])
         responseForm = self.successResultOf(content(response))
-        responseDom = ET.fromstring(responseForm)
+        responseDom = ElementTree.fromstring(responseForm)
         errors = responseDom.findall(
             ".//*[@class='klein-form-validation-error']")
         self.assertEqual(len(errors), 1)
@@ -529,7 +529,9 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
                       b"text/html")
-        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        responseDom = ElementTree.fromstring(
+            self.successResultOf(content(response))
+        )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
         self.assertEqual(submitButton[0].attrib['name'],
@@ -556,7 +558,9 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
                       b"text/html")
-        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        responseDom = ElementTree.fromstring(
+            self.successResultOf(content(response))
+        )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
         self.assertEqual(submitButton[0].attrib['name'], 'button')
@@ -582,7 +586,9 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
                       b"text/html")
-        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        responseDom = ElementTree.fromstring(
+            self.successResultOf(content(response))
+        )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 0)
         protectionField = responseDom.findall(
@@ -612,7 +618,9 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 200)
         self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
                       b"text/html")
-        responseDom = ET.fromstring(self.successResultOf(content(response)))
+        responseDom = ElementTree.fromstring(
+            self.successResultOf(content(response))
+        )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
         self.assertEqual(submitButton[0].attrib['name'],

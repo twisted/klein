@@ -13,7 +13,6 @@ if __name__ == "__main__":
             'Operating System :: OS Independent',
             'Programming Language :: Python',
             'Programming Language :: Python :: 2.7',
-            'Programming Language :: Python :: 3.4',
             'Programming Language :: Python :: 3.5',
             'Programming Language :: Python :: 3.6',
             'Programming Language :: Python :: 3.7',
@@ -41,8 +40,7 @@ if __name__ == "__main__":
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
-        packages=["klein", "klein.storage",
-                  "klein.test"],
+        packages=["klein", "klein.storage", "klein.test"],
         package_dir={"": "src"},
         package_data=dict(
             klein=[

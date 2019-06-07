@@ -40,7 +40,7 @@ if __name__ == "__main__":
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
-        packages=["klein", "klein.test"],
+        packages=["klein", "klein.storage", "klein.test"],
         package_dir={"": "src"},
         package_data=dict(
             klein=[

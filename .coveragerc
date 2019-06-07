@@ -2,6 +2,13 @@
 branch = True
 source = klein
 
+[paths]
+source=
+   src/klein
+   .tox/*/lib/python*/site-packages/klein
+   .tox/*/Lib/site-packages/klein
+   .tox/pypy*/site-packages/klein
+
 [report]
 exclude_lines =
     pragma: no cover

@@ -7,7 +7,7 @@ Templating wrapper support for Klein.
 from functools import partial
 from json import dumps
 from operator import setitem
-from typing import Any, Tuple, cast
+from typing import Any, Callable, TYPE_CHECKING, Tuple, cast
 
 import attr
 
@@ -18,7 +18,15 @@ from twisted.web.error import MissingRenderMethod
 from twisted.web.template import Element, TagLoader
 
 from ._app import _call
-from ._decorators import bindable, modified
+from ._decorators import bindable, modified, originalName
+
+if TYPE_CHECKING:               # pragma: no cover
+    from twisted.internet.defer import Deferred
+    from twisted.web.iweb import IRequest
+    from twisted.web.template import Tag
+    from typing import List
+    Deferred, IRequest, Tag
+    StackType = List[Tuple[Any, Callable[[Any], None]]]
 
 # https://github.com/python/mypy/issues/224
 ATOM_TYPES = (
@@ -28,6 +36,7 @@ ATOM_TYPES = (
 )
 
 def _should_return_json(request):
+    # type: (IRequest) -> bool
     """
     Should the given request result in a JSON entity-body?
     """
@@ -36,6 +45,7 @@ def _should_return_json(request):
 
 @inlineCallbacks
 def resolveDeferredObjects(root):
+    # type: (Any) -> Deferred
     """
     Wait on possibly nested L{Deferred}s that represent a JSON
     serializable object.
@@ -51,7 +61,7 @@ def resolveDeferredObjects(root):
 
     result = [None]
     setResult = partial(setitem, result, 0)
-    stack = [(root, setResult)]
+    stack = [(root, setResult)]  # type: StackType
 
     while stack:
         mightBeDeferred, setter = stack.pop()
@@ -62,7 +72,7 @@ def resolveDeferredObjects(root):
         if isinstance(obj, ATOM_TYPES):
             setter(obj)
         elif isinstance(obj, list):
-            parent = [None] * len(obj)
+            parent = [None] * len(obj)  # type: Any
             setter(parent)
             stack.extend(
                 reversed([
@@ -125,7 +135,8 @@ class PlatedElement(Element):
     renderers.
     """
 
-    def __init__(self, slot_data, preloaded, boundInstance, presentationSlots):
+    def __init__(self, slot_data, preloaded, boundInstance, presentationSlots,
+                 renderers):
         """
         @param slot_data: A dictionary mapping names to values.
 
@@ -134,6 +145,7 @@ class PlatedElement(Element):
         self.slot_data = slot_data
         self._boundInstance = boundInstance
         self._presentationSlots = presentationSlots
+        self._renderers = renderers
         super(PlatedElement, self).__init__(
             loader=TagLoader(preloaded.fillSlots(
                 **{k: _extra_types(v) for k, v in slot_data.items()}
@@ -155,6 +167,15 @@ class PlatedElement(Element):
         """
         @return: a renderer.
         """
+        if name in self._renderers:
+            wrapped = self._renderers[name]
+
+            @modified("plated render wrapper", wrapped)
+            def renderWrapper(request, tag, *args, **kw):
+                # type: (IRequest, Tag, *Any, **Any) -> Any
+                return _call(self._boundInstance, wrapped,
+                             request, tag, *args, **kw)
+            return renderWrapper
         if ":" not in name:
             raise MissingRenderMethod(self, name)
         slot, type = name.split(":", 1)
@@ -188,6 +209,20 @@ class Plating(object):
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentationSlots = {self.CONTENT} | set(presentation_slots)
+        self._renderers = {}
+
+
+    def renderMethod(self, renderer):
+        """
+        Add a render method to this L{Plating} object that can be used in the
+        top-level template.
+
+        The name of the renderer to use within the template is the name of the
+        decorated function.
+        """
+        self._renderers[text_type(originalName(renderer))] = renderer
+        return renderer
+
 
     def routed(self, routing, tags):
         """
@@ -199,6 +234,7 @@ class Plating(object):
             @bindable
             @inlineCallbacks
             def mymethod(instance, request, *args, **kw):
+                # type: (Any, IRequest, *Any, **Any) -> Any
                 data = yield _call(instance, method, request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
@@ -232,6 +268,7 @@ class Plating(object):
         loaded = loaded.clone()
         return PlatedElement(slot_data=slot_data,
                              preloaded=loaded,
+                             renderers=self._renderers,
                              boundInstance=instance,
                              presentationSlots=self._presentationSlots)
 
@@ -246,9 +283,9 @@ class Plating(object):
         instance's L{Plating._elementify} to construct a
         L{PlatedElement}.
         """
-        _plating = attr.ib()
-        _function = attr.ib()
-        _instance = attr.ib()
+        _plating = attr.ib(type='Plating')
+        _function = attr.ib(type=Callable[..., Any])
+        _instance = attr.ib(type=object)
 
         def __call__(self, *args, **kwargs):
             return self._function(*args, **kwargs)

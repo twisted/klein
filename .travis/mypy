@@ -31,6 +31,9 @@ tmp="$(mktemp -t mypy.XXXX)";
 #   annotations are used, but we ignore the errors for files that are not yet
 #   participating.
 #
+# * "Type alias to Union" not callable is telling us that our zope.interface
+#   compatibility hack doesn't support adaptation.  Real ZI support in mypy
+#   should obviate this.
 
 mypy "$@"      \
     | grep -v  \

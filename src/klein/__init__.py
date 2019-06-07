@@ -3,7 +3,11 @@ from __future__ import absolute_import, division
 from typing import TYPE_CHECKING
 
 from ._app import Klein, handle_errors, route, run, urlFor, url_for
+from ._dihttp import RequestComponent, RequestURL, Response
+from ._form import Field, FieldValues, Form, RenderableForm
 from ._plating import Plating
+from ._requirer import Requirer
+from ._session import Authorization, SessionProcurer
 from ._version import __version__ as _incremental_version
 
 if TYPE_CHECKING:
@@ -16,6 +20,16 @@ else:
 __all__ = (
     "Klein",
     "Plating",
+    'Field',
+    'FieldValues',
+    'Form',
+    'RequestComponent',
+    'RequestURL',
+    'Response',
+    'RenderableForm',
+    'SessionProcurer',
+    'Authorization',
+    'Requirer',
     "__author__",
     "__copyright__",
     "__license__",

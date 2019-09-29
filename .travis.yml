@@ -27,52 +27,45 @@ matrix:
       env: TOXENV=mypy
 
     - python: 2.7
-      env: TOXENV=coverage-py27-tw160,codecov-py27
-    - python: 2.7
       env: TOXENV=coverage-py27-tw171,codecov-py27
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw184,codecov-py27
     - python: 2.7
       env: TOXENV=coverage-py27-twcurrent,codecov-py27
 
-    - python: 3.4
-      env: TOXENV=coverage-py34-tw160,codecov-py34
-    - python: 3.4
-      env: TOXENV=coverage-py34-tw171,codecov-py34
-    - python: 3.4
-      env: TOXENV=coverage-py34-tw189,codecov-py34
-
-    - python: 3.5
-      env: TOXENV=coverage-py35-tw160,codecov-py35
     - python: 3.5
       env: TOXENV=coverage-py35-tw171,codecov-py35
+    - python: 3.5
+      env: TOXENV=coverage-py35-tw184,codecov-py35
     - python: 3.5
       env: TOXENV=coverage-py35-twcurrent,codecov-py35
 
     - python: 3.6
-      env: TOXENV=coverage-py36-tw160,codecov-py36
-    - python: 3.6
       env: TOXENV=coverage-py36-tw171,codecov-py36
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw184,codecov-py36
     - python: 3.6
       env: TOXENV=coverage-py36-twcurrent,codecov-py36
 
     - python: 3.7
-      env: TOXENV=coverage-py37-tw160,codecov-py37
-    - python: 3.7
       env: TOXENV=coverage-py37-tw171,codecov-py37
+    - python: 3.7
+      env: TOXENV=coverage-py37-tw184,codecov-py37
     - python: 3.7
       env: TOXENV=coverage-py37-twcurrent,codecov-py37
 
-    - python: pypy2.7-6.0
-      env: TOXENV=coverage-pypy2-tw160,codecov-pypy2
-    - python: pypy2.7-6.0
+    - python: pypy
       env: TOXENV=coverage-pypy2-tw171,codecov-pypy2
-    - python: pypy2.7-6.0
+    - python: pypy
+      env: TOXENV=coverage-pypy2-tw184,codecov-pypy2
+    - python: pypy
       env: TOXENV=coverage-pypy2-twcurrent,codecov-pypy2
 
-    - python: pypy3.5-6.0
-      env: TOXENV=coverage-pypy3-tw160,codecov-pypy3
-    - python: pypy3.5-6.0
+    - python: pypy3
       env: TOXENV=coverage-pypy3-tw171,codecov-pypy3
-    - python: pypy3.5-6.0
+    - python: pypy3
+      env: TOXENV=coverage-pypy3-tw184,codecov-pypy3
+    - python: pypy3
       env: TOXENV=coverage-pypy3-twcurrent,codecov-pypy3
 
     # Test against Twisted trunk in case something in development breaks us.

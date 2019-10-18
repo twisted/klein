@@ -21,15 +21,16 @@ from .interfaces import (
 )
 
 if TYPE_CHECKING:               # pragma: no cover
-    from mypy_extensions import Arg, KwArg, VarArg
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
-    from typing import Awaitable, Dict, Sequence, Text, TypeVar
+    from mypy_extensions import KwArg, VarArg, Arg
+    from typing import TypeVar, Awaitable, Dict, Text
     T = TypeVar('T')
     (IRequest, Arg, KwArg, VarArg, Callable, Dict, IInterface, Awaitable,
      Componentized, IRequestLifecycle, Text)
 else:
     Arg = KwArg = lambda t, *x: t
+
 
 
 
@@ -116,7 +117,7 @@ class SessionProcurer(object):
                 [it for it in [request.getCookie(cookie)
                                for cookie in [self._secureCookie,
                                               self._insecureCookie]] if it]
-            )  # type: Sequence[Text]
+            )
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
             yield self._store.sentInsecurely(allPossibleSentTokens)

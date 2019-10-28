@@ -5,7 +5,7 @@ Extensions to L{twisted.trial}.
 """
 
 import sys
-from typing import Any
+from typing import Any, Optional
 
 from twisted import version as twistedVersion
 from twisted.trial.unittest import SynchronousTestCase
@@ -13,8 +13,6 @@ from twisted.trial.unittest import SynchronousTestCase
 from zope.interface import Interface
 from zope.interface.exceptions import Invalid
 from zope.interface.verify import verifyObject
-
-Any, Interface  # Silence linter
 
 
 __all__ = ()
@@ -28,7 +26,7 @@ class TestCase(SynchronousTestCase):
 
     if (twistedVersion.major, twistedVersion.minor) < (16, 4):
         def assertRegex(self, text, regex, msg=None):
-            # type: (str, Any, str) -> None
+            # type: (str, Any, Optional[str]) -> None
             """
             Fail the test if a C{regexp} search of C{text} fails.
 

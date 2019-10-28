@@ -16,7 +16,7 @@ from klein._typing import ifmethod
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
@@ -24,7 +24,8 @@ if TYPE_CHECKING:               # pragma: no cover
     from typing import Tuple, List
     sessions = List[ISession]
     errors = List[NoSuchSession]
-    IRequest, Deferred, sessions, errors, Tuple, Componentized, IInterface
+
+
 
 class ISimpleTest(Interface):
     """
@@ -97,7 +98,7 @@ def simpleSessionRouter():
 
     requirer = Requirer()
 
-    @requirer.prerequisite([ISession])
+    @requirer.prerequisite([ISession])  # type: ignore[misc]
     def procure(request):
         # type: (IRequest) -> Deferred
         return sproc.procureSession(request)

@@ -1,5 +1,6 @@
 from functools import wraps
 
+
 def bindable(bindable):
     """
     Mark a method as a "bindable" method.

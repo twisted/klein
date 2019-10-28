@@ -1,11 +1,15 @@
-from typing import TYPE_CHECKING
+from typing import Callable, TYPE_CHECKING
 
 
 __all__ = ()
 
 
-if TYPE_CHECKING:               # pragma: no cover
+def _ifmethod(method):
+    # type: (Callable) -> Callable
+    return method
+
+
+if TYPE_CHECKING:  # pragma: no cover
     ifmethod = staticmethod
 else:
-    def ifmethod(method):
-        return method
+    ifmethod = _ifmethod

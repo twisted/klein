@@ -20,20 +20,18 @@ from .interfaces import (
     TooLateForCookies
 )
 
-if TYPE_CHECKING:               # pragma: no cover
-    from mypy_extensions import Arg, KwArg, VarArg
+if TYPE_CHECKING:  # pragma: no cover
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
-    from typing import Awaitable, Dict, Sequence, Text, TypeVar
+    from mypy_extensions import KwArg, Arg
+    from typing import Dict, Sequence, Text, TypeVar
     T = TypeVar('T')
-    (IRequest, Arg, KwArg, VarArg, Callable, Dict, IInterface, Awaitable,
-     Componentized, IRequestLifecycle, Text)
 else:
     Arg = KwArg = lambda t, *x: t
 
 
 
-@implementer(ISessionProcurer)
+@implementer(ISessionProcurer)  # type: ignore[misc]
 @attr.s
 class SessionProcurer(object):
     """
@@ -76,7 +74,7 @@ class SessionProcurer(object):
     @type _setCookieOnGET: L{bool}
     """
 
-    _store = attr.ib(type=ISessionStore)
+    _store = attr.ib(type=ISessionStore)  # type: ignore[misc]
 
     _maxAge = attr.ib(type=int, default=3600)
     _secureCookie = attr.ib(type=bytes, default=b"Klein-Secure-Session")
@@ -92,7 +90,7 @@ class SessionProcurer(object):
     @inlineCallbacks
     def procureSession(self, request, forceInsecure=False):
         # type: (IRequest, bool) -> Any
-        alreadyProcured = request.getComponent(ISession)
+        alreadyProcured = request.getComponent(ISession)  # type: ignore[misc]
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
                 returnValue(alreadyProcured)
@@ -110,12 +108,22 @@ class SessionProcurer(object):
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             allPossibleSentTokens = (
-                sum([request.requestHeaders.getRawHeaders(header, [])
-                     for header in [self._secureTokenHeader,
-                                    self._insecureTokenHeader]], []) +
-                [it for it in [request.getCookie(cookie)
-                               for cookie in [self._secureCookie,
-                                              self._insecureCookie]] if it]
+                sum(
+                    [
+                        request.requestHeaders.getRawHeaders(header, [])
+                        for header in [
+                            self._secureTokenHeader, self._insecureTokenHeader
+                        ]
+                    ],
+                    []
+                ) +
+                [
+                    it for it in [
+                        request.getCookie(cookie) for cookie in
+                        [self._secureCookie, self._insecureCookie]
+                    ]
+                    if it
+                ]
             )  # type: Sequence[Text]
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
@@ -185,7 +193,7 @@ class SessionProcurer(object):
             )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
-            request.setComponent(ISession, session)
+            request.setComponent(ISession, session)  # type: ignore[misc]
         returnValue(session)
 
 
@@ -214,7 +222,7 @@ class AuthorizationDenied(Resource, object):
         return "{} DENIED".format(qual(self._interface)).encode('utf-8')
 
 
-@implementer(IDependencyInjector, IRequiredParameter)
+@implementer(IDependencyInjector, IRequiredParameter)  # type: ignore[misc]
 @attr.s
 class Authorization(object):
     """
@@ -290,8 +298,10 @@ class Authorization(object):
         # TODO: this could be optimized to do fewer calls to 'authorize' by
         # collecting all the interfaces that are necessary and then using
         # addBeforeHook; the interface would not need to change.
-        provider = ((yield ISession(request).authorize([self._interface]))
-                    .get(self._interface))
+        session = ISession(request)  # type: ignore[misc]
+        provider = (
+            (yield session.authorize([self._interface])).get(self._interface)
+        )
         if self._required and provider is None:
             raise EarlyExit(self._whenDenied(self._interface, instance))
         # TODO: CSRF protection should probably go here

@@ -35,6 +35,7 @@ ATOM_TYPES = (
     cast(Tuple[Any, ...], (float, None.__class__))
 )
 
+
 def _should_return_json(request):
     # type: (IRequest) -> bool
     """

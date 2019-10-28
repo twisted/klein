@@ -6,7 +6,7 @@ Support for interoperability with L{twisted.web.iweb.IRequest}.
 """
 
 from io import BytesIO
-from typing import Text
+from typing import Text, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import provides
@@ -27,9 +27,6 @@ from ._message import FountAlreadyAccessedError, MessageState
 from ._request import IHTTPRequest
 from ._tubes import IOFount, fountToBytes
 
-# Silence linter
-Deferred, IFount, IHTTPHeaders, Text
-
 
 __all__ = ()
 
@@ -38,7 +35,7 @@ noneIO = BytesIO()
 
 
 
-@implementer(IHTTPRequest)
+@implementer(IHTTPRequest)  # type: ignore[misc]
 @attrs(frozen=True)
 class HTTPRequestWrappingIRequest(object):
     """
@@ -57,7 +54,7 @@ class HTTPRequestWrappingIRequest(object):
     @property
     def method(self):
         # type: () -> Text
-        return self._request.method.decode("ascii")
+        return cast(Text, self._request.method.decode("ascii"))
 
 
     @property

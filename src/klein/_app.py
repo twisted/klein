@@ -11,8 +11,9 @@ from contextlib import contextmanager
 try:
     from inspect import iscoroutine
 except ImportError:
-    def iscoroutine(*args, **kwargs):  # type: ignore
+    def iscoroutine(*args, **kwargs):  # type: ignore[misc]
         return False
+from typing import IO, Optional
 from weakref import ref
 
 from twisted.internet import endpoints, reactor
@@ -142,6 +143,7 @@ class Klein(object):
 
 
     def resource(self):
+        # type: () -> KleinResource
         """
         Return an L{IResource} which suitably wraps this app.
 
@@ -389,8 +391,15 @@ class Klein(object):
     url_for = urlFor
 
 
-    def run(self, host=None, port=None, logFile=None,
-            endpoint_description=None, displayTracebacks=True):
+    def run(
+        self,
+        host=None,                  # type: Optional[str]
+        port=None,                  # type: Optional[int]
+        logFile=None,               # type: Optional[IO]
+        endpoint_description=None,  # type: Optional[str]
+        displayTracebacks=True,     # type: bool
+    ):
+        # type: (...) -> None
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -403,22 +412,17 @@ class Klein(object):
             to.  "0.0.0.0" will allow you to listen on all interfaces, and
             "127.0.0.1" will allow you to listen on just the loopback
             interface.
-        @type host: str
 
         @param port: The TCP port to accept HTTP requests on.
-        @type port: int
 
         @param logFile: The file object to log to, by default C{sys.stdout}
-        @type logFile: file object
 
         @param endpoint_description: specification of endpoint. Must contain
             protocol, port and interface. May contain other optional arguments,
              e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
-        @type endpoint_description: str
 
         @param displayTracebacks: Weather a processing error will result in
             a page displaying the traceback with debugging information or not.
-        @type displayTracebacks: bool
         """
         if logFile is None:
             logFile = sys.stdout

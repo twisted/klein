@@ -1117,9 +1117,13 @@ class KleinResourceTests(SynchronousTestCase):
         )
 
     if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
+        test_urlDecodeErrorReprPy2.skip = (  # type: ignore[attr-defined]
+            "Only works on Py2"
+        )
     else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
+        test_urlDecodeErrorReprPy3.skip = (  # type: ignore[attr-defined]
+            "Only works on Py3"
+        )
 
 
     def test_subroutedBranch(self):

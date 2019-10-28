@@ -5,8 +5,7 @@ Extensions to Tubes.
 """
 
 from io import BytesIO
-from typing import Iterable
-from typing.io import BinaryIO
+from typing import Any as UnknownType, BinaryIO, Iterable
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional, provides
@@ -19,8 +18,6 @@ from twisted.internet.defer import Deferred
 from twisted.python.failure import Failure
 
 from zope.interface import implementer
-
-BinaryIO, Deferred, Iterable  # Silence linter
 
 
 __all__ = ()
@@ -85,12 +82,12 @@ class IOFount(object):
 
 
     def pauseFlow(self):
-        # type: () -> None
+        # type: () -> UnknownType
         return self._pauser.pause()
 
 
     def stopFlow(self):
-        # type: () -> None
+        # type: () -> UnknownType
         return self._pauser.resume()
 
 

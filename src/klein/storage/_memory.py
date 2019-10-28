@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_memory -*-
 from binascii import hexlify
 from os import urandom
-from typing import Any, Callable, Dict, List, TYPE_CHECKING, Text, cast
+from typing import Any, Callable, Dict, Iterable, Text, cast
 
 import attr
 from attr import Factory
@@ -16,12 +16,11 @@ from klein.interfaces import (
     ISession, ISessionStore, NoSuchSession, SessionMechanism
 )
 
-if TYPE_CHECKING:               # pragma: no cover
-    List, Deferred, IInterface, Any, Callable, Dict, SessionMechanism
-
 _authCB = Callable[[IInterface, ISession, Componentized], Any]
 
-@implementer(ISession)
+
+
+@implementer(ISession)  # type: ignore[misc]
 @attr.s
 class MemorySession(object):
     """
@@ -31,12 +30,12 @@ class MemorySession(object):
     identifier = attr.ib(type=Text)
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
-    _authorizationCallback = attr.ib(type=_authCB)
+    _authorizationCallback = attr.ib(type=_authCB)  # type: ignore[misc]
     _components = attr.ib(default=Factory(Componentized),
                           type=Componentized)
 
     def authorize(self, interfaces):
-        # type: (List[IInterface]) -> Deferred
+        # type: (Iterable[IInterface]) -> Deferred
         """
         Authorize each interface by calling back to the session store's
         authorization callback.
@@ -48,6 +47,7 @@ class MemorySession(object):
             if provider is not None:
                 result[interface] = provider
         return succeed(result)
+
 
 
 class _MemoryAuthorizerFunction(object):
@@ -81,11 +81,13 @@ def _noAuthorization(interface, session, data):
     # type: (IInterface, ISession, Componentized) -> None
     return None
 
-@implementer(ISessionStore)
+
+
+@implementer(ISessionStore)  # type: ignore[misc]
 @attr.s
 class MemorySessionStore(object):
     authorizationCallback = attr.ib(
-        type=_authFn,
+        type=_authFn,  # type: ignore[misc]
         default=_noAuthorization
     )
     _secureStorage = attr.ib(type=Dict[str, Any],
@@ -95,7 +97,7 @@ class MemorySessionStore(object):
 
     @classmethod
     def fromAuthorizers(cls, authorizers):
-        # type: (List[_MemoryAuthorizerFunction]) -> MemorySessionStore
+        # type: (Iterable[_MemoryAuthorizerFunction]) -> MemorySessionStore
         """
         Create a L{MemorySessionStore} from a collection of callbacks which can
         do authorization.
@@ -147,5 +149,5 @@ class MemorySessionStore(object):
 
 
     def sentInsecurely(self, tokens):
-        # type: (List[str]) -> None
+        # type: (Iterable[str]) -> None
         return

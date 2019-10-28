@@ -18,7 +18,7 @@ from ._imessage import (
     IMutableHTTPHeaders as _IMutableHTTPHeaders,
 )
 
-IKleinRequest  # Silence linter
+IKleinRequest
 
 
 if TYPE_CHECKING:               # pragma: no cover

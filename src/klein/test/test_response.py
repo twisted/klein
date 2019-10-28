@@ -8,10 +8,8 @@ Tests for L{klein._response}.
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
 from .._headers import FrozenHTTPHeaders
-from .._message import IHTTPMessage
+from .._interfaces import IHTTPMessage
 from .._response import FrozenHTTPResponse, IHTTPResponse
-
-IHTTPMessage  # Silence linter
 
 
 __all__ = ()
@@ -45,7 +43,7 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
         L{FrozenHTTPResponse} implements L{IHTTPResponse}.
         """
         response = self.responseFromBytes()
-        self.assertProvides(IHTTPResponse, response)
+        self.assertProvides(IHTTPResponse, response)  # type: ignore[misc]
 
 
     def test_initInvalidBodyType(self):

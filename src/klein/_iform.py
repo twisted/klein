@@ -1,5 +1,3 @@
-
-
 class ValidationError(Exception):
     """
     A L{ValidationError} is raised by L{Field.extractValue}.

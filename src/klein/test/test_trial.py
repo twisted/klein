@@ -7,6 +7,7 @@ Tests for L{klein.test._trial}.
 from zope.interface import Interface, implementer
 
 from ._trial import TestCase
+from .._typing import ifmethod
 
 
 __all__ = ()
@@ -22,6 +23,7 @@ class TestCaseTests(TestCase):
         """
         Frobbable object.
         """
+        @ifmethod
         def frob():
             # type: () -> None
             """

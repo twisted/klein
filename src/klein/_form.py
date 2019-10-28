@@ -1,17 +1,16 @@
 # -*- test-case-name: klein.test.test_form -*-
 
-from __future__ import print_function, unicode_literals
+from __future__ import unicode_literals
 
 import json
 from typing import (
     Any, AnyStr, Callable, Dict, Iterable, List, Optional, Sequence,
-    TYPE_CHECKING, Text, Union, cast
+    TYPE_CHECKING, Text, cast,
 )
 
 import attr
 
 from twisted.internet.defer import inlineCallbacks
-from twisted.python.compat import unicode
 from twisted.python.components import Componentized, registerAdapter
 from twisted.web.error import MissingRenderMethod
 from twisted.web.http import FORBIDDEN
@@ -23,20 +22,20 @@ from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
-from .interfaces import (EarlyExit, IDependencyInjector, IRequestLifecycle,
-                         IRequiredParameter, ISession, SessionMechanism,
-                         ValidationError, ValueAbsent)
+from .interfaces import (
+    EarlyExit, IDependencyInjector, IRequestLifecycle, IRequiredParameter,
+    ISession, SessionMechanism, ValidationError, ValueAbsent,
+)
 
 if TYPE_CHECKING:               # pragma: no cover
     from typing import Type
     from mypy_extensions import DefaultNamedArg, NoReturn
     from twisted.internet.defer import Deferred
-    if not TYPE_CHECKING:
-        (Tag, Any, Callable, Dict, Optional, AnyStr, Iterable, IRequest, List,
-         Text, DefaultNamedArg, Union, NoReturn, Deferred, Type)
 else:
     def DefaultNamedArg(*ignore):
         pass
+
+
 
 class CrossSiteRequestForgery(Resource, object):
     """
@@ -46,6 +45,7 @@ class CrossSiteRequestForgery(Resource, object):
         # type: (str) -> None
         super(CrossSiteRequestForgery, self).__init__()
         self.message = message
+
 
     def render(self, request):
         # type: (IRequest) -> bytes
@@ -57,14 +57,17 @@ class CrossSiteRequestForgery(Resource, object):
 
 CSRF_PROTECTION = "__csrf_protection__"
 
+
+
 def textConverter(value):
     # type: (AnyStr) -> Text
     """
     Converter for form values (which may be any type of string) into text.
     """
-    return (
-        value if isinstance(value, unicode) else unicode(value, "utf-8")
-    )
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    else:
+        return value
 
 
 
@@ -77,7 +80,7 @@ class IParsedJSONBody(Interface):
 
 
 
-@implementer(IRequiredParameter)
+@implementer(IRequiredParameter)  # type: ignore[misc]
 @attr.s(frozen=True)
 class Field(object):
     """
@@ -105,7 +108,10 @@ class Field(object):
         Register this form field as a dependency injector.
         """
         protoForm = IProtoForm(injectionComponents)
-        return protoForm.addField(self.maybeNamed(parameterName))
+        return cast(
+            IDependencyInjector,
+            protoForm.addField(self.maybeNamed(parameterName))
+        )
 
 
     def maybeNamed(self, name):
@@ -138,9 +144,13 @@ class Field(object):
         @return: A new set of tags to include in a template.
         @rtype: iterable of L{twisted.web.template.Tag}
         """
+        value = self.value
+        if self.value is None:
+            # FIXME: mypy says this is unreachable because self.value is not
+            # optional.  Should it be?
+            value = ""  # type: ignore[misc]
         input_tag = tags.input(
-            type=self.formInputType, name=self.formFieldName,
-            value=(self.value if self.value is not None else "")
+            type=self.formInputType, name=self.formFieldName, value=value
         )
         error_tags = []
         if self.error:
@@ -151,6 +161,7 @@ class Field(object):
         else:
             yield input_tag
             yield error_tags
+
 
     def extractValue(self, request):
         # type: (IRequest) -> Any
@@ -217,6 +228,7 @@ class Field(object):
         """
         return cls(converter=textConverter, formInputType="text", **kw)
 
+
     @classmethod
     def password(cls, **kw):          # type: (**Any) -> Field
         """
@@ -226,6 +238,7 @@ class Field(object):
         """
         return cls(converter=textConverter,
                    formInputType="password", **kw)
+
 
     @classmethod
     def hidden(cls, name, value, **kw):
@@ -279,13 +292,13 @@ class RenderableForm(object):
     An L{IRenderable} representing a renderable form.
 
     @ivar prevalidationValues: a L{dict} mapping {L{Field}: L{list} of
-        L{unicode}}, representing the value that each field received as part of
+        L{Text}}, representing the value that each field received as part of
         the request.
 
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
     _form = attr.ib(type='Form')
-    _session = attr.ib(type=ISession)
+    _session = attr.ib(type=ISession)  # type: ignore[misc]
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
     _enctype = attr.ib(type=str)
@@ -340,7 +353,9 @@ class RenderableForm(object):
         if self._method.lower() == 'post':
             yield self._fieldForCSRF()
 
+
     # Public interface below.
+
 
     def lookupRenderMethod(self, name):
         # type: (str) -> NoReturn
@@ -413,7 +428,7 @@ def defaultValidationFailureHandler(
 
     @return: Any object acceptable from a Klein route.
     """
-    session = request.getComponent(ISession)
+    session = request.getComponent(ISession)  # type: ignore[misc]
     request.setResponseCode(400)
     enctype = (
         (request.getHeader(b'content-type') or
@@ -450,6 +465,7 @@ class IProtoForm(Interface):
     Marker interface for L{ProtoForm}.
     """
 
+
 class IForm(Interface):
     """
     Marker interface for form attached to dependency injection components.
@@ -463,7 +479,7 @@ class ProtoForm(object):
     Form-builder.
     """
     _componentized = attr.ib(type=Componentized)
-    _lifecycle = attr.ib(type=IRequestLifecycle)
+    _lifecycle = attr.ib(type=IRequestLifecycle)  # type: ignore[misc]
     _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
@@ -472,7 +488,7 @@ class ProtoForm(object):
         """
         Create a ProtoForm from a componentized object.
         """
-        rl = IRequestLifecycle(componentized)
+        rl = IRequestLifecycle(componentized)  # type: ignore[misc]
         assert rl is not None
         return cls(componentized, rl)
 
@@ -524,7 +540,7 @@ class FieldValues(object):
 
 
 
-@implementer(IDependencyInjector)
+@implementer(IDependencyInjector)  # type: ignore[misc]
 @attr.s
 class FieldInjector(object):
     """
@@ -532,7 +548,7 @@ class FieldInjector(object):
     """
     _componentized = attr.ib(type=Componentized)
     _field = attr.ib(type=Field)
-    _lifecycle = attr.ib(type=IRequestLifecycle)
+    _lifecycle = attr.ib(type=IRequestLifecycle)  # type: ignore[misc]
 
     def injectValue(self, instance, request, routeParams):
         # type: (Any, IRequest, Dict[str, Any]) -> Any
@@ -543,15 +559,18 @@ class FieldInjector(object):
             self._field.pythonArgumentName
         )
 
+
     def finalize(self):
         # type: () -> None
         """
         Finalize this ProtoForm into a real form.
         """
-        finalForm = IForm(self._componentized, None)
-        if finalForm is not None:
+        if IForm(self._componentized, None) is not None:
             return
-        finalForm = Form(IProtoForm(self._componentized)._fields)
+
+        finalForm = cast(
+            IForm, Form(IProtoForm(self._componentized)._fields)
+        )
         self._componentized.setComponent(IForm, finalForm)
 
         # XXX set requiresComponents argument here to ISession if CSRF is
@@ -566,7 +585,7 @@ class FieldInjector(object):
             )
         self._lifecycle.addPrepareHook(
             populateValuesHook, provides=[IFieldValues],
-            requires=[ISession]
+            requires=[ISession]  # type: ignore[misc]
         )
 
 
@@ -581,6 +600,7 @@ class IValidationFailureHandler(Interface):
     """
 
 
+
 def checkCSRF(request):
     # type: (IRequest) -> None
     """
@@ -588,7 +608,7 @@ def checkCSRF(request):
     it is found.
     """
     # TODO: optionalize CSRF protection for GET forms
-    session = ISession(request, None)
+    session = ISession(request, None)  # type: ignore[misc]
     token = None
     if request.method in (b'GET', b'HEAD'):
         # Idempotent requests don't require CRSF validation.  (Don't have
@@ -734,14 +754,16 @@ class Form(object):
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        form = IForm(decoratedFunction.injectionComponents, None)
+        form = IForm(
+            decoratedFunction.injectionComponents, None
+        )  # type: Optional[Form]
         if form is None:
             form = Form([])
         return RenderableFormParam(form, action, method, enctype, encoding)
 
 
 
-@implementer(IRequiredParameter, IDependencyInjector)
+@implementer(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
 @attr.s
 class RenderableFormParam(object):
     """
@@ -760,16 +782,19 @@ class RenderableFormParam(object):
         # type: (Componentized, str, IRequestLifecycle) -> RenderableFormParam
         return self
 
+
     def injectValue(self, instance, request, routeParams):
         # type: (Any, IRequest, Dict[str, Any]) -> RenderableForm
         """
         Create the renderable form from the request.
         """
         return RenderableForm(
-            self._form, ISession(request), self._action, self._method,
-            self._enctype, self._encoding, prevalidationValues={},
-            validationErrors={}
+            self._form,
+            ISession(request),  # type: ignore[misc]
+            self._action, self._method, self._enctype, self._encoding,
+            prevalidationValues={}, validationErrors={},
         )
+
 
     def finalize(self):
         # type: () -> None

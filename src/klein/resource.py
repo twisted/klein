@@ -15,9 +15,10 @@ from ._app import resource as _globalResourceMethod
 from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 
 if TYPE_CHECKING:
-    from typing import AnyStr, Callable, Text
-    AnyStr, Callable, Text
+    from typing import Any, AnyStr, Callable, Text
     KleinResource = _KleinResource
+
+
 
 class _SpecialModuleObject(object):
     """
@@ -33,10 +34,17 @@ class _SpecialModuleObject(object):
 
     KleinResource = _KleinResource
 
+
+    def __init__(self, preserve):
+        # type: (Any) -> None
+        self.__preserve__ = preserve
+
+
     @property
     def ensure_utf8_bytes(self):
         # type: () -> Callable[[AnyStr], Text]
         return ensure_utf8_bytes
+
 
     def __call__(self):
         # type: () -> _KleinResource
@@ -58,6 +66,5 @@ class _SpecialModuleObject(object):
         return "<special bound method/module klein.resource>"
 
 
-preserve = modules[__name__]
-modules[__name__] = _SpecialModuleObject()  # type: ignore
-modules[__name__].__preserve__ = preserve   # type: ignore
+module = _SpecialModuleObject(modules[__name__])
+modules[__name__] = module  # type: ignore[assignment]

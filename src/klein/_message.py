@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_message -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 HTTP message API.

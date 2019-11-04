@@ -7,9 +7,10 @@ All Zope Interface classes should be imported from here so that type checking
 works, since mypy doesn't otherwise get along with Zope Interface.
 """
 
-from typing import TYPE_CHECKING
+from typing import Mapping, Optional, TYPE_CHECKING, Text
 
-from ._iapp import IKleinRequest
+from zope.interface import Attribute, Interface
+
 from ._imessage import (
     IHTTPHeaders as _IHTTPHeaders,
     IHTTPMessage as _IHTTPMessage,
@@ -17,8 +18,28 @@ from ._imessage import (
     IHTTPResponse as _IHTTPResponse,
     IMutableHTTPHeaders as _IMutableHTTPHeaders,
 )
+from ._typing import ifmethod
 
-IKleinRequest
+
+
+class IKleinRequest(Interface):
+    branch_segments = Attribute("Segments consumed by a branch route.")
+    mapper = Attribute("L{werkzeug.routing.MapAdapter}")
+
+    @ifmethod
+    def url_for(
+        request,               # type: IKleinRequest
+        endpoint,              # type: Text
+        values=None,           # type: Optional[Mapping[Text, Text]]
+        method=None,           # type: Optional[Text]
+        force_external=False,  # type: bool
+        append_unknown=True,   # type: bool
+    ):
+        # type: (...) -> Text
+        """
+        L{werkzeug.routing.MapAdapter.build}
+        """
+
 
 
 if TYPE_CHECKING:               # pragma: no cover

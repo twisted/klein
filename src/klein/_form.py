@@ -5,12 +5,12 @@ from __future__ import unicode_literals
 import json
 from typing import (
     Any, AnyStr, Callable, Dict, Iterable, List, Optional, Sequence,
-    TYPE_CHECKING, Text, cast,
+    Text, Type, cast,
 )
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized, registerAdapter
 from twisted.web.error import MissingRenderMethod
 from twisted.web.http import FORBIDDEN
@@ -22,18 +22,11 @@ from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
+from ._typing import DefaultNamedArg, NoReturn
 from .interfaces import (
     EarlyExit, IDependencyInjector, IRequestLifecycle, IRequiredParameter,
     ISession, SessionMechanism, ValidationError, ValueAbsent,
 )
-
-if TYPE_CHECKING:               # pragma: no cover
-    from typing import Type
-    from mypy_extensions import DefaultNamedArg, NoReturn
-    from twisted.internet.defer import Deferred
-else:
-    def DefaultNamedArg(*ignore):
-        pass
 
 
 

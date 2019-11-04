@@ -1,33 +1,29 @@
 # -*- test-case-name: klein.test.test_session -*-
 
 from typing import (
-    Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
+    Any, Callable, Dict, Optional, Sequence, Text, TypeVar, Union
 )
 
 import attr
 
 from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.python.components import Componentized
 from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
+from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
 
 from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
+from ._typing import Arg, KwArg
 from .interfaces import (
     EarlyExit, IDependencyInjector, IRequestLifecycle, IRequiredParameter,
     ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
     TooLateForCookies
 )
 
-if TYPE_CHECKING:  # pragma: no cover
-    from twisted.web.iweb import IRequest
-    from twisted.python.components import Componentized
-    from mypy_extensions import KwArg, Arg
-    from typing import Dict, Sequence, Text, TypeVar
-    T = TypeVar('T')
-else:
-    Arg = KwArg = lambda t, *x: t
+T = TypeVar('T')
 
 
 
@@ -79,7 +75,7 @@ class SessionProcurer(object):
     _maxAge = attr.ib(type=int, default=3600)
     _secureCookie = attr.ib(type=bytes, default=b"Klein-Secure-Session")
     _insecureCookie = attr.ib(type=bytes, default=b"Klein-INSECURE-Session")
-    _cookieDomain = attr.ib(type=_Optional[bytes], default=None)
+    _cookieDomain = attr.ib(type=Optional[bytes], default=None)
     _cookiePath = attr.ib(type=bytes, default=b"/")
 
     _secureTokenHeader = attr.ib(type=bytes, default=b"X-Auth-Token")

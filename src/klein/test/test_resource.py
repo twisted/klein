@@ -17,6 +17,7 @@ from twisted.python.compat import _PY3, unicode
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
+from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
 from twisted.web.static import File
 from twisted.web.template import Element, XMLString, renderer
@@ -25,7 +26,7 @@ from twisted.web.test.test_web import DummyChannel
 from werkzeug.exceptions import NotFound
 
 from .util import EqualityTestsMixin
-from .. import Klein
+from .. import Klein, KleinRenderable
 from .._interfaces import IKleinRequest
 from .._resource import (
     KleinResource, _URLDecodeError, _extractURLparts, ensure_utf8_bytes
@@ -208,7 +209,8 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
-        def foo(self):
+        def foo(self, resource):
+            # type: (IRequest) -> KleinRenderable
             pass
 
     _one = _One()

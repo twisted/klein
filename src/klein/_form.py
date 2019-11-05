@@ -90,7 +90,7 @@ class Field(object):
     default = attr.ib(type=Optional[Any], default=None, cmp=False)
     required = attr.ib(type=bool, default=True)
     noLabel = attr.ib(type=bool, default=False)
-    value = attr.ib(type=Optional[Text], default=u"")
+    value = attr.ib(type=Text, default=u"")
     error = attr.ib(type=ValidationError, default=None)
 
     # IRequiredParameter
@@ -138,8 +138,8 @@ class Field(object):
         @rtype: iterable of L{twisted.web.template.Tag}
         """
         value = self.value
-        if self.value is None:
-            value = ""
+        if value is None:
+            value = ""  # type: ignore[misc]
         input_tag = tags.input(
             type=self.formInputType, name=self.formFieldName, value=value
         )

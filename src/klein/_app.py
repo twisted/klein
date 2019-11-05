@@ -437,7 +437,7 @@ class Klein(object):
 
     def urlFor(
         self,
-        request,                  # type: IKleinRequest
+        request,               # type: IKleinRequest
         endpoint,              # type: Text
         values=None,           # type: Optional[Mapping[Text, Text]]
         method=None,           # type: Optional[Text]

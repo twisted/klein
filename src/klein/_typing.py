@@ -18,7 +18,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
     ifmethod = staticmethod
 else:
-    Arg, KwArg = VarArg = lambda t, *x: t
+    Arg = KwArg = VarArg = lambda t, *x: t
 
     def DefaultNamedArg(*ignore):
         pass

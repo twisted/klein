@@ -1,4 +1,4 @@
-from typing import Iterable, List, TYPE_CHECKING, Text, Tuple
+from typing import Iterable, List, Text, Tuple
 
 from hyperlink import DecodedURL
 

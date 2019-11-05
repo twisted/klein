@@ -21,10 +21,10 @@ from .interfaces import (
 )
 
 if TYPE_CHECKING:               # pragma: no cover
-    from mypy_extensions import Arg, KwArg, VarArg
+    from mypy_extensions import Arg, KwArg
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
-    from typing import Awaitable, Dict, Sequence, Text, TypeVar
+    from typing import Dict, Sequence, Text, TypeVar
     T = TypeVar('T')
 else:
     Arg = KwArg = lambda t, *x: t

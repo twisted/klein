@@ -27,9 +27,6 @@ from ._message import FountAlreadyAccessedError, MessageState
 from ._request import IHTTPRequest
 from ._tubes import IOFount, fountToBytes
 
-# Silence linter
-Deferred, IFount, IHTTPHeaders, Text
-
 
 __all__ = ()
 
@@ -38,7 +35,7 @@ noneIO = BytesIO()
 
 
 
-@implementer(IHTTPRequest)
+@implementer(IHTTPRequest)  # type: ignore[misc]
 @attrs(frozen=True)
 class HTTPRequestWrappingIRequest(object):
     """

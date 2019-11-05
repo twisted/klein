@@ -15,12 +15,11 @@ from ._typing import ifmethod
 if TYPE_CHECKING:               # pragma: no cover
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
-    from typing import Dict, Iterable, List, Text, Type, Sequence
+    from typing import Dict, Iterable, Text, Sequence
     from twisted.web.iweb import IRequest
     from zope.interface.interfaces import IInterface
 
-    Deferred, Text, Componentized, Sequence, IRequest, List, Type
-    Iterable, IInterface, Dict
+
 
 class NoSuchSession(Exception):
     """

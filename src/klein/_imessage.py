@@ -23,8 +23,6 @@ from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
 
-AnyStr, DecodedURL, Deferred, Iterable, IFount, Text  # Silence linter
-
 
 __all__ = ()
 

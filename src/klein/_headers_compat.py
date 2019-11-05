@@ -20,14 +20,12 @@ from ._headers import (
     rawHeaderNameAndValue,
 )
 
-AnyStr, Iterable, RawHeaders, String, Tuple  # Silence linter
-
 
 __all__ = ()
 
 
 
-@implementer(IMutableHTTPHeaders)
+@implementer(IMutableHTTPHeaders)  # type: ignore[misc]
 @attrs(frozen=True)
 class HTTPHeadersWrappingHeaders(object):
     """

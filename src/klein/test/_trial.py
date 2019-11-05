@@ -14,8 +14,6 @@ from zope.interface import Interface
 from zope.interface.exceptions import Invalid
 from zope.interface.verify import verifyObject
 
-Any, Interface  # Silence linter
-
 
 __all__ = ()
 

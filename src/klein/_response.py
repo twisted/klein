@@ -19,14 +19,12 @@ from zope.interface import implementer
 from ._interfaces import IHTTPHeaders, IHTTPResponse
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 
-Deferred, IFount, Union  # Silence linter
-
 
 __all__ = ()
 
 
 
-@implementer(IHTTPResponse)
+@implementer(IHTTPResponse)  # type: ignore[misc]
 @attrs(frozen=True)
 class FrozenHTTPResponse(object):
     """
@@ -35,7 +33,9 @@ class FrozenHTTPResponse(object):
 
     status = attrib(validator=instance_of(int))  # type: int
 
-    headers = attrib(validator=provides(IHTTPHeaders))  # type: IHTTPHeaders
+    headers = attrib(
+        validator=provides(IHTTPHeaders)  # type: ignore[misc]
+    )  # type: IHTTPHeaders
 
     _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
 

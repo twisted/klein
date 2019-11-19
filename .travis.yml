@@ -21,9 +21,9 @@ branches:
 #
 matrix:
   include:
-    - python: 3.7
+    - python: 3.8
       env: TOXENV=flake8
-    - python: 3.7
+    - python: 3.8
       env: TOXENV=mypy
 
     - python: 2.7
@@ -54,6 +54,13 @@ matrix:
     - python: 3.7
       env: TOXENV=coverage-py37-twcurrent,codecov-py37
 
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw171,codecov-py38
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw184,codecov-py38
+    - python: 3.8
+      env: TOXENV=coverage-py38-twcurrent,codecov-py38
+
     - python: pypy
       env: TOXENV=coverage-pypy2-tw171,codecov-pypy2
     - python: pypy
@@ -72,8 +79,8 @@ matrix:
     # This is allowed to fail below, since the bug may be in Twisted.
     - python: 2.7
       env: TOXENV=coverage-py27-twtrunk,codecov-py27
-    - python: 3.7
-      env: TOXENV=coverage-py37-twtrunk,codecov-py37
+    - python: 3.8
+      env: TOXENV=coverage-py38-twtrunk,codecov-py38
 
     - python: 2.7
       env: TOXENV=twistedchecker-diff
@@ -85,7 +92,7 @@ matrix:
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
     - env: TOXENV=coverage-py27-twtrunk,codecov-py27
-    - env: TOXENV=coverage-py37-twtrunk,codecov-py37
+    - env: TOXENV=coverage-py38-twtrunk,codecov-py38
 
     # This is not yet required.
     - env: TOXENV=twistedchecker-diff

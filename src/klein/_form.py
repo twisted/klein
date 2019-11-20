@@ -77,7 +77,7 @@ class IParsedJSONBody(Interface):
 
 
 
-@implementer(IRequiredParameter)
+@implementer(IRequiredParameter)  # type: ignore[misc]
 @attr.s(frozen=True)
 class Field(object):
     """
@@ -285,7 +285,7 @@ class RenderableForm(object):
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
     _form = attr.ib(type='Form')
-    _session = attr.ib(type=ISession)
+    _session = attr.ib(type=ISession)  # type: ignore[misc]
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
     _enctype = attr.ib(type=str)
@@ -413,7 +413,7 @@ def defaultValidationFailureHandler(
 
     @return: Any object acceptable from a Klein route.
     """
-    session = request.getComponent(ISession)
+    session = request.getComponent(ISession)  # type: ignore[misc]
     request.setResponseCode(400)
     enctype = (
         (request.getHeader(b'content-type') or
@@ -463,7 +463,7 @@ class ProtoForm(object):
     Form-builder.
     """
     _componentized = attr.ib(type=Componentized)
-    _lifecycle = attr.ib(type=IRequestLifecycle)
+    _lifecycle = attr.ib(type=IRequestLifecycle)  # type: ignore[misc]
     _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
@@ -472,7 +472,7 @@ class ProtoForm(object):
         """
         Create a ProtoForm from a componentized object.
         """
-        rl = IRequestLifecycle(componentized)
+        rl = IRequestLifecycle(componentized)  # type: ignore[misc]
         assert rl is not None
         return cls(componentized, rl)
 
@@ -524,7 +524,7 @@ class FieldValues(object):
 
 
 
-@implementer(IDependencyInjector)
+@implementer(IDependencyInjector)  # type: ignore[misc]
 @attr.s
 class FieldInjector(object):
     """
@@ -532,7 +532,7 @@ class FieldInjector(object):
     """
     _componentized = attr.ib(type=Componentized)
     _field = attr.ib(type=Field)
-    _lifecycle = attr.ib(type=IRequestLifecycle)
+    _lifecycle = attr.ib(type=IRequestLifecycle)  # type: ignore[misc]
 
     def injectValue(self, instance, request, routeParams):
         # type: (Any, IRequest, Dict[str, Any]) -> Any
@@ -588,7 +588,7 @@ def checkCSRF(request):
     it is found.
     """
     # TODO: optionalize CSRF protection for GET forms
-    session = ISession(request, None)
+    session = ISession(request, None)  # type: ignore[misc]
     token = None
     if request.method in (b'GET', b'HEAD'):
         # Idempotent requests don't require CRSF validation.  (Don't have
@@ -741,7 +741,7 @@ class Form(object):
 
 
 
-@implementer(IRequiredParameter, IDependencyInjector)
+@implementer(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
 @attr.s
 class RenderableFormParam(object):
     """
@@ -766,9 +766,10 @@ class RenderableFormParam(object):
         Create the renderable form from the request.
         """
         return RenderableForm(
-            self._form, ISession(request), self._action, self._method,
-            self._enctype, self._encoding, prevalidationValues={},
-            validationErrors={}
+            self._form,
+            ISession(request),  # type: ignore[misc]
+            self._action, self._method, self._enctype, self._encoding,
+            prevalidationValues={}, validationErrors={},
         )
 
     def finalize(self):

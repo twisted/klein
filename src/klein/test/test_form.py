@@ -19,11 +19,10 @@ from klein.interfaces import (
 )
 from klein.storage.memory import MemorySessionStore
 
-if TYPE_CHECKING:               # pragma: no cover
-    from typing import Any, Dict, Tuple, Union
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Any, Tuple
     from twisted.web.iweb import IRequest
     from klein import RenderableForm
-    Any, IRequest, Text, Union, Dict, Tuple, RenderableForm
 
 
 
@@ -40,13 +39,13 @@ class DanglingField(Field):
 
 @attr.s(hash=False)
 class TestObject(object):
-    sessionStore = attr.ib(type=ISessionStore)
+    sessionStore = attr.ib(type=ISessionStore)  # type: ignore[misc]
     calls = attr.ib(attr.Factory(list), type=List)
 
     router = Klein()
     requirer = Requirer()
 
-    @requirer.prerequisite([ISession])
+    @requirer.prerequisite([ISession])  # type: ignore[misc]
     @inlineCallbacks
     def procureASession(self, request):
         # type: (IRequest) -> Any

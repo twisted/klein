@@ -16,9 +16,6 @@ from .._headers import (
 )
 from .._headers_compat import HTTPHeadersWrappingHeaders
 
-# Silence linter
-IMutableHTTPHeaders, RawHeaders, Text
-
 
 try:
     from twisted.web.http_headers import _sanitizeLinearWhitespace

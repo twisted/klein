@@ -9,7 +9,7 @@ from zope.interface.verify import verifyObject
 from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
-Any
+
 
 class IFoo(Interface):
     """
@@ -36,9 +36,9 @@ class MemoryTests(SynchronousTestCase):
         Verify that the session store complies with the relevant interfaces.
         """
         store = MemorySessionStore()
-        verifyObject(ISessionStore, store)
+        verifyObject(ISessionStore, store)  # type: ignore[misc]
         verifyObject(
-            ISession, self.successResultOf(
+            ISession, self.successResultOf(  # type: ignore[misc]
                 store.newSession(True, SessionMechanism.Header)
             )
         )

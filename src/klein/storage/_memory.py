@@ -64,6 +64,8 @@ class _MemoryAuthorizerFunction(object):
 
 _authFn = Callable[[IInterface, ISession, Componentized], Any]
 
+
+
 def declareMemoryAuthorizer(forInterface):
     # type: (IInterface) -> Callable[[Callable], _MemoryAuthorizerFunction]
     """
@@ -76,6 +78,7 @@ def declareMemoryAuthorizer(forInterface):
         decoratee.__memoryAuthInterface__ = forInterface
         return decoratee
     return decorate
+
 
 def _noAuthorization(interface, session, data):
     # type: (IInterface, ISession, Componentized) -> None

@@ -1,18 +1,16 @@
-from typing import TYPE_CHECKING, Text
+from typing import Iterable, List, Text, Tuple
+
+from hyperlink import DecodedURL
 
 from treq.testing import StubTreq
 
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.http_headers import Headers
+from twisted.web.iweb import IRequest
 
 from zope.interface import Interface
 
 from klein import Klein, RequestComponent, RequestURL, Requirer, Response
-
-if TYPE_CHECKING:               # pragma: no cover
-    from typing import Iterable, List, Tuple
-    from hyperlink import DecodedURL
-    from twisted.web.iweb import IRequest
 
 
 
@@ -32,6 +30,7 @@ class BadlyBehavedHeaders(Headers):
                 yield (key, values)
 
 
+
 router = Klein()
 requirer = Requirer()
 
@@ -45,6 +44,8 @@ def requiresURL(url):
     """
     text = url.child(u"hello/ world").asText()  # type: Text
     return text
+
+
 
 
 

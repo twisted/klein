@@ -54,4 +54,4 @@ __version__ = _incremental_version.base()
 
 __author__ = "The Klein contributors (see AUTHORS)"
 __license__ = "MIT"
-__copyright__ = "Copyright 2016-2017 {0}".format(__author__)
+__copyright__ = "Copyright 2011-2019 {0}".format(__author__)

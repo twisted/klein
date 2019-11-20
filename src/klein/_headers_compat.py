@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_headers -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Support for interoperability with L{twisted.web.http_headers.Headers}.

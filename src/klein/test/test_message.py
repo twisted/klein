@@ -11,9 +11,8 @@ from hypothesis import given
 from hypothesis.strategies import binary
 
 from ._trial import TestCase
-from .._message import (
-    FountAlreadyAccessedError, IHTTPMessage, bytesToFount, fountToBytes
-)
+from .._interfaces import IHTTPMessage
+from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 
 
 __all__ = ()
@@ -53,7 +52,9 @@ class FrozenHTTPMessageTestsMixIn(object):
         Message instance implements L{IHTTPMessage}.
         """
         message = self.messageFromBytes()
-        cast(TestCase, self).assertProvides(IHTTPMessage, message)
+        cast(TestCase, self).assertProvides(
+            IHTTPMessage, message  # type: ignore[misc]
+        )
 
 
     @given(binary())

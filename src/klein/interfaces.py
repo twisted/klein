@@ -24,7 +24,7 @@ from ._isession import (
 )
 
 if TYPE_CHECKING:               # pragma: no cover
-    from ._storage.memory import MemorySessionStore, MemorySession
+    from .storage._memory import MemorySessionStore, MemorySession
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
     from ._isession import IRequestLifecycleT as _IRequestLifecycleT

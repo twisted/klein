@@ -15,10 +15,7 @@ from tubes.itube import IFount
 from twisted.internet.defer import Deferred, succeed
 
 from ._imessage import FountAlreadyAccessedError
-from ._interfaces import IHTTPMessage
 from ._tubes import bytesToFount, fountToBytes
-
-Any, Deferred, IHTTPMessage, Optional  # Silence linter
 
 
 __all__ = ()

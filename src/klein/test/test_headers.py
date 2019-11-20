@@ -23,9 +23,6 @@ from .._headers import (
     normalizeHeaderName, normalizeRawHeaders, normalizeRawHeadersFrozen,
 )
 
-# Silence linter
-AnyStr, Dict, Iterable, List, Optional, RawHeaders, Text, Tuple
-
 
 __all__ = ()
 
@@ -371,7 +368,7 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertProvides(IHTTPHeaders, headers)
+        self.assertProvides(IHTTPHeaders, headers)  # type: ignore[misc]
 
 
     def test_defaultHeaders(self):
@@ -413,7 +410,9 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         Class implements L{IMutableHTTPHeaders}.
         """
         headers = self.headers(rawHeaders=())
-        cast(TestCase, self).assertProvides(IMutableHTTPHeaders, headers)
+        cast(TestCase, self).assertProvides(
+            IMutableHTTPHeaders, headers  # type: ignore[misc]
+        )
 
 
     def test_rawHeaders(self):

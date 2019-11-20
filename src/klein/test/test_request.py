@@ -10,10 +10,8 @@ from hyperlink import DecodedURL
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
 from .._headers import FrozenHTTPHeaders
-from .._message import IHTTPMessage
+from .._interfaces import IHTTPMessage
 from .._request import FrozenHTTPRequest, IHTTPRequest
-
-IHTTPMessage  # Silence linter
 
 
 __all__ = ()
@@ -48,7 +46,7 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         L{FrozenHTTPRequest} implements L{IHTTPRequest}.
         """
         request = self.requestFromBytes()
-        self.assertProvides(IHTTPRequest, request)
+        self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
 
 
     def test_initInvalidBodyType(self):

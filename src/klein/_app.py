@@ -53,7 +53,9 @@ KleinRoute = Callable[
     [Any, IRequest, VarArg(Any), KwArg(Any)],
     KleinRenderable
 ]
-KleinErrorHandler = Callable[["Klein", IRequest, Failure], KleinRenderable]
+KleinErrorHandler = Callable[
+    [Optional["Klein"], IRequest, Failure], KleinRenderable
+]
 
 
 def _call(__klein_instance__, __klein_f__, *args, **kwargs):
@@ -131,7 +133,7 @@ class Klein(object):
         self._url_map = Map()
         self._endpoints = {}       # type: Dict[Text, KleinRoute]
         self._error_handlers = []  # type: List[KleinErrorHandler]
-        self._instance = None      # type: Klein # type: ignore[assignment]
+        self._instance = None      # type: Optional[Klein]
         self._boundAs = None       # type: Optional[Text]
 
 

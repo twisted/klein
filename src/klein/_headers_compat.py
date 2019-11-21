@@ -5,7 +5,7 @@
 Support for interoperability with L{twisted.web.http_headers.Headers}.
 """
 
-from typing import AnyStr, Iterable, Text, Tuple
+from typing import AnyStr, Iterable, Text, Tuple, cast
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -57,7 +57,9 @@ class HTTPHeadersWrappingHeaders(object):
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
         if isinstance(name, bytes):
-            values = self._headers.getRawHeaders(name, default=())
+            values = cast(
+                Iterable[AnyStr], self._headers.getRawHeaders(name, default=())
+            )
         elif isinstance(name, Text):
             values = (
                 headerValueAsText(value)

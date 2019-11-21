@@ -5,7 +5,7 @@
 Tests for L{klein._headers}.
 """
 
-from typing import Text
+from typing import Text, cast
 
 from twisted.web.http_headers import Headers
 
@@ -16,11 +16,11 @@ from .._headers import (
 )
 from .._headers_compat import HTTPHeadersWrappingHeaders
 
-
 try:
     from twisted.web.http_headers import _sanitizeLinearWhitespace
 except ImportError:
     _sanitizeLinearWhitespace = None
+
 
 def _twistedHeaderNormalize(value):
     # type: (Text) -> Text
@@ -31,7 +31,10 @@ def _twistedHeaderNormalize(value):
     if _sanitizeLinearWhitespace is None:
         return value
     else:
-        return _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
+        return cast(
+            Text,
+            _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
+        )
 
 
 __all__ = ()

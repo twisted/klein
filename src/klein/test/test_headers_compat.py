@@ -5,7 +5,7 @@
 Tests for L{klein._headers}.
 """
 
-from typing import Text, cast
+from typing import Text
 
 from twisted.web.http_headers import Headers
 
@@ -28,13 +28,12 @@ def _twistedHeaderNormalize(value):
     Normalize the given header value according to the rules of the installed
     Twisted version.
     """
-    if _sanitizeLinearWhitespace is None:
-        return value
-    else:
-        return cast(
-            Text,
-            _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
-        )
+    if _sanitizeLinearWhitespace is not None:
+        valueBytes = value.encode("utf-8")
+        valueBytes = _sanitizeLinearWhitespace(valueBytes)
+        value = valueBytes.decode("utf-8")
+
+    return value
 
 
 __all__ = ()

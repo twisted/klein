@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Interfaces related to HTTP messages.
@@ -22,8 +22,6 @@ from twisted.internet.defer import Deferred
 from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
-
-AnyStr, DecodedURL, Deferred, Iterable, IFount, Text  # Silence linter
 
 
 __all__ = ()

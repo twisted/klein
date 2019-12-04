@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_headers -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Tests for L{klein._headers}.
@@ -22,9 +22,6 @@ from .._headers import (
     headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
     normalizeHeaderName, normalizeRawHeaders, normalizeRawHeadersFrozen,
 )
-
-# Silence linter
-AnyStr, Dict, Iterable, List, Optional, RawHeaders, Text, Tuple
 
 
 __all__ = ()
@@ -371,7 +368,7 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertProvides(IHTTPHeaders, headers)
+        self.assertProvides(IHTTPHeaders, headers)  # type: ignore[misc]
 
 
     def test_defaultHeaders(self):
@@ -413,7 +410,9 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         Class implements L{IMutableHTTPHeaders}.
         """
         headers = self.headers(rawHeaders=())
-        cast(TestCase, self).assertProvides(IMutableHTTPHeaders, headers)
+        cast(TestCase, self).assertProvides(
+            IMutableHTTPHeaders, headers  # type: ignore[misc]
+        )
 
 
     def test_rawHeaders(self):

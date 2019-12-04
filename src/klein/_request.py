@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_request -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 HTTP request API.
@@ -21,15 +21,12 @@ from zope.interface import implementer
 from ._interfaces import IHTTPHeaders, IHTTPRequest
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 
-# Silence linter
-Deferred, IFount, IHTTPHeaders, Text, Union
-
 
 __all__ = ()
 
 
 
-@implementer(IHTTPRequest)
+@implementer(IHTTPRequest)  # type: ignore[misc]
 @attrs(frozen=True)
 class FrozenHTTPRequest(object):
     """
@@ -38,7 +35,9 @@ class FrozenHTTPRequest(object):
 
     method  = attrib(validator=instance_of(Text))        # type: Text
     uri     = attrib(validator=instance_of(DecodedURL))  # type: DecodedURL
-    headers = attrib(validator=provides(IHTTPHeaders))   # type: IHTTPHeaders
+    headers = attrib(
+        validator=provides(IHTTPHeaders)  # type: ignore[misc]
+    )  # type: IHTTPHeaders
 
     _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
 

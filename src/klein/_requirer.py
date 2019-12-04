@@ -12,16 +12,16 @@ from ._app import _call
 from ._decorators import bindable, modified
 from .interfaces import EarlyExit, IRequestLifecycle
 
-if TYPE_CHECKING:               # pragma: no cover
-    from typing import Dict, Tuple, Sequence
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Dict, Sequence
     from twisted.web.iweb import IRequest
     from twisted.internet.defer import Deferred
     from zope.interface.interfaces import IInterface
     from .interfaces import IDependencyInjector, IRequiredParameter
-    IDependencyInjector, IRequiredParameter, IRequest, Dict, Tuple
-    Deferred, IInterface, Sequence
 
-@implementer(IRequestLifecycle)
+
+
+@implementer(IRequestLifecycle)  # type: ignore[misc]
 @attr.s
 class RequestLifecycle(object):
     """
@@ -62,6 +62,8 @@ _routeDecorator = Any           # a decorator like @route
 _routeT = Any                   # a thing decorated by a decorator like @route
 
 _prerequisiteCallback = Callable[[IRequestLifecycle], None]
+
+
 
 @attr.s
 class Requirer(object):
@@ -115,10 +117,12 @@ class Requirer(object):
         """
 
         def decorator(functionWithRequirements):
-            # type: (Any) -> Callable
+            # type: (Callable) -> Callable
             injectionComponents = Componentized()
             lifecycle = RequestLifecycle()
-            injectionComponents.setComponent(IRequestLifecycle, lifecycle)
+            injectionComponents.setComponent(
+                IRequestLifecycle, lifecycle  # type: ignore[misc]
+            )
 
             injectors = {}      # type: Dict[str, IDependencyInjector]
 
@@ -149,12 +153,12 @@ class Requirer(object):
                     result = ee.alternateReturnValue
                 else:
                     result = yield _call(
-                        instance, functionWithRequirements, *args,
-                        **injected
+                        instance, functionWithRequirements, *args, **injected
                     )
                 returnValue(result)
 
-            functionWithRequirements.injectionComponents = injectionComponents
+            fWR, iC = functionWithRequirements, injectionComponents
+            fWR.injectionComponents = iC  # type: ignore[attr-defined]
             routeDecorator(router)
             return functionWithRequirements
 

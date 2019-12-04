@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_request -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 HTTP headers API.
@@ -13,9 +13,6 @@ from zope.interface import implementer
 
 from ._imessage import MutableRawHeaders, RawHeader, RawHeaders
 from ._interfaces import IHTTPHeaders, IMutableHTTPHeaders
-
-# Silence linter
-AnyStr, Iterable, Tuple, MutableRawHeaders, RawHeader, RawHeaders
 
 
 __all__ = ()
@@ -162,7 +159,7 @@ def rawHeaderNameAndValue(name, value):
 
 # Implementation
 
-@implementer(IHTTPHeaders)
+@implementer(IHTTPHeaders)  # type: ignore[misc]
 @attrs(frozen=True)
 class FrozenHTTPHeaders(object):
     """
@@ -181,7 +178,7 @@ class FrozenHTTPHeaders(object):
 
 
 
-@implementer(IMutableHTTPHeaders)
+@implementer(IMutableHTTPHeaders)  # type: ignore[misc]
 @attrs(frozen=True)
 class MutableHTTPHeaders(object):
     """

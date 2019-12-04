@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_request_compat -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Tests for L{klein._irequest}.
@@ -23,8 +23,6 @@ from .._headers import IHTTPHeaders
 from .._message import FountAlreadyAccessedError
 from .._request import IHTTPRequest
 from .._request_compat import HTTPRequestWrappingIRequest
-
-DecodedURL, Headers, IRequest, Optional, Text  # Silence linter
 
 
 __all__ = ()
@@ -59,7 +57,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         L{HTTPRequestWrappingIRequest} implements L{IHTTPRequest}.
         """
         request = HTTPRequestWrappingIRequest(request=self.legacyRequest())
-        self.assertProvides(IHTTPRequest, request)
+        self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
 
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
@@ -127,7 +125,9 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         legacyRequest = self.legacyRequest()
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
-        self.assertProvides(IHTTPHeaders, request.headers)
+        self.assertProvides(
+            IHTTPHeaders, request.headers  # type: ignore[misc]
+        )
 
 
     def test_bodyAsFountTwice(self):

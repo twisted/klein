@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Extensions to L{twisted.trial}.
@@ -13,8 +13,6 @@ from twisted.trial.unittest import SynchronousTestCase
 from zope.interface import Interface
 from zope.interface.exceptions import Invalid
 from zope.interface.verify import verifyObject
-
-Any, Interface  # Silence linter
 
 
 __all__ = ()

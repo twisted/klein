@@ -161,8 +161,10 @@ class SessionProcurer(object):
                     # manipulation could succeed (no CSRF token check could
                     # ever succeed, for example).
                     raise NoSuchSession(
-                        u"Can't initialize a session on a {method} request."
-                        .format(method=request.method.decode("ascii"))
+                        u"Can't initialize a session on a "
+                        u"{method} request.".format(
+                            method=request.method.decode("ascii")
+                        )
                     )
                 if not self._setCookieOnGET:
                     # We don't have a session ID at all, and we're not allowed

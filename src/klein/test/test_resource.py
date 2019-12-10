@@ -936,8 +936,11 @@ class KleinResourceTests(SynchronousTestCase):
 
             self.assertEqual(
                 str(failure.value),
-                ("Request.finish called on a request after its connection was "
-                 "lost; use Request.notifyFinish to keep track of this."))
+                (
+                    "Request.finish called on a request after its connection "
+                    "was lost; use Request.notifyFinish to keep track of this."
+                )
+            )
 
         d.addErrback(lambda _: finished)
         d.addErrback(_eb)

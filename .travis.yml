@@ -102,8 +102,8 @@ matrix:
 
 
 install:
-  - ./.travis/install
+  - pip install tox
 
 
 script:
-  - ./.travis/run tox
+  - tox

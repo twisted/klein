@@ -1,4 +1,3 @@
-import twisted
 from twisted.trial.unittest import TestCase as AsynchronousTestCase
 
 from .test_resource import LeafResource, _render, requestMock
@@ -25,25 +24,9 @@ class PY3KleinResourceTests(AsynchronousTestCase):
         async def leaf(request):
             return LeafResource()
 
-        if (twisted.version.major, twisted.version.minor) >= (16, 6):
-            expected = b"I am a leaf in the wind."
+        expected = b"I am a leaf in the wind."
 
-            d = _render(resource, request)
-
-        else:
-            expected = b"** Twisted>=16.6 is required **"
-
-            # Twisted version in use does not have ensureDeferred, so
-            # attempting to use an async resource will raise
-            # NotImplementedError.
-            # resource.render(), and therefore _render(), does not return the
-            # deferred object that does the rendering, so we need to check for
-            # errors indirectly via handle_errors().
-            @app.handle_errors(NotImplementedError)
-            def notImplementedError(request, failure):
-                return expected
-
-            d = _render(resource, request)
+        d = _render(resource, request)
 
         def assertResult(_):
             self.assertEqual(request.getWrittenData(), expected)

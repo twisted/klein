@@ -75,7 +75,7 @@ https://twistedmatrix.com/documents/current/core/howto/logger.html
     endpoint = endpoints.serverFromString(reactor, endpoint_description)
 
     # This actually starts listening on the endpoint with the Klein app
-    endpoint.listen(Site(app.resource())
+    endpoint.listen(Site(app.resource()))
 
     # After doing other things like setting up logging,
     # starting other services in the reactor or

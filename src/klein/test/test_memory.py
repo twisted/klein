@@ -38,9 +38,10 @@ class MemoryTests(SynchronousTestCase):
         store = MemorySessionStore()
         verifyObject(ISessionStore, store)  # type: ignore[misc]
         verifyObject(
-            ISession, self.successResultOf(  # type: ignore[misc]
+            ISession,  # type: ignore[misc]
+            self.successResultOf(
                 store.newSession(True, SessionMechanism.Header)
-            )
+            ),
         )
 
 

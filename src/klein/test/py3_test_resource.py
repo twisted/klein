@@ -7,13 +7,11 @@ from .._resource import KleinResource
 
 
 class PY3KleinResourceTests(AsynchronousTestCase):
-
     def assertFired(self, deferred, result=None):
         """
         Assert that the given deferred has fired with the given result.
         """
         self.assertEqual(self.successResultOf(deferred), result)
-
 
     def test_asyncResourceRendering(self):
         app = Klein()

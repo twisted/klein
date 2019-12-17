@@ -23,7 +23,7 @@ String = Union[bytes, Text]
 
 # Encoding/decoding header data
 
-HEADER_NAME_ENCODING  = "iso-8859-1"
+HEADER_NAME_ENCODING = "iso-8859-1"
 HEADER_VALUE_ENCODING = "iso-8859-1"
 
 
@@ -81,6 +81,7 @@ def normalizeHeaderName(name):
 
 # Internal data representation
 
+
 def normalizeRawHeaders(headerPairs):
     # type: (Iterable[Iterable[String]]) -> Iterable[RawHeader]
     for pair in headerPairs:
@@ -116,10 +117,7 @@ def getFromRawHeaders(rawHeaders, name):
 
     if isinstance(name, Text):
         rawName = headerNameAsBytes(normalizeHeaderName(name))
-        return(
-            headerValueAsText(v)
-            for n, v in rawHeaders if rawName == n
-        )
+        return (headerValueAsText(v) for n, v in rawHeaders if rawName == n)
 
     raise TypeError("name {!r} must be text or bytes".format(name))
 
@@ -139,16 +137,16 @@ def rawHeaderNameAndValue(name, value):
     if isinstance(name, bytes):
         if not isinstance(value, bytes):
             raise TypeError(
-                "value {!r} must be bytes to match name {!r}"
-                .format(value, name)
+                "value {!r} must be bytes to match name {!r}".format(
+                    value, name
+                )
             )
         return (name, value)
 
     elif isinstance(name, Text):
         if not isinstance(value, Text):
             raise TypeError(
-                "value {!r} must be text to match name {!r}"
-                .format(value, name)
+                "value {!r} must be text to match name {!r}".format(value, name)
             )
         return (headerNameAsBytes(name), headerValueAsBytes(value))
 
@@ -156,8 +154,8 @@ def rawHeaderNameAndValue(name, value):
         raise TypeError("name {!r} must be text or bytes".format(name))
 
 
-
 # Implementation
+
 
 @implementer(IHTTPHeaders)  # type: ignore[misc]
 @attrs(frozen=True)
@@ -167,15 +165,12 @@ class FrozenHTTPHeaders(object):
     """
 
     rawHeaders = attrib(
-        converter=normalizeRawHeadersFrozen,
-        default=(),
+        converter=normalizeRawHeadersFrozen, default=(),
     )  # type: RawHeaders
-
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
         return getFromRawHeaders(self.rawHeaders, name)
-
 
 
 @implementer(IMutableHTTPHeaders)  # type: ignore[misc]
@@ -186,28 +181,23 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders = attrib(
-        converter=normalizeRawHeadersMutable,
-        default=Factory(list),
+        converter=normalizeRawHeadersMutable, default=Factory(list),
     )  # type: MutableRawHeaders
-
 
     @property
     def rawHeaders(self):
         # type: () -> RawHeaders
         return tuple(self._rawHeaders)
 
-
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
         return getFromRawHeaders(self._rawHeaders, name)
-
 
     def remove(self, name):
         # type: (String) -> None
         rawName = rawHeaderName(name)
 
         self._rawHeaders[:] = [p for p in self._rawHeaders if p[0] != rawName]
-
 
     def addValue(self, name, value):
         # type: (AnyStr, AnyStr) -> None

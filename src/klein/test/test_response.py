@@ -15,7 +15,6 @@ from .._response import FrozenHTTPResponse, IHTTPResponse
 __all__ = ()
 
 
-
 class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
     """
     Tests for L{FrozenHTTPResponse}.
@@ -25,17 +24,13 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
     def responseFromBytes(data=b""):
         # type: (bytes) -> FrozenHTTPResponse
         return FrozenHTTPResponse(
-            status=200,
-            headers=FrozenHTTPHeaders(rawHeaders=()),
-            body=data,
+            status=200, headers=FrozenHTTPHeaders(rawHeaders=()), body=data,
         )
-
 
     @classmethod
     def messageFromBytes(cls, data=b""):
         # type: (bytes) -> IHTTPMessage
         return cls.responseFromBytes(data)
-
 
     def test_interface(self):
         # type: () -> None
@@ -44,7 +39,6 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
         """
         response = self.responseFromBytes()
         self.assertProvides(IHTTPResponse, response)  # type: ignore[misc]
-
 
     def test_initInvalidBodyType(self):
         # type: () -> None

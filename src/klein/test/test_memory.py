@@ -1,4 +1,3 @@
-
 from typing import Any
 
 from twisted.trial.unittest import SynchronousTestCase
@@ -10,19 +9,16 @@ from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
 
-
 class IFoo(Interface):
     """
     Testing interface 1.
     """
 
 
-
 class IBar(Interface):
     """
     Testing interface 2.
     """
-
 
 
 class MemoryTests(SynchronousTestCase):
@@ -44,7 +40,6 @@ class MemoryTests(SynchronousTestCase):
             ),
         )
 
-
     def test_noAuthorizers(self):
         # type: () -> None
         """
@@ -55,9 +50,9 @@ class MemoryTests(SynchronousTestCase):
         session = self.successResultOf(
             store.newSession(True, SessionMechanism.Header)
         )
-        self.assertEqual(self.successResultOf(session.authorize([IFoo, IBar])),
-                         {})
-
+        self.assertEqual(
+            self.successResultOf(session.authorize([IFoo, IBar])), {}
+        )
 
     def test_simpleAuthorization(self):
         # type: () -> None
@@ -66,6 +61,7 @@ class MemoryTests(SynchronousTestCase):
         decorated with L{declareMemoryAuthorizer} and constructs a session
         store that can authorize for those interfaces.
         """
+
         @declareMemoryAuthorizer(IFoo)
         def fooMe(interface, session, componentized):
             # type: (Any, Any, Any) -> int
@@ -80,5 +76,7 @@ class MemoryTests(SynchronousTestCase):
         session = self.successResultOf(
             store.newSession(False, SessionMechanism.Cookie)
         )
-        self.assertEqual(self.successResultOf(session.authorize([IBar, IFoo])),
-                         {IFoo: 1, IBar: 2})
+        self.assertEqual(
+            self.successResultOf(session.authorize([IBar, IFoo])),
+            {IFoo: 1, IBar: 2},
+        )

@@ -5,7 +5,6 @@ Tests for exported API.
 from twisted.trial import unittest
 
 
-
 class PublicSymbolsTestCase(unittest.TestCase):
     """
     Tests for public API modules.
@@ -27,7 +26,6 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
         self.assertIdentical(k.Plating, p.Plating)
 
-
     def test_klein_resource(self):
         # type: () -> None
         """
@@ -37,7 +35,6 @@ class PublicSymbolsTestCase(unittest.TestCase):
         import klein._app as a
 
         self.assertIdentical(k.resource()._app, a.resource()._app)
-
 
     def test_app(self):
         # type: () -> None
@@ -53,7 +50,6 @@ class PublicSymbolsTestCase(unittest.TestCase):
         self.assertIdentical(a.route, _a.route)
         self.assertIdentical(a.run, _a.run)
 
-
     def test_interfaces(self):
         # type: () -> None
         """
@@ -63,7 +59,6 @@ class PublicSymbolsTestCase(unittest.TestCase):
         import klein._interfaces as _i
 
         self.assertIdentical(i.IKleinRequest, _i.IKleinRequest)
-
 
     def test_resource(self):
         # type: () -> None

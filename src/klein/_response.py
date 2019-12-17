@@ -23,7 +23,6 @@ from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 __all__ = ()
 
 
-
 @implementer(IHTTPResponse)  # type: ignore[misc]
 @attrs(frozen=True)
 class FrozenHTTPResponse(object):
@@ -43,11 +42,9 @@ class FrozenHTTPResponse(object):
         default=Factory(MessageState), init=False
     )  # type: MessageState
 
-
     def bodyAsFount(self):
         # type: () -> IFount
         return bodyAsFount(self._body, self._state)
-
 
     def bodyAsBytes(self):
         # type: () -> Deferred[bytes]

@@ -4,6 +4,7 @@ from typing import Callable, Text, TypeVar, cast
 C = TypeVar("C", bound=Callable)
 
 
+
 def bindable(bindable):
     # type: (C) -> C
     """
@@ -51,11 +52,13 @@ def modified(
         return value, and is only related to C{original} in the sense that it
         likely calls it.
     """
+
     def decorator(wrapper):
         # type: (C) -> C
-        namer = named(modification + ' for ' + original.__name__)
-        result = cast(C, namer(wraps(original)(wrapper)))
-        result.__original__ = original  # type: ignore[attr-defined]
+        result = named(modification + " for " + original.__name__)(
+            wraps(original)(wrapper)
+        )
+        result.__original__ = original
         if modifier is not None:
             before = set(wrapper.__dict__.keys())
             result = modifier(result)
@@ -63,6 +66,7 @@ def modified(
             for key in after - before:
                 setattr(original, key, wrapper.__dict__[key])
         return result
+
     return decorator
 
 
@@ -71,11 +75,13 @@ def named(name):
     """
     Change the name of a function to the given name.
     """
+
     def decorator(original):
         # type: (C) -> C
         original.__name__ = str(name)
         original.__qualname__ = str(name)
         return original
+
     return decorator
 
 

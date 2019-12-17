@@ -22,9 +22,9 @@ if TYPE_CHECKING:  # pragma: no cover
     from twisted.python.components import Componentized
     from zope.interface.interfaces import IInterface
     from typing import Tuple, List
+
     sessions = List[ISession]
     errors = List[NoSuchSession]
-
 
 
 class ISimpleTest(Interface):
@@ -46,7 +46,6 @@ class IDenyMe(Interface):
     """
 
 
-
 @implementer(ISimpleTest)
 class SimpleTest(object):
     """
@@ -61,7 +60,6 @@ class SimpleTest(object):
         return 3
 
 
-
 @declareMemoryAuthorizer(ISimpleTest)
 def memoryAuthorizer(interface, session, data):
     # type: (IInterface, ISession, Componentized) -> SimpleTest
@@ -69,7 +67,6 @@ def memoryAuthorizer(interface, session, data):
     Authorize the ISimpleTest interface; it always works.
     """
     return SimpleTest()
-
 
 
 def simpleSessionRouter():
@@ -83,8 +80,11 @@ def simpleSessionRouter():
     router = Klein()
     token = "X-Test-Session-Token"
     cookie = "X-Test-Session-Cookie"
-    sproc = SessionProcurer(mss, secureTokenHeader=b"X-Test-Session-Token",
-                            secureCookie=b"X-Test-Session-Cookie")
+    sproc = SessionProcurer(
+        mss,
+        secureTokenHeader=b"X-Test-Session-Token",
+        secureCookie=b"X-Test-Session-Cookie",
+    )
 
     @router.route("/")
     @inlineCallbacks
@@ -94,7 +94,7 @@ def simpleSessionRouter():
             sessions.append((yield sproc.procureSession(request)))
         except NoSuchSession as nss:
             exceptions.append(nss)
-        returnValue(b'ok')
+        returnValue(b"ok")
 
     requirer = Requirer()
 
@@ -115,7 +115,6 @@ def simpleSessionRouter():
 
     treq = StubTreq(router.resource())
     return sessions, exceptions, token, cookie, treq
-
 
 
 class ProcurementTests(SynchronousTestCase):
@@ -140,22 +139,20 @@ class ProcurementTests(SynchronousTestCase):
         def route(request):
             # type: (IRequest) -> Deferred
             sproc = SessionProcurer(mss)
+            sessions.append((yield sproc.procureSession(request)))
+            sessions.append((yield sproc.procureSession(request)))
             sessions.append(
-                (yield sproc.procureSession(request)))
-            sessions.append(
-                (yield sproc.procureSession(request)))
-            sessions.append(
-                (yield sproc.procureSession(request, forceInsecure=True)))
-            returnValue(b'sessioned')
+                (yield sproc.procureSession(request, forceInsecure=True))
+            )
+            returnValue(b"sessioned")
 
         treq = StubTreq(router.resource())
-        self.successResultOf(treq.get('http://unittest.example.com/'))
+        self.successResultOf(treq.get("http://unittest.example.com/"))
         self.assertIs(sessions[0], sessions[1])
         self.assertIs(sessions[0], sessions[2])
-        self.successResultOf(treq.get('https://unittest.example.com/'))
+        self.successResultOf(treq.get("https://unittest.example.com/"))
         self.assertIs(sessions[3], sessions[4])
         self.assertIsNot(sessions[3], sessions[5])
-
 
     def test_procuredTooLate(self):
         # type: () -> None
@@ -179,9 +176,8 @@ class ProcurementTests(SynchronousTestCase):
             request.finish()
 
         treq = StubTreq(router.resource())
-        result = self.successResultOf(treq.get('http://unittest.example.com/'))
-        self.assertEqual(self.successResultOf(result.content()), b'oops...bye')
-
+        result = self.successResultOf(treq.get("http://unittest.example.com/"))
+        self.assertEqual(self.successResultOf(result.content()), b"oops...bye")
 
     def test_cookiesTurnedOff(self):
         # type: () -> None
@@ -199,12 +195,11 @@ class ProcurementTests(SynchronousTestCase):
             sproc = SessionProcurer(mss, setCookieOnGET=False)
             with self.assertRaises(NoSuchSession):
                 yield sproc.procureSession(request)
-            returnValue(b'no session')
+            returnValue(b"no session")
 
         treq = StubTreq(router.resource())
-        result = self.successResultOf(treq.get('http://unittest.example.com/'))
-        self.assertEqual(self.successResultOf(result.content()), b'no session')
-
+        result = self.successResultOf(treq.get("http://unittest.example.com/"))
+        self.assertEqual(self.successResultOf(result.content()), b"no session")
 
     def test_unknownSessionHeader(self):
         # type: () -> None
@@ -215,12 +210,11 @@ class ProcurementTests(SynchronousTestCase):
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
 
         response = self.successResultOf(
-            treq.get('https://unittest.example.com/', headers={token: u"bad"})
+            treq.get("https://unittest.example.com/", headers={token: u"bad"})
         )
         self.assertEqual(response.code, 200)
         self.assertEqual(len(sessions), 0)
         self.assertEqual(len(exceptions), 1)
-
 
     def test_unknownSessionCookieGET(self):
         # type: () -> None
@@ -230,14 +224,15 @@ class ProcurementTests(SynchronousTestCase):
         """
         badSessionID = "bad"
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
-        response = self.successResultOf(treq.get(
-            'https://unittest.example.com/', cookies={cookie: badSessionID}
-        ))
+        response = self.successResultOf(
+            treq.get(
+                "https://unittest.example.com/", cookies={cookie: badSessionID}
+            )
+        )
         self.assertEqual(response.code, 200)
         self.assertEqual(len(exceptions), 0)
         self.assertEqual(len(sessions), 1)
         self.assertNotEqual(sessions[0].identifier, badSessionID)
-
 
     def test_unknownSessionCookiePOST(self):
         # type: () -> None
@@ -247,13 +242,14 @@ class ProcurementTests(SynchronousTestCase):
         """
         badSessionID = "bad"
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
-        response = self.successResultOf(treq.post(
-            'https://unittest.example.com/', cookies={cookie: badSessionID}
-        ))
+        response = self.successResultOf(
+            treq.post(
+                "https://unittest.example.com/", cookies={cookie: badSessionID}
+            )
+        )
         self.assertEqual(response.code, 200)
         self.assertEqual(len(exceptions), 1)
         self.assertEqual(len(sessions), 0)
-
 
     def test_authorization(self):
         # type: () -> None
@@ -262,11 +258,10 @@ class ProcurementTests(SynchronousTestCase):
         knows how to supply that authorization, it is passed to the object.
         """
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
-        response = self.successResultOf(treq.get(
-            'https://unittest.example.com/test'
-        ))
+        response = self.successResultOf(
+            treq.get("https://unittest.example.com/test")
+        )
         self.assertEqual(self.successResultOf(response.content()), b"ok: 7")
-
 
     def test_authorizationDenied(self):
         # type: () -> None
@@ -276,8 +271,10 @@ class ProcurementTests(SynchronousTestCase):
         is not invoked.
         """
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
-        response = self.successResultOf(treq.get(
-            'https://unittest.example.com/denied'
-        ))
-        self.assertEqual(self.successResultOf(response.content()),
-                         b'klein.test.test_session.IDenyMe DENIED')
+        response = self.successResultOf(
+            treq.get("https://unittest.example.com/denied")
+        )
+        self.assertEqual(
+            self.successResultOf(response.content()),
+            b"klein.test.test_session.IDenyMe DENIED",
+        )

@@ -1,4 +1,13 @@
-include LICENSE
-include README.rst
+include .coveragerc
+include .travis/twistedchecker-diff
 include AUTHORS
+include CONTRIBUTING.rst
+include docs/Makefile
+include LICENSE
 include NEWS.rst
+include pyproject.toml
+include README.rst
+include tox.ini
+recursive-include docs *.py
+recursive-include docs *.rst
+recursive-include docs *.txt

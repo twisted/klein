@@ -85,8 +85,6 @@ matrix:
       env: TOXENV=coverage-py38-twtrunk,codecov-py38
 
     - python: 2.7
-      env: TOXENV=twistedchecker-diff
-    - python: 2.7
       env: TOXENV=docs
     - python: 2.7
       env: TOXENV=docs-linkcheck
@@ -95,9 +93,8 @@ matrix:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
     - env: TOXENV=coverage-py27-twtrunk,codecov-py27
     - env: TOXENV=coverage-py38-twtrunk,codecov-py38
-
-    # This is not yet required.
-    - env: TOXENV=twistedchecker-diff
+    - env: TOXENV=coverage-py27-twtrunk,codecov
+    - env: TOXENV=coverage-py38-twtrunk,codecov
 
     # This depends on external web sites, so it's allowed to fail.
     - env: TOXENV=docs-linkcheck

@@ -1,4 +1,5 @@
 from typing import Callable, TYPE_CHECKING, Union
+
 try:
     from typing import Awaitable
 except ImportError:

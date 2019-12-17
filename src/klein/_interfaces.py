@@ -21,7 +21,7 @@ from ._imessage import (
 IKleinRequest  # Silence linter
 
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from typing import Union
 
     from ._headers import FrozenHTTPHeaders, MutableHTTPHeaders
@@ -39,9 +39,7 @@ if TYPE_CHECKING:               # pragma: no cover
     ]
 
     IMutableHTTPHeaders = Union[
-        _IMutableHTTPHeaders,
-        HTTPHeadersWrappingHeaders,
-        MutableHTTPHeaders,
+        _IMutableHTTPHeaders, HTTPHeadersWrappingHeaders, MutableHTTPHeaders,
     ]
 
     IHTTPMessage = Union[
@@ -53,22 +51,19 @@ if TYPE_CHECKING:               # pragma: no cover
     ]
 
     IHTTPRequest = Union[
-        _IHTTPRequest,
-        FrozenHTTPRequest,
-        HTTPRequestWrappingIRequest,
+        _IHTTPRequest, FrozenHTTPRequest, HTTPRequestWrappingIRequest,
     ]
 
     IHTTPResponse = Union[
-        _IHTTPResponse,
-        FrozenHTTPResponse,
+        _IHTTPResponse, FrozenHTTPResponse,
     ]
 
 else:
-    IHTTPHeaders        = _IHTTPHeaders
+    IHTTPHeaders = _IHTTPHeaders
     IMutableHTTPHeaders = _IMutableHTTPHeaders
-    IHTTPMessage        = _IHTTPMessage
-    IHTTPRequest        = _IHTTPRequest
-    IHTTPResponse       = _IHTTPResponse
+    IHTTPMessage = _IHTTPMessage
+    IHTTPRequest = _IHTTPRequest
+    IHTTPResponse = _IHTTPResponse
 
 
 __all__ = ()

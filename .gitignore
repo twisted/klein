@@ -1,15 +1,11 @@
 *.pyc
 *~
 .DS_Store
-/.coverage
-/.coverage.*
 /.eggs
 /.hypothesis/
-/.mypy_cache
 /.tox/
-/_trial_temp/
 /build/
 /dist/
 /docs/_build/
+/htmlcov/
 /src/*.egg-info
-htmlcov

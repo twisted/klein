@@ -25,7 +25,6 @@ from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 __all__ = ()
 
 
-
 @implementer(IHTTPRequest)  # type: ignore[misc]
 @attrs(frozen=True)
 class FrozenHTTPRequest(object):
@@ -33,8 +32,8 @@ class FrozenHTTPRequest(object):
     Immutable HTTP request.
     """
 
-    method  = attrib(validator=instance_of(Text))        # type: Text
-    uri     = attrib(validator=instance_of(DecodedURL))  # type: DecodedURL
+    method = attrib(validator=instance_of(Text))  # type: Text
+    uri = attrib(validator=instance_of(DecodedURL))  # type: DecodedURL
     headers = attrib(
         validator=provides(IHTTPHeaders)  # type: ignore[misc]
     )  # type: IHTTPHeaders
@@ -45,11 +44,9 @@ class FrozenHTTPRequest(object):
         default=Factory(MessageState), init=False
     )  # type: MessageState
 
-
     def bodyAsFount(self):
         # type: () -> IFount
         return bodyAsFount(self._body, self._state)
-
 
     def bodyAsBytes(self):
         # type: () -> Deferred[bytes]

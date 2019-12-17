@@ -28,7 +28,6 @@ from .._request_compat import HTTPRequestWrappingIRequest
 __all__ = ()
 
 
-
 class HTTPRequestWrappingIRequestTests(TestCase):
     """
     Tests for L{HTTPRequestWrappingIRequest}.
@@ -36,20 +35,24 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
     def legacyRequest(
         self,
-        path=b"/",          # type: bytes
-        method=b"GET",      # type: bytes
+        path=b"/",  # type: bytes
+        method=b"GET",  # type: bytes
         host=b"localhost",  # type: bytes
-        port=8080,          # type: int
-        isSecure=False,     # type: bool
-        body=None,          # type: Optional[bytes]
-        headers=None,       # type: Optional[Headers]
+        port=8080,  # type: int
+        isSecure=False,  # type: bool
+        body=None,  # type: Optional[bytes]
+        headers=None,  # type: Optional[Headers]
     ):
         # type: (...) -> IRequest
         return requestMock(
-            path=path, method=method, host=host, port=port,
-            isSecure=isSecure, body=body, headers=headers,
+            path=path,
+            method=method,
+            host=host,
+            port=port,
+            isSecure=isSecure,
+            body=body,
+            headers=headers,
         )
-
 
     def test_interface(self):
         # type: () -> None
@@ -58,7 +61,6 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         request = HTTPRequestWrappingIRequest(request=self.legacyRequest())
         self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
-
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
     def test_method(self, methodText):
@@ -71,7 +73,6 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
         self.assertEqual(request.method, methodText)
 
-
     @given(decoded_urls())
     def test_uri(self, url):
         # type: (DecodedURL) -> None
@@ -83,11 +84,14 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
         path = (
             uri.replace(scheme=u"", host=u"", port=None)
-            .asText().encode("ascii")
+            .asText()
+            .encode("ascii")
         )
         legacyRequest = self.legacyRequest(
             isSecure=(uri.scheme == u"https"),
-            host=uri.host.encode("ascii"), port=uri.port, path=path,
+            host=uri.host.encode("ascii"),
+            port=uri.port,
+            path=path,
         )
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
 
@@ -109,12 +113,12 @@ class HTTPRequestWrappingIRequestTests(TestCase):
             ).format(url=url)
 
         self.assertEqual(
-            requestURINormalized, uriNormalized,
+            requestURINormalized,
+            uriNormalized,
             "{} != {}".format(
                 strURL(requestURINormalized), strURL(uriNormalized)
-            )
+            ),
         )
-
 
     def test_headers(self):
         # type: () -> None
@@ -129,7 +133,6 @@ class HTTPRequestWrappingIRequestTests(TestCase):
             IHTTPHeaders, request.headers  # type: ignore[misc]
         )
 
-
     def test_bodyAsFountTwice(self):
         # type: () -> None
         """
@@ -140,7 +143,6 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
         request.bodyAsFount()
         self.assertRaises(FountAlreadyAccessedError, request.bodyAsFount)
-
 
     @given(binary())
     def test_bodyAsBytes(self, data):
@@ -154,7 +156,6 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         body = self.successResultOf(request.bodyAsBytes())
 
         self.assertEqual(body, data)
-
 
     def test_bodyAsBytesCached(self):
         # type: () -> None

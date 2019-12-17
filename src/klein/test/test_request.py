@@ -17,7 +17,6 @@ from .._request import FrozenHTTPRequest, IHTTPRequest
 __all__ = ()
 
 
-
 class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
     """
     Tests for L{FrozenHTTPRequest}.
@@ -33,12 +32,10 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
             body=data,
         )
 
-
     @classmethod
     def messageFromBytes(cls, data=b""):
         # type: (bytes) -> IHTTPMessage
         return cls.requestFromBytes(data)
-
 
     def test_interface(self):
         # type: () -> None
@@ -47,7 +44,6 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         """
         request = self.requestFromBytes()
         self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
-
 
     def test_initInvalidBodyType(self):
         # type: () -> None

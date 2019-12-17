@@ -34,7 +34,6 @@ __all__ = ()
 noneIO = BytesIO()
 
 
-
 @implementer(IHTTPRequest)  # type: ignore[misc]
 @attrs(frozen=True)
 class HTTPRequestWrappingIRequest(object):
@@ -50,12 +49,10 @@ class HTTPRequestWrappingIRequest(object):
         default=Factory(MessageState), init=False
     )  # type: MessageState
 
-
     @property
     def method(self):
         # type: () -> Text
         return self._request.method.decode("ascii")
-
 
     @property
     def uri(self):
@@ -85,12 +82,10 @@ class HTTPRequestWrappingIRequest(object):
 
         return DecodedURL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
 
-
     @property
     def headers(self):
         # type: () -> IHTTPHeaders
         return HTTPHeadersWrappingHeaders(headers=self._request.requestHeaders)
-
 
     def bodyAsFount(self):
         # type: () -> IFount
@@ -103,7 +98,6 @@ class HTTPRequestWrappingIRequest(object):
         self._request.content = noneIO
 
         return fount
-
 
     def bodyAsBytes(self):
         # type: () -> Deferred[bytes]

@@ -53,9 +53,9 @@ def modified(  # type: ignore[no-untyped-def]
     """
 
     def decorator(wrapper):
-        # type: (C) -> C
+        # type: (Callable) -> Callable
         namer = named(modification + " for " + original.__name__)
-        result = cast(C, namer(wraps(original)(wrapper)))
+        result = namer(wraps(original)(wrapper))
         result.__original__ = original  # type: ignore[attr-defined]
         if modifier is not None:
             before = set(wrapper.__dict__.keys())

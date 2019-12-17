@@ -17,7 +17,6 @@ from ._dihttp import Response
 from ._interfaces import IKleinRequest
 
 
-
 def ensure_utf8_bytes(v):
     """
     Coerces a value which is either a C{unicode} or C{str} to a C{str}.
@@ -26,7 +25,6 @@ def ensure_utf8_bytes(v):
     if isinstance(v, unicode):
         v = v.encode("utf-8")
     return v
-
 
 
 class _StandInResource(object):
@@ -38,11 +36,11 @@ class _StandInResource(object):
     """
 
 
-
 class _URLDecodeError(Exception):
     """
     Raised if one or more string parts of the URL could not be decoded.
     """
+
     __slots__ = ["errors"]
 
     def __init__(self, errors):
@@ -55,7 +53,6 @@ class _URLDecodeError(Exception):
 
     def __repr__(self):
         return "<URLDecodeError(errors={0!r})>".format(self.errors)
-
 
 
 def _extractURLparts(request):
@@ -74,29 +71,33 @@ def _extractURLparts(request):
     @rtype: L{tuple} of L{unicode}, L{unicode}, L{int}, L{unicode}, L{unicode}
     """
     server_name = request.getRequestHostname()
-    if hasattr(request.getHost(), 'port'):
+    if hasattr(request.getHost(), "port"):
         server_port = request.getHost().port
     else:
         server_port = 0
     if (bool(request.isSecure()), server_port) not in [
-            (True, 443), (False, 80), (False, 0), (True, 0)]:
+        (True, 443),
+        (False, 80),
+        (False, 0),
+        (True, 0),
+    ]:
         server_name = server_name + b":" + intToBytes(server_port)
 
-    script_name = b''
+    script_name = b""
     if request.prepath:
-        script_name = b'/'.join(request.prepath)
+        script_name = b"/".join(request.prepath)
 
-        if not script_name.startswith(b'/'):
-            script_name = b'/' + script_name
+        if not script_name.startswith(b"/"):
+            script_name = b"/" + script_name
 
-    path_info = b''
+    path_info = b""
     if request.postpath:
-        path_info = b'/'.join(request.postpath)
+        path_info = b"/".join(request.postpath)
 
-        if not path_info.startswith(b'/'):
-            path_info = b'/' + path_info
+        if not path_info.startswith(b"/"):
+            path_info = b"/" + path_info
 
-    url_scheme = u'https' if request.isSecure() else u'http'
+    url_scheme = u"https" if request.isSecure() else u"http"
 
     utf8Failures = []
     try:
@@ -118,24 +119,21 @@ def _extractURLparts(request):
     return url_scheme, server_name, server_port, path_info, script_name
 
 
-
 class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
     """
-    isLeaf = True
 
+    isLeaf = True
 
     def __init__(self, app):
         Resource.__init__(self)
         self._app = app
 
-
     def __eq__(self, other):
         if isinstance(other, KleinResource):
             return vars(self) == vars(other)
         return NotImplemented
-
 
     def __ne__(self, other):
         result = self.__eq__(other)
@@ -143,13 +141,16 @@ class KleinResource(Resource):
             return result
         return not result
 
-
     def render(self, request):
         # Stuff we need to know for the mapper.
         try:
-            url_scheme, server_name, server_port, path_info, script_name = (
-                _extractURLparts(request)
-            )
+            (
+                url_scheme,
+                server_name,
+                server_port,
+                path_info,
+                script_name,
+            ) = _extractURLparts(request)
         except _URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, "Invalid encoding in {what}.".format(what=what))
@@ -192,10 +193,9 @@ class KleinResource(Resource):
             # Standard Twisted Web stuff. Defer the method action, giving us
             # something renderable or printable. Return NOT_DONE_YET and set up
             # the incremental renderer.
-            d = defer.maybeDeferred(self._app.execute_endpoint,
-                                    endpoint,
-                                    request,
-                                    **kwargs)
+            d = defer.maybeDeferred(
+                self._app.execute_endpoint, endpoint, request, **kwargs
+            )
 
             request.notifyFinish().addErrback(lambda _: d.cancel())
 
@@ -247,7 +247,7 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return ensure_utf8_bytes(b''.join(resp.iter_encoded()))
+                    return ensure_utf8_bytes(b"".join(resp.iter_encoded()))
                 else:
                     request.processingFailed(failure)
                     return
@@ -257,10 +257,12 @@ class KleinResource(Resource):
             # Each error handler is a tuple of
             # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
-                d = defer.maybeDeferred(self._app.execute_error_handler,
-                                        error_handler[1],
-                                        request,
-                                        failure)
+                d = defer.maybeDeferred(
+                    self._app.execute_error_handler,
+                    error_handler[1],
+                    request,
+                    failure,
+                )
 
                 d.addCallback(process)
 
@@ -273,7 +275,7 @@ class KleinResource(Resource):
         def write_response(r):
             if r is not _StandInResource:
                 if isinstance(r, unicode):
-                    r = r.encode('utf-8')
+                    r = r.encode("utf-8")
 
                 if (r is not None) and (r != NOT_DONE_YET):
                     request.write(r)

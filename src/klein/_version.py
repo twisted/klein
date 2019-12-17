@@ -7,5 +7,5 @@ Provides klein version information.
 
 from incremental import Version
 
-__version__ = Version('klein', 19, 6, 0)
+__version__ = Version("klein", 19, 6, 0)
 __all__ = ["__version__"]

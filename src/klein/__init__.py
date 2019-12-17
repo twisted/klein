@@ -13,6 +13,7 @@ from ._version import __version__ as _incremental_version
 if TYPE_CHECKING:
     # Inform mypy of import shenanigans.
     from .resource import _SpecialModuleObject
+
     resource = _SpecialModuleObject()
 else:
     from . import resource
@@ -20,16 +21,16 @@ else:
 __all__ = (
     "Klein",
     "Plating",
-    'Field',
-    'FieldValues',
-    'Form',
-    'RequestComponent',
-    'RequestURL',
-    'Response',
-    'RenderableForm',
-    'SessionProcurer',
-    'Authorization',
-    'Requirer',
+    "Field",
+    "FieldValues",
+    "Form",
+    "RequestComponent",
+    "RequestURL",
+    "Response",
+    "RenderableForm",
+    "SessionProcurer",
+    "Authorization",
+    "Requirer",
     "__author__",
     "__copyright__",
     "__license__",

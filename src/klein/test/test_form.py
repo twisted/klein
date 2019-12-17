@@ -22,6 +22,8 @@ from klein.interfaces import (
 )
 from klein.storage.memory import MemorySessionStore
 
+from .._form import textConverter
+
 
 class DanglingField(Field):
     """
@@ -223,6 +225,17 @@ class TestForms(SynchronousTestCase):
     """
     Tests for L{klein.Form} and associated tools.
     """
+
+    def test_textConverter(self):
+        # type: () -> None
+        """
+        Convert a string of either type to text.
+        """
+        text = u"f\xf6o"
+        for string in (text, text.encode("utf-8")):
+            result = textConverter(string)  # type: ignore[type-var]
+            self.assertIsInstance(result, Text)
+            self.assertEqual(result, text)
 
     def test_handling(self):
         # type: () -> None

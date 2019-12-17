@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Text, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Text, Union
 
 import attr
 
@@ -27,9 +27,6 @@ from .interfaces import (
     SessionMechanism,
     TooLateForCookies,
 )
-
-T = TypeVar("T")
-
 
 @implementer(ISessionProcurer)  # type: ignore[misc]
 @attr.s

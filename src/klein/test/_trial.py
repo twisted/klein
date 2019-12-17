@@ -16,7 +16,6 @@ from zope.interface.verify import verifyObject
 __all__ = ()
 
 
-
 class TestCase(SynchronousTestCase):
     """
     Extensions to L{SynchronousTestCase}.

@@ -13,7 +13,6 @@ from .._typing import ifmethod
 __all__ = ()
 
 
-
 class TestCaseTests(TestCase):
     """
     Tests for L{TestCase}.
@@ -23,6 +22,7 @@ class TestCaseTests(TestCase):
         """
         Frobbable object.
         """
+
         @ifmethod
         def frob():
             # type: () -> None
@@ -30,23 +30,21 @@ class TestCaseTests(TestCase):
             Frob the object.
             """
 
-
     @implementer(IFrobbable)
     class Frobbable(object):
         """
         Implements L{IFrobbable}.
         """
+
         def frob(self):
             # type: () -> None
             pass
-
 
     @implementer(IFrobbable)
     class NotFrobbable(object):
         """
         Does not implement L{IFrobbable}, despite declaring.
         """
-
 
     def test_assertProvidesPass(self):
         # type: () -> None
@@ -58,7 +56,6 @@ class TestCaseTests(TestCase):
         self.assertProvides(self.IFrobbable, frobbable)
         frobbable.frob()  # Coverage
 
-
     def test_assertProvidesFail(self):
         # type: () -> None
         """
@@ -67,5 +64,7 @@ class TestCaseTests(TestCase):
         """
         self.assertRaises(
             self.failureException,
-            self.assertProvides, self.IFrobbable, self.NotFrobbable(),
+            self.assertProvides,
+            self.IFrobbable,
+            self.NotFrobbable(),
         )

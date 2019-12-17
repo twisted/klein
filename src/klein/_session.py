@@ -28,6 +28,7 @@ from .interfaces import (
     TooLateForCookies,
 )
 
+
 @implementer(ISessionProcurer)  # type: ignore[misc]
 @attr.s
 class SessionProcurer(object):

@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Callable, Text, TypeVar, cast
+from typing import Callable, Text, TypeVar
 
 C = TypeVar("C", bound=Callable)
 

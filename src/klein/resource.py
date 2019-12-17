@@ -17,7 +17,6 @@ from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 KleinResource = _KleinResource
 
 
-
 class _SpecialModuleObject(object):
     """
     See the test in
@@ -32,17 +31,14 @@ class _SpecialModuleObject(object):
 
     KleinResource = _KleinResource
 
-
     def __init__(self, preserve):
         # type: (Any) -> None
         self.__preserve__ = preserve
-
 
     @property
     def ensure_utf8_bytes(self):
         # type: () -> Callable[[AnyStr], Text]
         return ensure_utf8_bytes
-
 
     def __call__(self):
         # type: () -> _KleinResource
@@ -54,7 +50,6 @@ class _SpecialModuleObject(object):
         # Use the same docstring as the real implementation to reduce
         # confusion.
         return _globalResourceMethod()
-
 
     def __repr__(self):
         # type: () -> str

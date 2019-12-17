@@ -12,7 +12,9 @@ from twisted.web.http_headers import Headers
 from ._trial import TestCase
 from .test_headers import MutableHTTPHeadersTestsMixIn
 from .._headers import (
-    IMutableHTTPHeaders, RawHeaders, normalizeRawHeadersFrozen
+    IMutableHTTPHeaders,
+    RawHeaders,
+    normalizeRawHeadersFrozen,
 )
 from .._headers_compat import HTTPHeadersWrappingHeaders
 
@@ -33,12 +35,11 @@ def _twistedHeaderNormalize(value):
     else:
         return cast(
             Text,
-            _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
+            _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8"),
         )
 
 
 __all__ = ()
-
 
 
 class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
@@ -52,11 +53,9 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
             sorted(rawHeaders1), sorted(rawHeaders2)
         )
 
-
     def headerNormalize(self, value):
         # type: (Text) -> Text
         return _twistedHeaderNormalize(value)
-
 
     def headers(self, rawHeaders):
         # type: (RawHeaders) -> IMutableHTTPHeaders
@@ -65,7 +64,6 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
             headers.addRawHeader(rawName, rawValue)
 
         return HTTPHeadersWrappingHeaders(headers=headers)
-
 
     def test_rawHeaders(self):
         # type: () -> None

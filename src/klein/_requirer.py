@@ -1,4 +1,3 @@
-
 from typing import Any, Callable, Dict, List, Sequence
 
 import attr
@@ -13,9 +12,11 @@ from zope.interface.interfaces import IInterface
 from ._app import _call
 from ._decorators import bindable, modified
 from .interfaces import (
-    EarlyExit, IDependencyInjector, IRequestLifecycle, IRequiredParameter
+    EarlyExit,
+    IDependencyInjector,
+    IRequestLifecycle,
+    IRequiredParameter,
 )
-
 
 
 @implementer(IRequestLifecycle)  # type: ignore[misc]
@@ -24,6 +25,7 @@ class RequestLifecycle(object):
     """
     Mechanism to run hooks at the start of a request managed by a L{Requirer}.
     """
+
     _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
 
     def addPrepareHook(self, beforeHook, requires=(), provides=()):
@@ -38,7 +40,6 @@ class RequestLifecycle(object):
         """
         # TODO: topological requirements sort
         self._prepareHooks.append(beforeHook)
-
 
     @inlineCallbacks
     def runPrepareHooks(self, instance, request):
@@ -55,11 +56,10 @@ class RequestLifecycle(object):
             yield _call(instance, hook, request)
 
 
-_routeDecorator = Any           # a decorator like @route
-_routeT = Any                   # a thing decorated by a decorator like @route
+_routeDecorator = Any  # a decorator like @route
+_routeT = Any  # a thing decorated by a decorator like @route
 
 _prerequisiteCallback = Callable[[IRequestLifecycle], None]
-
 
 
 @attr.s
@@ -67,15 +67,15 @@ class Requirer(object):
     """
     Dependency injection for required parameters.
     """
+
     _prerequisites = attr.ib(
-        type=List[_prerequisiteCallback],
-        default=attr.Factory(list)
+        type=List[_prerequisiteCallback], default=attr.Factory(list)
     )
 
     def prerequisite(
-            self,
-            providesComponents,   # type: Sequence[IInterface]
-            requiresComponents=()  # type: Sequence[IInterface]
+        self,
+        providesComponents,  # type: Sequence[IInterface]
+        requiresComponents=(),  # type: Sequence[IInterface]
     ):
         # type: (...) -> Callable[[Callable], Callable]
         """
@@ -94,18 +94,21 @@ class Requirer(object):
             dependencies; you must presently register prerequisites in the
             order you want them to be called.
         """
+
         def decorator(prerequisiteMethod):
             # type: (Callable) -> Callable
             def oneHook(lifecycle):
                 # type: (IRequestLifecycle) -> None
                 lifecycle.addPrepareHook(
-                    prerequisiteMethod, requires=requiresComponents,
-                    provides=providesComponents
+                    prerequisiteMethod,
+                    requires=requiresComponents,
+                    provides=providesComponents,
                 )
+
             self._prerequisites.append(oneHook)
             return prerequisiteMethod
-        return decorator
 
+        return decorator
 
     def require(self, routeDecorator, **requiredParameters):
         # type: (_routeT, **IRequiredParameter) -> _routeDecorator
@@ -121,7 +124,7 @@ class Requirer(object):
                 IRequestLifecycle, lifecycle  # type: ignore[misc]
             )
 
-            injectors = {}      # type: Dict[str, IDependencyInjector]
+            injectors = {}  # type: Dict[str, IDependencyInjector]
 
             for parameterName, required in requiredParameters.items():
                 injectors[parameterName] = required.registerInjector(

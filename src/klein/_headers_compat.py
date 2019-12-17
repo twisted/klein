@@ -15,14 +15,18 @@ from twisted.web.http_headers import Headers
 from zope.interface import implementer
 
 from ._headers import (
-    IMutableHTTPHeaders, RawHeaders, String, headerNameAsBytes,
-    headerValueAsText, normalizeHeaderName, rawHeaderName,
+    IMutableHTTPHeaders,
+    RawHeaders,
+    String,
+    headerNameAsBytes,
+    headerValueAsText,
+    normalizeHeaderName,
+    rawHeaderName,
     rawHeaderNameAndValue,
 )
 
 
 __all__ = ()
-
 
 
 @implementer(IMutableHTTPHeaders)  # type: ignore[misc]
@@ -40,7 +44,6 @@ class HTTPHeadersWrappingHeaders(object):
 
     _headers = attrib(validator=instance_of(Headers))  # type: Headers
 
-
     @property
     def rawHeaders(self):
         # type: () -> RawHeaders
@@ -52,7 +55,6 @@ class HTTPHeadersWrappingHeaders(object):
                     yield (name, value)
 
         return tuple(pairs())
-
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
@@ -72,11 +74,9 @@ class HTTPHeadersWrappingHeaders(object):
 
         return values
 
-
     def remove(self, name):
         # type: (String) -> None
         self._headers.removeHeader(rawHeaderName(name))
-
 
     def addValue(self, name, value):
         # type: (AnyStr, AnyStr) -> None

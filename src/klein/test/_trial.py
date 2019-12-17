@@ -18,13 +18,13 @@ from zope.interface.verify import verifyObject
 __all__ = ()
 
 
-
 class TestCase(SynchronousTestCase):
     """
     Extensions to L{SynchronousTestCase}.
     """
 
     if (twistedVersion.major, twistedVersion.minor) < (16, 4):
+
         def assertRegex(self, text, regex, msg=None):
             # type: (str, Any, Optional[str]) -> None
             """
@@ -43,7 +43,6 @@ class TestCase(SynchronousTestCase):
                 # Python 2.7 has unittest.assertRegexpMatches() which was
                 # renamed to unittest.assertRegex() in Python 3.2
                 super(TestCase, self).assertRegexpMatches(text, regex, msg)
-
 
     def assertProvides(self, interface, obj):
         # type: (Interface, Any) -> None

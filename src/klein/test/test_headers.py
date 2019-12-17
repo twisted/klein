@@ -15,17 +15,24 @@ from ._strategies import ascii_text, latin1_text
 from ._trial import TestCase
 from .._headers import (
     FrozenHTTPHeaders,
-    HEADER_NAME_ENCODING, HEADER_VALUE_ENCODING,
-    IHTTPHeaders, IMutableHTTPHeaders,
+    HEADER_NAME_ENCODING,
+    HEADER_VALUE_ENCODING,
+    IHTTPHeaders,
+    IMutableHTTPHeaders,
     MutableHTTPHeaders,
-    RawHeaders, getFromRawHeaders,
-    headerNameAsBytes, headerNameAsText, headerValueAsBytes, headerValueAsText,
-    normalizeHeaderName, normalizeRawHeaders, normalizeRawHeadersFrozen,
+    RawHeaders,
+    getFromRawHeaders,
+    headerNameAsBytes,
+    headerNameAsText,
+    headerValueAsBytes,
+    headerValueAsText,
+    normalizeHeaderName,
+    normalizeRawHeaders,
+    normalizeRawHeadersFrozen,
 )
 
 
 __all__ = ()
-
 
 
 def encodeName(name):
@@ -54,11 +61,11 @@ def headerValueSanitize(value):
     Sanitize a header value by replacing linear whitespace with spaces.
     """
     if isinstance(value, bytes):
-        lws = [b'\r\n', b'\r', b'\n']
-        space = b' '
+        lws = [b"\r\n", b"\r", b"\n"]
+        space = b" "
     else:
-        lws = ['\r\n', '\r', '\n']
-        space = ' '
+        lws = ["\r\n", "\r", "\n"]
+        space = " "
     for l in lws:
         value = value.replace(l, space)
     return value
@@ -77,7 +84,6 @@ class EncodingTests(TestCase):
         """
         self.assertIdentical(headerNameAsBytes(name), name)
 
-
     @given(latin1_text(min_size=1))
     def test_headerNameAsBytesWithText(self, name):
         # type: (Text) -> None
@@ -87,7 +93,6 @@ class EncodingTests(TestCase):
         rawName = encodeName(name)
         self.assertEqual(headerNameAsBytes(name), rawName)
 
-
     @given(binary())
     def test_headerNameAsTextWithBytes(self, name):
         # type: (bytes) -> None
@@ -95,7 +100,6 @@ class EncodingTests(TestCase):
         L{headerNameAsText} decodes L{bytes} using L{HEADER_NAME_ENCODING}.
         """
         self.assertEqual(headerNameAsText(name), decodeName(name))
-
 
     @given(text(min_size=1))
     def test_headerNameAsTextWithText(self, name):
@@ -105,7 +109,6 @@ class EncodingTests(TestCase):
         """
         self.assertIdentical(headerNameAsText(name), name)
 
-
     @given(binary())
     def test_headerValueAsBytesWithBytes(self, value):
         # type: (bytes) -> None
@@ -113,7 +116,6 @@ class EncodingTests(TestCase):
         L{headerValueAsBytes} passes through L{bytes}.
         """
         self.assertIdentical(headerValueAsBytes(value), value)
-
 
     @given(latin1_text(min_size=1))
     def test_headerValueAsBytesWithText(self, value):
@@ -124,7 +126,6 @@ class EncodingTests(TestCase):
         rawValue = encodeValue(value)
         self.assertEqual(headerValueAsBytes(value), rawValue)
 
-
     @given(binary())
     def test_headerValueAsTextWithBytes(self, value):
         # type: (bytes) -> None
@@ -133,7 +134,6 @@ class EncodingTests(TestCase):
         """
         self.assertEqual(headerValueAsText(value), decodeValue(value))
 
-
     @given(text(min_size=1))
     def test_headerValueAsTextWithText(self, value):
         # type: (Text) -> None
@@ -141,7 +141,6 @@ class EncodingTests(TestCase):
         L{headerValueAsText} passes through L{Text}.
         """
         self.assertIdentical(headerValueAsText(value), value)
-
 
 
 class HeaderNameNormalizationTests(TestCase):
@@ -155,7 +154,6 @@ class HeaderNameNormalizationTests(TestCase):
         L{normalizeHeaderName} normalizes header names to lower case.
         """
         self.assertEqual(normalizeHeaderName("FooBar"), "foobar")
-
 
 
 class RawHeadersConversionTests(TestCase):
@@ -179,7 +177,6 @@ class RawHeadersConversionTests(TestCase):
             )
             self.assertEqual(str(e), "header pair must be a 2-item iterable")
 
-
     @given(latin1_text())
     def test_pairNameText(self, name):
         # type: (Text) -> None
@@ -195,7 +192,6 @@ class RawHeadersConversionTests(TestCase):
             ((normalizeHeaderName(headerNameAsBytes(name)), b"value"),),
         )
 
-
     @given(latin1_text())
     def test_pairValueText(self, value):
         # type: (Text) -> None
@@ -207,7 +203,6 @@ class RawHeadersConversionTests(TestCase):
         normalized = tuple(normalizeRawHeaders(rawHeaders))
 
         self.assertEqual(normalized, ((b"name", headerValueAsBytes(value)),))
-
 
 
 class GetValuesTestsMixIn(object):
@@ -230,16 +225,13 @@ class GetValuesTestsMixIn(object):
             "{} must implement getValues()".format(self.__class__)
         )
 
-
     def test_getBytesName(self):
         # type: () -> None
         """
         C{getValues} returns an iterable of L{bytes} values for the
         given L{bytes} header name.
         """
-        rawHeaders = (
-            (b"a", b"1"), (b"b", b"2"), (b"c", b"3"), (b"B", b"TWO")
-        )
+        rawHeaders = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"), (b"B", b"TWO"))
 
         normalized = defaultdict(list)  # type: Dict[bytes, List[bytes]]
         for name, value in rawHeaders:
@@ -247,10 +239,10 @@ class GetValuesTestsMixIn(object):
 
         for name, values in normalized.items():
             cast(TestCase, self).assertEqual(
-                list(self.getValues(rawHeaders, name)), values,
-                "header name: {!r}".format(name)
+                list(self.getValues(rawHeaders, name)),
+                values,
+                "header name: {!r}".format(name),
             )
-
 
     def headerNormalize(self, value):
         # type: (Text) -> Text
@@ -259,7 +251,6 @@ class GetValuesTestsMixIn(object):
         behavior Twisted has changed after version 18.9.0.
         """
         return value
-
 
     @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
     def test_getTextName(self, textPairs):
@@ -271,8 +262,9 @@ class GetValuesTestsMixIn(object):
         This test only inserts Latin1 text into the header values, which is
         valid data.
         """
-        textHeaders = tuple((name, headerValueSanitize(value))
-                            for name, value in textPairs)
+        textHeaders = tuple(
+            (name, headerValueSanitize(value)) for name, value in textPairs
+        )
 
         textValues = defaultdict(list)  # type: Dict[Text, List[Text]]
         for name, value in textHeaders:
@@ -287,9 +279,8 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 [self.headerNormalize(value) for value in _values],
-                "header name: {!r}".format(name)
+                "header name: {!r}".format(name),
             )
-
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
     def test_getTextNameBinaryValues(self, pairs):
@@ -318,11 +309,12 @@ class GetValuesTestsMixIn(object):
         for textName, values in binaryValues.items():
             cast(TestCase, self).assertEqual(
                 tuple(self.getValues(rawHeaders, textName)),
-                tuple(self.headerNormalize(headerValueAsText(value))
-                      for value in values),
-                "header name: {!r}".format(textName)
+                tuple(
+                    self.headerNormalize(headerValueAsText(value))
+                    for value in values
+                ),
+                "header name: {!r}".format(textName),
             )
-
 
     def test_getInvalidNameType(self):
         # type: () -> None
@@ -338,7 +330,6 @@ class GetValuesTestsMixIn(object):
         )
 
 
-
 class RawHeadersReadTests(GetValuesTestsMixIn, TestCase):
     """
     Tests for utilities that access data from the "headers tartare" internal
@@ -348,7 +339,6 @@ class RawHeadersReadTests(GetValuesTestsMixIn, TestCase):
     def getValues(self, rawHeaders, name):
         # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         return getFromRawHeaders(normalizeRawHeadersFrozen(rawHeaders), name)
-
 
 
 class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
@@ -361,7 +351,6 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         headers = FrozenHTTPHeaders(rawHeaders=rawHeaders)
         return headers.getValues(name=name)
 
-
     def test_interface(self):
         # type: () -> None
         """
@@ -370,7 +359,6 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         headers = FrozenHTTPHeaders(rawHeaders=())
         self.assertProvides(IHTTPHeaders, headers)  # type: ignore[misc]
 
-
     def test_defaultHeaders(self):
         # type: () -> None
         """
@@ -378,7 +366,6 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         """
         headers = FrozenHTTPHeaders()
         self.assertEqual(headers.rawHeaders, ())
-
 
 
 class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
@@ -390,19 +377,16 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         # type: (RawHeaders, RawHeaders) -> None
         cast(TestCase, self).assertEqual(rawHeaders1, rawHeaders2)
 
-
     def headers(self, rawHeaders):
         # type: (RawHeaders) -> IMutableHTTPHeaders
         raise NotImplementedError(
             "{} must implement headers()".format(self.__class__)
         )
 
-
     def getValues(self, rawHeaders, name):
         # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
         headers = self.headers(rawHeaders=rawHeaders)
         return headers.getValues(name=name)
-
 
     def test_interface(self):
         # type: () -> None
@@ -414,7 +398,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             IMutableHTTPHeaders, headers  # type: ignore[misc]
         )
 
-
     def test_rawHeaders(self):
         # type: () -> None
         """
@@ -424,7 +407,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         rawHeaders = [(b"a", b"1"), (b"b", b"2"), (b"c", b"3")]
         headers = self.headers(rawHeaders=rawHeaders)
         self.assertRawHeadersEqual(headers.rawHeaders, tuple(rawHeaders))
-
 
     def test_removeBytesName(self):
         # type: () -> None
@@ -440,7 +422,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             headers.rawHeaders, ((b"a", b"1"), (b"c", b"3"))
         )
 
-
     def test_removeTextName(self):
         # type: () -> None
         """
@@ -454,7 +435,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         self.assertRawHeadersEqual(
             headers.rawHeaders, ((b"a", b"1"), (b"c", b"3"))
         )
-
 
     def test_removeInvalidNameType(self):
         # type: () -> None
@@ -471,7 +451,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
         )
 
-
     def test_addValueBytesName(self):
         # type: () -> None
         """
@@ -486,7 +465,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             headers.rawHeaders, ((b"a", b"1"), (b"b", b"2a"), (b"b", b"2b"))
         )
 
-
     def test_addValueTextName(self):
         # type: () -> None
         """
@@ -500,7 +478,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         self.assertRawHeadersEqual(
             headers.rawHeaders, ((b"a", b"1"), (b"b", b"2a"), (b"b", b"2b"))
         )
-
 
     def test_addValueBytesNameTextValue(self):
         # type: () -> None
@@ -517,7 +494,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             str(e), "value u?'1' must be bytes to match name b?'a'"
         )
 
-
     def test_addValueTextNameBytesValue(self):
         # type: () -> None
         """
@@ -532,7 +508,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         cast(TestCase, self).assertRegex(
             str(e), "value b?'1' must be text to match name u?'a'"
         )
-
 
     def test_addValueInvalidNameType(self):
         # type: () -> None
@@ -550,7 +525,6 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         )
 
 
-
 class MutableHTTPHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     """
     Tests for L{MutableHTTPHeaders}.
@@ -559,7 +533,6 @@ class MutableHTTPHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     def headers(self, rawHeaders):
         # type: (RawHeaders) -> IMutableHTTPHeaders
         return MutableHTTPHeaders(rawHeaders=rawHeaders)
-
 
     def test_defaultHeaders(self):
         # type: () -> None

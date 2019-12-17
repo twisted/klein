@@ -21,19 +21,18 @@ from ._imessage import (
 from ._typing import ifmethod
 
 
-
 class IKleinRequest(Interface):
     branch_segments = Attribute("Segments consumed by a branch route.")
     mapper = Attribute("L{werkzeug.routing.MapAdapter}")
 
     @ifmethod
     def url_for(
-        request,               # type: IKleinRequest
-        endpoint,              # type: Text
-        values=None,           # type: Optional[Mapping[Text, Text]]
-        method=None,           # type: Optional[Text]
+        request,  # type: IKleinRequest
+        endpoint,  # type: Text
+        values=None,  # type: Optional[Mapping[Text, Text]]
+        method=None,  # type: Optional[Text]
         force_external=False,  # type: bool
-        append_unknown=True,   # type: bool
+        append_unknown=True,  # type: bool
     ):
         # type: (...) -> Text
         """
@@ -41,8 +40,7 @@ class IKleinRequest(Interface):
         """
 
 
-
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from typing import Union
 
     from ._headers import FrozenHTTPHeaders, MutableHTTPHeaders
@@ -60,9 +58,7 @@ if TYPE_CHECKING:               # pragma: no cover
     ]
 
     IMutableHTTPHeaders = Union[
-        _IMutableHTTPHeaders,
-        HTTPHeadersWrappingHeaders,
-        MutableHTTPHeaders,
+        _IMutableHTTPHeaders, HTTPHeadersWrappingHeaders, MutableHTTPHeaders,
     ]
 
     IHTTPMessage = Union[
@@ -74,22 +70,19 @@ if TYPE_CHECKING:               # pragma: no cover
     ]
 
     IHTTPRequest = Union[
-        _IHTTPRequest,
-        FrozenHTTPRequest,
-        HTTPRequestWrappingIRequest,
+        _IHTTPRequest, FrozenHTTPRequest, HTTPRequestWrappingIRequest,
     ]
 
     IHTTPResponse = Union[
-        _IHTTPResponse,
-        FrozenHTTPResponse,
+        _IHTTPResponse, FrozenHTTPResponse,
     ]
 
 else:
-    IHTTPHeaders        = _IHTTPHeaders
+    IHTTPHeaders = _IHTTPHeaders
     IMutableHTTPHeaders = _IMutableHTTPHeaders
-    IHTTPMessage        = _IHTTPMessage
-    IHTTPRequest        = _IHTTPRequest
-    IHTTPResponse       = _IHTTPResponse
+    IHTTPMessage = _IHTTPMessage
+    IHTTPRequest = _IHTTPRequest
+    IHTTPResponse = _IHTTPResponse
 
 
 __all__ = ()

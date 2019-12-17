@@ -3,8 +3,15 @@ from __future__ import absolute_import, division
 from typing import TYPE_CHECKING
 
 from ._app import (
-    Klein, KleinErrorHandler, KleinRenderable, KleinRoute,
-    handle_errors, route, run, urlFor, url_for,
+    Klein,
+    KleinErrorHandler,
+    KleinRenderable,
+    KleinRoute,
+    handle_errors,
+    route,
+    run,
+    urlFor,
+    url_for,
 )
 from ._dihttp import RequestComponent, RequestURL, Response
 from ._form import Field, FieldValues, Form, RenderableForm
@@ -16,6 +23,7 @@ from ._version import __version__ as _incremental_version
 if TYPE_CHECKING:
     # Inform mypy of import shenanigans.
     from .resource import _SpecialModuleObject
+
     resource = _SpecialModuleObject(None)
 else:
     from . import resource

@@ -51,9 +51,10 @@ def modified(  # type: ignore[no-untyped-def]
         return value, and is only related to C{original} in the sense that it
         likely calls it.
     """
+
     def decorator(wrapper):
         # type: (C) -> C
-        namer = named(modification + ' for ' + original.__name__)
+        namer = named(modification + " for " + original.__name__)
         result = cast(C, namer(wraps(original)(wrapper)))
         result.__original__ = original  # type: ignore[attr-defined]
         if modifier is not None:
@@ -63,6 +64,7 @@ def modified(  # type: ignore[no-untyped-def]
             for key in after - before:
                 setattr(original, key, wrapper.__dict__[key])
         return result
+
     return decorator
 
 
@@ -71,11 +73,13 @@ def named(name):
     """
     Change the name of a function to the given name.
     """
+
     def decorator(original):
         # type: (C) -> C
         original.__name__ = str(name)
         original.__qualname__ = str(name)
         return original
+
     return decorator
 
 

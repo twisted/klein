@@ -1,8 +1,7 @@
 from functools import wraps
-from typing import Callable, Text, TypeVar, cast
+from typing import Callable, Text, TypeVar
 
 C = TypeVar("C", bound=Callable)
-
 
 
 def bindable(bindable):
@@ -29,9 +28,7 @@ def bindable(bindable):
     return bindable
 
 
-def modified(
-    modification, original, modifier=None
-):
+def modified(modification, original, modifier=None):
     # FIXME: This maybe isn't quite right
     # __type: (Text, C, Optional[Callable[[C], C]]) -> Callable[[C], C]
     """
@@ -54,11 +51,11 @@ def modified(
     """
 
     def decorator(wrapper):
-        # type: (C) -> C
+        # type: (Callable) -> Callable
         result = named(modification + " for " + original.__name__)(
             wraps(original)(wrapper)
         )
-        result.__original__ = original
+        result.__original__ = original  # type: ignore[attr-defined]
         if modifier is not None:
             before = set(wrapper.__dict__.keys())
             result = modifier(result)

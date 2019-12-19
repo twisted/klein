@@ -224,6 +224,8 @@ jobs:
           env_py="${env_py/./}";    # Remove "."
           ln -s ".tox/coverage-${env_py}" testenv;  # To find artifacts below
           tox -e "coverage-${env_py}-${{ matrix.twisted }},codecov";
+          ls -al .;
+          ls -al testenv/;
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           GITHUB_REF: ${{ github.ref }}

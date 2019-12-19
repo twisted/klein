@@ -221,7 +221,7 @@ jobs:
         run: |
           env_py="${{ matrix.python }}";
           env_py="py${env_py#py}";  # Add "py" prefix if not present
-          env_py="py${env_py/./}";  # Remove "."
+          env_py="${env_py/./}";    # Remove "."
           tox -e "coverage-${env_py}-${{ matrix.twisted }},codecov";
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

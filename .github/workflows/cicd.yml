@@ -232,6 +232,7 @@ jobs:
           GITHUB_WORKFLOW: ${{ github.workflow }}
 
       - name: Upload Trial log artifact
+        if: failure()
         uses: actions/upload-artifact@v1
         with:
           name: trial

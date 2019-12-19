@@ -234,4 +234,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: trial
-          path: .tox/coverage-py/log/trial.log
+          path: .tox/coverage-*/log/trial.log

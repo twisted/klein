@@ -222,10 +222,8 @@ jobs:
           env_py="${{ matrix.python }}";
           env_py="py${env_py#py}";  # Add "py" prefix if not present
           env_py="${env_py/./}";    # Remove "."
-          ln -s ".tox/coverage-${env_py}" testenv;  # To find artifacts below
+          ln -s ".tox/coverage-${env_py}-${{ matrix.twisted }}" testenv;  # For upload step
           tox -e "coverage-${env_py}-${{ matrix.twisted }},codecov";
-          ls -al .;
-          ls -al testenv/;
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           GITHUB_REF: ${{ github.ref }}

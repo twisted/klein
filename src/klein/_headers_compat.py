@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_headers -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Support for interoperability with L{twisted.web.http_headers.Headers}.
@@ -15,19 +15,21 @@ from twisted.web.http_headers import Headers
 from zope.interface import implementer
 
 from ._headers import (
-    IMutableHTTPHeaders, RawHeaders, String, headerNameAsBytes,
-    headerValueAsText, normalizeHeaderName, rawHeaderName,
+    IMutableHTTPHeaders,
+    RawHeaders,
+    String,
+    headerNameAsBytes,
+    headerValueAsText,
+    normalizeHeaderName,
+    rawHeaderName,
     rawHeaderNameAndValue,
 )
-
-AnyStr, Iterable, RawHeaders, String, Tuple  # Silence linter
 
 
 __all__ = ()
 
 
-
-@implementer(IMutableHTTPHeaders)
+@implementer(IMutableHTTPHeaders)  # type: ignore[misc]
 @attrs(frozen=True)
 class HTTPHeadersWrappingHeaders(object):
     """
@@ -42,7 +44,6 @@ class HTTPHeadersWrappingHeaders(object):
 
     _headers = attrib(validator=instance_of(Headers))  # type: Headers
 
-
     @property
     def rawHeaders(self):
         # type: () -> RawHeaders
@@ -54,7 +55,6 @@ class HTTPHeadersWrappingHeaders(object):
                     yield (name, value)
 
         return tuple(pairs())
-
 
     def getValues(self, name):
         # type: (AnyStr) -> Iterable[AnyStr]
@@ -72,11 +72,9 @@ class HTTPHeadersWrappingHeaders(object):
 
         return values
 
-
     def remove(self, name):
         # type: (String) -> None
         self._headers.removeHeader(rawHeaderName(name))
-
 
     def addValue(self, name, value):
         # type: (AnyStr, AnyStr) -> None

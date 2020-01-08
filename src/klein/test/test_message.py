@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_message -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Tests for L{klein._message}.
@@ -11,13 +11,11 @@ from hypothesis import given
 from hypothesis.strategies import binary
 
 from ._trial import TestCase
-from .._message import (
-    FountAlreadyAccessedError, IHTTPMessage, bytesToFount, fountToBytes
-)
+from .._interfaces import IHTTPMessage
+from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 
 
 __all__ = ()
-
 
 
 class FrozenHTTPMessageTestsMixIn(object):
@@ -32,10 +30,7 @@ class FrozenHTTPMessageTestsMixIn(object):
         Return a new instance of an L{IHTTPMessage} implementation using the
         given bytes as the message body.
         """
-        raise NotImplementedError(
-            "{} must implement getValues()".format(cls)
-        )
-
+        raise NotImplementedError("{} must implement getValues()".format(cls))
 
     @classmethod
     def messageFromFountFromBytes(cls, data=b""):
@@ -46,15 +41,15 @@ class FrozenHTTPMessageTestsMixIn(object):
         """
         return cls.messageFromBytes(bytesToFount(data))
 
-
     def test_interface_message(self):
         # type: () -> None
         """
         Message instance implements L{IHTTPMessage}.
         """
         message = self.messageFromBytes()
-        cast(TestCase, self).assertProvides(IHTTPMessage, message)
-
+        cast(TestCase, self).assertProvides(
+            IHTTPMessage, message  # type: ignore[misc]
+        )
 
     @given(binary())
     def test_bodyAsFountFromBytes(self, data):
@@ -69,7 +64,6 @@ class FrozenHTTPMessageTestsMixIn(object):
 
         cast(TestCase, self).assertEqual(body, data)
 
-
     @given(binary())
     def test_bodyAsFountFromBytesTwice(self, data):
         # type: (bytes) -> None
@@ -83,7 +77,6 @@ class FrozenHTTPMessageTestsMixIn(object):
             FountAlreadyAccessedError, message.bodyAsFount
         )
 
-
     @given(binary())
     def test_bodyAsFountFromFount(self, data):
         # type: (bytes) -> None
@@ -95,7 +88,6 @@ class FrozenHTTPMessageTestsMixIn(object):
         body = cast(TestCase, self).successResultOf(fountToBytes(fount))
 
         cast(TestCase, self).assertEqual(body, data)
-
 
     @given(binary())
     def test_bodyAsFountFromFountTwice(self, data):
@@ -110,7 +102,6 @@ class FrozenHTTPMessageTestsMixIn(object):
             FountAlreadyAccessedError, message.bodyAsFount
         )
 
-
     @given(binary())
     def test_bodyAsBytesFromBytes(self, data):
         # type: (bytes) -> None
@@ -121,7 +112,6 @@ class FrozenHTTPMessageTestsMixIn(object):
         body = cast(TestCase, self).successResultOf(message.bodyAsBytes())
 
         cast(TestCase, self).assertEqual(body, data)
-
 
     @given(binary())
     def test_bodyAsBytesFromBytesCached(self, data):
@@ -136,7 +126,6 @@ class FrozenHTTPMessageTestsMixIn(object):
 
         cast(TestCase, self).assertIdentical(body1, body2)
 
-
     @given(binary())
     def test_bodyAsBytesFromFount(self, data):
         # type: (bytes) -> None
@@ -146,7 +135,6 @@ class FrozenHTTPMessageTestsMixIn(object):
         message = self.messageFromFountFromBytes(data)
         body = cast(TestCase, self).successResultOf(message.bodyAsBytes())
         cast(TestCase, self).assertEqual(body, data)
-
 
     @given(binary())
     def test_bodyAsBytesFromFountCached(self, data):

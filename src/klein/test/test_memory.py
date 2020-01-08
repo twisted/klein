@@ -1,4 +1,3 @@
-
 from typing import Any
 
 from twisted.trial.unittest import SynchronousTestCase
@@ -9,7 +8,6 @@ from zope.interface.verify import verifyObject
 from klein.interfaces import ISession, ISessionStore, SessionMechanism
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
-Any
 
 class IFoo(Interface):
     """
@@ -17,12 +15,10 @@ class IFoo(Interface):
     """
 
 
-
 class IBar(Interface):
     """
     Testing interface 2.
     """
-
 
 
 class MemoryTests(SynchronousTestCase):
@@ -36,13 +32,13 @@ class MemoryTests(SynchronousTestCase):
         Verify that the session store complies with the relevant interfaces.
         """
         store = MemorySessionStore()
-        verifyObject(ISessionStore, store)
+        verifyObject(ISessionStore, store)  # type: ignore[misc]
         verifyObject(
-            ISession, self.successResultOf(
+            ISession,  # type: ignore[misc]
+            self.successResultOf(
                 store.newSession(True, SessionMechanism.Header)
-            )
+            ),
         )
-
 
     def test_noAuthorizers(self):
         # type: () -> None
@@ -54,9 +50,9 @@ class MemoryTests(SynchronousTestCase):
         session = self.successResultOf(
             store.newSession(True, SessionMechanism.Header)
         )
-        self.assertEqual(self.successResultOf(session.authorize([IFoo, IBar])),
-                         {})
-
+        self.assertEqual(
+            self.successResultOf(session.authorize([IFoo, IBar])), {}
+        )
 
     def test_simpleAuthorization(self):
         # type: () -> None
@@ -65,6 +61,7 @@ class MemoryTests(SynchronousTestCase):
         decorated with L{declareMemoryAuthorizer} and constructs a session
         store that can authorize for those interfaces.
         """
+
         @declareMemoryAuthorizer(IFoo)
         def fooMe(interface, session, componentized):
             # type: (Any, Any, Any) -> int
@@ -79,5 +76,7 @@ class MemoryTests(SynchronousTestCase):
         session = self.successResultOf(
             store.newSession(False, SessionMechanism.Cookie)
         )
-        self.assertEqual(self.successResultOf(session.authorize([IBar, IFoo])),
-                         {IFoo: 1, IBar: 2})
+        self.assertEqual(
+            self.successResultOf(session.authorize([IBar, IFoo])),
+            {IFoo: 1, IBar: 2},
+        )

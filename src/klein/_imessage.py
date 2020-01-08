@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Interfaces related to HTTP messages.
@@ -23,8 +23,6 @@ from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
 
-AnyStr, DecodedURL, Deferred, Iterable, IFount, Text  # Silence linter
-
 
 __all__ = ()
 
@@ -34,13 +32,11 @@ RawHeaders = Sequence[RawHeader]
 MutableRawHeaders = MutableSequence[RawHeader]
 
 
-
 class FountAlreadyAccessedError(Exception):
     """
     The HTTP message's fount has already been accessed and is no longer
     available.
     """
-
 
 
 class IHTTPHeaders(Interface):
@@ -82,7 +78,6 @@ class IHTTPHeaders(Interface):
         """
     )  # type: RawHeaders
 
-
     @ifmethod
     def getValues(name):
         # type: (AnyStr) -> Iterable[AnyStr]
@@ -102,7 +97,6 @@ class IHTTPHeaders(Interface):
         """
 
 
-
 class IMutableHTTPHeaders(IHTTPHeaders):
     """
     Mutable HTTP entity headers.
@@ -120,7 +114,6 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         @param name: The name of the header to remove.
         """
 
-
     @ifmethod
     def addValue(name, value):
         # type: (AnyStr, AnyStr) -> None
@@ -134,14 +127,12 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         """
 
 
-
 class IHTTPMessage(Interface):
     """
     HTTP entity.
     """
 
     headers = Attribute("Entity headers.")  # type: IHTTPHeaders
-
 
     @ifmethod
     def bodyAsFount():
@@ -160,7 +151,6 @@ class IHTTPMessage(Interface):
         @raise FountAlreadyAccessedError: If the fount has previously been
             accessed.
         """
-
 
     @ifmethod
     def bodyAsBytes():
@@ -185,15 +175,13 @@ class IHTTPMessage(Interface):
         """
 
 
-
 class IHTTPRequest(IHTTPMessage):
     """
     HTTP request.
     """
 
     method = Attribute("Request method.")  # type: Text
-    uri    = Attribute("Request URI.")     # type: DecodedURL
-
+    uri = Attribute("Request URI.")  # type: DecodedURL
 
 
 class IHTTPResponse(IHTTPMessage):

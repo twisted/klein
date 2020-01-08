@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_irequest -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Support for interoperability with L{twisted.web.iweb.IRequest}.
@@ -27,9 +27,6 @@ from ._message import FountAlreadyAccessedError, MessageState
 from ._request import IHTTPRequest
 from ._tubes import IOFount, fountToBytes
 
-# Silence linter
-Deferred, IFount, IHTTPHeaders, Text
-
 
 __all__ = ()
 
@@ -37,8 +34,7 @@ __all__ = ()
 noneIO = BytesIO()
 
 
-
-@implementer(IHTTPRequest)
+@implementer(IHTTPRequest)  # type: ignore[misc]
 @attrs(frozen=True)
 class HTTPRequestWrappingIRequest(object):
     """
@@ -53,12 +49,10 @@ class HTTPRequestWrappingIRequest(object):
         default=Factory(MessageState), init=False
     )  # type: MessageState
 
-
     @property
     def method(self):
         # type: () -> Text
         return self._request.method.decode("ascii")
-
 
     @property
     def uri(self):
@@ -88,12 +82,10 @@ class HTTPRequestWrappingIRequest(object):
 
         return DecodedURL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
 
-
     @property
     def headers(self):
         # type: () -> IHTTPHeaders
         return HTTPHeadersWrappingHeaders(headers=self._request.requestHeaders)
-
 
     def bodyAsFount(self):
         # type: () -> IFount
@@ -106,7 +98,6 @@ class HTTPRequestWrappingIRequest(object):
         self._request.content = noneIO
 
         return fount
-
 
     def bodyAsBytes(self):
         # type: () -> Deferred[bytes]

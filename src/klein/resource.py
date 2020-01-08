@@ -16,8 +16,9 @@ from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 
 if TYPE_CHECKING:
     from typing import AnyStr, Callable, Text
-    AnyStr, Callable, Text
+
     KleinResource = _KleinResource
+
 
 class _SpecialModuleObject(object):
     """
@@ -49,7 +50,6 @@ class _SpecialModuleObject(object):
         # confusion.
         return _globalResourceMethod()
 
-
     def __repr__(self):
         # type: () -> str
         """
@@ -60,4 +60,4 @@ class _SpecialModuleObject(object):
 
 preserve = modules[__name__]
 modules[__name__] = _SpecialModuleObject()  # type: ignore
-modules[__name__].__preserve__ = preserve   # type: ignore
+modules[__name__].__preserve__ = preserve  # type: ignore

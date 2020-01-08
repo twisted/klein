@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_memory -*-
 from binascii import hexlify
 from os import urandom
-from typing import Any, Callable, Dict, List, TYPE_CHECKING, Text, cast
+from typing import Any, Callable, Dict, Iterable, List, Text, cast
 
 import attr
 from attr import Factory
@@ -13,15 +13,16 @@ from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from klein.interfaces import (
-    ISession, ISessionStore, NoSuchSession, SessionMechanism
+    ISession,
+    ISessionStore,
+    NoSuchSession,
+    SessionMechanism,
 )
-
-if TYPE_CHECKING:               # pragma: no cover
-    List, Deferred, IInterface, Any, Callable, Dict, SessionMechanism
 
 _authCB = Callable[[IInterface, ISession, Componentized], Any]
 
-@implementer(ISession)
+
+@implementer(ISession)  # type: ignore[misc]
 @attr.s
 class MemorySession(object):
     """
@@ -31,9 +32,8 @@ class MemorySession(object):
     identifier = attr.ib(type=Text)
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
-    _authorizationCallback = attr.ib(type=_authCB)
-    _components = attr.ib(default=Factory(Componentized),
-                          type=Componentized)
+    _authorizationCallback = attr.ib(type=_authCB)  # type: ignore[misc]
+    _components = attr.ib(default=Factory(Componentized), type=Componentized)
 
     def authorize(self, interfaces):
         # type: (List[IInterface]) -> Deferred
@@ -43,8 +43,9 @@ class MemorySession(object):
         """
         result = {}
         for interface in interfaces:
-            provider = self._authorizationCallback(interface, self,
-                                                   self._components)
+            provider = self._authorizationCallback(
+                interface, self, self._components
+            )
             if provider is not None:
                 result[interface] = provider
         return succeed(result)
@@ -54,6 +55,7 @@ class _MemoryAuthorizerFunction(object):
     """
     Type shadow for function with the given attribute.
     """
+
     __memoryAuthInterface__ = None  # type: IInterface
 
     def __call__(self, interface, session, data):
@@ -62,7 +64,9 @@ class _MemoryAuthorizerFunction(object):
         Return a provider of the given interface.
         """
 
+
 _authFn = Callable[[IInterface, ISession, Componentized], Any]
+
 
 def declareMemoryAuthorizer(forInterface):
     # type: (IInterface) -> Callable[[Callable], _MemoryAuthorizerFunction]
@@ -70,28 +74,34 @@ def declareMemoryAuthorizer(forInterface):
     Declare that the decorated function is an authorizer usable with a memory
     session store.
     """
+
     def decorate(decoratee):
         # type: (_authFn) -> _MemoryAuthorizerFunction
         decoratee = cast(_MemoryAuthorizerFunction, decoratee)
         decoratee.__memoryAuthInterface__ = forInterface
         return decoratee
+
     return decorate
+
 
 def _noAuthorization(interface, session, data):
     # type: (IInterface, ISession, Componentized) -> None
     return None
 
-@implementer(ISessionStore)
+
+@implementer(ISessionStore)  # type: ignore[misc]
 @attr.s
 class MemorySessionStore(object):
     authorizationCallback = attr.ib(
-        type=_authFn,
-        default=_noAuthorization
+        type=_authFn,  # type: ignore[misc]
+        default=_noAuthorization,
     )
-    _secureStorage = attr.ib(type=Dict[str, Any],
-                             default=cast(Dict[str, Any], Factory(dict)))
-    _insecureStorage = attr.ib(type=Dict[str, Any],
-                               default=cast(Dict[str, Any], Factory(dict)))
+    _secureStorage = attr.ib(
+        type=Dict[str, Any], default=cast(Dict[str, Any], Factory(dict))
+    )
+    _insecureStorage = attr.ib(
+        type=Dict[str, Any], default=cast(Dict[str, Any], Factory(dict))
+    )
 
     @classmethod
     def fromAuthorizers(cls, authorizers):
@@ -110,8 +120,8 @@ class MemorySessionStore(object):
             return interfaceToCallable.get(interface, _noAuthorization)(
                 interface, session, data
             )
-        return cls(authorizationCallback)
 
+        return cls(authorizationCallback)
 
     def _storage(self, isConfidential):
         # type: (bool) -> Dict[str, Any]
@@ -123,16 +133,18 @@ class MemorySessionStore(object):
         else:
             return self._insecureStorage
 
-
     def newSession(self, isConfidential, authenticatedBy):
         # type: (bool, SessionMechanism) -> Deferred
         storage = self._storage(isConfidential)
-        identifier = hexlify(urandom(32)).decode('ascii')
-        session = MemorySession(identifier, isConfidential, authenticatedBy,
-                                self.authorizationCallback)
+        identifier = hexlify(urandom(32)).decode("ascii")
+        session = MemorySession(
+            identifier,
+            isConfidential,
+            authenticatedBy,
+            self.authorizationCallback,
+        )
         storage[identifier] = session
         return succeed(session)
-
 
     def loadSession(self, identifier, isConfidential, authenticatedBy):
         # type: (str, bool, SessionMechanism) -> Deferred
@@ -140,12 +152,14 @@ class MemorySessionStore(object):
         if identifier in storage:
             return succeed(storage[identifier])
         else:
-            return fail(NoSuchSession(
-                u"Session not found in memory store {id!r}"
-                .format(id=identifier)
-            ))
-
+            return fail(
+                NoSuchSession(
+                    u"Session not found in memory store {id!r}".format(
+                        id=identifier
+                    )
+                )
+            )
 
     def sentInsecurely(self, tokens):
-        # type: (List[str]) -> None
+        # type: (Iterable[str]) -> None
         return

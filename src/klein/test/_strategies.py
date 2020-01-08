@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Hypothesis strategies.
@@ -14,7 +14,12 @@ from hyperlink import DecodedURL, EncodedURL
 
 from hypothesis import assume
 from hypothesis.strategies import (
-    characters, composite, integers, lists, sampled_from, text
+    characters,
+    composite,
+    integers,
+    lists,
+    sampled_from,
+    text,
 )
 
 from idna import IDNAError, check_label, encode as idna_encode
@@ -27,7 +32,7 @@ Iterable, Optional, Sequence, Text  # Silence linter
 __all__ = ()
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 DrawCallable = Callable[[Callable[..., T]], T]
 
 
@@ -76,6 +81,7 @@ def idna_characters():  # pragma: no cover
 
     return _idnaCharacters
 
+
 _idnaCharacters = None  # type: Optional[str]
 
 
@@ -91,9 +97,9 @@ def ascii_text(draw, min_size=0, max_size=None):  # pragma: no cover
     @param max_size: The maximum number of characters in the text.
         Use C{None} for an unbounded size.
     """
-    return draw(text(
-        min_size=min_size, max_size=max_size, alphabet=ascii_letters
-    ))
+    return draw(
+        text(min_size=min_size, max_size=max_size, alphabet=ascii_letters)
+    )
 
 
 @composite  # pragma: no cover
@@ -108,10 +114,15 @@ def latin1_text(draw, min_size=0, max_size=None):
     @param max_size: The maximum number of characters in the text.
         Use C{None} for an unbounded size.
     """
-    return u"".join(draw(lists(
-        characters(max_codepoint=255),
-        min_size=min_size, max_size=max_size,
-    )))
+    return u"".join(
+        draw(
+            lists(
+                characters(max_codepoint=255),
+                min_size=min_size,
+                max_size=max_size,
+            )
+        )
+    )
 
 
 @composite
@@ -126,9 +137,9 @@ def idna_text(draw, min_size=0, max_size=None):  # pragma: no cover
     @param max_size: The maximum number of characters in the text.
         Use C{None} for an unbounded size.
     """
-    return draw(text(
-        min_size=min_size, max_size=max_size, alphabet=idna_characters()
-    ))
+    return draw(
+        text(min_size=min_size, max_size=max_size, alphabet=idna_characters())
+    )
 
 
 @composite
@@ -172,10 +183,13 @@ def hostname_labels(draw, allow_idn=True):  # pragma: no cover
                 label = label[:-1]
 
     else:
-        label = draw(text(
-            min_size=1, max_size=63,
-            alphabet=unicode(ascii_letters + digits + u"-")
-        ))
+        label = draw(
+            text(
+                min_size=1,
+                max_size=63,
+                alphabet=unicode(ascii_letters + digits + u"-"),
+            )
+        )
 
     # Filter invalid labels.
     # It would be better not to generate bogus labels in the first place... but
@@ -203,8 +217,9 @@ def hostnames(
         internationalized domain names (IDNs).
     """
     labels = draw(
-        lists(hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5)
-        .filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
+        lists(
+            hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5
+        ).filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
     )
 
     name = u".".join(labels)
@@ -228,6 +243,7 @@ def path_characters():
     global _path_characters
 
     if _path_characters is None:
+
         def chars():
             # type: () -> Iterable[Text]
             for i in range(maxunicode):
@@ -248,6 +264,7 @@ def path_characters():
         _path_characters = "".join(chars())
 
     return _path_characters
+
 
 _path_characters = None  # type: Optional[str]
 
@@ -277,7 +294,9 @@ def encoded_urls(draw):  # pragma: no cover
 
     args = dict(
         scheme=draw(sampled_from((u"http", u"https"))),
-        host=host, port=port, path=path,
+        host=host,
+        port=port,
+        path=path,
     )
 
     return EncodedURL(**args)

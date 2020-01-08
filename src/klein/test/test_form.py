@@ -1,4 +1,3 @@
-
 from typing import List, TYPE_CHECKING, Text, cast
 from xml.etree import ElementTree
 
@@ -14,17 +13,18 @@ from twisted.web.template import Element, TagLoader, renderer, tags
 
 from klein import Field, Form, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
-    ISession, ISessionStore, NoSuchSession, SessionMechanism,
-    ValidationError
+    ISession,
+    ISessionStore,
+    NoSuchSession,
+    SessionMechanism,
+    ValidationError,
 )
 from klein.storage.memory import MemorySessionStore
 
-if TYPE_CHECKING:               # pragma: no cover
-    from typing import Any, Dict, Tuple, Union
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Any, Tuple
     from twisted.web.iweb import IRequest
     from klein import RenderableForm
-    Any, IRequest, Text, Union, Dict, Tuple, RenderableForm
-
 
 
 class DanglingField(Field):
@@ -40,20 +40,22 @@ class DanglingField(Field):
 
 @attr.s(hash=False)
 class TestObject(object):
-    sessionStore = attr.ib(type=ISessionStore)
+    sessionStore = attr.ib(type=ISessionStore)  # type: ignore[misc]
     calls = attr.ib(attr.Factory(list), type=List)
 
     router = Klein()
     requirer = Requirer()
 
-    @requirer.prerequisite([ISession])
+    @requirer.prerequisite([ISession])  # type: ignore[misc]
     @inlineCallbacks
     def procureASession(self, request):
         # type: (IRequest) -> Any
         try:
-            yield (SessionProcurer(self.sessionStore,
-                                   secureTokenHeader=b'X-Test-Session')
-                   .procureSession(request))
+            yield (
+                SessionProcurer(
+                    self.sessionStore, secureTokenHeader=b"X-Test-Session"
+                ).procureSession(request)
+            )
         except NoSuchSession:
             # Intentionally slightly buggy - if a session can't be procured,
             # simply leave it out and rely on checkCSRF to ensure the session
@@ -69,17 +71,19 @@ class TestObject(object):
         "..."
 
     @requirer.require(
-        router.route("/handle", methods=['POST']),
-        name=Field.text(), value=Field.number(),
+        router.route("/handle", methods=["POST"]),
+        name=Field.text(),
+        value=Field.number(),
     )
     def handler(self, name, value):
         # type: (Text, float) -> bytes
         self.calls.append((name, value))
-        return b'yay'
+        return b"yay"
 
     @requirer.require(
-        router.route("/handle-submit", methods=['POST']),
-        name=Field.text(), button=Field.submit(u"OK")
+        router.route("/handle-submit", methods=["POST"]),
+        name=Field.text(),
+        button=Field.submit(u"OK"),
     )
     def handlerWithSubmit(self, name, button):
         # type: (str, str) -> None
@@ -88,52 +92,51 @@ class TestObject(object):
         """
 
     @requirer.require(
-        router.route("/password-field", methods=["POST"]),
-        pw=Field.password()
+        router.route("/password-field", methods=["POST"]), pw=Field.password()
     )
     def gotPassword(self, pw):
         # type: (Text) -> bytes
         self.calls.append(("password", pw))
-        return b'password received'
+        return b"password received"
 
     @requirer.require(
-        router.route("/notrequired", methods=['POST']),
-        name=Field.text(), value=Field.number(required=False, default=7.0)
+        router.route("/notrequired", methods=["POST"]),
+        name=Field.text(),
+        value=Field.number(required=False, default=7.0),
     )
     def notRequired(self, name, value):
         # type: (IRequest, Text, float) -> bytes
         self.calls.append((name, value))
-        return b'okay'
+        return b"okay"
 
     @requirer.require(
-        router.route("/constrained", methods=['POST']),
-        goldilocks=Field.number(minimum=3, maximum=9)
+        router.route("/constrained", methods=["POST"]),
+        goldilocks=Field.number(minimum=3, maximum=9),
     )
     def constrained(self, goldilocks):
         # type: (int) -> bytes
-        self.calls.append(('constrained', goldilocks))
-        return b'got it'
+        self.calls.append(("constrained", goldilocks))
+        return b"got it"
 
     @requirer.require(
-        router.route("/render", methods=['GET']),
-        form=Form.rendererFor(handler, action=u'/handle')
+        router.route("/render", methods=["GET"]),
+        form=Form.rendererFor(handler, action=u"/handle"),
     )
     def renderer(self, form):
         # type: (IRequest, Form) -> Form
         return form
 
     @requirer.require(
-        router.route("/render-submit", methods=['GET']),
-        form=Form.rendererFor(handlerWithSubmit, action=u'/handle-submit')
+        router.route("/render-submit", methods=["GET"]),
+        form=Form.rendererFor(handlerWithSubmit, action=u"/handle-submit"),
     )
     def submitRenderer(self, form):
         # type: (IRequest, RenderableForm) -> RenderableForm
         return form
 
-
     @requirer.require(
         router.route("/render-custom", methods=["GET"]),
-        form=Form.rendererFor(handler, action=u"/handle")
+        form=Form.rendererFor(handler, action=u"/handle"),
     )
     def customFormRender(self, form):
         # type: (RenderableForm) -> Any
@@ -143,31 +146,27 @@ class TestObject(object):
         """
         return Element(loader=TagLoader(tags.html(tags.body(form.glue()))))
 
-
     @requirer.require(
         router.route("/render-cascade", methods=["GET"]),
-        form=Form.rendererFor(handler, action=u"/handle")
+        form=Form.rendererFor(handler, action=u"/handle"),
     )
     def cascadeRenderer(self, form):
         # type: (RenderableForm) -> RenderableForm
 
         class CustomElement(Element):
-
             @renderer
             def customize(self, request, tag):
                 # type: (IRequest, Any) -> Any
                 return tag("customized")
 
-        form.validationErrors[form._form.fields[0]] = ValidationError(message=(
-            tags.div(class_="checkme", render="customize")
-        ))
-
-        return CustomElement(
-            loader=TagLoader(form)
+        form.validationErrors[form._form.fields[0]] = ValidationError(
+            message=(tags.div(class_="checkme", render="customize"))
         )
 
+        return CustomElement(loader=TagLoader(form))
+
     @requirer.require(
-        router.route("/handle-validation", methods=['POST']),
+        router.route("/handle-validation", methods=["POST"]),
         value=Field.number(maximum=10),
     )
     def customValidation(self, value):
@@ -176,31 +175,25 @@ class TestObject(object):
         never called.
         """
 
-    @requirer.require(
-        Form.onValidationFailureFor(customValidation)
-    )
+    @requirer.require(Form.onValidationFailureFor(customValidation))
     def customFailureHandling(self, values):
         # type: (RenderableForm) -> bytes
         """
         Handle validation failure.
         """
-        self.calls.append(('validation', values))
-        return b'~special~'
+        self.calls.append(("validation", values))
+        return b"~special~"
 
-
-    @requirer.require(
-        router.route("/handle-empty", methods=['POST']),
-    )
+    @requirer.require(router.route("/handle-empty", methods=["POST"]),)
     def emptyHandler(self):
         # type: () -> bytes
         """
         Empty form handler; just for testing rendering.
         """
 
-
     @requirer.require(
-        router.route("/render-empty", methods=['GET']),
-        form=Form.rendererFor(emptyHandler, action=u'/handle-empty')
+        router.route("/render-empty", methods=["GET"]),
+        form=Form.rendererFor(emptyHandler, action=u"/handle-empty"),
     )
     def emptyRenderer(self, form):
         # type: (RenderableForm) -> RenderableForm
@@ -217,17 +210,17 @@ def simpleFormRouter():
     calls = []
 
     @requirer.require(
-        router.route("/getme", methods=['GET']),
-        name=Field.text(), value=Field.number(),
-        custom=Field(formInputType='number', converter=int, required=False),
+        router.route("/getme", methods=["GET"]),
+        name=Field.text(),
+        value=Field.number(),
+        custom=Field(formInputType="number", converter=int, required=False),
     )
     def justGet(name, value, custom):
         # type: (str, int, int) -> bytes
         calls.append((name, value or custom))
-        return b'got'
+        return b"got"
 
     return router, calls
-
 
 
 class TestForms(SynchronousTestCase):
@@ -249,15 +242,16 @@ class TestForms(SynchronousTestCase):
 
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle',
-            data=dict(name='hello', value='1234', ignoreme='extraneous'),
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle",
+                data=dict(name="hello", value="1234", ignoreme="extraneous"),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertEqual(self.successResultOf(content(response)), b'yay')
-        self.assertEqual(to.calls, [(u'hello', 1234)])
-
+        self.assertEqual(self.successResultOf(content(response)), b"yay")
+        self.assertEqual(to.calls, [(u"hello", 1234)])
 
     def test_handlingPassword(self):
         # type: () -> None
@@ -273,16 +267,18 @@ class TestForms(SynchronousTestCase):
 
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/password-field',
-            data=dict(pw='asdfjkl;'),
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/password-field",
+                data=dict(pw="asdfjkl;"),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertEqual(self.successResultOf(content(response)),
-                         b'password received')
-        self.assertEqual(to.calls, [(u'password', u'asdfjkl;')])
-
+        self.assertEqual(
+            self.successResultOf(content(response)), b"password received"
+        )
+        self.assertEqual(to.calls, [(u"password", u"asdfjkl;")])
 
     def test_numberConstraints(self):
         # type: () -> None
@@ -298,28 +294,33 @@ class TestForms(SynchronousTestCase):
 
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        tooLow = self.successResultOf(stub.post(
-            'https://localhost/constrained',
-            data=dict(goldilocks='1'),
-            headers={b'X-Test-Session': session.identifier}
-        ))
-        tooHigh = self.successResultOf(stub.post(
-            'https://localhost/constrained',
-            data=dict(goldilocks='20'),
-            headers={b'X-Test-Session': session.identifier}
-        ))
-        justRight = self.successResultOf(stub.post(
-            'https://localhost/constrained',
-            data=dict(goldilocks='7'),
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        tooLow = self.successResultOf(
+            stub.post(
+                "https://localhost/constrained",
+                data=dict(goldilocks="1"),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
+        tooHigh = self.successResultOf(
+            stub.post(
+                "https://localhost/constrained",
+                data=dict(goldilocks="20"),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
+        justRight = self.successResultOf(
+            stub.post(
+                "https://localhost/constrained",
+                data=dict(goldilocks="7"),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
 
         self.assertEqual(tooHigh.code, 400)
         self.assertEqual(tooLow.code, 400)
         self.assertEqual(justRight.code, 200)
-        self.assertEqual(self.successResultOf(content(justRight)), b'got it')
-        self.assertEqual(to.calls, [(u'constrained', 7)])
-
+        self.assertEqual(self.successResultOf(content(justRight)), b"got it")
+        self.assertEqual(to.calls, [(u"constrained", 7)])
 
     def test_missingRequiredParameter(self):
         # type: () -> None
@@ -335,18 +336,19 @@ class TestForms(SynchronousTestCase):
 
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle',
-            data=dict(),
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle",
+                data=dict(),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 400)
         self.assertIn(
             b"a value was required but none was supplied",
-            self.successResultOf(content(response))
+            self.successResultOf(content(response)),
         )
         self.assertEqual(to.calls, [])
-
 
     def test_noName(self):
         # type: () -> None
@@ -360,17 +362,19 @@ class TestForms(SynchronousTestCase):
         )
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/dangling-param',
-            data=dict(),
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/dangling-param",
+                data=dict(),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 500)
         errors = self.flushLoggedErrors(ValueError)
         self.assertEqual(len(errors), 1)
-        self.assertIn(str(errors[0].value),
-                      "Cannot extract unnamed form field.")
-
+        self.assertIn(
+            str(errors[0].value), "Cannot extract unnamed form field."
+        )
 
     def test_handlingGET(self):
         # type: () -> None
@@ -382,13 +386,14 @@ class TestForms(SynchronousTestCase):
 
         stub = StubTreq(router.resource())
 
-        response = self.successResultOf(stub.get(
-            b"https://localhost/getme?name=hello,%20big+world&value=4321"
-        ))
+        response = self.successResultOf(
+            stub.get(
+                b"https://localhost/getme?name=hello,%20big+world&value=4321"
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertEqual(self.successResultOf(content(response)), b'got')
-        self.assertEqual(calls, [(u'hello, big world', 4321)])
-
+        self.assertEqual(self.successResultOf(content(response)), b"got")
+        self.assertEqual(calls, [(u"hello, big world", 4321)])
 
     def test_validatingParameters(self):
         # type: () -> None
@@ -401,20 +406,22 @@ class TestForms(SynchronousTestCase):
 
         stub = StubTreq(router.resource())
 
-        response = self.successResultOf(stub.get(
-            b"https://localhost/getme?"
-            b"name=hello,%20big+world&value=not+a+number"
-        ))
+        response = self.successResultOf(
+            stub.get(
+                b"https://localhost/getme?"
+                b"name=hello,%20big+world&value=not+a+number"
+            )
+        )
         responseForm = self.successResultOf(content(response))
         self.assertEqual(response.code, 400)
         self.assertEqual(calls, [])
         responseForm = self.successResultOf(content(response))
         responseDom = ElementTree.fromstring(responseForm)
         errors = responseDom.findall(
-            ".//*[@class='klein-form-validation-error']")
+            ".//*[@class='klein-form-validation-error']"
+        )
         self.assertEqual(len(errors), 1)
         self.assertEquals(errors[0].text, "not a valid number")
-
 
     def test_customParameterValidation(self):
         # type: () -> None
@@ -428,32 +435,29 @@ class TestForms(SynchronousTestCase):
 
         stub = StubTreq(router.resource())
 
-        response = self.successResultOf(stub.get(
-            b"https://localhost/getme?"
-            b"name=hello,%20big+world&value=0&custom=not+a+number"
-        ))
+        response = self.successResultOf(
+            stub.get(
+                b"https://localhost/getme?"
+                b"name=hello,%20big+world&value=0&custom=not+a+number"
+            )
+        )
         responseForm = self.successResultOf(content(response))
         self.assertEqual(response.code, 400)
         self.assertEqual(calls, [])
         responseForm = self.successResultOf(content(response))
         responseDom = ElementTree.fromstring(responseForm)
         errors = responseDom.findall(
-            ".//*[@class='klein-form-validation-error']")
+            ".//*[@class='klein-form-validation-error']"
+        )
         self.assertEqual(len(errors), 1)
         errorText = cast(str, errors[0].text)
         self.assertIsNot(errorText, None)
         self.assertTrue(
-            errorText.startswith(
-                "invalid literal for int() with base 10: "
-            )
+            errorText.startswith("invalid literal for int() with base 10: ")
         )
         # Peculiar 2-step assert because pypy2 (invalidly) sticks a 'u' in
         # there.
-        self.assertTrue(
-            errorText.endswith(
-                "'not a number'"
-            )
-        )
+        self.assertTrue(errorText.endswith("'not a number'"))
 
     def test_handlingJSON(self):
         # type: () -> None
@@ -469,15 +473,16 @@ class TestForms(SynchronousTestCase):
 
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle',
-            json=dict(name='hello', value='1234', ignoreme='extraneous'),
-            headers={u'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle",
+                json=dict(name="hello", value="1234", ignoreme="extraneous"),
+                headers={u"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertEqual(self.successResultOf(content(response)), b'yay')
-        self.assertEqual(to.calls, [(u'hello', 1234)])
-
+        self.assertEqual(self.successResultOf(content(response)), b"yay")
+        self.assertEqual(to.calls, [(u"hello", 1234)])
 
     def test_missingOptionalParameterJSON(self):
         # type: () -> None
@@ -493,22 +498,25 @@ class TestForms(SynchronousTestCase):
 
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/notrequired',
-            json=dict(name='one'),
-            headers={b'X-Test-Session': session.identifier}
-        ))
-        response2 = self.successResultOf(stub.post(
-            'https://localhost/notrequired',
-            json=dict(name='two', value=2),
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/notrequired",
+                json=dict(name="one"),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
+        response2 = self.successResultOf(
+            stub.post(
+                "https://localhost/notrequired",
+                json=dict(name="two", value=2),
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
         self.assertEqual(response2.code, 200)
-        self.assertEqual(self.successResultOf(content(response)), b'okay')
-        self.assertEqual(self.successResultOf(content(response2)), b'okay')
-        self.assertEqual(to.calls, [(u'one', 7.0), (u'two', 2.0)])
-
+        self.assertEqual(self.successResultOf(content(response)), b"okay")
+        self.assertEqual(self.successResultOf(content(response2)), b"okay")
+        self.assertEqual(to.calls, [(u"one", 7.0), (u"two", 2.0)])
 
     def test_rendering(self):
         # type: () -> None
@@ -522,21 +530,24 @@ class TestForms(SynchronousTestCase):
         )
 
         stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get(
-            'https://localhost/render',
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.get(
+                "https://localhost/render",
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
+        self.assertIn(
+            response.headers.getRawHeaders(b"content-type")[0], b"text/html"
+        )
         responseDom = ElementTree.fromstring(
             self.successResultOf(content(response))
         )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'],
-                         '__klein_auto_submit__')
-
+        self.assertEqual(
+            submitButton[0].attrib["name"], "__klein_auto_submit__"
+        )
 
     def test_renderingExplicitSubmit(self):
         # type: () -> None
@@ -551,20 +562,22 @@ class TestForms(SynchronousTestCase):
         )
 
         stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get(
-            'https://localhost/render-submit',
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.get(
+                "https://localhost/render-submit",
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
+        self.assertIn(
+            response.headers.getRawHeaders(b"content-type")[0], b"text/html"
+        )
         responseDom = ElementTree.fromstring(
             self.successResultOf(content(response))
         )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'], 'button')
-
+        self.assertEqual(submitButton[0].attrib["name"], "button")
 
     def test_renderingFormGlue(self):
         # type: () -> None
@@ -579,13 +592,16 @@ class TestForms(SynchronousTestCase):
         )
 
         stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get(
-            'https://localhost/render-custom',
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.get(
+                "https://localhost/render-custom",
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
+        self.assertIn(
+            response.headers.getRawHeaders(b"content-type")[0], b"text/html"
+        )
         responseDom = ElementTree.fromstring(
             self.successResultOf(content(response))
         )
@@ -594,9 +610,7 @@ class TestForms(SynchronousTestCase):
         protectionField = responseDom.findall(
             ".//*[@name='__csrf_protection__']"
         )
-        self.assertEqual(protectionField[0].attrib['value'],
-                         session.identifier)
-
+        self.assertEqual(protectionField[0].attrib["value"], session.identifier)
 
     def test_renderingEmptyForm(self):
         # type: () -> None
@@ -611,26 +625,28 @@ class TestForms(SynchronousTestCase):
         )
 
         stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get(
-            'https://localhost/render-empty',
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.get(
+                "https://localhost/render-empty",
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
+        self.assertIn(
+            response.headers.getRawHeaders(b"content-type")[0], b"text/html"
+        )
         responseDom = ElementTree.fromstring(
             self.successResultOf(content(response))
         )
         submitButton = responseDom.findall(".//*[@type='submit']")
         self.assertEqual(len(submitButton), 1)
-        self.assertEqual(submitButton[0].attrib['name'],
-                         '__klein_auto_submit__')
+        self.assertEqual(
+            submitButton[0].attrib["name"], "__klein_auto_submit__"
+        )
         protectionField = responseDom.findall(
             ".//*[@name='__csrf_protection__']"
         )
-        self.assertEqual(protectionField[0].attrib['value'],
-                         session.identifier)
-
+        self.assertEqual(protectionField[0].attrib["value"], session.identifier)
 
     def test_renderLookupError(self):
         # type: () -> None
@@ -645,16 +661,17 @@ class TestForms(SynchronousTestCase):
         )
 
         stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get(
-            'https://localhost/render-cascade',
-            headers={b'X-Test-Session': session.identifier}
-        ))
+        response = self.successResultOf(
+            stub.get(
+                "https://localhost/render-cascade",
+                headers={b"X-Test-Session": session.identifier},
+            )
+        )
         self.assertEqual(response.code, 200)
         # print(self.successResultOf(response.content()).decode('utf-8'))
         failures = self.flushLoggedErrors()
         self.assertEqual(len(failures), 1)
         self.assertIn("MissingRenderMethod", str(failures[0]))
-
 
     def test_customValidationHandling(self):
         # type: () -> None
@@ -670,22 +687,26 @@ class TestForms(SynchronousTestCase):
 
         testobj = TestObject(mem)
         stub = StubTreq(testobj.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle-validation',
-            headers={b'X-Test-Session': session.identifier},
-            json={"value": 300}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle-validation",
+                headers={b"X-Test-Session": session.identifier},
+                json={"value": 300},
+            )
+        )
         self.assertEqual(response.code, 200)
-        self.assertIn(response.headers.getRawHeaders(b"content-type")[0],
-                      b"text/html")
+        self.assertIn(
+            response.headers.getRawHeaders(b"content-type")[0], b"text/html"
+        )
         responseText = self.successResultOf(content(response))
         self.assertEqual(responseText, b"~special~")
         self.assertEqual(
-            [(k.pythonArgumentName, v) for k, v
-             in testobj.calls[-1][1].prevalidationValues.items()],
-            [('value', 300)]
+            [
+                (k.pythonArgumentName, v)
+                for k, v in testobj.calls[-1][1].prevalidationValues.items()
+            ],
+            [("value", 300)],
         )
-
 
     def test_renderingWithNoSessionYet(self):
         # type: () -> None
@@ -695,15 +716,14 @@ class TestForms(SynchronousTestCase):
         """
         mem = MemorySessionStore()
         stub = StubTreq(TestObject(mem).router.resource())
-        response = self.successResultOf(stub.get('https://localhost/render'))
+        response = self.successResultOf(stub.get("https://localhost/render"))
         self.assertEqual(response.code, 200)
-        setCookie = response.cookies()['Klein-Secure-Session']
+        setCookie = response.cookies()["Klein-Secure-Session"]
         expected = 'value="{}"'.format(setCookie)
         actual = self.successResultOf(content(response))
         if not isinstance(expected, bytes):
             actual = actual.decode("utf-8")
         self.assertIn(expected, actual)
-
 
     def test_noSessionPOST(self):
         # type: () -> None
@@ -714,14 +734,15 @@ class TestForms(SynchronousTestCase):
         mem = MemorySessionStore()
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle',
-            data=dict(name='hello', value='1234')
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle",
+                data=dict(name="hello", value="1234"),
+            )
+        )
         self.assertEqual(to.calls, [])
         self.assertEqual(response.code, 403)
-        self.assertIn(b'CSRF', self.successResultOf(content(response)))
-
+        self.assertIn(b"CSRF", self.successResultOf(content(response)))
 
     def test_cookieNoToken(self):
         # type: () -> None
@@ -735,15 +756,18 @@ class TestForms(SynchronousTestCase):
         )
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle',
-            data=dict(name='hello', value='1234', ignoreme='extraneous'),
-            cookies={"Klein-Secure-Session": nativeString(session.identifier)}
-        ))
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle",
+                data=dict(name="hello", value="1234", ignoreme="extraneous"),
+                cookies={
+                    "Klein-Secure-Session": nativeString(session.identifier)
+                },
+            )
+        )
         self.assertEqual(to.calls, [])
         self.assertEqual(response.code, 403)
-        self.assertIn(b'CSRF', self.successResultOf(content(response)))
-
+        self.assertIn(b"CSRF", self.successResultOf(content(response)))
 
     def test_cookieWithToken(self):
         # type: () -> None
@@ -757,12 +781,20 @@ class TestForms(SynchronousTestCase):
         )
         to = TestObject(mem)
         stub = StubTreq(to.router.resource())
-        response = self.successResultOf(stub.post(
-            'https://localhost/handle',
-            data=dict(name='hello', value='1234', ignoreme='extraneous',
-                      __csrf_protection__=session.identifier),
-            cookies={"Klein-Secure-Session": nativeString(session.identifier)}
-        ))
-        self.assertEqual(to.calls, [('hello', 1234)])
+        response = self.successResultOf(
+            stub.post(
+                "https://localhost/handle",
+                data=dict(
+                    name="hello",
+                    value="1234",
+                    ignoreme="extraneous",
+                    __csrf_protection__=session.identifier,
+                ),
+                cookies={
+                    "Klein-Secure-Session": nativeString(session.identifier)
+                },
+            )
+        )
+        self.assertEqual(to.calls, [("hello", 1234)])
         self.assertEqual(response.code, 200)
-        self.assertIn(b'yay', self.successResultOf(content(response)))
+        self.assertIn(b"yay", self.successResultOf(content(response)))

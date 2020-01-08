@@ -21,62 +21,69 @@ branches:
 #
 matrix:
   include:
-    - python: 3.7
+    - python: 3.8
       env: TOXENV=flake8
-    - python: 3.7
+    - python: 3.8
+      env: TOXENV=black
+    - python: 3.8
       env: TOXENV=mypy
 
     - python: 2.7
-      env: TOXENV=coverage-py27-tw171,codecov-py27
+      env: TOXENV=coverage-py27-tw171,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-tw184,codecov-py27
+      env: TOXENV=coverage-py27-tw184,codecov
     - python: 2.7
-      env: TOXENV=coverage-py27-twcurrent,codecov-py27
+      env: TOXENV=coverage-py27-twcurrent,codecov
 
     - python: 3.5
-      env: TOXENV=coverage-py35-tw171,codecov-py35
+      env: TOXENV=coverage-py35-tw171,codecov
     - python: 3.5
-      env: TOXENV=coverage-py35-tw184,codecov-py35
+      env: TOXENV=coverage-py35-tw184,codecov
     - python: 3.5
-      env: TOXENV=coverage-py35-twcurrent,codecov-py35
+      env: TOXENV=coverage-py35-twcurrent,codecov
 
     - python: 3.6
-      env: TOXENV=coverage-py36-tw171,codecov-py36
+      env: TOXENV=coverage-py36-tw171,codecov
     - python: 3.6
-      env: TOXENV=coverage-py36-tw184,codecov-py36
+      env: TOXENV=coverage-py36-tw184,codecov
     - python: 3.6
-      env: TOXENV=coverage-py36-twcurrent,codecov-py36
+      env: TOXENV=coverage-py36-twcurrent,codecov
 
     - python: 3.7
-      env: TOXENV=coverage-py37-tw171,codecov-py37
+      env: TOXENV=coverage-py37-tw171,codecov
     - python: 3.7
-      env: TOXENV=coverage-py37-tw184,codecov-py37
+      env: TOXENV=coverage-py37-tw184,codecov
     - python: 3.7
-      env: TOXENV=coverage-py37-twcurrent,codecov-py37
+      env: TOXENV=coverage-py37-twcurrent,codecov
+
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw171,codecov
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw184,codecov
+    - python: 3.8
+      env: TOXENV=coverage-py38-twcurrent,codecov
 
     - python: pypy
-      env: TOXENV=coverage-pypy2-tw171,codecov-pypy2
+      env: TOXENV=coverage-pypy2-tw171,codecov
     - python: pypy
-      env: TOXENV=coverage-pypy2-tw184,codecov-pypy2
+      env: TOXENV=coverage-pypy2-tw184,codecov
     - python: pypy
-      env: TOXENV=coverage-pypy2-twcurrent,codecov-pypy2
+      env: TOXENV=coverage-pypy2-twcurrent,codecov
 
     - python: pypy3
-      env: TOXENV=coverage-pypy3-tw171,codecov-pypy3
+      env: TOXENV=coverage-pypy3-tw171,codecov
     - python: pypy3
-      env: TOXENV=coverage-pypy3-tw184,codecov-pypy3
+      env: TOXENV=coverage-pypy3-tw184,codecov
     - python: pypy3
-      env: TOXENV=coverage-pypy3-twcurrent,codecov-pypy3
+      env: TOXENV=coverage-pypy3-twcurrent,codecov
 
     # Test against Twisted trunk in case something in development breaks us.
     # This is allowed to fail below, since the bug may be in Twisted.
     - python: 2.7
-      env: TOXENV=coverage-py27-twtrunk,codecov-py27
-    - python: 3.7
-      env: TOXENV=coverage-py37-twtrunk,codecov-py37
+      env: TOXENV=coverage-py27-twtrunk,codecov
+    - python: 3.8
+      env: TOXENV=coverage-py38-twtrunk,codecov
 
-    - python: 2.7
-      env: TOXENV=twistedchecker-diff
     - python: 2.7
       env: TOXENV=docs
     - python: 2.7
@@ -84,19 +91,16 @@ matrix:
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
-    - env: TOXENV=coverage-py27-twtrunk,codecov-py27
-    - env: TOXENV=coverage-py37-twtrunk,codecov-py37
-
-    # This is not yet required.
-    - env: TOXENV=twistedchecker-diff
+    - env: TOXENV=coverage-py27-twtrunk,codecov
+    - env: TOXENV=coverage-py38-twtrunk,codecov
 
     # This depends on external web sites, so it's allowed to fail.
     - env: TOXENV=docs-linkcheck
 
 
 install:
-  - ./.travis/install
+  - pip install tox
 
 
 script:
-  - ./.travis/run tox
+  - tox

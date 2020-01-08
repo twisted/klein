@@ -8,11 +8,15 @@ from __future__ import absolute_import, division
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
+
 try:
     from inspect import iscoroutine
 except ImportError:
+
     def iscoroutine(*args, **kwargs):  # type: ignore
         return False
+
+
 from weakref import ref
 
 from twisted.internet import endpoints, reactor
@@ -23,8 +27,10 @@ from twisted.web.server import Request, Site
 try:
     from twisted.internet.defer import ensureDeferred
 except ImportError:
+
     def ensureDeferred(*args, **kwagrs):
         raise NotImplementedError("Coroutines support requires Twisted>=16.6")
+
 
 from werkzeug.routing import Map, Rule, Submount
 
@@ -33,7 +39,6 @@ from zope.interface import implementer
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest
 from ._resource import KleinResource
-
 
 
 def _call(__klein_instance__, __klein_f__, *args, **kwargs):
@@ -49,7 +54,7 @@ def _call(__klein_instance__, __klein_f__, *args, **kwargs):
         C{ensureDeferred} on it.
     """
     if __klein_instance__ is not None or getattr(
-            __klein_f__, "__klein_bound__", False
+        __klein_f__, "__klein_bound__", False
     ):
         args = (__klein_instance__,) + args
     result = __klein_f__(*args, **kwargs)
@@ -58,12 +63,10 @@ def _call(__klein_instance__, __klein_f__, *args, **kwargs):
     return result
 
 
-
 @implementer(IKleinRequest)
 class KleinRequest(object):
-
     def __init__(self, request):
-        self.branch_segments = ['']
+        self.branch_segments = [""]
         self.mapper = None
 
     def url_for(self, *args, **kwargs):
@@ -71,7 +74,6 @@ class KleinRequest(object):
 
 
 registerAdapter(KleinRequest, Request, IKleinRequest)
-
 
 
 class Klein(object):
@@ -93,21 +95,16 @@ class Klein(object):
         self._instance = None
         self._boundAs = None
 
-
     def __eq__(self, other):
         if isinstance(other, Klein):
             return vars(self) == vars(other)
         return NotImplemented
-
 
     def __ne__(self, other):
         result = self.__eq__(other)
         if result is NotImplemented:
             return result
         return not result
-
-
-
 
     @property
     def url_map(self):
@@ -116,14 +113,12 @@ class Klein(object):
         """
         return self._url_map
 
-
     @property
     def endpoints(self):
         """
         Read only property exposing L{Klein._endpoints}.
         """
         return self._endpoints
-
 
     def execute_endpoint(self, endpoint, *args, **kwargs):
         """
@@ -133,13 +128,11 @@ class Klein(object):
         endpoint_f = self._endpoints[endpoint]
         return endpoint_f(self._instance, *args, **kwargs)
 
-
     def execute_error_handler(self, handler, request, failure):
         """
         Execute the passed error handler, possibly with a bound instance.
         """
         return handler(self._instance, request, failure)
-
 
     def resource(self):
         """
@@ -149,7 +142,6 @@ class Klein(object):
         """
 
         return KleinResource(self)
-
 
     def __get__(self, instance, owner):
         """
@@ -168,7 +160,7 @@ class Klein(object):
                     self._boundAs = name
                     break
             else:
-                self._boundAs = 'unknown_' + str(id(self))
+                self._boundAs = "unknown_" + str(id(self))
 
         boundName = "__klein_bound_{}__".format(self._boundAs)
         k = getattr(instance, boundName, lambda: None)()
@@ -187,14 +179,12 @@ class Klein(object):
 
         return k
 
-
     @staticmethod
     def _segments_in_url(url):
-        segment_count = url.count('/')
-        if url.endswith('/'):
+        segment_count = url.count("/")
+        if url.endswith("/"):
             segment_count -= 1
         return segment_count
-
 
     def route(self, url, *args, **kwargs):
         """
@@ -223,25 +213,26 @@ class Klein(object):
 
         @named("router for '" + url + "'")
         def deco(f):
-            kwargs.setdefault('endpoint', f.__name__)
-            if kwargs.pop('branch', False):
+            kwargs.setdefault("endpoint", f.__name__)
+            if kwargs.pop("branch", False):
                 branchKwargs = kwargs.copy()
-                branchKwargs['endpoint'] = branchKwargs['endpoint'] + '_branch'
+                branchKwargs["endpoint"] = branchKwargs["endpoint"] + "_branch"
 
                 @modified("branch route '{url}' executor".format(url=url), f)
                 def branch_f(instance, request, *a, **kw):
-                    IKleinRequest(request).branch_segments = (
-                        kw.pop('__rest__', '').split('/')
-                    )
+                    IKleinRequest(request).branch_segments = kw.pop(
+                        "__rest__", ""
+                    ).split("/")
                     return _call(instance, f, request, *a, **kw)
 
                 branch_f.segment_count = segment_count
 
-                self._endpoints[branchKwargs['endpoint']] = branch_f
+                self._endpoints[branchKwargs["endpoint"]] = branch_f
                 self._url_map.add(
                     Rule(
-                        url.rstrip('/') + '/' + '<path:__rest__>',
-                        *args, **branchKwargs
+                        url.rstrip("/") + "/" + "<path:__rest__>",
+                        *args,
+                        **branchKwargs
                     )
                 )
 
@@ -251,11 +242,11 @@ class Klein(object):
 
             _f.segment_count = segment_count
 
-            self._endpoints[kwargs['endpoint']] = _f
+            self._endpoints[kwargs["endpoint"]] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
             return f
-        return deco
 
+        return deco
 
     @contextmanager
     def subroute(self, prefix):
@@ -288,20 +279,18 @@ class Klein(object):
 
         segments = self._segments_in_url(prefix)
 
-        submount_map = namedtuple(
-            'submount', ['rules', 'add'])(
-                [], lambda r: submount_map.rules.append(r))
+        submount_map = namedtuple("submount", ["rules", "add"])(
+            [], lambda r: submount_map.rules.append(r)
+        )
 
         try:
             self._url_map = submount_map
             self._subroute_segments += segments
             yield self
-            _map_before_submount.add(
-                Submount(prefix, submount_map.rules))
+            _map_before_submount.add(Submount(prefix, submount_map.rules))
         finally:
             self._url_map = _map_before_submount
             self._subroute_segments -= segments
-
 
     def handle_errors(self, f_or_exception, *additional_exceptions):
         """
@@ -356,9 +345,8 @@ class Klein(object):
         # Try to detect calls using the "simple" @app.handle_error syntax by
         # introspecting the first argument - if it isn't a type which
         # subclasses Exception we assume the simple syntax was used.
-        if (
-            not isinstance(f_or_exception, type) or
-            not issubclass(f_or_exception, Exception)
+        if not isinstance(f_or_exception, type) or not issubclass(
+            f_or_exception, Exception
         ):
             return self.handle_errors(Exception)(f_or_exception)
 
@@ -374,23 +362,37 @@ class Klein(object):
 
         return deco
 
-
-    def urlFor(self, request, endpoint, values=None, method=None,
-               force_external=False, append_unknown=True):
-        host = request.getHeader(b'host')
+    def urlFor(
+        self,
+        request,
+        endpoint,
+        values=None,
+        method=None,
+        force_external=False,
+        append_unknown=True,
+    ):
+        host = request.getHeader(b"host")
         if host is None:
             if force_external:
-                raise ValueError("Cannot build external URL if request"
-                                 " doesn't contain Host header")
-            host = b''
-        return self.url_map.bind(host).build(endpoint, values, method,
-                                             force_external, append_unknown)
+                raise ValueError(
+                    "Cannot build external URL if request"
+                    " doesn't contain Host header"
+                )
+            host = b""
+        return self.url_map.bind(host).build(
+            endpoint, values, method, force_external, append_unknown
+        )
 
     url_for = urlFor
 
-
-    def run(self, host=None, port=None, logFile=None,
-            endpoint_description=None, displayTracebacks=True):
+    def run(
+        self,
+        host=None,
+        port=None,
+        logFile=None,
+        endpoint_description=None,
+        displayTracebacks=True,
+    ):
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -426,8 +428,9 @@ class Klein(object):
         log.startLogging(logFile)
 
         if not endpoint_description:
-            endpoint_description = "tcp:port={0}:interface={1}".format(port,
-                                                                       host)
+            endpoint_description = "tcp:port={0}:interface={1}".format(
+                port, host
+            )
 
         endpoint = endpoints.serverFromString(reactor, endpoint_description)
 
@@ -436,7 +439,6 @@ class Klein(object):
 
         endpoint.listen(site)
         reactor.run()
-
 
 
 _globalKleinApp = Klein()

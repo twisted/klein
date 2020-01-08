@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_response -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Tests for L{klein._response}.
@@ -8,14 +8,11 @@ Tests for L{klein._response}.
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
 from .._headers import FrozenHTTPHeaders
-from .._message import IHTTPMessage
+from .._interfaces import IHTTPMessage
 from .._response import FrozenHTTPResponse, IHTTPResponse
-
-IHTTPMessage  # Silence linter
 
 
 __all__ = ()
-
 
 
 class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
@@ -27,17 +24,13 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
     def responseFromBytes(data=b""):
         # type: (bytes) -> FrozenHTTPResponse
         return FrozenHTTPResponse(
-            status=200,
-            headers=FrozenHTTPHeaders(rawHeaders=()),
-            body=data,
+            status=200, headers=FrozenHTTPHeaders(rawHeaders=()), body=data,
         )
-
 
     @classmethod
     def messageFromBytes(cls, data=b""):
         # type: (bytes) -> IHTTPMessage
         return cls.responseFromBytes(data)
-
 
     def test_interface(self):
         # type: () -> None
@@ -45,8 +38,7 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
         L{FrozenHTTPResponse} implements L{IHTTPResponse}.
         """
         response = self.responseFromBytes()
-        self.assertProvides(IHTTPResponse, response)
-
+        self.assertProvides(IHTTPResponse, response)  # type: ignore[misc]
 
     def test_initInvalidBodyType(self):
         # type: () -> None

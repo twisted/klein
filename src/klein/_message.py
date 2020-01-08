@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_message -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 HTTP message API.
@@ -15,17 +15,13 @@ from tubes.itube import IFount
 from twisted.internet.defer import Deferred, succeed
 
 from ._imessage import FountAlreadyAccessedError
-from ._interfaces import IHTTPMessage
 from ._tubes import bytesToFount, fountToBytes
-
-Any, Deferred, IHTTPMessage, Optional  # Silence linter
 
 
 __all__ = ()
 
 
 InternalBody = Union[bytes, IFount]
-
 
 
 @attrs(frozen=False)
@@ -36,12 +32,13 @@ class MessageState(object):
 
     cachedBody = attrib(
         type=Optional[bytes],
-        validator=optional(instance_of(bytes)), default=None, init=False
+        validator=optional(instance_of(bytes)),
+        default=None,
+        init=False,
     )
 
     fountExhausted = attrib(
-        type=bool,
-        validator=instance_of(bool), default=False, init=False
+        type=bool, validator=instance_of(bool), default=False, init=False
     )
 
 
@@ -51,10 +48,7 @@ def validateBody(instance, attribute, body):
     Validator for L{InternalBody}.
     """
 
-    if (
-        not isinstance(body, bytes) and
-        not IFount.providedBy(body)
-    ):
+    if not isinstance(body, bytes) and not IFount.providedBy(body):
         raise TypeError("body must be bytes or IFount")
 
 

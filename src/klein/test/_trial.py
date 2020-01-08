@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2019. See LICENSE for details.
 
 """
 Extensions to L{twisted.trial}.
@@ -14,11 +14,8 @@ from zope.interface import Interface
 from zope.interface.exceptions import Invalid
 from zope.interface.verify import verifyObject
 
-Any, Interface  # Silence linter
-
 
 __all__ = ()
-
 
 
 class TestCase(SynchronousTestCase):
@@ -27,6 +24,7 @@ class TestCase(SynchronousTestCase):
     """
 
     if (twistedVersion.major, twistedVersion.minor) < (16, 4):
+
         def assertRegex(self, text, regex, msg=None):
             # type: (str, Any, str) -> None
             """
@@ -45,7 +43,6 @@ class TestCase(SynchronousTestCase):
                 # Python 2.7 has unittest.assertRegexpMatches() which was
                 # renamed to unittest.assertRegex() in Python 3.2
                 super(TestCase, self).assertRegexpMatches(text, regex, msg)
-
 
     def assertProvides(self, interface, obj):
         # type: (Interface, Any) -> None

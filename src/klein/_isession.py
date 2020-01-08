@@ -1,26 +1,23 @@
-
 from typing import Any, TYPE_CHECKING
 
 import attr
 
 try:
     from constantly import NamedConstant, Names
-except ImportError:             # pragma: no cover
+except ImportError:  # pragma: no cover
     from twisted.python.constants import NamedConstant, Names
 
 from zope.interface import Attribute, Interface
 
 from ._typing import ifmethod
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from twisted.internet.defer import Deferred
     from twisted.python.components import Componentized
-    from typing import Dict, Iterable, List, Text, Type, Sequence
+    from typing import Dict, Iterable, Text, Sequence
     from twisted.web.iweb import IRequest
     from zope.interface.interfaces import IInterface
 
-    Deferred, Text, Componentized, Sequence, IRequest, List, Type
-    Iterable, IInterface, Dict
 
 class NoSuchSession(Exception):
     """
@@ -40,7 +37,6 @@ class TransactionEnded(Exception):
     """
 
 
-
 class ISessionStore(Interface):
     """
     Backing storage for sessions.
@@ -55,7 +51,6 @@ class ISessionStore(Interface):
         @return: a new session with a new identifier.
         @rtype: L{Deferred} firing with L{ISession}.
         """
-
 
     @ifmethod
     def loadSession(identifier, isConfidential, authenticatedBy):
@@ -78,7 +73,6 @@ class ISessionStore(Interface):
             L{NoSuchSession}.
         """
 
-
     @ifmethod
     def sentInsecurely(identifiers):
         # type: (Sequence[Text]) -> None
@@ -86,7 +80,6 @@ class ISessionStore(Interface):
         The transport layer has detected that the given identifiers have been
         sent over an unauthenticated transport.
         """
-
 
 
 class ISimpleAccountBinding(Interface):
@@ -134,7 +127,6 @@ class ISimpleAccountBinding(Interface):
         """
 
 
-
 class ISimpleAccount(Interface):
     """
     Data-store agnostic account interface.
@@ -159,13 +151,11 @@ class ISimpleAccount(Interface):
         session to act on behalf of this account.
         """
 
-
     def changePassword(self, newPassword):
         # type: (Text) -> None
         """
         Change the password of this account.
         """
-
 
 
 class ISessionProcurer(Interface):
@@ -236,7 +226,6 @@ class SessionMechanism(Names):
     Header = NamedConstant()
 
 
-
 class ISession(Interface):
     """
     An L{ISession} provider contains an identifier for the session, information
@@ -274,7 +263,6 @@ class ISession(Interface):
         authenticate this session.
         """
     )
-
 
     @ifmethod
     def authorize(interfaces):
@@ -368,16 +356,16 @@ class IRequiredParameter(Interface):
         """
 
 
-
 class IRequestLifecycle(Interface):
     """
     Interface for adding hooks to the phases of a request's lifecycle.
     """
 
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from typing import Union
     from ._requirer import RequestLifecycle
+
     IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]
 
 
@@ -393,4 +381,5 @@ class EarlyExit(Exception):
     @type alternateReturnValue: Any type that's acceptable to return from a
         Klein route.
     """
+
     alternateReturnValue = attr.ib(type=Any)

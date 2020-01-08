@@ -1,5 +1,6 @@
 from functools import wraps
 
+
 def bindable(bindable):
     """
     Mark a method as a "bindable" method.
@@ -42,9 +43,11 @@ def modified(modification, original, modifier=None):
         return value, and is only related to C{original} in the sense that it
         likely calls it.
     """
+
     def decorator(wrapper):
-        result = (named(modification + ' for ' + original.__name__)
-                  (wraps(original)(wrapper)))
+        result = named(modification + " for " + original.__name__)(
+            wraps(original)(wrapper)
+        )
         result.__original__ = original
         if modifier is not None:
             before = set(wrapper.__dict__.keys())
@@ -53,6 +56,7 @@ def modified(modification, original, modifier=None):
             for key in after - before:
                 setattr(original, key, wrapper.__dict__[key])
         return result
+
     return decorator
 
 
@@ -60,10 +64,12 @@ def named(name):
     """
     Change the name of a function to the given name.
     """
+
     def decorator(original):
         original.__name__ = str(name)
         original.__qualname__ = str(name)
         return original
+
     return decorator
 
 

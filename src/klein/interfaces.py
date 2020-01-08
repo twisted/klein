@@ -4,9 +4,7 @@ from ._iform import (
     ValidationError,
     ValueAbsent,
 )
-from ._interfaces import (
-    IKleinRequest,
-)
+from ._interfaces import IKleinRequest
 from ._isession import (
     EarlyExit,
     IDependencyInjector as _IDependencyInjector,
@@ -23,8 +21,8 @@ from ._isession import (
     TransactionEnded,
 )
 
-if TYPE_CHECKING:               # pragma: no cover
-    from ._storage.memory import MemorySessionStore, MemorySession
+if TYPE_CHECKING:  # pragma: no cover
+    from .storage._memory import MemorySessionStore, MemorySession
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
     from ._isession import IRequestLifecycleT as _IRequestLifecycleT
@@ -37,12 +35,22 @@ if TYPE_CHECKING:               # pragma: no cover
     ISession = Union[_ISession, MemorySession]
     ISimpleAccount = _ISimpleAccount
     ISimpleAccountBinding = _ISimpleAccountBinding
-    IDependencyInjector = Union[_IDependencyInjector, Authorization,
-                                RenderableFormParam, FieldInjector, RequestURL,
-                                RequestComponent]
-    IRequiredParameter = Union[_IRequiredParameter, Authorization, Field,
-                               RenderableFormParam, RequestURL,
-                               RequestComponent]
+    IDependencyInjector = Union[
+        _IDependencyInjector,
+        Authorization,
+        RenderableFormParam,
+        FieldInjector,
+        RequestURL,
+        RequestComponent,
+    ]
+    IRequiredParameter = Union[
+        _IRequiredParameter,
+        Authorization,
+        Field,
+        RenderableFormParam,
+        RequestURL,
+        RequestComponent,
+    ]
     IRequestLifecycle = _IRequestLifecycleT
 else:
     ISession = _ISession

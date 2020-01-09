@@ -37,7 +37,7 @@ pattern.
 
     from klein import run, subroute
 
-    with subrout("/branch") as app:
+    with subroute("/branch") as app:
       @app.route("/twilightforest")
       def twighlightforest(request):
           return b"These stairs lead to the twilight forest."

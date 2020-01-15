@@ -24,7 +24,6 @@ __all__ = ()
 InternalBody = Union[bytes, IFount]
 
 
-
 @attrs(frozen=False)
 class MessageState(object):
     """
@@ -33,12 +32,13 @@ class MessageState(object):
 
     cachedBody = attrib(
         type=Optional[bytes],
-        validator=optional(instance_of(bytes)), default=None, init=False
+        validator=optional(instance_of(bytes)),
+        default=None,
+        init=False,
     )
 
     fountExhausted = attrib(
-        type=bool,
-        validator=instance_of(bool), default=False, init=False
+        type=bool, validator=instance_of(bool), default=False, init=False
     )
 
 
@@ -48,10 +48,7 @@ def validateBody(instance, attribute, body):
     Validator for L{InternalBody}.
     """
 
-    if (
-        not isinstance(body, bytes) and
-        not IFount.providedBy(body)
-    ):
+    if not isinstance(body, bytes) and not IFount.providedBy(body):
         raise TypeError("body must be bytes or IFount")
 
 

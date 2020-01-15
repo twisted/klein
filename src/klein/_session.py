@@ -1,8 +1,6 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import (
-    Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
-)
+from typing import Any, Callable, Optional as _Optional, TYPE_CHECKING, Union
 
 import attr
 
@@ -15,9 +13,16 @@ from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
 from .interfaces import (
-    EarlyExit, IDependencyInjector, IRequestLifecycle, IRequiredParameter,
-    ISession, ISessionProcurer, ISessionStore, NoSuchSession, SessionMechanism,
-    TooLateForCookies
+    EarlyExit,
+    IDependencyInjector,
+    IRequestLifecycle,
+    IRequiredParameter,
+    ISession,
+    ISessionProcurer,
+    ISessionStore,
+    NoSuchSession,
+    SessionMechanism,
+    TooLateForCookies,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -25,10 +30,10 @@ if TYPE_CHECKING:  # pragma: no cover
     from twisted.python.components import Componentized
     from twisted.web.iweb import IRequest
     from typing import Dict, Sequence, Text, TypeVar
-    T = TypeVar('T')
+
+    T = TypeVar("T")
 else:
     Arg = KwArg = lambda t, *x: t
-
 
 
 @implementer(ISessionProcurer)  # type: ignore[misc]
@@ -83,8 +88,7 @@ class SessionProcurer(object):
     _cookiePath = attr.ib(type=bytes, default=b"/")
 
     _secureTokenHeader = attr.ib(type=bytes, default=b"X-Auth-Token")
-    _insecureTokenHeader = attr.ib(type=bytes,
-                                   default=b"X-INSECURE-Auth-Token")
+    _insecureTokenHeader = attr.ib(type=bytes, default=b"X-INSECURE-Auth-Token")
     _setCookieOnGET = attr.ib(type=bool, default=True)
 
     @inlineCallbacks
@@ -107,14 +111,23 @@ class SessionProcurer(object):
         else:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
-            allPossibleSentTokens = (
-                sum([request.requestHeaders.getRawHeaders(header, [])
-                     for header in [self._secureTokenHeader,
-                                    self._insecureTokenHeader]], []) +
-                [it for it in [request.getCookie(cookie)
-                               for cookie in [self._secureCookie,
-                                              self._insecureCookie]] if it]
-            )  # type: Sequence[Text]
+            allPossibleSentTokens = sum(
+                [
+                    request.requestHeaders.getRawHeaders(header, [])
+                    for header in [
+                        self._secureTokenHeader,
+                        self._insecureTokenHeader,
+                    ]
+                ],
+                [],
+            ) + [
+                it
+                for it in [
+                    request.getCookie(cookie)
+                    for cookie in [self._secureCookie, self._insecureCookie]
+                ]
+                if it
+            ]  # type: Sequence[Text]
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
             yield self._store.sentInsecurely(allPossibleSentTokens)
@@ -142,9 +155,8 @@ class SessionProcurer(object):
                 if mechanism == SessionMechanism.Header:
                     raise
                 session = None
-        if (
-            mechanism == SessionMechanism.Cookie and
-            (session is None or session.identifier != sentCookie)
+        if mechanism == SessionMechanism.Cookie and (
+            session is None or session.identifier != sentCookie
         ):
             if session is None:
                 if request.startedWriting:
@@ -155,14 +167,16 @@ class SessionProcurer(object):
                         " late in the request pipeline; the headers"
                         " were already sent."
                     )
-                if request.method != b'GET':
+                if request.method != b"GET":
                     # Sessions should only ever be auto-created by GET
                     # requests; there's no way that any meaningful data
                     # manipulation could succeed (no CSRF token check could
                     # ever succeed, for example).
                     raise NoSuchSession(
-                        u"Can't initialize a session on a {method} request."
-                        .format(method=request.method.decode("ascii"))
+                        u"Can't initialize a session on a "
+                        u"{method} request.".format(
+                            method=request.method.decode("ascii")
+                        )
                     )
                 if not self._setCookieOnGET:
                     # We don't have a session ID at all, and we're not allowed
@@ -177,9 +191,13 @@ class SessionProcurer(object):
             if not isinstance(cookieName, str):
                 cookieName = cookieName.decode("ascii")
             request.addCookie(
-                cookieName, identifierInCookie, max_age=str(self._maxAge),
-                domain=self._cookieDomain, path=self._cookiePath,
-                secure=sentSecurely, httpOnly=True,
+                cookieName,
+                identifierInCookie,
+                max_age=str(self._maxAge),
+                domain=self._cookieDomain,
+                path=self._cookiePath,
+                secure=sentSecurely,
+                httpOnly=True,
             )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
@@ -188,16 +206,17 @@ class SessionProcurer(object):
 
 
 _procureProcurerType = Union[
-    Callable[[Any], ISessionProcurer],
-    Callable[[], ISessionProcurer]
+    Callable[[Any], ISessionProcurer], Callable[[], ISessionProcurer]
 ]
 
 _kleinRenderable = Any
 _routeCallable = Any
 _kleinCallable = Callable[..., _kleinRenderable]
 _kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
-_requirerResult = Callable[[Arg(_routeCallable, 'route'), KwArg(Any)],
-                           Callable[[_kleinCallable], _kleinCallable]]
+_requirerResult = Callable[
+    [Arg(_routeCallable, "route"), KwArg(Any)],
+    Callable[[_kleinCallable], _kleinCallable],
+]
 
 
 class AuthorizationDenied(Resource, object):
@@ -209,7 +228,7 @@ class AuthorizationDenied(Resource, object):
     def render(self, request):
         # type: (IRequest) -> bytes
         request.setResponseCode(UNAUTHORIZED)
-        return "{} DENIED".format(qual(self._interface)).encode('utf-8')
+        return "{} DENIED".format(qual(self._interface)).encode("utf-8")
 
 
 @implementer(IDependencyInjector, IRequiredParameter)  # type: ignore[misc]
@@ -266,10 +285,12 @@ class Authorization(object):
         passed to L{Requirer.require}?  Note that this will never be used if
         C{required} is set to C{False}.
     """
+
     _interface = attr.ib(type=IInterface)
     _required = attr.ib(type=bool, default=True)
-    _whenDenied = attr.ib(type=Callable[[IInterface, Any], Any],
-                          default=AuthorizationDenied)
+    _whenDenied = attr.ib(
+        type=Callable[[IInterface, Any], Any], default=AuthorizationDenied
+    )
 
     def registerInjector(self, injectionComponents, parameterName, lifecycle):
         # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
@@ -277,7 +298,6 @@ class Authorization(object):
         Register this authorization to inject a parameter.
         """
         return self
-
 
     @inlineCallbacks
     def injectValue(self, instance, request, routeParams):
@@ -289,14 +309,13 @@ class Authorization(object):
         # collecting all the interfaces that are necessary and then using
         # addBeforeHook; the interface would not need to change.
         session = ISession(request)  # type: ignore[misc]
-        provider = (
-            (yield session.authorize([self._interface])).get(self._interface)
+        provider = (yield session.authorize([self._interface])).get(
+            self._interface
         )
         if self._required and provider is None:
             raise EarlyExit(self._whenDenied(self._interface, instance))
         # TODO: CSRF protection should probably go here
         returnValue(provider)
-
 
     def finalize(self):
         # type: () -> None

@@ -8,7 +8,7 @@ from csv import reader as csvReader
 from os.path import dirname, join
 from string import ascii_letters, digits
 from sys import maxunicode
-from typing import Callable, Iterable, Optional, Sequence, Text, TypeVar
+from typing import Callable, Iterable, Optional, Sequence, Text, TypeVar, cast
 
 from hyperlink import DecodedURL, EncodedURL
 
@@ -25,8 +25,6 @@ from hypothesis.strategies import (
 from idna import IDNAError, check_label, encode as idna_encode
 
 from twisted.python.compat import _PY3, unicode
-
-Iterable, Optional, Sequence, Text  # Silence linter
 
 
 __all__ = ()
@@ -97,8 +95,11 @@ def ascii_text(draw, min_size=0, max_size=None):  # pragma: no cover
     @param max_size: The maximum number of characters in the text.
         Use C{None} for an unbounded size.
     """
-    return draw(
-        text(min_size=min_size, max_size=max_size, alphabet=ascii_letters)
+    return cast(
+        Text,
+        draw(
+            text(min_size=min_size, max_size=max_size, alphabet=ascii_letters)
+        ),
     )
 
 
@@ -137,8 +138,13 @@ def idna_text(draw, min_size=0, max_size=None):  # pragma: no cover
     @param max_size: The maximum number of characters in the text.
         Use C{None} for an unbounded size.
     """
-    return draw(
-        text(min_size=min_size, max_size=max_size, alphabet=idna_characters())
+    return cast(
+        Text,
+        draw(
+            text(
+                min_size=min_size, max_size=max_size, alphabet=idna_characters()
+            )
+        ),
     )
 
 
@@ -155,7 +161,7 @@ def port_numbers(draw, allow_zero=False):  # pragma: no cover
     else:
         min_value = 1
 
-    return draw(integers(min_value=min_value, max_value=65535))
+    return cast(int, draw(integers(min_value=min_value, max_value=65535)))
 
 
 @composite
@@ -168,7 +174,7 @@ def hostname_labels(draw, allow_idn=True):  # pragma: no cover
         internationalized domain names (IDNs).
     """
     if allow_idn:
-        label = draw(idna_text(min_size=1, max_size=63))
+        label = cast(Text, draw(idna_text(min_size=1, max_size=63)))
 
         try:
             label.encode("ascii")
@@ -183,12 +189,15 @@ def hostname_labels(draw, allow_idn=True):  # pragma: no cover
                 label = label[:-1]
 
     else:
-        label = draw(
-            text(
-                min_size=1,
-                max_size=63,
-                alphabet=unicode(ascii_letters + digits + u"-"),
-            )
+        label = cast(
+            Text,
+            draw(
+                text(
+                    min_size=1,
+                    max_size=63,
+                    alphabet=unicode(ascii_letters + digits + u"-"),
+                )
+            ),
         )
 
     # Filter invalid labels.
@@ -216,10 +225,13 @@ def hostnames(
     @param allow_idn: Whether to allow non-ASCII characters as allowed by
         internationalized domain names (IDNs).
     """
-    labels = draw(
-        lists(
-            hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5
-        ).filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
+    labels = cast(
+        Sequence[Text],
+        draw(
+            lists(
+                hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5
+            ).filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
+        ),
     )
 
     name = u".".join(labels)
@@ -272,8 +284,9 @@ _path_characters = None  # type: Optional[str]
 @composite
 def paths(draw):  # pragma: no cover
     # type: (DrawCallable) -> Sequence[Text]
-    return draw(
-        lists(text(min_size=1, alphabet=path_characters()), max_size=10)
+    return cast(
+        Sequence[Text],
+        draw(lists(text(min_size=1, alphabet=path_characters()), max_size=10)),
     )
 
 
@@ -285,15 +298,15 @@ def encoded_urls(draw):  # pragma: no cover
     Call the L{EncodedURL.to_uri} method on each URL to get an HTTP
     protocol-friendly URI.
     """
-    port = draw(port_numbers(allow_zero=True))
-    host = draw(hostnames())
-    path = draw(paths())
+    port = cast(Optional[int], draw(port_numbers(allow_zero=True)))
+    host = cast(Text, draw(hostnames()))
+    path = cast(Sequence[Text], draw(paths()))
 
     if port == 0:
         port = None
 
     args = dict(
-        scheme=draw(sampled_from((u"http", u"https"))),
+        scheme=cast(Text, draw(sampled_from((u"http", u"https")))),
         host=host,
         port=port,
         path=path,

@@ -10,6 +10,7 @@ from ._app import (
     handle_errors,
     route,
     run,
+    subroute,
     urlFor,
     url_for,
 )
@@ -52,6 +53,7 @@ __all__ = (
     "resource",
     "route",
     "run",
+    "subroute",
     "urlFor",
     "url_for",
 )

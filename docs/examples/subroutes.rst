@@ -28,3 +28,17 @@ Here is an example app that has routes for ``/branch/lair``, ``/branch/crypt``, 
             return b"A stair to a swampy wasteland."
 
     app.run("localhost", 8080)
+
+
+The subroute method is also available globally if that is your preferred klein
+pattern.
+
+.. code-block:: python
+
+    from klein import run, subroute
+
+    with subroute("/branch") as app:
+      @app.route("/twilightforest")
+      def twighlightforest(request):
+          return b"These stairs lead to the twilight forest."
+    app.run("localhost", 8080)

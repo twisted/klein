@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Mapping, Sequence, TYPE_CHECKING, Text, Union
+from typing import Any, Mapping, Sequence, TYPE_CHECKING, Text, Union, cast
 
 import attr
 
@@ -40,11 +40,13 @@ def urlFromRequest(request):
         if not isinstance(host, text_type):
             host = host.decode("ascii")
 
-    return parse(request.uri.decode("charmap")).replace(
+    url = cast(DecodedURL, parse(request.uri.decode("charmap")))
+    url = url.replace(
         scheme=u"https" if request.isSecure() else u"http",
         host=host,
         port=port,
     )
+    return url
 
 
 @provider(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]

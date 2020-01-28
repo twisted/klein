@@ -2,11 +2,20 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Mapping, Sequence, TYPE_CHECKING, Text, Union, cast
+from typing import (
+    Any,
+    Dict,
+    Mapping,
+    Sequence,
+    TYPE_CHECKING,
+    Text,
+    Union,
+    cast,
+)
 
 import attr
 
-from hyperlink import parse
+from hyperlink import DecodedURL, parse
 
 from six import text_type
 
@@ -16,8 +25,6 @@ from zope.interface.interfaces import IInterface
 from .interfaces import IDependencyInjector, IRequiredParameter
 
 if TYPE_CHECKING:  # pragma: no cover
-    from hyperlink import DecodedURL
-    from typing import Dict
     from klein.interfaces import IRequestLifecycle
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized

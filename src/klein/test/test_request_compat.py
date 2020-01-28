@@ -82,11 +82,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         uri = url.asURI()  # Normalize as (computer-friendly) URI
 
-        if uri.port is None:
-            port = dict(http=80, https=443).get(uri.scheme)
-            assert port is not None
-        else:
-            port = uri.port
+        assert port is not None
 
         path = (
             uri.replace(scheme=u"", host=u"", port=None)
@@ -96,7 +92,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         legacyRequest = self.legacyRequest(
             isSecure=(uri.scheme == u"https"),
             host=uri.host.encode("ascii"),
-            port=port,
+            port=uri.port,
             path=path,
         )
         request = HTTPRequestWrappingIRequest(request=legacyRequest)

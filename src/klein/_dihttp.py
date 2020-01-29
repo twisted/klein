@@ -15,7 +15,7 @@ from typing import (
 
 import attr
 
-from hyperlink import DecodedURL, parse
+from hyperlink import DecodedURL
 
 from six import text_type
 
@@ -47,7 +47,7 @@ def urlFromRequest(request):
         if not isinstance(host, text_type):
             host = host.decode("ascii")
 
-    url = cast(DecodedURL, parse(request.uri.decode("charmap")))
+    url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
         scheme=u"https" if request.isSecure() else u"http",
         host=host,

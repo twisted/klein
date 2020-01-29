@@ -132,7 +132,7 @@ class SessionProcurer(object):
             # to do it? Turn on your dang HTTPS!
             yield self._store.sentInsecurely(allPossibleSentTokens)
             tokenHeader = self._insecureTokenHeader
-            cookieName = self._insecureCookie
+            cookieName = self._insecureCookie.decode("ascii")
             sentSecurely = False
             # Fun future feature: honeypot that does this over HTTPS, but sets
             # isSecure() to return false because it serves up a cert for the
@@ -186,10 +186,6 @@ class SessionProcurer(object):
                     )
                 session = yield self._store.newSession(sentSecurely, mechanism)
             identifierInCookie = session.identifier
-            if not isinstance(identifierInCookie, str):
-                identifierInCookie = identifierInCookie.encode("ascii")
-            if not isinstance(cookieName, str):
-                cookieName = cookieName.decode("ascii")
             request.addCookie(
                 cookieName,
                 identifierInCookie,

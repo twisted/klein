@@ -2,19 +2,18 @@ from __future__ import absolute_import, division
 
 import os
 from io import BytesIO
-
-try:
-    from unittest.mock import Mock, call
-except Exception:
-    from mock import Mock, call
+from unittest.mock import Mock, call
 
 from six.moves.urllib.parse import parse_qs
 
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
-from twisted.python.compat import _PY3, unicode
-from twisted.trial.unittest import SynchronousTestCase
+from twisted.python.compat import unicode
+from twisted.trial.unittest import (
+    SynchronousTestCase,
+    TestCase as AsynchronousTestCase,
+)
 from twisted.web import server
 from twisted.web.http_headers import Headers
 from twisted.web.resource import Resource
@@ -1098,16 +1097,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(b"Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_urlDecodeErrorReprPy2(self):
-        """
-        URLDecodeError.__repr__ formats properly.
-        """
-        self.assertEqual(
-            "<URLDecodeError(errors=<type 'exceptions.ValueError'>)>",
-            repr(_URLDecodeError(ValueError)),
-        )
-
-    def test_urlDecodeErrorReprPy3(self):
+    def test_urlDecodeErrorRepr(self):
         """
         URLDecodeError.__repr__ formats properly.
         """
@@ -1115,11 +1105,6 @@ class KleinResourceTests(SynchronousTestCase):
             "<URLDecodeError(errors=<class 'ValueError'>)>",
             repr(_URLDecodeError(ValueError)),
         )
-
-    if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
-    else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
 
     def test_subroutedBranch(self):
         subapp = Klein()
@@ -1319,10 +1304,30 @@ class GlobalAppTests(SynchronousTestCase):
         self.assertIdentical(resource.ensure_utf8_bytes, ensure_utf8_bytes)
 
 
-if _PY3:
-    import sys
+class PY3KleinResourceTests(AsynchronousTestCase):
+    def assertFired(self, deferred, result=None):
+        """
+        Assert that the given deferred has fired with the given result.
+        """
+        self.assertEqual(self.successResultOf(deferred), result)
 
-    if sys.version_info >= (3, 5):
-        from .py3_test_resource import PY3KleinResourceTests
+    def test_asyncResourceRendering(self):
+        app = Klein()
+        resource = KleinResource(app)
 
-        PY3KleinResourceTests  # shh pyflakes
+        request = requestMock(b"/resource/leaf")
+
+        @app.route("/resource/leaf")
+        async def leaf(request):
+            return LeafResource()
+
+        expected = b"I am a leaf in the wind."
+
+        d = _render(resource, request)
+
+        def assertResult(_):
+            self.assertEqual(request.getWrittenData(), expected)
+
+        d.addCallback(assertResult)
+
+        return d

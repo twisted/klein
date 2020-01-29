@@ -8,8 +8,6 @@ import attr
 
 from hyperlink import parse
 
-from six import text_type
-
 from zope.interface import implementer, provider
 from zope.interface.interfaces import IInterface
 
@@ -37,8 +35,6 @@ def urlFromRequest(request):
     else:
         host = request.client.host
         port = request.client.port
-        if not isinstance(host, text_type):
-            host = host.decode("ascii")
 
     return parse(request.uri.decode("charmap")).replace(
         scheme=u"https" if request.isSecure() else u"http",
@@ -141,7 +137,7 @@ class Response(object):
         """
         request.setResponseCode(self.code)
         for headerName, headerValueOrValues in self.headers.items():
-            if not isinstance(headerValueOrValues, (text_type, bytes)):
+            if not isinstance(headerValueOrValues, (str, bytes)):
                 headerValues = headerValueOrValues
             else:
                 headerValues = [headerValueOrValues]

@@ -2,16 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import (
-    Any,
-    Dict,
-    Mapping,
-    Sequence,
-    TYPE_CHECKING,
-    Text,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Mapping, Sequence, TYPE_CHECKING, Text, Union
 
 import attr
 

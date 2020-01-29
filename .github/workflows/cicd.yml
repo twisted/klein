@@ -219,11 +219,14 @@ jobs:
       - name: Run unit tests
         shell: bash
         run: |
-          env_py="${{ matrix.python }}";
-          env_py="py${env_py#py}";  # Add "py" prefix if not present
-          env_py="${env_py/./}";    # Remove "."
+          env_py="${{ matrix.python }}"; # env name
+          env_py="py${env_py#py}";       # Add "py" prefix if not present
+          env_py="${env_py/./}";         # Remove "."
+          py_int="${{ matrix.python }}"; # interpreter name
+          py_int="${py_int##py[23]*}";   # Wipe out pyXX
+          py_int="py${py_int#py}";       # Add "py" prefix if not present
           ln -s ".tox/coverage-${env_py}-${{ matrix.twisted }}" testenv;  # For upload step
-          tox -e "coverage-${env_py}-${{ matrix.twisted }},codecov-${env_py}";
+          tox -e "coverage-${env_py}-${{ matrix.twisted }},codecov-${py_int}";
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           GITHUB_REF: ${{ github.ref }}

@@ -225,7 +225,7 @@ jobs:
               env_codecov="${py}";
           else  # CPython
               env_test="py${py/./}";  # Add "py" prefix, remove "."
-              env_codecov="python";
+              env_codecov="py";
           fi;
           ln -s ".tox/coverage-${env_test}-${{ matrix.twisted }}" testenv;  # For upload step
           tox -e "coverage-${env_test}-${{ matrix.twisted }},codecov-${env_codecov}";

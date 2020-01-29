@@ -82,7 +82,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         uri = url.asURI()  # Normalize as (computer-friendly) URI
 
-        assert port is not None
+        assert uri.port is not None  # Tells mypy it's not an Optional
 
         path = (
             uri.replace(scheme=u"", host=u"", port=None)

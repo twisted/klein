@@ -4,6 +4,7 @@
 /.eggs
 /.hypothesis/
 /.tox/
+/apidocs/
 /build/
 /dist/
 /docs/_build/

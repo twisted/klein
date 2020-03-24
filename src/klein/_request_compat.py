@@ -6,7 +6,7 @@ Support for interoperability with L{twisted.web.iweb.IRequest}.
 """
 
 from io import BytesIO
-from typing import Text
+from typing import Text, cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import provides
@@ -52,7 +52,7 @@ class HTTPRequestWrappingIRequest(object):
     @property
     def method(self):
         # type: () -> Text
-        return self._request.method.decode("ascii")
+        return cast(Text, self._request.method.decode("ascii"))
 
     @property
     def uri(self):

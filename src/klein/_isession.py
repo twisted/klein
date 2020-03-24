@@ -1,4 +1,4 @@
-from typing import Any, TYPE_CHECKING
+from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING, Text, Union
 
 import attr
 
@@ -7,16 +7,14 @@ try:
 except ImportError:  # pragma: no cover
     from twisted.python.constants import NamedConstant, Names
 
+from twisted.internet.defer import Deferred
+from twisted.python.components import Componentized
+from twisted.web.iweb import IRequest
+
 from zope.interface import Attribute, Interface
+from zope.interface.interfaces import IInterface
 
 from ._typing import ifmethod
-
-if TYPE_CHECKING:  # pragma: no cover
-    from twisted.internet.defer import Deferred
-    from twisted.python.components import Componentized
-    from typing import Dict, Iterable, Text, Sequence
-    from twisted.web.iweb import IRequest
-    from zope.interface.interfaces import IInterface
 
 
 class NoSuchSession(Exception):
@@ -363,7 +361,6 @@ class IRequestLifecycle(Interface):
 
 
 if TYPE_CHECKING:  # pragma: no cover
-    from typing import Union
     from ._requirer import RequestLifecycle
 
     IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]

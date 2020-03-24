@@ -1,22 +1,22 @@
-from typing import Any, Callable, List, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Sequence
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.python.components import Componentized
+from twisted.web.iweb import IRequest
 
 from zope.interface import implementer
+from zope.interface.interfaces import IInterface
 
 from ._app import _call
 from ._decorators import bindable, modified
-from .interfaces import EarlyExit, IRequestLifecycle
-
-if TYPE_CHECKING:  # pragma: no cover
-    from typing import Dict, Sequence
-    from twisted.web.iweb import IRequest
-    from twisted.internet.defer import Deferred
-    from zope.interface.interfaces import IInterface
-    from .interfaces import IDependencyInjector, IRequiredParameter
+from .interfaces import (
+    EarlyExit,
+    IDependencyInjector,
+    IRequestLifecycle,
+    IRequiredParameter,
+)
 
 
 @implementer(IRequestLifecycle)  # type: ignore[misc]

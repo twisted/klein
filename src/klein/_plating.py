@@ -7,27 +7,22 @@ Templating wrapper support for Klein.
 from functools import partial
 from json import dumps
 from operator import setitem
-from typing import Any, Callable, TYPE_CHECKING, Tuple, cast
+from typing import Any, Callable, List, Tuple, cast
 
 import attr
 
 from six import integer_types, string_types, text_type
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.web.error import MissingRenderMethod
-from twisted.web.template import Element, TagLoader
+from twisted.web.iweb import IRequest
+from twisted.web.template import Element, Tag, TagLoader
 
 from ._app import _call
 from ._decorators import bindable, modified, originalName
 
-if TYPE_CHECKING:  # pragma: no cover
-    from twisted.internet.defer import Deferred
-    from twisted.web.iweb import IRequest
-    from twisted.web.template import Tag
-    from typing import List
 
-    Deferred, IRequest, Tag
-    StackType = List[Tuple[Any, Callable[[Any], None]]]
+StackType = List[Tuple[Any, Callable[[Any], None]]]
 
 # https://github.com/python/mypy/issues/224
 ATOM_TYPES = (

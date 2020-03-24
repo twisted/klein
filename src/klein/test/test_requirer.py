@@ -41,7 +41,8 @@ def requiresURL(url):
     """
     This is a route that requires a URL.
     """
-    return url.child(u"hello/ world").asText()
+    text = url.child(u"hello/ world").asText()  # type: Text
+    return text
 
 
 class ISample(Interface):

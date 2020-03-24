@@ -12,16 +12,14 @@ from typing import (
     List,
     Optional,
     Sequence,
-    TYPE_CHECKING,
     Text,
-    Union,
+    Type,
     cast,
 )
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks
-from twisted.python.compat import unicode
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized, registerAdapter
 from twisted.web.error import MissingRenderMethod
 from twisted.web.http import FORBIDDEN
@@ -33,6 +31,7 @@ from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
+from ._typing import DefaultNamedArg, NoReturn
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -43,34 +42,6 @@ from .interfaces import (
     ValidationError,
     ValueAbsent,
 )
-
-if TYPE_CHECKING:  # pragma: no cover
-    from typing import Type
-    from mypy_extensions import DefaultNamedArg, NoReturn
-    from twisted.internet.defer import Deferred
-
-    if not TYPE_CHECKING:
-        (
-            Tag,
-            Any,
-            Callable,
-            Dict,
-            Optional,
-            AnyStr,
-            Iterable,
-            IRequest,
-            List,
-            Text,
-            DefaultNamedArg,
-            Union,
-            NoReturn,
-            Deferred,
-            Type,
-        )
-else:
-
-    def DefaultNamedArg(*ignore):
-        pass
 
 
 class CrossSiteRequestForgery(Resource, object):
@@ -100,7 +71,10 @@ def textConverter(value):
     """
     Converter for form values (which may be any type of string) into text.
     """
-    return value if isinstance(value, unicode) else unicode(value, "utf-8")
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    else:
+        return value
 
 
 class IParsedJSONBody(Interface):
@@ -141,7 +115,10 @@ class Field(object):
         Register this form field as a dependency injector.
         """
         protoForm = IProtoForm(injectionComponents)
-        return protoForm.addField(self.maybeNamed(parameterName))
+        return cast(
+            IDependencyInjector,
+            protoForm.addField(self.maybeNamed(parameterName)),
+        )
 
     def maybeNamed(self, name):
         # type: (str) -> Field
@@ -175,10 +152,11 @@ class Field(object):
         @return: A new set of tags to include in a template.
         @rtype: iterable of L{twisted.web.template.Tag}
         """
+        value = self.value
+        if value is None:
+            value = ""  # type: ignore[misc]
         input_tag = tags.input(
-            type=self.formInputType,
-            name=self.formFieldName,
-            value=(self.value if self.value is not None else ""),
+            type=self.formInputType, name=self.formFieldName, value=value
         )
         error_tags = []
         if self.error:
@@ -322,7 +300,7 @@ class RenderableForm(object):
     An L{IRenderable} representing a renderable form.
 
     @ivar prevalidationValues: a L{dict} mapping {L{Field}: L{list} of
-        L{unicode}}, representing the value that each field received as part of
+        L{Text}}, representing the value that each field received as part of
         the request.
 
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
@@ -598,10 +576,10 @@ class FieldInjector(object):
         """
         Finalize this ProtoForm into a real form.
         """
-        finalForm = IForm(self._componentized, None)
-        if finalForm is not None:
+        if IForm(self._componentized, None) is not None:
             return
-        finalForm = Form(IProtoForm(self._componentized)._fields)
+
+        finalForm = cast(IForm, Form(IProtoForm(self._componentized)._fields))
         self._componentized.setComponent(IForm, finalForm)
 
         # XXX set requiresComponents argument here to ISession if CSRF is
@@ -616,7 +594,9 @@ class FieldInjector(object):
             )
 
         self._lifecycle.addPrepareHook(
-            populateValuesHook, provides=[IFieldValues], requires=[ISession]
+            populateValuesHook,
+            provides=[IFieldValues],
+            requires=[ISession],  # type: ignore[misc]
         )
 
 
@@ -789,7 +769,9 @@ class Form(object):
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        form = IForm(decoratedFunction.injectionComponents, None)
+        form = IForm(
+            decoratedFunction.injectionComponents, None
+        )  # type: Optional[Form]
         if form is None:
             form = Form([])
         return RenderableFormParam(form, action, method, enctype, encoding)

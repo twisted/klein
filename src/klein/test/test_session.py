@@ -2,29 +2,25 @@
 Tests for L{klein._session}.
 """
 
-from typing import TYPE_CHECKING
+from typing import List, Tuple
 
 from treq.testing import StubTreq
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.web.iweb import IRequest
 
 from zope.interface import Interface, implementer
+from zope.interface.interfaces import IInterface
 
 from klein import Authorization, Klein, Requirer, SessionProcurer
 from klein._typing import ifmethod
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
-if TYPE_CHECKING:  # pragma: no cover
-    from twisted.web.iweb import IRequest
-    from twisted.internet.defer import Deferred
-    from twisted.python.components import Componentized
-    from zope.interface.interfaces import IInterface
-    from typing import Tuple, List
-
-    sessions = List[ISession]
-    errors = List[NoSuchSession]
+Sessions = List[ISession]
+Errors = List[NoSuchSession]
 
 
 class ISimpleTest(Interface):
@@ -70,7 +66,7 @@ def memoryAuthorizer(interface, session, data):
 
 
 def simpleSessionRouter():
-    # type: () -> Tuple[sessions, errors, str, str, StubTreq]
+    # type: () -> Tuple[Sessions, Errors, str, str, StubTreq]
     """
     Construct a simple router.
     """

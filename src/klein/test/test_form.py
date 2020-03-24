@@ -1,4 +1,4 @@
-from typing import List, TYPE_CHECKING, Text, cast
+from typing import Any, List, Text, Tuple, cast
 from xml.etree import ElementTree
 
 import attr
@@ -9,9 +9,10 @@ from treq.testing import StubTreq
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import nativeString
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.web.iweb import IRequest
 from twisted.web.template import Element, TagLoader, renderer, tags
 
-from klein import Field, Form, Klein, Requirer, SessionProcurer
+from klein import Field, Form, Klein, RenderableForm, Requirer, SessionProcurer
 from klein.interfaces import (
     ISession,
     ISessionStore,
@@ -21,10 +22,7 @@ from klein.interfaces import (
 )
 from klein.storage.memory import MemorySessionStore
 
-if TYPE_CHECKING:  # pragma: no cover
-    from typing import Any, Tuple
-    from twisted.web.iweb import IRequest
-    from klein import RenderableForm
+from .._form import textConverter
 
 
 class DanglingField(Field):
@@ -227,6 +225,17 @@ class TestForms(SynchronousTestCase):
     """
     Tests for L{klein.Form} and associated tools.
     """
+
+    def test_textConverter(self):
+        # type: () -> None
+        """
+        Convert a string of either type to text.
+        """
+        text = u"f\xf6o"
+        for string in (text, text.encode("utf-8")):
+            result = textConverter(string)  # type: ignore[type-var]
+            self.assertIsInstance(result, Text)
+            self.assertEqual(result, text)
 
     def test_handling(self):
         # type: () -> None

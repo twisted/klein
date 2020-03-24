@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_memory -*-
 from binascii import hexlify
 from os import urandom
-from typing import Any, Callable, Dict, Iterable, List, Text, cast
+from typing import Any, Callable, Dict, Iterable, Text, cast
 
 import attr
 from attr import Factory
@@ -36,7 +36,7 @@ class MemorySession(object):
     _components = attr.ib(default=Factory(Componentized), type=Componentized)
 
     def authorize(self, interfaces):
-        # type: (List[IInterface]) -> Deferred
+        # type: (Iterable[IInterface]) -> Deferred
         """
         Authorize each interface by calling back to the session store's
         authorization callback.
@@ -105,7 +105,7 @@ class MemorySessionStore(object):
 
     @classmethod
     def fromAuthorizers(cls, authorizers):
-        # type: (List[_MemoryAuthorizerFunction]) -> MemorySessionStore
+        # type: (Iterable[_MemoryAuthorizerFunction]) -> MemorySessionStore
         """
         Create a L{MemorySessionStore} from a collection of callbacks which can
         do authorization.

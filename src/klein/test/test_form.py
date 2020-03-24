@@ -465,12 +465,10 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(errors), 1)
         errorText = cast(str, errors[0].text)
         self.assertIsNot(errorText, None)
-        self.assertTrue(
-            errorText.startswith("invalid literal for int() with base 10: ")
+        self.assertEqual(
+            errorText,
+            "invalid literal for int() with base 10: 'not a number'",
         )
-        # Peculiar 2-step assert because pypy2 (invalidly) sticks a 'u' in
-        # there.
-        self.assertTrue(errorText.endswith("'not a number'"))
 
     def test_handlingJSON(self):
         # type: () -> None

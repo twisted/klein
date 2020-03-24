@@ -1098,16 +1098,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(b"Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_urlDecodeErrorReprPy2(self):
-        """
-        URLDecodeError.__repr__ formats properly.
-        """
-        self.assertEqual(
-            "<URLDecodeError(errors=<type 'exceptions.ValueError'>)>",
-            repr(_URLDecodeError(ValueError)),
-        )
-
-    def test_urlDecodeErrorReprPy3(self):
+    def test_urlDecodeErrorRepr(self):
         """
         URLDecodeError.__repr__ formats properly.
         """
@@ -1115,11 +1106,6 @@ class KleinResourceTests(SynchronousTestCase):
             "<URLDecodeError(errors=<class 'ValueError'>)>",
             repr(_URLDecodeError(ValueError)),
         )
-
-    if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
-    else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
 
     def test_subroutedBranch(self):
         subapp = Klein()

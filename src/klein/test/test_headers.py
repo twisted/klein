@@ -430,7 +430,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2a"), (b"c", b"3"), (b"b", b"2b"))
         headers = self.headers(rawHeaders=rawHeaders)
-        headers.remove(name=u"b")
+        headers.remove(name="b")
 
         self.assertRawHeadersEqual(
             headers.rawHeaders, ((b"a", b"1"), (b"c", b"3"))
@@ -473,7 +473,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2a"))
         headers = self.headers(rawHeaders=rawHeaders)
-        headers.addValue(name=u"b", value=u"2b")
+        headers.addValue(name="b", value="2b")
 
         self.assertRawHeadersEqual(
             headers.rawHeaders, ((b"a", b"1"), (b"b", b"2a"), (b"b", b"2b"))
@@ -488,7 +488,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         headers = self.headers(rawHeaders=())
 
         e = cast(TestCase, self).assertRaises(
-            TypeError, headers.addValue, b"a", u"1"
+            TypeError, headers.addValue, b"a", "1"
         )
         cast(TestCase, self).assertRegex(
             str(e), "value u?'1' must be bytes to match name b?'a'"
@@ -503,7 +503,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         headers = self.headers(rawHeaders=())
 
         e = cast(TestCase, self).assertRaises(
-            TypeError, headers.addValue, u"a", b"1"
+            TypeError, headers.addValue, "a", b"1"
         )
         cast(TestCase, self).assertRegex(
             str(e), "value b?'1' must be text to match name u?'a'"

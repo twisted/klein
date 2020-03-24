@@ -519,7 +519,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/snowman")
         def snowman(request):
-            return u"\u2603"
+            return "\u2603"
 
         d = _render(self.kr, request)
 
@@ -1070,8 +1070,8 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
 
     def test_ensure_utf8_bytes(self):
-        self.assertEqual(ensure_utf8_bytes(u"abc"), b"abc")
-        self.assertEqual(ensure_utf8_bytes(u"\u2202"), b"\xe2\x88\x82")
+        self.assertEqual(ensure_utf8_bytes("abc"), b"abc")
+        self.assertEqual(ensure_utf8_bytes("\u2202"), b"\xe2\x88\x82")
         self.assertEqual(ensure_utf8_bytes(b"\xe2\x88\x82"), b"\xe2\x88\x82")
 
     def test_decodesPath(self):
@@ -1233,7 +1233,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         """
         request = requestMock(b"/f\xc3\xb6\xc3\xb6")
         server_mock = Mock(Server)
-        server_mock.getRequestHostname = u"/var/run/twisted.socket"
+        server_mock.getRequestHostname = "/var/run/twisted.socket"
         request.host = server_mock
         (
             url_scheme,

@@ -253,7 +253,7 @@ class Field(object):
             formInputType="hidden",
             noLabel=True,
             value=value,
-            **kw
+            **kw,
         ).maybeNamed(name)
 
     @classmethod

@@ -2,11 +2,11 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Mapping, Sequence, TYPE_CHECKING, Text, Union
+from typing import Any, Dict, Mapping, Sequence, TYPE_CHECKING, Text, Union
 
 import attr
 
-from hyperlink import parse
+from hyperlink import DecodedURL
 
 from six import text_type
 
@@ -16,8 +16,6 @@ from zope.interface.interfaces import IInterface
 from .interfaces import IDependencyInjector, IRequiredParameter
 
 if TYPE_CHECKING:  # pragma: no cover
-    from hyperlink import DecodedURL
-    from typing import Dict
     from klein.interfaces import IRequestLifecycle
     from twisted.web.iweb import IRequest
     from twisted.python.components import Componentized
@@ -40,11 +38,13 @@ def urlFromRequest(request):
         if not isinstance(host, text_type):
             host = host.decode("ascii")
 
-    return parse(request.uri.decode("charmap")).replace(
+    url = DecodedURL.fromText(request.uri.decode("charmap"))
+    url = url.replace(
         scheme=u"https" if request.isSecure() else u"http",
         host=host,
         port=port,
     )
+    return url
 
 
 @provider(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]

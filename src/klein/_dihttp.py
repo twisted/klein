@@ -6,7 +6,7 @@ from typing import Any, Dict, Mapping, Sequence, Text, Union
 
 import attr
 
-from hyperlink import DecodedURL, parse
+from hyperlink import DecodedURL
 
 from six import text_type
 
@@ -40,11 +40,13 @@ def urlFromRequest(request):
         if not isinstance(host, text_type):
             host = host.decode("ascii")
 
-    return parse(request.uri.decode("charmap")).replace(
+    url = DecodedURL.fromText(request.uri.decode("charmap"))
+    url = url.replace(
         scheme=u"https" if request.isSecure() else u"http",
         host=host,
         port=port,
     )
+    return url
 
 
 @provider(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]

@@ -8,7 +8,7 @@ Tests for L{klein._irequest}.
 from string import ascii_uppercase
 from typing import Optional, Text
 
-from hyperlink import DecodedURL
+from hyperlink import DecodedURL, EncodedURL
 
 from hypothesis import given
 from hypothesis.strategies import binary, text
@@ -82,6 +82,8 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         uri = url.asURI()  # Normalize as (computer-friendly) URI
 
+        assert uri.port is not None  # Tells mypy it's not an Optional
+
         path = (
             uri.replace(scheme=u"", host=u"", port=None)
             .asText()
@@ -100,7 +102,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
         # Needed because non-equal URLs can render as the same strings
         def strURL(url):
-            # type: (DecodedURL) -> Text
+            # type: (EncodedURL) -> Text
             return (
                 u"URL(scheme={url.scheme!r}, "
                 u"userinfo={url.userinfo!r}, "

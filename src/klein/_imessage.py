@@ -4,8 +4,8 @@
 Interfaces related to HTTP messages.
 
 Do not import directly from here, except:
- * From _interfaces.py.
- * From implementations of these interfaces, but even then, import the
+ - From _interfaces.py.
+ - From implementations of these interfaces, but even then, import the
    zope.interface.Interface classes via _interfaces.py.
 
 This will ensure that type checking works.

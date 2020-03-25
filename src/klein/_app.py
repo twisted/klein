@@ -304,7 +304,7 @@ class Klein(object):
                 return 'Uh oh'
 
         Alternately, a handler can be registered for one or more specific
-        C{Exception} tyes::
+        C{Exception} types::
 
             @app.handle_errors(EncodingError, ValidationError):
             def error_handler(request, failure)
@@ -336,9 +336,9 @@ class Klein(object):
             subclass to scope the decorated handler to.
         @type f_or_exception: C{function} or C{Exception}
 
-        @param additional_exceptions Additional C{Exception} subclasses to
+        @param additional_exceptions: Additional C{Exception} subclasses to
             scope the decorated function to.
-        @type additional_exceptions C{list} of C{Exception}s
+        @type additional_exceptions: C{list} of C{Exception}s
 
         @returns: decorated error handler function.
         """
@@ -414,7 +414,7 @@ class Klein(object):
         @type logFile: file object
 
         @param endpoint_description: specification of endpoint. Must contain
-            protocol, port and interface. May contain other optional arguments,
+             protocol, port and interface. May contain other optional arguments,
              e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
         @type endpoint_description: str
 

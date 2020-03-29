@@ -93,4 +93,4 @@ def originalName(function):
     while fnext is not None:
         function = fnext
         fnext = getattr(function, "__original__", None)
-    return function.__name__  # type: ignore[misc]
+    return function.__name__  # type: ignore[unreachable]

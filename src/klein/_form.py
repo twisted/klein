@@ -154,7 +154,7 @@ class Field(object):
         """
         value = self.value
         if value is None:
-            value = ""  # type: ignore[misc]
+            value = ""  # type: ignore[unreachable]
         input_tag = tags.input(
             type=self.formInputType, name=self.formFieldName, value=value
         )

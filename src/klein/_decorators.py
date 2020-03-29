@@ -31,7 +31,7 @@ def bindable(bindable):
 def modified(
     modification,  # type: Text
     original,  # type: Callable
-    modifier=None, # type: Optional[Callable]
+    modifier=None,  # type: Optional[Callable]
 ):
     # type: (...) -> Callable
     """

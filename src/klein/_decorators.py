@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Callable, Text, TypeVar
+from typing import Callable, Optional, Text, TypeVar
 
 C = TypeVar("C", bound=Callable)
 
@@ -28,9 +28,12 @@ def bindable(bindable):
     return bindable
 
 
-def modified(modification, original, modifier=None):
-    # FIXME: This maybe isn't quite right
-    # __type: (Text, C, Optional[Callable[[C], C]]) -> Callable[[C], C]
+def modified(
+    modification,  # type: Text
+    original,  # type: Callable
+    modifier=None, # type: Optional[Callable]
+):
+    # type: (...) -> Callable
     """
     Annotate a callable as a modified wrapper of an original callable.
 
@@ -51,7 +54,7 @@ def modified(modification, original, modifier=None):
     """
 
     def decorator(wrapper):
-        # type: (Callable) -> Callable
+        # type: (Callable[..., C]) -> Callable[..., C]
         result = named(modification + " for " + original.__name__)(
             wraps(original)(wrapper)
         )

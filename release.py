@@ -29,7 +29,10 @@ def spawn(args: Sequence[str]) -> None:
     Spawn a new process with the given arguments, raising L{CalledProcessError}
     with captured output if the exit status is non-zero.
     """
-    run(args, capture_output=True, check=True)
+    try:
+        run(args, capture_output=True, check=True)
+    except CalledProcessError as e:
+        error(f"command {e.cmd} failed: {e.stderr}", 1)
 
 
 def currentVersion() -> Version:
@@ -44,6 +47,13 @@ def currentVersion() -> Version:
     return versionInfo["__version__"]
 
 
+def fadeToBlack():
+    """
+    Run black to reformat the source code.
+    """
+    spawn(["tox", "-e", "black-reformat"])
+
+
 def incrementVersion(candidate: bool) -> None:
     """
     Increment the current release version.
@@ -55,10 +65,10 @@ def incrementVersion(candidate: bool) -> None:
     args = ["python", "-m", "incremental.update", "klein"]
     if candidate:
         args.append("--rc")
-    try:
-        spawn(args)
-    except CalledProcessError as e:
-        error(f"command {e.cmd} failed: {e.stderr}", 1)
+    spawn(args)
+
+    # Incremental generates code that black wants to reformat.
+    fadeToBlack()
 
 
 def releaseBranchName(version: Version) -> str:
@@ -174,6 +184,7 @@ def main(argv: Sequence[str]) -> None:
     """
     Command line entry point.
     """
+
     def invalidArguments() -> NoReturn:
         error(f"invalid arguments: {argv}", 64)
 

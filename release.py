@@ -10,19 +10,34 @@ from incremental import Version
 
 
 def warning(message: str) -> None:
+    """
+    Print a warning.
+    """
     print(f"WARNING: {message}", file=stderr)
 
 
 def error(message: str, exitStatus: int) -> NoReturn:
+    """
+    Print an error message and exit with the given status.
+    """
     print(f"ERROR: {message}", file=stderr)
     exit(exitStatus)
 
 
 def spawn(args: Sequence[str]) -> None:
+    """
+    Spawn a new process with the given arguments, raising L{CalledProcessError}
+    with captured output if the exit status is non-zero.
+    """
     run(args, capture_output=True, check=True)
 
 
 def currentVersion() -> Version:
+    """
+    Determine the current version.
+    """
+    # Incremental doesn't have an API to do this, so we are duplicating some
+    # code from its source tree. Boo.
     versionInfo: Dict[str, Any] = {}
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
     exec (versonFile.read_text(), versionInfo)  # noqa: E211  # black py2.7
@@ -30,6 +45,11 @@ def currentVersion() -> Version:
 
 
 def incrementVersion(candidate: bool) -> None:
+    """
+    Increment the current release version.
+    If C{candidate} is C{True}, the new version will be a release candidate;
+    otherwise it will be a regular release.
+    """
     # Incremental doesn't have an API to do this, so we have to run a
     # subprocess. Boo.
     args = ["python", "-m", "incremental.update", "klein"]
@@ -42,10 +62,16 @@ def incrementVersion(candidate: bool) -> None:
 
 
 def releaseBranchName(version: Version) -> str:
+    """
+    Compute the name of the release branch for the given version.
+    """
     return f"release-{version.major}.{version.minor}"
 
 
 def releaseBranch(repository: Repository, version: Version) -> Optional[Head]:
+    """
+    Return the release branch corresponding to the given version.
+    """
     branchName = releaseBranchName(version)
 
     if branchName in repository.heads:
@@ -55,6 +81,9 @@ def releaseBranch(repository: Repository, version: Version) -> Optional[Head]:
 
 
 def createReleaseBranch(repository: Repository, version: Version) -> Head:
+    """
+    Create a new release branch.
+    """
     branchName = releaseBranchName(version)
 
     if branchName in repository.heads:
@@ -65,6 +94,12 @@ def createReleaseBranch(repository: Repository, version: Version) -> Head:
 
 
 def startRelease() -> None:
+    """
+    Start a new release:
+     * Increment the current version to a new release candidate version.
+     * Create a corresponding branch.
+     * Switch to the new branch.
+    """
     repository = Repository()
 
     if repository.head.ref != repository.heads.master:
@@ -100,6 +135,9 @@ def startRelease() -> None:
 
 
 def bumpRelease() -> None:
+    """
+    Increment the release candidate version.
+    """
     repository = Repository()
 
     if repository.is_dirty():
@@ -125,7 +163,17 @@ def bumpRelease() -> None:
         )
 
 
+def publishRelease() -> None:
+    """
+    Publish the current version.
+    """
+    raise NotImplementedError()
+
+
 def main(argv: Sequence[str]) -> None:
+    """
+    Command line entry point.
+    """
     def invalidArguments() -> NoReturn:
         error(f"invalid arguments: {argv}", 64)
 
@@ -138,6 +186,8 @@ def main(argv: Sequence[str]) -> None:
         startRelease()
     elif subcommand == "bump":
         bumpRelease()
+    elif subcommand == "publish":
+        publishRelease()
     else:
         invalidArguments()
 

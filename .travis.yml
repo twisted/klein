@@ -79,8 +79,6 @@ matrix:
 
     # Test against Twisted trunk in case something in development breaks us.
     # This is allowed to fail below, since the bug may be in Twisted.
-    - python: 2.7
-      env: TOXENV=coverage-py27-twtrunk,codecov
     - python: 3.8
       env: TOXENV=coverage-py38-twtrunk,codecov
 

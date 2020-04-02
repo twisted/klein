@@ -8,13 +8,14 @@ Each version is numbered with the major portion being the last two digits of the
 That is, the first release of 2016 would be 16.0, and the second would be 16.1.
 
 
-Doing a Release
+Releasing Klein
 ---------------
 
-#. Create a branch called "release-<version>"
-#. Run :code:`python incremental.update Klein --rc && python incremental.update Klein`
-#. Commit, and push the branch
+#. Start with a clean (no changes) source tree on the master branch.
+#. Create a new release candidate: :code:`tox -e release start`
+#. Commit and push the branch
 #. Open a PR from the branch (follow the usual process for merging a PR).
+
 #. Pull latest :code:`master`: :code:`git checkout master && git pull --rebase`
 #. Clear the directory of any other changes using ``git clean -f -x -d  .``
 #. Tag the release using ``git tag -s <release> -m "Tag <release> release"``

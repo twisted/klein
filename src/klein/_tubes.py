@@ -5,7 +5,7 @@ Extensions to Tubes.
 """
 
 from io import BytesIO
-from typing import Any as UnknownType, BinaryIO, Iterable
+from typing import Any, BinaryIO, Iterable
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional, provides
@@ -77,11 +77,11 @@ class IOFount(object):
         return result
 
     def pauseFlow(self):
-        # type: () -> UnknownType
+        # type: () -> Any
         return self._pauser.pause()
 
     def stopFlow(self):
-        # type: () -> UnknownType
+        # type: () -> Any
         return self._pauser.resume()
 
     def _pause(self):

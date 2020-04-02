@@ -148,11 +148,6 @@ def bumpRelease() -> None:
     if version.release_candidate is None:
         error(f"current version is not a release candidate: {version}", 1)
 
-    incrementVersion(candidate=True)
-    version = currentVersion()
-
-    print(f"New release candidate version: {version}")
-
     branch = releaseBranch(repository, version)
 
     if repository.head.ref != branch:
@@ -161,6 +156,11 @@ def bumpRelease() -> None:
             f'not release branch "{branch}"',
             1,
         )
+
+    incrementVersion(candidate=True)
+    version = currentVersion()
+
+    print(f"New release candidate version: {version}")
 
 
 def publishRelease() -> None:

@@ -47,7 +47,7 @@ def currentVersion() -> Version:
     return versionInfo["__version__"]
 
 
-def fadeToBlack():
+def fadeToBlack() -> None:
     """
     Run black to reformat the source code.
     """

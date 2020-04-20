@@ -29,51 +29,51 @@ matrix:
       env: TOXENV=mypy
 
     - python: 2.7
-      env: TOXENV=coverage-py27-tw171,codecov
-    - python: 2.7
       env: TOXENV=coverage-py27-tw184,codecov
+    - python: 2.7
+      env: TOXENV=coverage-py27-tw192,codecov
     - python: 2.7
       env: TOXENV=coverage-py27-twcurrent,codecov
 
     - python: 3.5
-      env: TOXENV=coverage-py35-tw171,codecov
-    - python: 3.5
       env: TOXENV=coverage-py35-tw184,codecov
+    - python: 3.5
+      env: TOXENV=coverage-py35-tw192,codecov
     - python: 3.5
       env: TOXENV=coverage-py35-twcurrent,codecov
 
     - python: 3.6
-      env: TOXENV=coverage-py36-tw171,codecov
-    - python: 3.6
       env: TOXENV=coverage-py36-tw184,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw192,codecov
     - python: 3.6
       env: TOXENV=coverage-py36-twcurrent,codecov
 
     - python: 3.7
-      env: TOXENV=coverage-py37-tw171,codecov
-    - python: 3.7
       env: TOXENV=coverage-py37-tw184,codecov
+    - python: 3.7
+      env: TOXENV=coverage-py37-tw192,codecov
     - python: 3.7
       env: TOXENV=coverage-py37-twcurrent,codecov
 
     - python: 3.8
-      env: TOXENV=coverage-py38-tw171,codecov
-    - python: 3.8
       env: TOXENV=coverage-py38-tw184,codecov
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw192,codecov
     - python: 3.8
       env: TOXENV=coverage-py38-twcurrent,codecov
 
     - python: pypy
-      env: TOXENV=coverage-pypy2-tw171,codecov
-    - python: pypy
       env: TOXENV=coverage-pypy2-tw184,codecov
+    - python: pypy
+      env: TOXENV=coverage-pypy2-tw192,codecov
     - python: pypy
       env: TOXENV=coverage-pypy2-twcurrent,codecov
 
     - python: pypy3
-      env: TOXENV=coverage-pypy3-tw171,codecov
-    - python: pypy3
       env: TOXENV=coverage-pypy3-tw184,codecov
+    - python: pypy3
+      env: TOXENV=coverage-pypy3-tw192,codecov
     - python: pypy3
       env: TOXENV=coverage-pypy3-twcurrent,codecov
 

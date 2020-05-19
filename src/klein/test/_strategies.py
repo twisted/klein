@@ -230,7 +230,7 @@ def hostnames(
         draw(
             lists(
                 hostname_labels(allow_idn=allow_idn), min_size=1, max_size=5
-            ).filter(lambda ls: sum(len(l) for l in ls) + len(ls) - 1 <= 252)
+            ).filter(lambda ls: sum(len(s) for s in ls) + len(ls) - 1 <= 252)
         ),
     )
 

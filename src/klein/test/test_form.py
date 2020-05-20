@@ -734,7 +734,7 @@ class TestForms(SynchronousTestCase):
         setCookie = response.cookies()["Klein-Secure-Session"]
         expected = 'value="{}"'.format(setCookie)
         actual = self.successResultOf(content(response))
-        if not isinstance(expected, bytes):
+        if not isinstance(expected, bytes):  # type: ignore[unreachable]
             actual = actual.decode("utf-8")
         self.assertIn(expected, actual)
 

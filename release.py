@@ -3,6 +3,8 @@ from subprocess import CalledProcessError, run
 from sys import exit, stderr
 from typing import Any, Dict, NoReturn, Optional, Sequence
 
+from click import command, group as commandGroup
+
 from git import Repo as Repository
 from git.refs.head import Head
 
@@ -180,30 +182,25 @@ def publishRelease() -> None:
     raise NotImplementedError()
 
 
-def main(argv: Sequence[str]) -> None:
-    """
-    Command line entry point.
-    """
+@commandGroup()
+def main() -> None:
+    pass
 
-    def invalidArguments() -> NoReturn:
-        error(f"invalid arguments: {argv}", 64)
 
-    if len(argv) != 1:
-        invalidArguments()
+@main.command()
+def start() -> None:
+    startRelease()
 
-    subcommand = argv[0]
 
-    if subcommand == "start":
-        startRelease()
-    elif subcommand == "bump":
-        bumpRelease()
-    elif subcommand == "publish":
-        publishRelease()
-    else:
-        invalidArguments()
+@main.command()
+def bump() -> None:
+    bumpRelease()
+
+
+@main.command()
+def publish() -> None:
+    publishRelease()
 
 
 if __name__ == "__main__":
-    from sys import argv
-
-    main(argv[1:])
+    main()

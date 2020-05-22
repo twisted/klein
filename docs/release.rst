@@ -14,12 +14,11 @@ Releasing Klein
 #. Start with a clean (no changes) source tree on the master branch.
 #. Create a new release candidate: :code:`tox -e release start`
 #. Commit and push the branch
-#. Open a PR from the branch (follow the usual process for merging a PR).
+#. Open a PR from the branch (follow the usual process for opening a PR).
+#. As appropriate, pull the latest code from :code:`master`: :code:`git checkout master && git pull --rebase` (or use the GitHub UI)
+#. To publish a release candidate: :code:`tox -e release publish`
 
-#. Pull latest :code:`master`: :code:`git checkout master && git pull --rebase`
 #. Clear the directory of any other changes using ``git clean -f -x -d  .``
-#. Tag the release using ``git tag -s <release> -m "Tag <release> release"``
-#. Push up the tag using ``git push --tags``.
 #. Make a pull request for this changes.
    Continue when it is merged.
 #. Generate the tarball and wheel using ``python setup.py sdist bdist_wheel``.

@@ -92,6 +92,13 @@ def releaseBranch(repository: Repository, version: Version) -> Optional[Head]:
     return None
 
 
+def releaseTagName(version: Version) -> str:
+    """
+    Compute the name of the release tag for the given version.
+    """
+    return version.public()
+
+
 def createReleaseBranch(repository: Repository, version: Version) -> Head:
     """
     Create a new release branch.
@@ -130,7 +137,7 @@ def startRelease() -> None:
     incrementVersion(candidate=True)
     version = currentVersion()
 
-    print(f"New release candidate version: {version}")
+    print(f"New release candidate version: {version.public()}")
 
     branch = createReleaseBranch(repository, version)
     branch.checkout()
@@ -172,14 +179,46 @@ def bumpRelease() -> None:
     incrementVersion(candidate=True)
     version = currentVersion()
 
-    print(f"New release candidate version: {version}")
+    print(f"New release candidate version: {version.public()}")
 
 
 def publishRelease() -> None:
     """
     Publish the current version.
     """
-    raise NotImplementedError()
+    repository = Repository()
+
+    if repository.is_dirty():
+        warning("working copy is dirty")
+
+    version = currentVersion()
+
+    if version.release_candidate is None:
+        error(f"current version is not a release candidate: {version}", 1)
+
+    branch = releaseBranch(repository, version)
+
+    if repository.head.ref != branch:
+        error(
+            f'working copy is on branch "{repository.head.ref}", '
+            f'not release branch "{branch}"',
+            1,
+        )
+
+    tagName = releaseTagName(version)
+
+    if tagName in repository.tags:
+        tag = repository.tags[tagName]
+        if tag.commit != repository.head.ref.commit:
+            error(f"Release tag already exists: {tagName}", 1)
+    else:
+        print("Creating release tag:", tagName)
+        tag = repository.create_tag(
+            tagName, ref=branch, message=f"Tag release {version.public()}"
+        )
+
+    print("Pushing tag to origin:", tag)
+    repository.remotes.origin.push(refspec=tag.path)
 
 
 @commandGroup()

@@ -12,7 +12,7 @@ Releasing Klein
 ---------------
 
 #. Start with a clean (no changes) source tree on the master branch.
-#. Create a new release candidate: :code:`tox -e release start`
+#. Create a new release candidate: :code:`tox -e release -- start`
 #. Commit and push the branch
 #. Open a PR from the branch (follow the usual process for opening a PR).
 #. As appropriate, pull the latest code from :code:`master`: :code:`git checkout master && git pull --rebase` (or use the GitHub UI)

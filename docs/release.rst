@@ -16,10 +16,5 @@ Releasing Klein
 #. Commit and push the branch
 #. Open a PR from the branch (follow the usual process for opening a PR).
 #. As appropriate, pull the latest code from :code:`master`: :code:`git checkout master && git pull --rebase` (or use the GitHub UI)
-#. To publish a release candidate: :code:`tox -e release publish`
-
-#. Clear the directory of any other changes using ``git clean -f -x -d  .``
-#. Make a pull request for this changes.
-   Continue when it is merged.
-#. Generate the tarball and wheel using ``python setup.py sdist bdist_wheel``.
-#. Upload the tarball and wheel using ``twine upload dist/klein-*``.
+#. To publish a release candidate to PyPI: :code:`tox -e release publish` (add :code:`--test` to submit to TestPyPI instead)
+#. To publish a production release: :code:`tox -e release publish --final`

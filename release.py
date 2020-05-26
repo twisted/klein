@@ -1,14 +1,23 @@
+from enum import Enum
+from os import chdir
 from pathlib import Path
+from shutil import rmtree
 from subprocess import CalledProcessError, run
 from sys import exit, stderr
+from tempfile import mkdtemp
 from typing import Any, Dict, NoReturn, Optional, Sequence
 
-from click import command, group as commandGroup
+from click import group as commandGroup, option as commandOption
 
-from git import Repo as Repository
+from git import Repo as Repository, TagReference
 from git.refs.head import Head
 
 from incremental import Version
+
+
+class PyPI(Enum):
+    Test = "testpypi"
+    Production = "pypi"
 
 
 def warning(message: str) -> None:
@@ -31,8 +40,9 @@ def spawn(args: Sequence[str]) -> None:
     Spawn a new process with the given arguments, raising L{CalledProcessError}
     with captured output if the exit status is non-zero.
     """
+    print("Executing command:", " ".join(repr(arg) for arg in args))
     try:
-        run(args, capture_output=True, check=True)
+        run(args, input=b"", capture_output=True, check=True)
     except CalledProcessError as e:
         error(f"command {e.cmd} failed: {e.stderr}", 1)
 
@@ -112,6 +122,56 @@ def createReleaseBranch(repository: Repository, version: Version) -> Head:
     return repository.create_head(branchName)
 
 
+def clone(repository: Repository, tag: TagReference) -> Path:
+    """
+    Clone a tagged version from the given repository's origin.
+    Return the path to the new clone.
+    """
+    path = Path(mkdtemp())
+
+    print(f"Cloning repository with tag {tag} at {path}...")
+    Repository.clone_from(
+        url=next(repository.remotes.origin.urls),
+        to_path=str(path),
+        branch=tag.name,
+        multi_options=["--depth=1"],
+    )
+
+    return path
+
+
+def distribute(
+    repository: Repository, tag: TagReference, test: bool = False
+) -> None:
+    """
+    Build a distribution for the project at the given path and upload to PyPI.
+    """
+    src = clone(repository, tag)
+
+    if test:
+        pypi = PyPI.Test
+    else:
+        pypi = PyPI.Production
+
+    wd = Path.cwd()
+    try:
+        chdir(src)
+
+        print("Building distribution at:", src)
+        spawn(["python", "setup.py", "sdist", "bdist_wheel"])
+
+        print(f"Uploading distribution to {pypi.value}...")
+        twineCommand = ["twine", "upload"]
+        twineCommand.append(f"--repository={pypi.value}")
+        twineCommand += [str(p) for p in Path("dist").iterdir()]
+        spawn(twineCommand)
+
+    finally:
+        chdir(wd)
+
+    rmtree(str(src))
+
+
 def startRelease() -> None:
     """
     Start a new release:
@@ -142,15 +202,10 @@ def startRelease() -> None:
     branch = createReleaseBranch(repository, version)
     branch.checkout()
 
-    print(
-        (
-            f"Next steps:\n"
-            f" • Commit version updates to release branch: {branch}\n"
-            f" • Push the release branch to GitHub\n"
-            f" • Open a pull request on GitHub from the release branch\n"
-        ),
-        end="",
-    )
+    print("Next steps (to be done manually):")
+    print(" • Commit version changes to the new release branch:", branch)
+    print(" • Push the release branch to GitHub")
+    print(" • Open a pull request on GitHub from the release branch")
 
 
 def bumpRelease() -> None:
@@ -179,17 +234,17 @@ def bumpRelease() -> None:
     incrementVersion(candidate=True)
     version = currentVersion()
 
-    print(f"New release candidate version: {version.public()}")
+    print("New release candidate version:", version.public())
 
 
-def publishRelease() -> None:
+def publishRelease(final: bool, test: bool = False) -> None:
     """
     Publish the current version.
     """
     repository = Repository()
 
     if repository.is_dirty():
-        warning("working copy is dirty")
+        error("working copy is dirty", 1)
 
     version = currentVersion()
 
@@ -205,12 +260,18 @@ def publishRelease() -> None:
             1,
         )
 
+    incrementVersion(candidate=False)
+    version = currentVersion()
+
     tagName = releaseTagName(version)
 
     if tagName in repository.tags:
         tag = repository.tags[tagName]
+        message = f"Release tag already exists: {tagName}"
         if tag.commit != repository.head.ref.commit:
-            error(f"Release tag already exists: {tagName}", 1)
+            error(message, 1)
+        else:
+            print(message)
     else:
         print("Creating release tag:", tagName)
         tag = repository.create_tag(
@@ -219,6 +280,8 @@ def publishRelease() -> None:
 
     print("Pushing tag to origin:", tag)
     repository.remotes.origin.push(refspec=tag.path)
+
+    distribute(repository, tag, test=test)
 
 
 @commandGroup()
@@ -237,8 +300,10 @@ def bump() -> None:
 
 
 @main.command()
-def publish() -> None:
-    publishRelease()
+@commandOption("--test/--production")
+@commandOption("--final/--candidate")
+def publish(final: bool, test: bool) -> None:
+    publishRelease(final=final, test=test)
 
 
 if __name__ == "__main__":

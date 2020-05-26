@@ -16,5 +16,7 @@ Releasing Klein
 #. Commit and push the branch
 #. Open a PR from the branch (follow the usual process for opening a PR).
 #. As appropriate, pull the latest code from :code:`master`: :code:`git checkout master && git pull --rebase` (or use the GitHub UI)
-#. To publish a release candidate to PyPI: :code:`tox -e release publish` (add :code:`--test` to submit to TestPyPI instead)
-#. To publish a production release: :code:`tox -e release publish --final`
+#. To publish a release candidate to PyPI: :code:`tox -e release -- publish`
+#. Obtain an approving review for the PR using the usual process.
+#. To publish a production release: :code:`tox -e release -- publish --final`
+#. Merge the PR to the master branch.

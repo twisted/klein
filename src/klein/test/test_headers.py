@@ -66,8 +66,8 @@ def headerValueSanitize(value):
     else:
         lws = ["\r\n", "\r", "\n"]
         space = " "
-    for l in lws:
-        value = value.replace(l, space)
+    for lw in lws:
+        value = value.replace(lw, space)
     return value
 
 

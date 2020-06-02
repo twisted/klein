@@ -1,4 +1,3 @@
-
 from twisted.web.template import tags, slot
 from klein import Klein, Plating, Form, Field, Requirer, SessionProcurer
 from klein.interfaces import ISession
@@ -20,12 +19,12 @@ style = Plating(tags=tags.html(
     tags.body(tags.div(slot(Plating.CONTENT))))
 )
 
-@style.routed(
-    requirer.require(
+@requirer.require(
+    style.routed(
         app.route("/", methods=["POST"]),
-        foo=Field.integer(minimum=3, maximum=10), bar=Field.text(),
+        tags.h1('u did it: ', slot("an-form-arg"))
     ),
-    tags.h1('u did it: ', slot("an-form-arg"))
+    foo=Field.number(minimum=3, maximum=10), bar=Field.text(),
 )
 def postHandler(foo, bar):
     return {"an-form-arg": foo}

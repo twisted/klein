@@ -91,7 +91,7 @@ def originalName(function):
     Get the original, user-specified name of C{function}, chasing back any
     wrappers applied with C{modified}.
     """
-    fnext = function
+    fnext = function  # type: Optional[Callable]
     while fnext is not None:
         function = fnext
         fnext = getattr(function, "__original__", None)

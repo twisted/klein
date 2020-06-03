@@ -34,7 +34,7 @@ __all__ = ()
 noneIO = BytesIO()
 
 
-@implementer(IHTTPRequest)  # type: ignore[misc]
+@implementer(IHTTPRequest)
 @attrs(frozen=True)
 class HTTPRequestWrappingIRequest(object):
     """

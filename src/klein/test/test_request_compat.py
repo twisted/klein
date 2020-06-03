@@ -60,7 +60,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         L{HTTPRequestWrappingIRequest} implements L{IHTTPRequest}.
         """
         request = HTTPRequestWrappingIRequest(request=self.legacyRequest())
-        self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
+        self.assertProvides(IHTTPRequest, request)
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
     def test_method(self, methodText):
@@ -131,9 +131,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         legacyRequest = self.legacyRequest()
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
-        self.assertProvides(
-            IHTTPHeaders, request.headers  # type: ignore[misc]
-        )
+        self.assertProvides(IHTTPHeaders, request.headers)
 
     def test_bodyAsFountTwice(self):
         # type: () -> None

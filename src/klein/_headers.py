@@ -157,7 +157,7 @@ def rawHeaderNameAndValue(name, value):
 # Implementation
 
 
-@implementer(IHTTPHeaders)  # type: ignore[misc]
+@implementer(IHTTPHeaders)
 @attrs(frozen=True)
 class FrozenHTTPHeaders(object):
     """
@@ -173,7 +173,7 @@ class FrozenHTTPHeaders(object):
         return getFromRawHeaders(self.rawHeaders, name)
 
 
-@implementer(IMutableHTTPHeaders)  # type: ignore[misc]
+@implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
 class MutableHTTPHeaders(object):
     """

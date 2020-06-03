@@ -1,6 +1,36 @@
 NEWS
 ====
 
+20.6.0 - 2020-06-??
+-------------------
+ * This is the last release of Klein expected to support Python 2.
+ * Python 3.8 is now supported by Klein. [`#303 <https://github.com/twisted/klein/pull/303>`_]
+ * Python 3.4 is no longer supported by Klein. [`#284 <https://github.com/twisted/klein/pull/284>`_]
+ * ``klein.app.subroute`` is now also available as ``klein.subroute``. [`#293 <https://github.com/twisted/klein/pull/293>`_]
+ * Support for forms and sessions. [`#276 <https://github.com/twisted/klein/pull/276>`_]
+ * The ``Klein`` class now supports deep copy by implementing ``__copy__``. [`#74 <https://github.com/twisted/klein/pull/74>`_]
+
+19.6.0 - 2019-06-07
+-------------------
+
+17.10.0 - 2017-10-22
+--------------------
+
+17.2.0 - 2017-03-03
+-------------------
+
+16.12.0 - 2016-12-13
+--------------------
+
+15.3.1 - 2015-12-17
+-------------------
+
+15.2.0 - 2015-11-30
+-------------------
+
+15.1.0 - 2015-07-08
+-------------------
+
 15.0.0 - 2015-01-11
 -------------------
  * [BUG] Klein now includes its test package as part of the distribution. [`#65 <https://github.com/twisted/klein/pull/65>`_]

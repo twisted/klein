@@ -98,7 +98,7 @@ def simpleSessionRouter():
 
     requirer = Requirer()
 
-    @requirer.prerequisite([ISession])  # type: ignore[misc]
+    @requirer.prerequisite([ISession])
     def procure(request):
         # type: (IRequest) -> Deferred
         return sproc.procureSession(request)

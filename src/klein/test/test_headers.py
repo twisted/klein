@@ -357,7 +357,7 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         L{FrozenHTTPHeaders} implements L{IHTTPHeaders}.
         """
         headers = FrozenHTTPHeaders(rawHeaders=())
-        self.assertProvides(IHTTPHeaders, headers)  # type: ignore[misc]
+        self.assertProvides(IHTTPHeaders, headers)
 
     def test_defaultHeaders(self):
         # type: () -> None
@@ -394,9 +394,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         Class implements L{IMutableHTTPHeaders}.
         """
         headers = self.headers(rawHeaders=())
-        cast(TestCase, self).assertProvides(
-            IMutableHTTPHeaders, headers  # type: ignore[misc]
-        )
+        cast(TestCase, self).assertProvides(IMutableHTTPHeaders, headers)
 
     def test_rawHeaders(self):
         # type: () -> None

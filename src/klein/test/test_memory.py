@@ -32,9 +32,9 @@ class MemoryTests(SynchronousTestCase):
         Verify that the session store complies with the relevant interfaces.
         """
         store = MemorySessionStore()
-        verifyObject(ISessionStore, store)  # type: ignore[misc]
+        verifyObject(ISessionStore, store)
         verifyObject(
-            ISession,  # type: ignore[misc]
+            ISession,
             self.successResultOf(
                 store.newSession(True, SessionMechanism.Header)
             ),

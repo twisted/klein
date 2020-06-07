@@ -40,8 +40,8 @@ def error(message: str, exitStatus: int) -> NoReturn:
 
 def spawn(args: Sequence[str]) -> None:
     """
-    Spawn a new process with the given arguments, raising L{CalledProcessError}
-    with captured output if the exit status is non-zero.
+    Spawn a new process with the given arguments, raising L{SystemExit} with
+    captured output if the exit status is non-zero.
     """
     print("Executing command:", " ".join(repr(arg) for arg in args))
     try:

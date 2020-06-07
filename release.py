@@ -1,3 +1,6 @@
+# Copyright (c) Twisted Matrix Laboratories.
+# See LICENSE for details.
+
 from enum import Enum
 from os import chdir
 from pathlib import Path

@@ -13,7 +13,7 @@ from six.moves.urllib.parse import parse_qs
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
-from twisted.python.compat import _PY3, unicode
+from twisted.python.compat import unicode
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
@@ -389,6 +389,23 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"ok")
+
+    def test_asyncRendering(self):
+        app = self.app
+        resource = self.kr
+
+        request = requestMock(b"/resource/leaf")
+
+        @app.route("/resource/leaf")
+        async def leaf(request):
+            return LeafResource()
+
+        expected = b"I am a leaf in the wind."
+
+        def assertResult(_):
+            self.assertEqual(request.getWrittenData(), expected)
+
+        return _render(resource, request).addCallback(assertResult)
 
     def test_elementRendering(self):
         app = self.app
@@ -1303,12 +1320,3 @@ class GlobalAppTests(SynchronousTestCase):
         )
         self.assertIdentical(resource.KleinResource, KleinResource)
         self.assertIdentical(resource.ensure_utf8_bytes, ensure_utf8_bytes)
-
-
-if _PY3:
-    import sys
-
-    if sys.version_info >= (3, 5):
-        from .py3_test_resource import PY3KleinResourceTests
-
-        PY3KleinResourceTests  # shh pyflakes

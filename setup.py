@@ -44,6 +44,6 @@ if __name__ == "__main__":
         package_dir={"": "src"},
         package_data=dict(klein=["test/idna-tables-properties.csv",],),
         url="https://github.com/twisted/klein",
-        maintainer="Amber Brown (HawkOwl)",
-        maintainer_email="hawkowl@twistedmatrix.com",
+        maintainer="Twisted Matrix Laboratories",
+        maintainer_email="twisted-python@twistedmatrix.com",
     )

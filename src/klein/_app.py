@@ -8,14 +8,7 @@ from __future__ import absolute_import, division
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
-
-try:
-    from inspect import iscoroutine
-except ImportError:
-
-    def iscoroutine(*args, **kwargs):  # type: ignore
-        return False
-
+from inspect import iscoroutine
 
 from weakref import ref
 

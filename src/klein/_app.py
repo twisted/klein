@@ -232,7 +232,7 @@ class Klein(object):
                     Rule(
                         url.rstrip("/") + "/" + "<path:__rest__>",
                         *args,
-                        **branchKwargs
+                        **branchKwargs,
                     )
                 )
 

@@ -29,7 +29,7 @@ from .interfaces import (
 )
 
 
-@implementer(ISessionProcurer)  # type: ignore[misc]
+@implementer(ISessionProcurer)
 @attr.s
 class SessionProcurer(object):
     """
@@ -72,7 +72,7 @@ class SessionProcurer(object):
     @type _setCookieOnGET: L{bool}
     """
 
-    _store = attr.ib(type=ISessionStore)  # type: ignore[misc]
+    _store = attr.ib(type=ISessionStore)
 
     _maxAge = attr.ib(type=int, default=3600)
     _secureCookie = attr.ib(type=bytes, default=b"Klein-Secure-Session")
@@ -87,7 +87,7 @@ class SessionProcurer(object):
     @inlineCallbacks
     def procureSession(self, request, forceInsecure=False):
         # type: (IRequest, bool) -> Any
-        alreadyProcured = request.getComponent(ISession)  # type: ignore[misc]
+        alreadyProcured = request.getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
                 returnValue(alreadyProcured)
@@ -166,8 +166,8 @@ class SessionProcurer(object):
                     # manipulation could succeed (no CSRF token check could
                     # ever succeed, for example).
                     raise NoSuchSession(
-                        u"Can't initialize a session on a "
-                        u"{method} request.".format(
+                        "Can't initialize a session on a "
+                        "{method} request.".format(
                             method=request.method.decode("ascii")
                         )
                     )
@@ -175,7 +175,7 @@ class SessionProcurer(object):
                     # We don't have a session ID at all, and we're not allowed
                     # by policy to set a cookie on the client.
                     raise NoSuchSession(
-                        u"Cannot auto-initialize a session for this request."
+                        "Cannot auto-initialize a session for this request."
                     )
                 session = yield self._store.newSession(sentSecurely, mechanism)
             identifierInCookie = session.identifier
@@ -194,7 +194,7 @@ class SessionProcurer(object):
             )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
-            request.setComponent(ISession, session)  # type: ignore[misc]
+            request.setComponent(ISession, session)
         returnValue(session)
 
 
@@ -224,7 +224,7 @@ class AuthorizationDenied(Resource, object):
         return "{} DENIED".format(qual(self._interface)).encode("utf-8")
 
 
-@implementer(IDependencyInjector, IRequiredParameter)  # type: ignore[misc]
+@implementer(IDependencyInjector, IRequiredParameter)
 @attr.s
 class Authorization(object):
     """
@@ -301,7 +301,7 @@ class Authorization(object):
         # TODO: this could be optimized to do fewer calls to 'authorize' by
         # collecting all the interfaces that are necessary and then using
         # addBeforeHook; the interface would not need to change.
-        session = ISession(request)  # type: ignore[misc]
+        session = ISession(request)  # type: ignore[operator]
         provider = (yield session.authorize([self._interface])).get(
             self._interface
         )

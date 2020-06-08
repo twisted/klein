@@ -14,6 +14,8 @@ NEWS
 19.6.0 - 2019-06-07
 -------------------
 
+New "forms" and "sessions" subsystems provide official support for POST requests, including CSRF protection, form generation to include CSRF tokens, dependency injection to populate parameters from both the request and session, as well as lightweight JSON API support.
+
 17.10.0 - 2017-10-22
 --------------------
 

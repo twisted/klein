@@ -42,13 +42,13 @@ class DanglingField(Field):
 
 @attr.s(hash=False)
 class TestObject(object):
-    sessionStore = attr.ib(type=ISessionStore)  # type: ignore[misc]
+    sessionStore = attr.ib(type=ISessionStore)
     calls = attr.ib(attr.Factory(list), type=List)
 
     router = Klein()
     requirer = Requirer()
 
-    @requirer.prerequisite([ISession])  # type: ignore[misc]
+    @requirer.prerequisite([ISession])
     @inlineCallbacks
     def procureASession(self, request):
         # type: (IRequest) -> Any
@@ -731,7 +731,7 @@ class TestForms(SynchronousTestCase):
         setCookie = response.cookies()["Klein-Secure-Session"]
         expected = 'value="{}"'.format(setCookie)
         actual = self.successResultOf(content(response))
-        if not isinstance(expected, bytes):
+        if not isinstance(expected, bytes):  # type: ignore[unreachable]
             actual = actual.decode("utf-8")
         self.assertIn(expected, actual)
 

@@ -43,7 +43,7 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         L{FrozenHTTPRequest} implements L{IHTTPRequest}.
         """
         request = self.requestFromBytes()
-        self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
+        self.assertProvides(IHTTPRequest, request)
 
     def test_initInvalidBodyType(self):
         # type: () -> None

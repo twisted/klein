@@ -29,7 +29,7 @@ from ._headers import (
 __all__ = ()
 
 
-@implementer(IMutableHTTPHeaders)  # type: ignore[misc]
+@implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
 class HTTPHeadersWrappingHeaders(object):
     """

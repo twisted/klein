@@ -45,7 +45,7 @@ def urlFromRequest(request):
     return url
 
 
-@provider(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
+@provider(IRequiredParameter, IDependencyInjector)
 class RequestURL(object):
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
@@ -71,7 +71,7 @@ class RequestURL(object):
         "Nothing to do upon finalization."
 
 
-@implementer(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
+@implementer(IRequiredParameter, IDependencyInjector)
 @attr.s(frozen=True)
 class RequestComponent(object):
     """

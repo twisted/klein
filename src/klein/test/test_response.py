@@ -38,7 +38,7 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
         L{FrozenHTTPResponse} implements L{IHTTPResponse}.
         """
         response = self.responseFromBytes()
-        self.assertProvides(IHTTPResponse, response)  # type: ignore[misc]
+        self.assertProvides(IHTTPResponse, response)
 
     def test_initInvalidBodyType(self):
         # type: () -> None

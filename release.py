@@ -266,6 +266,10 @@ def publishRelease(final: bool, test: bool = False) -> None:
     incrementVersion(candidate=False)
     version = currentVersion()
 
+    versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
+    repository.index.add(str(versonFile))
+    repository.index.commit(f"Update version to {version}")
+
     tagName = releaseTagName(version)
 
     if tagName in repository.tags:

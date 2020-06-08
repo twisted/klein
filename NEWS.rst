@@ -1,7 +1,7 @@
 NEWS
 ====
 
-20.6.0 - 2020-06-??
+20.6.0 - 2020-06-07
 -------------------
  * This is the last release of Klein expected to support Python 2.
  * This is the last release of Klein expected to support Python 3.5.

@@ -85,7 +85,7 @@ class TestObject(object):
     @requirer.require(
         router.route("/handle-submit", methods=["POST"]),
         name=Field.text(),
-        button=Field.submit(u"OK"),
+        button=Field.submit("OK"),
     )
     def handlerWithSubmit(self, name, button):
         # type: (str, str) -> None
@@ -122,7 +122,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/render", methods=["GET"]),
-        form=Form.rendererFor(handler, action=u"/handle"),
+        form=Form.rendererFor(handler, action="/handle"),
     )
     def renderer(self, form):
         # type: (IRequest, Form) -> Form
@@ -130,7 +130,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/render-submit", methods=["GET"]),
-        form=Form.rendererFor(handlerWithSubmit, action=u"/handle-submit"),
+        form=Form.rendererFor(handlerWithSubmit, action="/handle-submit"),
     )
     def submitRenderer(self, form):
         # type: (IRequest, RenderableForm) -> RenderableForm
@@ -138,7 +138,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/render-custom", methods=["GET"]),
-        form=Form.rendererFor(handler, action=u"/handle"),
+        form=Form.rendererFor(handler, action="/handle"),
     )
     def customFormRender(self, form):
         # type: (RenderableForm) -> Any
@@ -150,7 +150,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/render-cascade", methods=["GET"]),
-        form=Form.rendererFor(handler, action=u"/handle"),
+        form=Form.rendererFor(handler, action="/handle"),
     )
     def cascadeRenderer(self, form):
         # type: (RenderableForm) -> RenderableForm
@@ -195,7 +195,7 @@ class TestObject(object):
 
     @requirer.require(
         router.route("/render-empty", methods=["GET"]),
-        form=Form.rendererFor(emptyHandler, action=u"/handle-empty"),
+        form=Form.rendererFor(emptyHandler, action="/handle-empty"),
     )
     def emptyRenderer(self, form):
         # type: (RenderableForm) -> RenderableForm
@@ -235,7 +235,7 @@ class TestForms(SynchronousTestCase):
         """
         Convert a string of either type to text.
         """
-        text = u"f\xf6o"
+        text = "f\xf6o"
         for string in (text, text.encode("utf-8")):
             result = textConverter(string)  # type: ignore[type-var]
             self.assertIsInstance(result, Text)
@@ -264,7 +264,7 @@ class TestForms(SynchronousTestCase):
         )
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b"yay")
-        self.assertEqual(to.calls, [(u"hello", 1234)])
+        self.assertEqual(to.calls, [("hello", 1234)])
 
     def test_handlingPassword(self):
         # type: () -> None
@@ -291,7 +291,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(
             self.successResultOf(content(response)), b"password received"
         )
-        self.assertEqual(to.calls, [(u"password", u"asdfjkl;")])
+        self.assertEqual(to.calls, [("password", "asdfjkl;")])
 
     def test_numberConstraints(self):
         # type: () -> None
@@ -333,7 +333,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(tooLow.code, 400)
         self.assertEqual(justRight.code, 200)
         self.assertEqual(self.successResultOf(content(justRight)), b"got it")
-        self.assertEqual(to.calls, [(u"constrained", 7)])
+        self.assertEqual(to.calls, [("constrained", 7)])
 
     def test_missingRequiredParameter(self):
         # type: () -> None
@@ -406,7 +406,7 @@ class TestForms(SynchronousTestCase):
         )
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b"got")
-        self.assertEqual(calls, [(u"hello, big world", 4321)])
+        self.assertEqual(calls, [("hello, big world", 4321)])
 
     def test_validatingParameters(self):
         # type: () -> None
@@ -465,12 +465,9 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(errors), 1)
         errorText = cast(str, errors[0].text)
         self.assertIsNot(errorText, None)
-        self.assertTrue(
-            errorText.startswith("invalid literal for int() with base 10: ")
+        self.assertEqual(
+            errorText, "invalid literal for int() with base 10: 'not a number'",
         )
-        # Peculiar 2-step assert because pypy2 (invalidly) sticks a 'u' in
-        # there.
-        self.assertTrue(errorText.endswith("'not a number'"))
 
     def test_handlingJSON(self):
         # type: () -> None
@@ -490,12 +487,12 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/handle",
                 json=dict(name="hello", value="1234", ignoreme="extraneous"),
-                headers={u"X-Test-Session": session.identifier},
+                headers={"X-Test-Session": session.identifier},
             )
         )
         self.assertEqual(response.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b"yay")
-        self.assertEqual(to.calls, [(u"hello", 1234)])
+        self.assertEqual(to.calls, [("hello", 1234)])
 
     def test_missingOptionalParameterJSON(self):
         # type: () -> None
@@ -529,7 +526,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response2.code, 200)
         self.assertEqual(self.successResultOf(content(response)), b"okay")
         self.assertEqual(self.successResultOf(content(response2)), b"okay")
-        self.assertEqual(to.calls, [(u"one", 7.0), (u"two", 2.0)])
+        self.assertEqual(to.calls, [("one", 7.0), ("two", 2.0)])
 
     def test_rendering(self):
         # type: () -> None

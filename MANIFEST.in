@@ -7,7 +7,9 @@ include LICENSE
 include NEWS.rst
 include pyproject.toml
 include README.rst
+include release.py
 include tox.ini
 recursive-include docs *.py
 recursive-include docs *.rst
 recursive-include docs *.txt
+recursive-exclude docs/_build *

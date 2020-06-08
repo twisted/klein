@@ -166,8 +166,8 @@ class SessionProcurer(object):
                     # manipulation could succeed (no CSRF token check could
                     # ever succeed, for example).
                     raise NoSuchSession(
-                        u"Can't initialize a session on a "
-                        u"{method} request.".format(
+                        "Can't initialize a session on a "
+                        "{method} request.".format(
                             method=request.method.decode("ascii")
                         )
                     )
@@ -175,7 +175,7 @@ class SessionProcurer(object):
                     # We don't have a session ID at all, and we're not allowed
                     # by policy to set a cookie on the client.
                     raise NoSuchSession(
-                        u"Cannot auto-initialize a session for this request."
+                        "Cannot auto-initialize a session for this request."
                     )
                 session = yield self._store.newSession(sentSecurely, mechanism)
             identifierInCookie = session.identifier

@@ -85,12 +85,10 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         assert uri.port is not None  # Tells mypy it's not an Optional
 
         path = (
-            uri.replace(scheme=u"", host=u"", port=None)
-            .asText()
-            .encode("ascii")
+            uri.replace(scheme="", host="", port=None).asText().encode("ascii")
         )
         legacyRequest = self.legacyRequest(
-            isSecure=(uri.scheme == u"https"),
+            isSecure=(uri.scheme == "https"),
             host=uri.host.encode("ascii"),
             port=uri.port,
             path=path,
@@ -104,14 +102,14 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         def strURL(url):
             # type: (EncodedURL) -> Text
             return (
-                u"URL(scheme={url.scheme!r}, "
-                u"userinfo={url.userinfo!r}, "
-                u"host={url.host!r}, "
-                u"port={url.port!r}, "
-                u"path={url.path!r}, "
-                u"query={url.query!r}, "
-                u"fragment={url.fragment!r}, "
-                u"rooted={url.rooted})"
+                "URL(scheme={url.scheme!r}, "
+                "userinfo={url.userinfo!r}, "
+                "host={url.host!r}, "
+                "port={url.port!r}, "
+                "path={url.path!r}, "
+                "query={url.query!r}, "
+                "fragment={url.fragment!r}, "
+                "rooted={url.rooted})"
             ).format(url=url)
 
         self.assertEqual(

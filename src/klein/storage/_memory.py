@@ -151,7 +151,7 @@ class MemorySessionStore(object):
         else:
             return fail(
                 NoSuchSession(
-                    u"Session not found in memory store {id!r}".format(
+                    "Session not found in memory store {id!r}".format(
                         id=identifier
                     )
                 )

@@ -210,7 +210,7 @@ class ProcurementTests(SynchronousTestCase):
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
 
         response = self.successResultOf(
-            treq.get("https://unittest.example.com/", headers={token: u"bad"})
+            treq.get("https://unittest.example.com/", headers={token: "bad"})
         )
         self.assertEqual(response.code, 200)
         self.assertEqual(len(sessions), 0)

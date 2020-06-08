@@ -519,7 +519,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/snowman")
         def snowman(request):
-            return u"\u2603"
+            return "\u2603"
 
         d = _render(self.kr, request)
 
@@ -1070,8 +1070,8 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
 
     def test_ensure_utf8_bytes(self):
-        self.assertEqual(ensure_utf8_bytes(u"abc"), b"abc")
-        self.assertEqual(ensure_utf8_bytes(u"\u2202"), b"\xe2\x88\x82")
+        self.assertEqual(ensure_utf8_bytes("abc"), b"abc")
+        self.assertEqual(ensure_utf8_bytes("\u2202"), b"\xe2\x88\x82")
         self.assertEqual(ensure_utf8_bytes(b"\xe2\x88\x82"), b"\xe2\x88\x82")
 
     def test_decodesPath(self):
@@ -1098,16 +1098,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(b"Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_urlDecodeErrorReprPy2(self):
-        """
-        URLDecodeError.__repr__ formats properly.
-        """
-        self.assertEqual(
-            "<URLDecodeError(errors=<type 'exceptions.ValueError'>)>",
-            repr(_URLDecodeError(ValueError)),
-        )
-
-    def test_urlDecodeErrorReprPy3(self):
+    def test_urlDecodeErrorRepr(self):
         """
         URLDecodeError.__repr__ formats properly.
         """
@@ -1115,11 +1106,6 @@ class KleinResourceTests(SynchronousTestCase):
             "<URLDecodeError(errors=<class 'ValueError'>)>",
             repr(_URLDecodeError(ValueError)),
         )
-
-    if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
-    else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
 
     def test_subroutedBranch(self):
         subapp = Klein()
@@ -1247,7 +1233,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         """
         request = requestMock(b"/f\xc3\xb6\xc3\xb6")
         server_mock = Mock(Server)
-        server_mock.getRequestHostname = u"/var/run/twisted.socket"
+        server_mock.getRequestHostname = "/var/run/twisted.socket"
         request.host = server_mock
         (
             url_scheme,

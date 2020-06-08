@@ -73,6 +73,9 @@ matrix:
     - python: 3.8
       env: TOXENV=docs-linkcheck
 
+    - python: 3.8
+      env: TOXENV=packaging
+
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.
     - env: TOXENV=coverage-py38-twtrunk,codecov

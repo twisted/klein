@@ -47,9 +47,7 @@ class FrozenHTTPMessageTestsMixIn(object):
         Message instance implements L{IHTTPMessage}.
         """
         message = self.messageFromBytes()
-        cast(TestCase, self).assertProvides(
-            IHTTPMessage, message  # type: ignore[misc]
-        )
+        cast(TestCase, self).assertProvides(IHTTPMessage, message)
 
     @given(binary())
     def test_bodyAsFountFromBytes(self, data):

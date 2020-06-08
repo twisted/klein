@@ -23,6 +23,7 @@ if __name__ == "__main__":
         ],
         description="werkzeug + twisted.web",
         long_description=long_description,
+        long_description_content_type="text/x-rst",
         python_requires=">=3.5",
         setup_requires=["incremental"],
         use_incremental=True,

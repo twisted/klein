@@ -23,7 +23,7 @@ from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 __all__ = ()
 
 
-@implementer(IHTTPResponse)  # type: ignore[misc]
+@implementer(IHTTPResponse)
 @attrs(frozen=True)
 class FrozenHTTPResponse(object):
     """
@@ -32,9 +32,7 @@ class FrozenHTTPResponse(object):
 
     status = attrib(validator=instance_of(int))  # type: int
 
-    headers = attrib(
-        validator=provides(IHTTPHeaders)  # type: ignore[misc]
-    )  # type: IHTTPHeaders
+    headers = attrib(validator=provides(IHTTPHeaders))  # type: IHTTPHeaders
 
     _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
 

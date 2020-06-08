@@ -75,7 +75,7 @@ def idna_characters():  # pragma: no cover
                         break
                     result.append(unichr(i))
 
-        _idnaCharacters = u"".join(result)
+        _idnaCharacters = "".join(result)
 
     return _idnaCharacters
 
@@ -115,7 +115,7 @@ def latin1_text(draw, min_size=0, max_size=None):
     @param max_size: The maximum number of characters in the text.
         Use C{None} for an unbounded size.
     """
-    return u"".join(
+    return "".join(
         draw(
             lists(
                 characters(max_codepoint=255),
@@ -195,7 +195,7 @@ def hostname_labels(draw, allow_idn=True):  # pragma: no cover
                 text(
                     min_size=1,
                     max_size=63,
-                    alphabet=unicode(ascii_letters + digits + u"-"),
+                    alphabet=unicode(ascii_letters + digits + "-"),
                 )
             ),
         )
@@ -234,7 +234,7 @@ def hostnames(
         ),
     )
 
-    name = u".".join(labels)
+    name = ".".join(labels)
 
     # Filter names that are not IDNA-encodable.
     # We try pretty hard not to generate bogus names in the first place... but
@@ -306,7 +306,7 @@ def encoded_urls(draw):  # pragma: no cover
         port = None
 
     return EncodedURL(
-        scheme=cast(Text, draw(sampled_from((u"http", u"https")))),
+        scheme=cast(Text, draw(sampled_from(("http", "https")))),
         host=host,
         port=port,
         path=path,

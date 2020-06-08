@@ -42,14 +42,12 @@ def urlFromRequest(request):
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
-        scheme=u"https" if request.isSecure() else u"http",
-        host=host,
-        port=port,
+        scheme="https" if request.isSecure() else "http", host=host, port=port,
     )
     return url
 
 
-@provider(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
+@provider(IRequiredParameter, IDependencyInjector)
 class RequestURL(object):
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
@@ -75,7 +73,7 @@ class RequestURL(object):
         "Nothing to do upon finalization."
 
 
-@implementer(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
+@implementer(IRequiredParameter, IDependencyInjector)
 @attr.s(frozen=True)
 class RequestComponent(object):
     """
@@ -126,7 +124,7 @@ class Response(object):
         ],
         default=attr.Factory(dict),
     )
-    body = attr.ib(type=Any, default=u"")
+    body = attr.ib(type=Any, default="")
 
     def _applyToRequest(self, request):
         # type: (IRequest) -> Any

@@ -34,7 +34,7 @@ __all__ = ()
 noneIO = BytesIO()
 
 
-@implementer(IHTTPRequest)  # type: ignore[misc]
+@implementer(IHTTPRequest)
 @attrs(frozen=True)
 class HTTPRequestWrappingIRequest(object):
     """
@@ -62,9 +62,9 @@ class HTTPRequestWrappingIRequest(object):
         # This code borrows from t.w.server.Request._prePathURL.
 
         if request.isSecure():
-            scheme = u"https"
+            scheme = "https"
         else:
-            scheme = u"http"
+            scheme = "http"
 
         netloc = nativeString(request.getRequestHostname())
 
@@ -74,13 +74,13 @@ class HTTPRequestWrappingIRequest(object):
         else:
             default = 80
         if port != default:
-            netloc += u":{}".format(port)
+            netloc += ":{}".format(port)
 
         path = nativeString(request.uri)
-        if path and path[0] == u"/":
+        if path and path[0] == "/":
             path = path[1:]
 
-        return DecodedURL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
+        return DecodedURL.fromText("{}://{}/{}".format(scheme, netloc, path))
 
     @property
     def headers(self):

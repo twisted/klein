@@ -25,7 +25,7 @@ from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 __all__ = ()
 
 
-@implementer(IHTTPRequest)  # type: ignore[misc]
+@implementer(IHTTPRequest)
 @attrs(frozen=True)
 class FrozenHTTPRequest(object):
     """
@@ -34,9 +34,7 @@ class FrozenHTTPRequest(object):
 
     method = attrib(validator=instance_of(Text))  # type: Text
     uri = attrib(validator=instance_of(DecodedURL))  # type: DecodedURL
-    headers = attrib(
-        validator=provides(IHTTPHeaders)  # type: ignore[misc]
-    )  # type: IHTTPHeaders
+    headers = attrib(validator=provides(IHTTPHeaders))  # type: IHTTPHeaders
 
     _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
 

@@ -10,25 +10,52 @@ from collections import namedtuple
 from contextlib import contextmanager
 from inspect import iscoroutine
 
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    IO,
+    List,
+    Mapping,
+    Optional,
+    Text,
+    Union,
+    cast,
+)
 from weakref import ref
 
 from twisted.internet import reactor
-from twisted.internet.defer import ensureDeferred
+from twisted.internet.defer import Deferred, ensureDeferred
 from twisted.internet.endpoints import serverFromString
 from twisted.python import log
 from twisted.python.components import registerAdapter
+from twisted.python.failure import Failure
+from twisted.web.iweb import IRenderable, IRequest
+from twisted.web.resource import IResource
 from twisted.web.server import Request, Site
 
-from werkzeug.routing import Map, Rule, Submount
+from werkzeug.routing import Map, MapAdapter, Rule, Submount
 
 from zope.interface import implementer
 
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest
 from ._resource import KleinResource
+from ._typing import Awaitable, KwArg, VarArg
+
+
+KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]
+KleinRenderable = Union[
+    KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
+]
+KleinRoute = Callable[[Any, IRequest, VarArg(Any), KwArg(Any)], KleinRenderable]
+KleinErrorHandler = Callable[
+    [Optional["Klein"], IRequest, Failure], KleinRenderable
+]
 
 
 def _call(__klein_instance__, __klein_f__, *args, **kwargs):
+    # type: (Optional[Klein], Callable, Any, Any) -> Deferred
     """
     Call C{__klein_f__} with the given C{*args} and C{**kwargs}.
 
@@ -53,11 +80,32 @@ def _call(__klein_instance__, __klein_f__, *args, **kwargs):
 @implementer(IKleinRequest)
 class KleinRequest(object):
     def __init__(self, request):
+        # type: (Request) -> None
         self.branch_segments = [""]
-        self.mapper = None
 
-    def url_for(self, *args, **kwargs):
-        return self.mapper.build(*args, **kwargs)
+        # Don't annotate as optional, since you should never set this to None
+        self.mapper = None  # type: MapAdapter # type: ignore[assignment]
+
+    def url_for(
+        self,
+        endpoint,  # type: Text
+        values=None,  # type: Optional[Mapping[Text, Text]]
+        method=None,  # type: Optional[Text]
+        force_external=False,  # type: bool
+        append_unknown=True,  # type: bool
+    ):
+        # type: (...) -> Text
+        assert self.mapper is not None
+        return cast(
+            Text,
+            self.mapper.build(
+                endpoint=endpoint,
+                values=values,
+                method=method,
+                force_external=force_external,
+                append_unknown=append_unknown,
+            ),
+        )
 
 
 registerAdapter(KleinRequest, Request, IKleinRequest)
@@ -76,18 +124,21 @@ class Klein(object):
     _subroute_segments = 0
 
     def __init__(self):
+        # type: () -> None
         self._url_map = Map()
-        self._endpoints = {}
-        self._error_handlers = []
-        self._instance = None
-        self._boundAs = None
+        self._endpoints = {}  # type: Dict[Text, KleinRoute]
+        self._error_handlers = []  # type: List[KleinErrorHandler]
+        self._instance = None  # type: Optional[Klein]
+        self._boundAs = None  # type: Optional[Text]
 
     def __eq__(self, other):
+        # type: (Any) -> bool
         if isinstance(other, Klein):
             return vars(self) == vars(other)
         return NotImplemented
 
     def __ne__(self, other):
+        # type: (Any) -> bool
         result = self.__eq__(other)
         if result is NotImplemented:
             return result
@@ -95,6 +146,7 @@ class Klein(object):
 
     @property
     def url_map(self):
+        # type: () -> Map
         """
         Read only property exposing L{Klein._url_map}.
         """
@@ -102,26 +154,30 @@ class Klein(object):
 
     @property
     def endpoints(self):
+        # type: () -> Dict[Text, KleinRoute]
         """
         Read only property exposing L{Klein._endpoints}.
         """
         return self._endpoints
 
-    def execute_endpoint(self, endpoint, *args, **kwargs):
+    def execute_endpoint(self, endpoint, request, *args, **kwargs):
+        # type: (Text, IRequest, Any, Any) -> KleinRenderable
         """
         Execute the named endpoint with all arguments and possibly a bound
         instance.
         """
         endpoint_f = self._endpoints[endpoint]
-        return endpoint_f(self._instance, *args, **kwargs)
+        return endpoint_f(self._instance, request, *args, **kwargs)
 
     def execute_error_handler(self, handler, request, failure):
+        # type: (KleinErrorHandler, IRequest, Failure) -> KleinRenderable
         """
         Execute the passed error handler, possibly with a bound instance.
         """
         return handler(self._instance, request, failure)
 
     def resource(self):
+        # type: () -> KleinResource
         """
         Return an L{IResource} which suitably wraps this app.
 
@@ -131,6 +187,7 @@ class Klein(object):
         return KleinResource(self)
 
     def __get__(self, instance, owner):
+        # type: (Any, object) -> Klein
         """
         Get an instance of L{Klein} bound to C{instance}.
         """
@@ -150,7 +207,9 @@ class Klein(object):
                 self._boundAs = "unknown_" + str(id(self))
 
         boundName = "__klein_bound_{}__".format(self._boundAs)
-        k = getattr(instance, boundName, lambda: None)()
+        k = cast(
+            Optional["Klein"], getattr(instance, boundName, lambda: None)()
+        )
 
         if k is None:
             k = self.__class__()
@@ -168,6 +227,7 @@ class Klein(object):
 
     @staticmethod
     def _segments_in_url(url):
+        # type: (Text) -> int
         segment_count = url.count("/")
         if url.endswith("/"):
             segment_count -= 1
@@ -200,6 +260,7 @@ class Klein(object):
 
         @named("router for '" + url + "'")
         def deco(f):
+            # type: (KleinRoute) -> KleinRoute
             kwargs.setdefault("endpoint", f.__name__)
             if kwargs.pop("branch", False):
                 branchKwargs = kwargs.copy()
@@ -207,12 +268,17 @@ class Klein(object):
 
                 @modified("branch route '{url}' executor".format(url=url), f)
                 def branch_f(instance, request, *a, **kw):
+                    # type: (Any, IRequest, Any, Any) -> KleinRenderable
                     IKleinRequest(request).branch_segments = kw.pop(
                         "__rest__", ""
                     ).split("/")
                     return _call(instance, f, request, *a, **kw)
 
-                branch_f.segment_count = segment_count
+                branch_f = cast(KleinRoute, branch_f)
+
+                branch_f.segment_count = (  # type: ignore[attr-defined]
+                    segment_count
+                )
 
                 self._endpoints[branchKwargs["endpoint"]] = branch_f
                 self._url_map.add(
@@ -225,9 +291,12 @@ class Klein(object):
 
             @modified("route '{url}' executor".format(url=url), f)
             def _f(instance, request, *a, **kw):
+                # type: (Any, IRequest, Any, Any) -> KleinRenderable
                 return _call(instance, f, request, *a, **kw)
 
-            _f.segment_count = segment_count
+            _f = cast(KleinRoute, _f)
+
+            _f.segment_count = segment_count  # type: ignore[attr-defined]
 
             self._endpoints[kwargs["endpoint"]] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
@@ -351,13 +420,14 @@ class Klein(object):
 
     def urlFor(
         self,
-        request,
-        endpoint,
-        values=None,
-        method=None,
-        force_external=False,
-        append_unknown=True,
+        request,  # type: IKleinRequest
+        endpoint,  # type: Text
+        values=None,  # type: Optional[Mapping[Text, Text]]
+        method=None,  # type: Optional[Text]
+        force_external=False,  # type: bool
+        append_unknown=True,  # type: bool
     ):
+        # type: (...) -> Text
         host = request.getHeader(b"host")
         if host is None:
             if force_external:
@@ -366,20 +436,24 @@ class Klein(object):
                     " doesn't contain Host header"
                 )
             host = b""
-        return self.url_map.bind(host).build(
-            endpoint, values, method, force_external, append_unknown
+        return cast(
+            Text,
+            self.url_map.bind(host).build(
+                endpoint, values, method, force_external, append_unknown
+            ),
         )
 
     url_for = urlFor
 
     def run(
         self,
-        host=None,
-        port=None,
-        logFile=None,
-        endpoint_description=None,
-        displayTracebacks=True,
+        host=None,  # type: Optional[str]
+        port=None,  # type: Optional[int]
+        logFile=None,  # type: Optional[IO]
+        endpoint_description=None,  # type: Optional[str]
+        displayTracebacks=True,  # type: bool
     ):
+        # type: (...) -> None
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
         interface specified by C{host} and logging to C{logFile}.
@@ -392,22 +466,17 @@ class Klein(object):
             to.  "0.0.0.0" will allow you to listen on all interfaces, and
             "127.0.0.1" will allow you to listen on just the loopback
             interface.
-        @type host: str
 
         @param port: The TCP port to accept HTTP requests on.
-        @type port: int
 
         @param logFile: The file object to log to, by default C{sys.stdout}
-        @type logFile: file object
 
         @param endpoint_description: specification of endpoint. Must contain
              protocol, port and interface. May contain other optional arguments,
              e.g. to use SSL: "ssl:443:privateKey=key.pem:certKey=crt.pem"
-        @type endpoint_description: str
 
         @param displayTracebacks: Weather a processing error will result in
             a page displaying the traceback with debugging information or not.
-        @type displayTracebacks: bool
         """
         if logFile is None:
             logFile = sys.stdout

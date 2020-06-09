@@ -201,7 +201,7 @@ jobs:
     strategy:
       matrix:
         python: ["3.5", "3.6", "3.7", "3.8", "pypy3"]
-        twisted: ["17.1", "18.4", "current"]
+        twisted: ["18.4", "19.2", "current"]
 
     steps:
 
@@ -227,12 +227,14 @@ jobs:
               py_test="py${py/./}";  # Add "py" prefix, remove "."
               py_codecov="py";
           fi;
-          tw="${{ matrix.twisted }}";
-          tw="tw${tw/./}";  # Remove "."
-          env_test="coverage-${py_test}-${tw}";
-          env_codecov="codecov-${py_codecov}";
-          ln -s ".tox/${env_test}" testenv;  # For upload step
-          tox -e "${env_test},${env_codecov}";
+          twisted="${{ matrix.twisted }}";
+          twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
+          env_test="coverage-${py_test}-${twisted}";
+          env_codecov="codecov";
+          envs="${env_test},${env_codecov}";
+          echo "Test environments: ${envs}";
+          tox -e "${envs}";
+          ln -s ".tox/${env_test}" testenv;  # Fixed location for upload step below
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
           GITHUB_REF: ${{ github.ref }}

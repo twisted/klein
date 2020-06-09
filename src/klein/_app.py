@@ -8,15 +8,7 @@ from __future__ import absolute_import, division
 import sys
 from collections import namedtuple
 from contextlib import contextmanager
-
-try:
-    from inspect import iscoroutine
-except ImportError:
-
-    def iscoroutine(obj):  # type: ignore[misc]
-        # type: (object) -> bool
-        return False
-
+from inspect import iscoroutine
 
 from typing import (
     Any,
@@ -32,23 +24,15 @@ from typing import (
 )
 from weakref import ref
 
-from twisted.internet import endpoints, reactor
-from twisted.internet.defer import Deferred
+from twisted.internet import reactor
+from twisted.internet.defer import Deferred, ensureDeferred
+from twisted.internet.endpoints import serverFromString
 from twisted.python import log
 from twisted.python.components import registerAdapter
 from twisted.python.failure import Failure
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource
 from twisted.web.server import Request, Site
-
-try:
-    from twisted.internet.defer import ensureDeferred
-except ImportError:
-
-    def ensureDeferred(coro):
-        # type: (Awaitable) -> Deferred
-        raise NotImplementedError("Coroutines support requires Twisted>=16.6")
-
 
 from werkzeug.routing import Map, MapAdapter, Rule, Submount
 
@@ -301,7 +285,7 @@ class Klein(object):
                     Rule(
                         url.rstrip("/") + "/" + "<path:__rest__>",
                         *args,
-                        **branchKwargs
+                        **branchKwargs,
                     )
                 )
 
@@ -504,7 +488,7 @@ class Klein(object):
                 port, host
             )
 
-        endpoint = endpoints.serverFromString(reactor, endpoint_description)
+        endpoint = serverFromString(reactor, endpoint_description)
 
         site = Site(self.resource())
         site.displayTracebacks = displayTracebacks

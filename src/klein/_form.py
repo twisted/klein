@@ -86,7 +86,7 @@ class IParsedJSONBody(Interface):
     # parse_float?
 
 
-@implementer(IRequiredParameter)  # type: ignore[misc]
+@implementer(IRequiredParameter)
 @attr.s(frozen=True)
 class Field(object):
     """
@@ -253,7 +253,7 @@ class Field(object):
             formInputType="hidden",
             noLabel=True,
             value=value,
-            **kw
+            **kw,
         ).maybeNamed(name)
 
     @classmethod
@@ -307,7 +307,7 @@ class RenderableForm(object):
     """
 
     _form = attr.ib(type="Form")
-    _session = attr.ib(type=ISession)  # type: ignore[misc]
+    _session = attr.ib(type=ISession)
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
     _enctype = attr.ib(type=str)
@@ -433,7 +433,7 @@ def defaultValidationFailureHandler(
 
     @return: Any object acceptable from a Klein route.
     """
-    session = request.getComponent(ISession)  # type: ignore[misc]
+    session = request.getComponent(ISession)
     request.setResponseCode(400)
     enctype = (
         (
@@ -492,7 +492,7 @@ class ProtoForm(object):
     """
 
     _componentized = attr.ib(type=Componentized)
-    _lifecycle = attr.ib(type=IRequestLifecycle)  # type: ignore[misc]
+    _lifecycle = attr.ib(type=IRequestLifecycle)
     _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
@@ -501,7 +501,7 @@ class ProtoForm(object):
         """
         Create a ProtoForm from a componentized object.
         """
-        rl = IRequestLifecycle(componentized)  # type: ignore[misc]
+        rl = IRequestLifecycle(componentized)  # type: ignore[operator]
         assert rl is not None
         return cls(componentized, rl)
 
@@ -551,7 +551,7 @@ class FieldValues(object):
             raise EarlyExit(result)
 
 
-@implementer(IDependencyInjector)  # type: ignore[misc]
+@implementer(IDependencyInjector)
 @attr.s
 class FieldInjector(object):
     """
@@ -560,7 +560,7 @@ class FieldInjector(object):
 
     _componentized = attr.ib(type=Componentized)
     _field = attr.ib(type=Field)
-    _lifecycle = attr.ib(type=IRequestLifecycle)  # type: ignore[misc]
+    _lifecycle = attr.ib(type=IRequestLifecycle)
 
     def injectValue(self, instance, request, routeParams):
         # type: (Any, IRequest, Dict[str, Any]) -> Any
@@ -594,9 +594,7 @@ class FieldInjector(object):
             )
 
         self._lifecycle.addPrepareHook(
-            populateValuesHook,
-            provides=[IFieldValues],
-            requires=[ISession],  # type: ignore[misc]
+            populateValuesHook, provides=[IFieldValues], requires=[ISession],
         )
 
 
@@ -616,7 +614,7 @@ def checkCSRF(request):
     it is found.
     """
     # TODO: optionalize CSRF protection for GET forms
-    session = ISession(request, None)  # type: ignore[misc]
+    session = ISession(request, None)  # type: ignore[operator]
     token = None
     if request.method in (b"GET", b"HEAD"):
         # Idempotent requests don't require CRSF validation.  (Don't have
@@ -777,7 +775,7 @@ class Form(object):
         return RenderableFormParam(form, action, method, enctype, encoding)
 
 
-@implementer(IRequiredParameter, IDependencyInjector)  # type: ignore[misc]
+@implementer(IRequiredParameter, IDependencyInjector)
 @attr.s
 class RenderableFormParam(object):
     """
@@ -804,7 +802,7 @@ class RenderableFormParam(object):
         """
         return RenderableForm(
             self._form,
-            ISession(request),  # type: ignore[misc]
+            ISession(request),  # type: ignore[operator]
             self._action,
             self._method,
             self._enctype,

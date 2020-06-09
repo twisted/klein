@@ -469,7 +469,7 @@ class KleinTestCase(unittest.TestCase):
 
     @patch("klein._app.KleinResource")
     @patch("klein._app.log")
-    @patch("klein._app.endpoints.serverFromString")
+    @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
     def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
         """
@@ -486,7 +486,7 @@ class KleinTestCase(unittest.TestCase):
 
     @patch("klein._app.KleinResource")
     @patch("klein._app.log")
-    @patch("klein._app.endpoints.serverFromString")
+    @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
     def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
         """

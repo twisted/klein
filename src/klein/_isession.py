@@ -2,10 +2,7 @@ from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING, Text, Union
 
 import attr
 
-try:
-    from constantly import NamedConstant, Names
-except ImportError:  # pragma: no cover
-    from twisted.python.constants import NamedConstant, Names
+from constantly import NamedConstant, Names
 
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized

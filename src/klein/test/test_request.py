@@ -26,8 +26,8 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
     def requestFromBytes(data=b""):
         # type: (bytes) -> FrozenHTTPRequest
         return FrozenHTTPRequest(
-            method=u"GET",
-            uri=DecodedURL.fromText(u"https://twistedmatrix.com/"),
+            method="GET",
+            uri=DecodedURL.fromText("https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
             body=data,
         )
@@ -43,7 +43,7 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         L{FrozenHTTPRequest} implements L{IHTTPRequest}.
         """
         request = self.requestFromBytes()
-        self.assertProvides(IHTTPRequest, request)  # type: ignore[misc]
+        self.assertProvides(IHTTPRequest, request)
 
     def test_initInvalidBodyType(self):
         # type: () -> None
@@ -54,8 +54,8 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         e = self.assertRaises(
             TypeError,
             FrozenHTTPRequest,
-            method=u"GET",
-            uri=DecodedURL.fromText(u"https://twistedmatrix.com/"),
+            method="GET",
+            uri=DecodedURL.fromText("https://twistedmatrix.com/"),
             headers=FrozenHTTPHeaders(rawHeaders=()),
             body=object(),
         )

@@ -19,7 +19,7 @@ from .interfaces import (
 )
 
 
-@implementer(IRequestLifecycle)  # type: ignore[misc]
+@implementer(IRequestLifecycle)
 @attr.s
 class RequestLifecycle(object):
     """
@@ -120,9 +120,7 @@ class Requirer(object):
             # type: (Callable) -> Callable
             injectionComponents = Componentized()
             lifecycle = RequestLifecycle()
-            injectionComponents.setComponent(
-                IRequestLifecycle, lifecycle  # type: ignore[misc]
-            )
+            injectionComponents.setComponent(IRequestLifecycle, lifecycle)
 
             injectors = {}  # type: Dict[str, IDependencyInjector]
 

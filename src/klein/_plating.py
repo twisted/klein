@@ -240,17 +240,17 @@ class Plating(object):
                     json_data.update(data)
                     for ignored in self._presentationSlots:
                         json_data.pop(ignored, None)
-                    text_type = u"json"
+                    text_type = "json"
                     ready = yield resolveDeferredObjects(json_data)
                     result = dumps(ready)
                 else:
                     data[self.CONTENT] = loader.load()
-                    text_type = u"html"
+                    text_type = "html"
                     result = self._elementify(instance, data)
                 request.setHeader(
                     b"content-type",
                     (
-                        u"text/{format}; charset=utf-8".format(
+                        "text/{format}; charset=utf-8".format(
                             format=text_type
                         ).encode("charmap")
                     ),

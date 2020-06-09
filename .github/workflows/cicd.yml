@@ -59,7 +59,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -83,7 +83,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -106,7 +106,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -130,7 +130,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -154,7 +154,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -177,7 +177,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -206,7 +206,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Install Python
         uses: actions/setup-python@v1

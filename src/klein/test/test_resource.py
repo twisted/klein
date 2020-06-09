@@ -13,7 +13,7 @@ from six.moves.urllib.parse import parse_qs
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
-from twisted.python.compat import _PY3, unicode
+from twisted.python.compat import unicode
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
@@ -161,8 +161,10 @@ class DeferredElement(SimpleElement):
 class LeafResource(Resource):
     isLeaf = True
 
+    content = b"I am a leaf in the wind."
+
     def render(self, request):
-        return b"I am a leaf in the wind."
+        return self.content
 
 
 class ChildResource(Resource):
@@ -390,6 +392,20 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"ok")
 
+    def test_asyncRendering(self):
+        app = self.app
+        resource = self.kr
+
+        request = requestMock(b"/resource/leaf")
+
+        @app.route("/resource/leaf")
+        async def leaf(request):
+            return LeafResource()
+
+        self.assertFired(_render(resource, request))
+
+        self.assertEqual(request.getWrittenData(), LeafResource.content)
+
     def test_elementRendering(self):
         app = self.app
 
@@ -441,7 +457,7 @@ class KleinResourceTests(SynchronousTestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), b"I am a leaf in the wind.")
+        self.assertEqual(request.getWrittenData(), LeafResource.content)
 
     def test_childResourceRendering(self):
         app = self.app
@@ -519,7 +535,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/snowman")
         def snowman(request):
-            return u"\u2603"
+            return "\u2603"
 
         d = _render(self.kr, request)
 
@@ -1070,8 +1086,8 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
 
     def test_ensure_utf8_bytes(self):
-        self.assertEqual(ensure_utf8_bytes(u"abc"), b"abc")
-        self.assertEqual(ensure_utf8_bytes(u"\u2202"), b"\xe2\x88\x82")
+        self.assertEqual(ensure_utf8_bytes("abc"), b"abc")
+        self.assertEqual(ensure_utf8_bytes("\u2202"), b"\xe2\x88\x82")
         self.assertEqual(ensure_utf8_bytes(b"\xe2\x88\x82"), b"\xe2\x88\x82")
 
     def test_decodesPath(self):
@@ -1098,16 +1114,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(b"Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_urlDecodeErrorReprPy2(self):
-        """
-        URLDecodeError.__repr__ formats properly.
-        """
-        self.assertEqual(
-            "<URLDecodeError(errors=<type 'exceptions.ValueError'>)>",
-            repr(_URLDecodeError(ValueError)),
-        )
-
-    def test_urlDecodeErrorReprPy3(self):
+    def test_urlDecodeErrorRepr(self):
         """
         URLDecodeError.__repr__ formats properly.
         """
@@ -1115,11 +1122,6 @@ class KleinResourceTests(SynchronousTestCase):
             "<URLDecodeError(errors=<class 'ValueError'>)>",
             repr(_URLDecodeError(ValueError)),
         )
-
-    if _PY3:
-        test_urlDecodeErrorReprPy2.skip = "Only works on Py2"  # type: ignore
-    else:
-        test_urlDecodeErrorReprPy3.skip = "Only works on Py3"  # type: ignore
 
     def test_subroutedBranch(self):
         subapp = Klein()
@@ -1247,7 +1249,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         """
         request = requestMock(b"/f\xc3\xb6\xc3\xb6")
         server_mock = Mock(Server)
-        server_mock.getRequestHostname = u"/var/run/twisted.socket"
+        server_mock.getRequestHostname = "/var/run/twisted.socket"
         request.host = server_mock
         (
             url_scheme,
@@ -1317,12 +1319,3 @@ class GlobalAppTests(SynchronousTestCase):
         )
         self.assertIdentical(resource.KleinResource, KleinResource)
         self.assertIdentical(resource.ensure_utf8_bytes, ensure_utf8_bytes)
-
-
-if _PY3:
-    import sys
-
-    if sys.version_info >= (3, 5):
-        from .py3_test_resource import PY3KleinResourceTests
-
-        PY3KleinResourceTests  # shh pyflakes

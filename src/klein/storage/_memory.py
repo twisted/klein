@@ -22,7 +22,7 @@ from klein.interfaces import (
 _authCB = Callable[[IInterface, ISession, Componentized], Any]
 
 
-@implementer(ISession)  # type: ignore[misc]
+@implementer(ISession)
 @attr.s
 class MemorySession(object):
     """
@@ -32,7 +32,7 @@ class MemorySession(object):
     identifier = attr.ib(type=Text)
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
-    _authorizationCallback = attr.ib(type=_authCB)  # type: ignore[misc]
+    _authorizationCallback = attr.ib(type=_authCB)
     _components = attr.ib(default=Factory(Componentized), type=Componentized)
 
     def authorize(self, interfaces):
@@ -89,13 +89,10 @@ def _noAuthorization(interface, session, data):
     return None
 
 
-@implementer(ISessionStore)  # type: ignore[misc]
+@implementer(ISessionStore)
 @attr.s
 class MemorySessionStore(object):
-    authorizationCallback = attr.ib(
-        type=_authFn,  # type: ignore[misc]
-        default=_noAuthorization,
-    )
+    authorizationCallback = attr.ib(type=_authFn, default=_noAuthorization)
     _secureStorage = attr.ib(
         type=Dict[str, Any], default=cast(Dict[str, Any], Factory(dict))
     )
@@ -154,7 +151,7 @@ class MemorySessionStore(object):
         else:
             return fail(
                 NoSuchSession(
-                    u"Session not found in memory store {id!r}".format(
+                    "Session not found in memory store {id!r}".format(
                         id=identifier
                     )
                 )

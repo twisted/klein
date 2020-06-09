@@ -1,7 +1,11 @@
 from functools import wraps
+from typing import Callable, Optional, Text, TypeVar
+
+C = TypeVar("C", bound=Callable)
 
 
 def bindable(bindable):
+    # type: (C) -> C
     """
     Mark a method as a "bindable" method.
 
@@ -20,11 +24,16 @@ def bindable(bindable):
     @return: its argument, modified to mark it as unconditinally requiring an
         instance argument.
     """
-    bindable.__klein_bound__ = True
+    bindable.__klein_bound__ = True  # type: ignore[attr-defined]
     return bindable
 
 
-def modified(modification, original, modifier=None):
+def modified(
+    modification,  # type: Text
+    original,  # type: Callable
+    modifier=None,  # type: Optional[Callable]
+):
+    # type: (...) -> Callable
     """
     Annotate a callable as a modified wrapper of an original callable.
 
@@ -45,10 +54,11 @@ def modified(modification, original, modifier=None):
     """
 
     def decorator(wrapper):
+        # type: (Callable[..., C]) -> Callable[..., C]
         result = named(modification + " for " + original.__name__)(
             wraps(original)(wrapper)
         )
-        result.__original__ = original
+        result.__original__ = original  # type: ignore[attr-defined]
         if modifier is not None:
             before = set(wrapper.__dict__.keys())
             result = modifier(result)
@@ -61,11 +71,13 @@ def modified(modification, original, modifier=None):
 
 
 def named(name):
+    # type: (Text) -> Callable[[C], C]
     """
     Change the name of a function to the given name.
     """
 
     def decorator(original):
+        # type: (C) -> C
         original.__name__ = str(name)
         original.__qualname__ = str(name)
         return original
@@ -74,11 +86,12 @@ def named(name):
 
 
 def originalName(function):
+    # type: (Callable) -> Text
     """
     Get the original, user-specified name of C{function}, chasing back any
     wrappers applied with C{modified}.
     """
-    fnext = function
+    fnext = function  # type: Optional[Callable]
     while fnext is not None:
         function = fnext
         fnext = getattr(function, "__original__", None)

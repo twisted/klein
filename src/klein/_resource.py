@@ -97,7 +97,7 @@ def _extractURLparts(request):
         if not path_info.startswith(b"/"):
             path_info = b"/" + path_info
 
-    url_scheme = u"https" if request.isSecure() else u"http"
+    url_scheme = "https" if request.isSecure() else "http"
 
     utf8Failures = []
     try:

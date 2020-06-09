@@ -7,6 +7,7 @@
 /apidocs/
 /build/
 /dist/
-/docs/_build/
+/docs/
 /htmlcov/
+/htmldocs/
 /src/*.egg-info

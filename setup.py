@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "incremental",
             "six",
             "Tubes",
-            "Twisted>=15.5",  # 15.5 is the first version to support Py3.3+
+            "Twisted>=16.6",  # 16.6 introduces ensureDeferred
             "Werkzeug",
             "zope.interface",
         ],

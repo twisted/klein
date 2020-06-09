@@ -13,7 +13,7 @@ from six.moves.urllib.parse import parse_qs
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
-from twisted.python.compat import _PY3, unicode
+from twisted.python.compat import unicode
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
@@ -161,8 +161,10 @@ class DeferredElement(SimpleElement):
 class LeafResource(Resource):
     isLeaf = True
 
+    content = b"I am a leaf in the wind."
+
     def render(self, request):
-        return b"I am a leaf in the wind."
+        return self.content
 
 
 class ChildResource(Resource):
@@ -390,6 +392,20 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"ok")
 
+    def test_asyncRendering(self):
+        app = self.app
+        resource = self.kr
+
+        request = requestMock(b"/resource/leaf")
+
+        @app.route("/resource/leaf")
+        async def leaf(request):
+            return LeafResource()
+
+        self.assertFired(_render(resource, request))
+
+        self.assertEqual(request.getWrittenData(), LeafResource.content)
+
     def test_elementRendering(self):
         app = self.app
 
@@ -441,7 +457,7 @@ class KleinResourceTests(SynchronousTestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), b"I am a leaf in the wind.")
+        self.assertEqual(request.getWrittenData(), LeafResource.content)
 
     def test_childResourceRendering(self):
         app = self.app
@@ -1303,12 +1319,3 @@ class GlobalAppTests(SynchronousTestCase):
         )
         self.assertIdentical(resource.KleinResource, KleinResource)
         self.assertIdentical(resource.ensure_utf8_bytes, ensure_utf8_bytes)
-
-
-if _PY3:
-    import sys
-
-    if sys.version_info >= (3, 5):
-        from .py3_test_resource import PY3KleinResourceTests
-
-        PY3KleinResourceTests  # shh pyflakes

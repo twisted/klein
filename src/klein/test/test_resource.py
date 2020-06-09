@@ -161,8 +161,10 @@ class DeferredElement(SimpleElement):
 class LeafResource(Resource):
     isLeaf = True
 
+    content = b"I am a leaf in the wind."
+
     def render(self, request):
-        return b"I am a leaf in the wind."
+        return self.content
 
 
 class ChildResource(Resource):
@@ -400,12 +402,9 @@ class KleinResourceTests(SynchronousTestCase):
         async def leaf(request):
             return LeafResource()
 
-        expected = b"I am a leaf in the wind."
+        self.assertFired(_render(resource, request))
 
-        def assertResult(_):
-            self.assertEqual(request.getWrittenData(), expected)
-
-        return _render(resource, request).addCallback(assertResult)
+        self.assertEqual(request.getWrittenData(), LeafResource.content)
 
     def test_elementRendering(self):
         app = self.app
@@ -458,7 +457,7 @@ class KleinResourceTests(SynchronousTestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), b"I am a leaf in the wind.")
+        self.assertEqual(request.getWrittenData(), LeafResource.content)
 
     def test_childResourceRendering(self):
         app = self.app

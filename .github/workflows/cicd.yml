@@ -230,7 +230,7 @@ jobs:
           twisted="${{ matrix.twisted }}";
           twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
           env_test="coverage-${py_test}-${twisted}";
-          env_codecov="codecov";
+          env_codecov="${py_codecov}";
           envs="${env_test},${env_codecov}";
           echo "Test environments: ${envs}";
           tox -e "${envs}";

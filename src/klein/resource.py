@@ -8,16 +8,14 @@ This module, L{klein.resource}, serves two purposes:
 
     - It's the module where L{KleinResource} is defined.
 """
+
 from sys import modules
-from typing import TYPE_CHECKING
+from typing import AnyStr, Callable, Text
 
 from ._app import resource as _globalResourceMethod
 from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 
-if TYPE_CHECKING:
-    from typing import AnyStr, Callable, Text
-
-    KleinResource = _KleinResource
+KleinResource = _KleinResource
 
 
 class _SpecialModuleObject(object):

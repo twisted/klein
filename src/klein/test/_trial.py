@@ -4,8 +4,7 @@
 Extensions to L{twisted.trial}.
 """
 
-import sys
-from typing import Any, Optional
+from typing import Any
 
 from twisted.trial.unittest import SynchronousTestCase
 

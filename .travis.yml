@@ -28,13 +28,6 @@ matrix:
     - python: 3.8
       env: TOXENV=mypy
 
-    - python: 3.5
-      env: TOXENV=coverage-py35-tw184,codecov
-    - python: 3.5
-      env: TOXENV=coverage-py35-tw192,codecov
-    - python: 3.5
-      env: TOXENV=coverage-py35-twcurrent,codecov
-
     - python: 3.6
       env: TOXENV=coverage-py36-tw184,codecov
     - python: 3.6

@@ -8,6 +8,7 @@ This module, L{klein.resource}, serves two purposes:
 
     - It's the module where L{KleinResource} is defined.
 """
+
 from sys import modules
 from typing import Any, AnyStr, Callable, Text
 

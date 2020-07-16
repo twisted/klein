@@ -45,7 +45,7 @@ Code
   Klein uses `Twisted Trial <http://twistedmatrix.com/documents/current/api/twisted.trial.html>`_ and `tox <https://tox.readthedocs.io/en/latest/>`_ for its tests.
   The command to run the full test suite is ``tox`` with no arguments.
   This will run tests against several versions of Python and Twisted, which can be time-consuming.
-  To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py35-twcurrent`` will run tests with Python 3.5 and the current released version of Twisted.
+  To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py38-twcurrent`` will run tests with Python 3.8 and the current released version of Twisted.
   To run only one or a few specific tests in the suite, add a filename or fully-qualified Python path to the end of the test invocation: for example, ``tox klein.test.test_app.KleinTestCase.test_foo`` will run only the ``test_foo()`` method of the ``KleinTestCase`` class in ``klein/test/test_app.py``.
   These two test shortcuts can be combined to give you a quick feedback cycle, but make sure to check on the full test suite from time to time to make sure changes haven't had unexpected side effects.
 - Show us your code changes through pull requests sent to `Klein's GitHub repo <https://github.com/twisted/klein>`_.

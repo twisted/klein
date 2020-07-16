@@ -1,11 +1,7 @@
 from __future__ import absolute_import, division
 
 import sys
-
-try:
-    from unittest.mock import Mock, patch
-except Exception:
-    from mock import Mock, patch  # type: ignore[misc]
+from unittest.mock import Mock, patch
 
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest

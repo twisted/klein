@@ -2,11 +2,7 @@ from __future__ import absolute_import, division
 
 import os
 from io import BytesIO
-
-try:
-    from unittest.mock import Mock, call
-except Exception:
-    from mock import Mock, call
+from unittest.mock import Mock, call
 
 from six.moves.urllib.parse import parse_qs
 

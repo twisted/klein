@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     # Inform mypy of import shenanigans.
     from .resource import _SpecialModuleObject
 
-    resource = _SpecialModuleObject()
+    resource = _SpecialModuleObject(None)
 else:
     from . import resource
 

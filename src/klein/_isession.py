@@ -16,7 +16,7 @@ from ._typing import ifmethod
 if TYPE_CHECKING:  # pragma: no cover
     from ._requirer import RequestLifecycle
 
-    IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]
+    IRequestLifecycleT = Union[RequestLifecycle, "IRequestLifecycle"]
 
 
 class NoSuchSession(Exception):

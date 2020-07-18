@@ -21,19 +21,27 @@ branches:
 #
 matrix:
   include:
+    - stage: Lint and Code Style
+
     - python: 3.8
       env: TOXENV=flake8
     - python: 3.8
       env: TOXENV=black
     - python: 3.8
       env: TOXENV=mypy
+    - python: 3.8
+      env: TOXENV=packaging
 
-    - python: 3.6
-      env: TOXENV=coverage-py36-tw184,codecov
-    - python: 3.6
-      env: TOXENV=coverage-py36-tw192,codecov
-    - python: 3.6
-      env: TOXENV=coverage-py36-twcurrent,codecov
+    - stage: Tests (Python 3.8)
+
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw184,codecov
+    - python: 3.8
+      env: TOXENV=coverage-py38-tw192,codecov
+    - python: 3.8
+      env: TOXENV=coverage-py38-twcurrent,codecov
+
+    - stage: Tests
 
     - python: 3.7
       env: TOXENV=coverage-py37-tw184,codecov
@@ -42,12 +50,12 @@ matrix:
     - python: 3.7
       env: TOXENV=coverage-py37-twcurrent,codecov
 
-    - python: 3.8
-      env: TOXENV=coverage-py38-tw184,codecov
-    - python: 3.8
-      env: TOXENV=coverage-py38-tw192,codecov
-    - python: 3.8
-      env: TOXENV=coverage-py38-twcurrent,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw184,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-tw192,codecov
+    - python: 3.6
+      env: TOXENV=coverage-py36-twcurrent,codecov
 
     - python: pypy3
       env: TOXENV=coverage-pypy3-tw184,codecov
@@ -65,9 +73,6 @@ matrix:
       env: TOXENV=docs
     - python: 3.8
       env: TOXENV=docs-linkcheck
-
-    - python: 3.8
-      env: TOXENV=packaging
 
   allow_failures:
     # Tests against Twisted trunk are allow to fail, as they are not supported.

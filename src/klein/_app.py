@@ -95,7 +95,6 @@ class KleinRequest(object):
         append_unknown=True,  # type: bool
     ):
         # type: (...) -> Text
-        assert self.mapper is not None
         return cast(
             Text,
             self.mapper.build(

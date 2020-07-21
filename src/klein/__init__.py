@@ -2,7 +2,18 @@ from __future__ import absolute_import, division
 
 from typing import TYPE_CHECKING
 
-from ._app import Klein, handle_errors, route, run, subroute, urlFor, url_for
+from ._app import (
+    Klein,
+    KleinErrorHandler,
+    KleinRenderable,
+    KleinRoute,
+    handle_errors,
+    route,
+    run,
+    subroute,
+    urlFor,
+    url_for,
+)
 from ._dihttp import RequestComponent, RequestURL, Response
 from ._form import Field, FieldValues, Form, RenderableForm
 from ._plating import Plating
@@ -20,6 +31,9 @@ else:
 
 __all__ = (
     "Klein",
+    "KleinErrorHandler",
+    "KleinRenderable",
+    "KleinRoute",
     "Plating",
     "Field",
     "FieldValues",

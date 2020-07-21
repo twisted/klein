@@ -77,6 +77,21 @@ def _call(__klein_instance__, __klein_f__, *args, **kwargs):
     return result
 
 
+def buildURL(
+    mapper,  # type: MapAdapter
+    endpoint,  # type: Text
+    values=None,  # type: Optional[Mapping[Text, Text]]
+    method=None,  # type: Optional[Text]
+    force_external=False,  # type: bool
+    append_unknown=True,  # type: bool
+):
+    # type: (...) -> Text
+    return cast(
+        Text,
+        mapper.build(endpoint, values, method, force_external, append_unknown),
+    )
+
+
 @implementer(IKleinRequest)
 class KleinRequest(object):
     def __init__(self, request):
@@ -95,16 +110,13 @@ class KleinRequest(object):
         append_unknown=True,  # type: bool
     ):
         # type: (...) -> Text
-        assert self.mapper is not None
-        return cast(
-            Text,
-            self.mapper.build(
-                endpoint=endpoint,
-                values=values,
-                method=method,
-                force_external=force_external,
-                append_unknown=append_unknown,
-            ),
+        return buildURL(
+            self.mapper,
+            endpoint,
+            values,
+            method,
+            force_external,
+            append_unknown,
         )
 
 
@@ -436,11 +448,13 @@ class Klein(object):
                     " doesn't contain Host header"
                 )
             host = b""
-        return cast(
-            Text,
-            self.url_map.bind(host).build(
-                endpoint, values, method, force_external, append_unknown
-            ),
+        return buildURL(
+            self.url_map.bind(host),
+            endpoint,
+            values,
+            method,
+            force_external,
+            append_unknown,
         )
 
     url_for = urlFor

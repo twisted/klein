@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING, Text, Union
+from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING, Union
 
 import attr
 
@@ -43,8 +43,9 @@ class ISessionStore(Interface):
     """
 
     @ifmethod
-    def newSession(isConfidential, authenticatedBy):
-        # type: (bool, SessionMechanism) -> Deferred
+    def newSession(
+        isConfidential: bool, authenticatedBy: SessionMechanism,
+    ) -> Deferred:
         """
         Create a new L{ISession}.
 
@@ -53,8 +54,11 @@ class ISessionStore(Interface):
         """
 
     @ifmethod
-    def loadSession(identifier, isConfidential, authenticatedBy):
-        # type: (Text, bool, SessionMechanism) -> Deferred
+    def loadSession(
+        identifier: str,
+        isConfidential: bool,
+        authenticatedBy: SessionMechanism,
+    ) -> Deferred:
         """
         Load a session given the given identifier and security properties.
 
@@ -74,8 +78,7 @@ class ISessionStore(Interface):
         """
 
     @ifmethod
-    def sentInsecurely(identifiers):
-        # type: (Sequence[Text]) -> None
+    def sentInsecurely(identifiers: Sequence[str]) -> None:
         """
         The transport layer has detected that the given identifiers have been
         sent over an unauthenticated transport.
@@ -93,8 +96,7 @@ class ISimpleAccountBinding(Interface):
     """
 
     @ifmethod
-    def bindIfCredentialsMatch(username, password):
-        # type: (Text, Text) -> None
+    def bindIfCredentialsMatch(username: str, password: str) -> None:
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
@@ -102,8 +104,7 @@ class ISimpleAccountBinding(Interface):
         """
 
     @ifmethod
-    def boundAccounts():
-        # type: () -> Deferred
+    def boundAccounts() -> Deferred:
         """
         Retrieve the accounts currently associated with the session this is a
         component of.
@@ -112,16 +113,14 @@ class ISimpleAccountBinding(Interface):
         """
 
     @ifmethod
-    def unbindThisSession():
-        # type: () -> None
+    def unbindThisSession() -> None:
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
         """
 
     @ifmethod
-    def createAccount(username, email, password):
-        # type: (Text, Text, Text) -> None
+    def createAccount(username: str, email: str, password: str) -> None:
         """
         Create a new account with the given username, email and password.
         """
@@ -144,15 +143,13 @@ class ISimpleAccount(Interface):
         """
     )
 
-    def bindSession(self, session):
-        # type: (ISession) -> None
+    def bindSession(self, session: ISession) -> None:
         """
         Bind the given session to this account; i.e. authorize the given
         session to act on behalf of this account.
         """
 
-    def changePassword(self, newPassword):
-        # type: (Text) -> None
+    def changePassword(self, newPassword: str) -> None:
         """
         Change the password of this account.
         """
@@ -164,8 +161,9 @@ class ISessionProcurer(Interface):
     that store, given HTTP request objects.
     """
 
-    def procureSession(self, request, forceInsecure=False):
-        # type: (IRequest, bool, bool) -> Deferred
+    def procureSession(
+        self, request: IRequest, forceInsecure: bool = False
+    ) -> Deferred:
         """
         Retrieve a session using whatever technique is necessary.
 
@@ -265,8 +263,7 @@ class ISession(Interface):
     )
 
     @ifmethod
-    def authorize(interfaces):
-        # type: (Iterable[IInterface]) -> Deferred
+    def authorize(interfaces: Iterable[IInterface]) -> Deferred:
         """
         Retrieve other objects from this session.
 
@@ -293,8 +290,9 @@ class IDependencyInjector(Interface):
     """
 
     @ifmethod
-    def injectValue(instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> Any
+    def injectValue(
+        instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> Any:
         """
         Return a value to be injected into the parameter name specified by the
         IRequiredParameter.  This may return a Deferred, or an object, or an
@@ -311,8 +309,7 @@ class IDependencyInjector(Interface):
         """
 
     @ifmethod
-    def finalize():
-        # type: () -> None
+    def finalize() -> None:
         """
         Finalize this injector before allowing the route to be created.
 
@@ -335,8 +332,11 @@ class IRequiredParameter(Interface):
     """
 
     @ifmethod
-    def registerInjector(injectionComponents, parameterName, lifecycle):
-        # type: (Componentized, str, IRequestLifecycleT) -> IDependencyInjector
+    def registerInjector(
+        injectionComponents: Componentized,
+        parameterName: str,
+        lifecycle: IRequestLifecycleT,
+    ) -> IDependencyInjector:
         """
         Register the given injector at method-decoration time, informing it of
         its Python parameter name.

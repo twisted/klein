@@ -42,8 +42,7 @@ class MessageState(object):
     )
 
 
-def validateBody(instance, attribute, body):
-    # type: (Any, Any, InternalBody) -> None
+def validateBody(instance: Any, attribute: Any, body: InternalBody) -> None:
     """
     Validator for L{InternalBody}.
     """
@@ -52,8 +51,7 @@ def validateBody(instance, attribute, body):
         raise TypeError("body must be bytes or IFount")
 
 
-def bodyAsFount(body, state):
-    # type: (InternalBody, MessageState) -> IFount
+def bodyAsFount(body: InternalBody, state: MessageState) -> IFount:
     """
     Return a fount for a given L{InternalBody}.
     """
@@ -70,8 +68,7 @@ def bodyAsFount(body, state):
     return body
 
 
-def bodyAsBytes(body, state):
-    # type: (InternalBody, MessageState) -> Deferred[bytes]
+def bodyAsBytes(body: InternalBody, state: MessageState) -> Deferred[bytes]:
     """
     Return bytes for a given L{InternalBody}.
     """
@@ -84,8 +81,7 @@ def bodyAsBytes(body, state):
     if state.cachedBody is not None:
         return succeed(state.cachedBody)
 
-    def cache(bodyBytes):
-        # type: (bytes) -> bytes
+    def cache(bodyBytes: bytes) -> bytes:
         state.cachedBody = bodyBytes
         return bodyBytes
 

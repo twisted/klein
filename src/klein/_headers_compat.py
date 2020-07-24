@@ -42,13 +42,11 @@ class HTTPHeadersWrappingHeaders(object):
     # NOTE: In case Headers has different ideas about encoding text than we do,
     # always interact with it using bytes, not text.
 
-    _headers = attrib(validator=instance_of(Headers))  # type: Headers
+    _headers: Headers = attrib(validator=instance_of(Headers))
 
     @property
-    def rawHeaders(self):
-        # type: () -> RawHeaders
-        def pairs():
-            # type: () -> Iterable[Tuple[bytes, bytes]]
+    def rawHeaders(self) -> RawHeaders:
+        def pairs() -> Iterable[Tuple[bytes, bytes]]:
             for name, values in self._headers.getAllRawHeaders():
                 name = normalizeHeaderName(name)
                 for value in values:
@@ -56,8 +54,7 @@ class HTTPHeadersWrappingHeaders(object):
 
         return tuple(pairs())
 
-    def getValues(self, name):
-        # type: (AnyStr) -> Iterable[AnyStr]
+    def getValues(self, name: AnyStr) -> Iterable[AnyStr]:
         if isinstance(name, bytes):
             values = cast(
                 Iterable[AnyStr], self._headers.getRawHeaders(name, default=())
@@ -74,12 +71,10 @@ class HTTPHeadersWrappingHeaders(object):
 
         return values
 
-    def remove(self, name):
-        # type: (String) -> None
+    def remove(self, name: String) -> None:
         self._headers.removeHeader(rawHeaderName(name))
 
-    def addValue(self, name, value):
-        # type: (AnyStr, AnyStr) -> None
+    def addValue(self, name: AnyStr, value: AnyStr) -> None:
         rawName, rawValue = rawHeaderNameAndValue(name, value)
 
         self._headers.addRawHeader(rawName, rawValue)

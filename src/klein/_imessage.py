@@ -11,7 +11,7 @@ Do not import directly from here, except:
 This will ensure that type checking works.
 """
 
-from typing import AnyStr, Iterable, MutableSequence, Sequence, Text, Tuple
+from typing import AnyStr, Iterable, MutableSequence, Sequence, Tuple
 
 from hyperlink import DecodedURL
 
@@ -68,7 +68,7 @@ class IHTTPHeaders(Interface):
     well-behaved implementations.
     """
 
-    rawHeaders = Attribute(
+    rawHeaders: RawHeaders = Attribute(
         """
         Raw header data as a tuple in the from: C{((name, value), ...)}.
         C{name} and C{value} are bytes.
@@ -76,11 +76,10 @@ class IHTTPHeaders(Interface):
         Headers with multiple values are provided as separate name and value
         pairs.
         """
-    )  # type: RawHeaders
+    )
 
     @ifmethod
-    def getValues(name):
-        # type: (AnyStr) -> Iterable[AnyStr]
+    def getValues(name: AnyStr) -> Iterable[AnyStr]:
         """
         Get the values associated with the given header name.
 
@@ -103,8 +102,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
     """
 
     @ifmethod
-    def remove(name):
-        # type: (AnyStr) -> None
+    def remove(name: AnyStr) -> None:
         """
         Remove all header name/value pairs for the given header name.
 
@@ -115,8 +113,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         """
 
     @ifmethod
-    def addValue(name, value):
-        # type: (AnyStr, AnyStr) -> None
+    def addValue(name: AnyStr, value: AnyStr) -> None:
         """
         Add the given header name/value pair.
 
@@ -132,11 +129,10 @@ class IHTTPMessage(Interface):
     HTTP entity.
     """
 
-    headers = Attribute("Entity headers.")  # type: IHTTPHeaders
+    headers: IHTTPHeaders = Attribute("Entity headers.")
 
     @ifmethod
-    def bodyAsFount():
-        # type: () -> IFount
+    def bodyAsFount() -> IFount:
         """
         The entity body, as a fount.
 
@@ -153,8 +149,7 @@ class IHTTPMessage(Interface):
         """
 
     @ifmethod
-    def bodyAsBytes():
-        # type: () -> Deferred[bytes]
+    def bodyAsBytes() -> Deferred[bytes]:
         """
         The entity body, as bytes.
 
@@ -180,8 +175,8 @@ class IHTTPRequest(IHTTPMessage):
     HTTP request.
     """
 
-    method = Attribute("Request method.")  # type: Text
-    uri = Attribute("Request URI.")  # type: DecodedURL
+    method: str = Attribute("Request method.")
+    uri: DecodedURL = Attribute("Request URI.")
 
 
 class IHTTPResponse(IHTTPMessage):
@@ -189,4 +184,4 @@ class IHTTPResponse(IHTTPMessage):
     HTTP response.
     """
 
-    status = Attribute("Response status code.")  # type: int
+    status: int = Attribute("Response status code.")

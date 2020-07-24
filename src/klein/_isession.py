@@ -13,6 +13,11 @@ from zope.interface.interfaces import IInterface
 
 from ._typing import ifmethod
 
+if TYPE_CHECKING:  # pragma: no cover
+    from ._requirer import RequestLifecycle
+
+    IRequestLifecycleT = Union[RequestLifecycle, "IRequestLifecycle"]
+
 
 class NoSuchSession(Exception):
     """
@@ -355,12 +360,6 @@ class IRequestLifecycle(Interface):
     """
     Interface for adding hooks to the phases of a request's lifecycle.
     """
-
-
-if TYPE_CHECKING:  # pragma: no cover
-    from ._requirer import RequestLifecycle
-
-    IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]
 
 
 @attr.s

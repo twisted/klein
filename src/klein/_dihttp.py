@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Text, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 import attr
 
@@ -123,7 +123,7 @@ class Response(object):
     code = attr.ib(type=int, default=200)
     headers = attr.ib(
         type=Mapping[
-            Union[Text, bytes], Union[Text, bytes, Sequence[Union[Text, bytes]]]
+            Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
         ],
         default=attr.Factory(dict),
     )

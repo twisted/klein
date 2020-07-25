@@ -1,4 +1,4 @@
-from typing import Iterable, List, Text, Tuple
+from typing import Iterable, List, Tuple
 
 from hyperlink import DecodedURL
 
@@ -37,11 +37,11 @@ requirer = Requirer()
     router.route("/hello/world", methods=["GET"]), url=RequestURL()
 )
 def requiresURL(url):
-    # type: (DecodedURL) -> Text
+    # type: (DecodedURL) -> str
     """
     This is a route that requires a URL.
     """
-    text = url.child("hello/ world").asText()  # type: Text
+    text = url.child("hello/ world").asText()  # type: str
     return text
 
 
@@ -65,7 +65,7 @@ def provideSample(request):
     component=RequestComponent(ISample),
 )
 def needsComponent(component):
-    # type: (Text) -> Text
+    # type: (str) -> str
     """
     This route requires and returns an L{ISample}.
     """

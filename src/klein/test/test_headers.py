@@ -6,7 +6,7 @@ Tests for L{klein._headers}.
 """
 
 from collections import defaultdict
-from typing import AnyStr, Dict, Iterable, List, Optional, Text, Tuple, cast
+from typing import AnyStr, Dict, Iterable, List, Optional, Tuple, cast
 
 from hypothesis import given
 from hypothesis.strategies import binary, iterables, text, tuples
@@ -36,22 +36,22 @@ __all__ = ()
 
 
 def encodeName(name):
-    # type: (Text) -> Optional[bytes]
+    # type: (str) -> Optional[bytes]
     return name.encode(HEADER_NAME_ENCODING)
 
 
 def encodeValue(name):
-    # type: (Text) -> Optional[bytes]
+    # type: (str) -> Optional[bytes]
     return name.encode(HEADER_VALUE_ENCODING)
 
 
 def decodeName(name):
-    # type: (bytes) -> Text
+    # type: (bytes) -> str
     return name.decode(HEADER_NAME_ENCODING)
 
 
 def decodeValue(name):
-    # type: (bytes) -> Text
+    # type: (bytes) -> str
     return name.decode(HEADER_VALUE_ENCODING)
 
 
@@ -86,9 +86,9 @@ class EncodingTests(TestCase):
 
     @given(latin1_text(min_size=1))
     def test_headerNameAsBytesWithText(self, name):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
-        L{headerNameAsBytes} encodes L{Text} using L{HEADER_NAME_ENCODING}.
+        L{headerNameAsBytes} encodes L{str} using L{HEADER_NAME_ENCODING}.
         """
         rawName = encodeName(name)
         self.assertEqual(headerNameAsBytes(name), rawName)
@@ -103,9 +103,9 @@ class EncodingTests(TestCase):
 
     @given(text(min_size=1))
     def test_headerNameAsTextWithText(self, name):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
-        L{headerNameAsText} passes through L{Text}.
+        L{headerNameAsText} passes through L{str}.
         """
         self.assertIdentical(headerNameAsText(name), name)
 
@@ -119,9 +119,9 @@ class EncodingTests(TestCase):
 
     @given(latin1_text(min_size=1))
     def test_headerValueAsBytesWithText(self, value):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
-        L{headerValueAsBytes} encodes L{Text} using L{HEADER_VALUE_ENCODING}.
+        L{headerValueAsBytes} encodes L{str} using L{HEADER_VALUE_ENCODING}.
         """
         rawValue = encodeValue(value)
         self.assertEqual(headerValueAsBytes(value), rawValue)
@@ -136,9 +136,9 @@ class EncodingTests(TestCase):
 
     @given(text(min_size=1))
     def test_headerValueAsTextWithText(self, value):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
-        L{headerValueAsText} passes through L{Text}.
+        L{headerValueAsText} passes through L{str}.
         """
         self.assertIdentical(headerValueAsText(value), value)
 
@@ -179,7 +179,7 @@ class RawHeadersConversionTests(TestCase):
 
     @given(latin1_text())
     def test_pairNameText(self, name):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
         L{normalizeRawHeaders} converts ISO-8859-1-encodable text names into
         bytes.
@@ -194,7 +194,7 @@ class RawHeadersConversionTests(TestCase):
 
     @given(latin1_text())
     def test_pairValueText(self, value):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
         L{normalizeRawHeaders} converts ISO-8859-1-encodable text values into
         bytes.
@@ -245,7 +245,7 @@ class GetValuesTestsMixIn(object):
             )
 
     def headerNormalize(self, value):
-        # type: (Text) -> Text
+        # type: (str) -> str
         """
         Test hook for the normalization of header text values, which is a
         behavior Twisted has changed after version 18.9.0.
@@ -254,10 +254,10 @@ class GetValuesTestsMixIn(object):
 
     @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
     def test_getTextName(self, textPairs):
-        # type: (Iterable[Tuple[Text, Text]]) -> None
+        # type: (Iterable[Tuple[str, str]]) -> None
         """
-        C{getValues} returns an iterable of L{Text} values for
-        the given L{Text} header name.
+        C{getValues} returns an iterable of L{str} values for
+        the given L{str} header name.
 
         This test only inserts Latin1 text into the header values, which is
         valid data.
@@ -266,7 +266,7 @@ class GetValuesTestsMixIn(object):
             (name, headerValueSanitize(value)) for name, value in textPairs
         )
 
-        textValues = defaultdict(list)  # type: Dict[Text, List[Text]]
+        textValues = defaultdict(list)  # type: Dict[str, List[str]]
         for name, value in textHeaders:
             textValues[normalizeHeaderName(name)].append(value)
 
@@ -284,10 +284,10 @@ class GetValuesTestsMixIn(object):
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
     def test_getTextNameBinaryValues(self, pairs):
-        # type: (Iterable[Tuple[Text, bytes]]) -> None
+        # type: (Iterable[Tuple[str, bytes]]) -> None
         """
-        C{getValues} returns an iterable of L{Text} values for
-        the given L{Text} header name.
+        C{getValues} returns an iterable of L{str} values for
+        the given L{str} header name.
 
         This test only inserts binary data into the header values, which
         includes invalid data if you are a sane person, but arguably
@@ -300,7 +300,7 @@ class GetValuesTestsMixIn(object):
             for name, value in pairs
         )
 
-        binaryValues = defaultdict(list)  # type: Dict[Text, List[bytes]]
+        binaryValues = defaultdict(list)  # type: Dict[str, List[bytes]]
         for name, value in rawHeaders:
             binaryValues[headerNameAsText(normalizeHeaderName(name))].append(
                 value
@@ -423,7 +423,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
     def test_removeTextName(self):
         # type: () -> None
         """
-        L{IMutableHTTPHeaders.remove} removes all values for the given L{Text}
+        L{IMutableHTTPHeaders.remove} removes all values for the given L{str}
         header name.
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2a"), (b"c", b"3"), (b"b", b"2b"))
@@ -466,8 +466,8 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
     def test_addValueTextName(self):
         # type: () -> None
         """
-        L{IMutableHTTPHeaders.addValue} adds the given L{Text} value for the
-        given L{Text} header name.
+        L{IMutableHTTPHeaders.addValue} adds the given L{str} value for the
+        given L{str} header name.
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2a"))
         headers = self.headers(rawHeaders=rawHeaders)
@@ -481,7 +481,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         # type: () -> None
         """
         L{IMutableHTTPHeaders.addValue} raises L{TypeError} when the given
-        header name is L{bytes} and the given value is L{Text}.
+        header name is L{bytes} and the given value is L{str}.
         """
         headers = self.headers(rawHeaders=())
 
@@ -496,7 +496,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         # type: () -> None
         """
         L{IMutableHTTPHeaders.addValue} raises L{TypeError} when the given
-        header name is L{Text} and the given value is L{bytes}.
+        header name is L{str} and the given value is L{bytes}.
         """
         headers = self.headers(rawHeaders=())
 

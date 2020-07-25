@@ -86,7 +86,7 @@ class IHTTPHeaders(Interface):
         If the given name is L{bytes}, the value will be returned as the raw
         header L{bytes}.
 
-        If the given name is L{Text}, the name will be encoded as ISO-8859-1
+        If the given name is L{str}, the name will be encoded as ISO-8859-1
         and the value will be returned as text, by decoding the raw header
         value bytes with ISO-8859-1.
 
@@ -106,7 +106,7 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         """
         Remove all header name/value pairs for the given header name.
 
-        If the given name is L{Text}, it will be encoded as ISO-8859-1 before
+        If the given name is L{str}, it will be encoded as ISO-8859-1 before
         comparing to the (L{bytes}) header names.
 
         @param name: The name of the header to remove.
@@ -119,8 +119,8 @@ class IMutableHTTPHeaders(IHTTPHeaders):
 
         If the given name is L{bytes}, the value must also be L{bytes}.
 
-        If the given name is L{Text}, it will be encoded as ISO-8859-1, and the
-        value, which must also be L{Text}, will be encoded as ISO-8859-1.
+        If the given name is L{str}, it will be encoded as ISO-8859-1, and the
+        value, which must also be L{str}, will be encoded as ISO-8859-1.
         """
 
 

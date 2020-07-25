@@ -5,7 +5,7 @@
 Tests for L{klein._headers}.
 """
 
-from typing import Text, cast
+from typing import cast
 
 from twisted.web.http_headers import Headers
 
@@ -25,7 +25,7 @@ except ImportError:
 
 
 def _twistedHeaderNormalize(value):
-    # type: (Text) -> Text
+    # type: (str) -> str
     """
     Normalize the given header value according to the rules of the installed
     Twisted version.
@@ -34,7 +34,7 @@ def _twistedHeaderNormalize(value):
         return value
     else:
         return cast(
-            Text,
+            str,
             _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8"),
         )
 
@@ -54,7 +54,7 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
         )
 
     def headerNormalize(self, value):
-        # type: (Text) -> Text
+        # type: (str) -> str
         return _twistedHeaderNormalize(value)
 
     def headers(self, rawHeaders):

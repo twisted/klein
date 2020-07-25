@@ -6,7 +6,7 @@ Tests for L{klein._irequest}.
 """
 
 from string import ascii_uppercase
-from typing import Optional, Text
+from typing import Optional
 
 from hyperlink import DecodedURL, EncodedURL
 
@@ -64,7 +64,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
     def test_method(self, methodText):
-        # type: (Text) -> None
+        # type: (str) -> None
         """
         L{HTTPRequestWrappingIRequest.method} matches the underlying legacy
         request method.
@@ -100,7 +100,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
         # Needed because non-equal URLs can render as the same strings
         def strURL(url):
-            # type: (EncodedURL) -> Text
+            # type: (EncodedURL) -> str
             return (
                 "URL(scheme={url.scheme!r}, "
                 "userinfo={url.userinfo!r}, "

@@ -100,7 +100,7 @@ class KleinRequest(object):
         self.branch_segments = [""]
 
         # Don't annotate as optional, since you should never set this to None
-        self.mapper = None  # type: MapAdapter # type: ignore[assignment]
+        self.mapper: MapAdapter = None  # type: ignore[assignment]
 
     def url_for(
         self,

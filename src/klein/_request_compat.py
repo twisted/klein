@@ -93,7 +93,7 @@ class HTTPRequestWrappingIRequest(object):
 
         return fount
 
-    def bodyAsBytes(self) -> Deferred[bytes]:
+    def bodyAsBytes(self) -> Deferred:
         if self._state.cachedBody is not None:
             return succeed(self._state.cachedBody)
 

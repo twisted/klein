@@ -41,5 +41,5 @@ class FrozenHTTPResponse(object):
     def bodyAsFount(self) -> IFount:
         return bodyAsFount(self._body, self._state)
 
-    def bodyAsBytes(self) -> Deferred[bytes]:
+    def bodyAsBytes(self) -> Deferred:
         return bodyAsBytes(self._body, self._state)

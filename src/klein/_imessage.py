@@ -149,7 +149,7 @@ class IHTTPMessage(Interface):
         """
 
     @ifmethod
-    def bodyAsBytes() -> Deferred[bytes]:
+    def bodyAsBytes() -> Deferred:
         """
         The entity body, as bytes.
 

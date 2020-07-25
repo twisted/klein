@@ -68,7 +68,7 @@ def bodyAsFount(body: InternalBody, state: MessageState) -> IFount:
     return body
 
 
-def bodyAsBytes(body: InternalBody, state: MessageState) -> Deferred[bytes]:
+def bodyAsBytes(body: InternalBody, state: MessageState) -> Deferred:
     """
     Return bytes for a given L{InternalBody}.
     """

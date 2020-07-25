@@ -24,7 +24,7 @@ __all__ = ()
 
 
 # See https://github.com/twisted/tubes/issues/60
-def fountToBytes(fount: IFount) -> Deferred[bytes]:
+def fountToBytes(fount: IFount) -> Deferred:
     def collect(chunks: Iterable[bytes]) -> bytes:
         return b"".join(chunks)
 

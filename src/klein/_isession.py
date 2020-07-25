@@ -37,6 +37,87 @@ class TransactionEnded(Exception):
     """
 
 
+class SessionMechanism(Names):
+    """
+    Mechanisms which can be used to identify and authenticate a session.
+
+    @cvar Cookie: The Cookie session mechanism involves looking up the session
+        identifier via an HTTP cookie.  Session objects retrieved via this
+        mechanism may be vulnerable to U{CSRF attacks
+        <https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)>}
+        and therefore must have CSRF protections applied to them.
+
+    @cvar Header: The Header mechanism retrieves the session identifier via a
+        separate header such as C{"X-Auth-Token"}.  Since a different-origin
+        site in a browser can easily send a form submission including cookies,
+        but I{can't} easily put stuff into other arbitrary headers, this does
+        not require additional protections.
+    """
+
+    Cookie = NamedConstant()
+    Header = NamedConstant()
+
+
+class ISession(Interface):
+    """
+    An L{ISession} provider contains an identifier for the session, information
+    about how the session was negotiated with the client software, and
+    """
+
+    identifier = Attribute(
+        """
+        L{unicode} identifying a session.
+
+        This value should be:
+
+            1. I{unique} - no two sessions have the same identifier
+
+            2. I{unpredictable} - no one but the receipient of the session
+               should be able to guess what it is
+
+            3. I{opaque} - it should contain no interesting information
+        """
+    )
+
+    isConfidential = Attribute(
+        """
+        A L{bool} indicating whether this session mechanism transmitted over an
+        encrypted transport, i.e., HTTPS.  If C{True}, this means that this
+        session can be used for sensitive information; otherwise, the
+        information contained in it should be considered to be available to
+        attackers.
+        """
+    )
+
+    authenticatedBy = Attribute(
+        """
+        A L{SessionMechanism} indicating what mechanism was used to
+        authenticate this session.
+        """
+    )
+
+    @ifmethod
+    def authorize(interfaces: Iterable[IInterface]) -> Deferred:
+        """
+        Retrieve other objects from this session.
+
+        This method is how you can retrieve application-specific objects from
+        the general-purpose session; define interfaces for each facet of
+        something accessible to a session, then pass it here and to the
+        L{ISessionStore} implementation you're using.
+
+        @param interfaces: A list of interfaces.
+        @type interfaces: L{iterable} of
+            L{zope.interface.interfaces.IInterface}
+
+        @return: all of the providers that could be retrieved from the session.
+        @rtype: L{Deferred} firing with L{dict} mapping
+            L{zope.interface.interfaces.IInterface} to providers of each
+            interface.  Interfaces which cannot be authorized will not be
+            present as keys in this dictionary.
+        """
+
+
 class ISessionStore(Interface):
     """
     Backing storage for sessions.
@@ -200,87 +281,6 @@ class ISessionProcurer(Interface):
                   longer set a cookie, and we need to set a cookie.
 
         @rtype: L{Session}
-        """
-
-
-class SessionMechanism(Names):
-    """
-    Mechanisms which can be used to identify and authenticate a session.
-
-    @cvar Cookie: The Cookie session mechanism involves looking up the session
-        identifier via an HTTP cookie.  Session objects retrieved via this
-        mechanism may be vulnerable to U{CSRF attacks
-        <https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)>}
-        and therefore must have CSRF protections applied to them.
-
-    @cvar Header: The Header mechanism retrieves the session identifier via a
-        separate header such as C{"X-Auth-Token"}.  Since a different-origin
-        site in a browser can easily send a form submission including cookies,
-        but I{can't} easily put stuff into other arbitrary headers, this does
-        not require additional protections.
-    """
-
-    Cookie = NamedConstant()
-    Header = NamedConstant()
-
-
-class ISession(Interface):
-    """
-    An L{ISession} provider contains an identifier for the session, information
-    about how the session was negotiated with the client software, and
-    """
-
-    identifier = Attribute(
-        """
-        L{unicode} identifying a session.
-
-        This value should be:
-
-            1. I{unique} - no two sessions have the same identifier
-
-            2. I{unpredictable} - no one but the receipient of the session
-               should be able to guess what it is
-
-            3. I{opaque} - it should contain no interesting information
-        """
-    )
-
-    isConfidential = Attribute(
-        """
-        A L{bool} indicating whether this session mechanism transmitted over an
-        encrypted transport, i.e., HTTPS.  If C{True}, this means that this
-        session can be used for sensitive information; otherwise, the
-        information contained in it should be considered to be available to
-        attackers.
-        """
-    )
-
-    authenticatedBy = Attribute(
-        """
-        A L{SessionMechanism} indicating what mechanism was used to
-        authenticate this session.
-        """
-    )
-
-    @ifmethod
-    def authorize(interfaces: Iterable[IInterface]) -> Deferred:
-        """
-        Retrieve other objects from this session.
-
-        This method is how you can retrieve application-specific objects from
-        the general-purpose session; define interfaces for each facet of
-        something accessible to a session, then pass it here and to the
-        L{ISessionStore} implementation you're using.
-
-        @param interfaces: A list of interfaces.
-        @type interfaces: L{iterable} of
-            L{zope.interface.interfaces.IInterface}
-
-        @return: all of the providers that could be retrieved from the session.
-        @rtype: L{Deferred} firing with L{dict} mapping
-            L{zope.interface.interfaces.IInterface} to providers of each
-            interface.  Interfaces which cannot be authorized will not be
-            present as keys in this dictionary.
         """
 
 

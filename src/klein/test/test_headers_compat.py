@@ -24,8 +24,7 @@ except ImportError:
     _sanitizeLinearWhitespace = None
 
 
-def _twistedHeaderNormalize(value):
-    # type: (str) -> str
+def _twistedHeaderNormalize(value: str) -> str:
     """
     Normalize the given header value according to the rules of the installed
     Twisted version.
@@ -47,26 +46,24 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     Tests for L{HTTPHeadersWrappingHeaders}.
     """
 
-    def assertRawHeadersEqual(self, rawHeaders1, rawHeaders2):
-        # type: (RawHeaders, RawHeaders) -> None
+    def assertRawHeadersEqual(
+        self, rawHeaders1: RawHeaders, rawHeaders2: RawHeaders
+    ) -> None:
         super(HTTPHeadersWrappingHeadersTests, self).assertRawHeadersEqual(
             sorted(rawHeaders1), sorted(rawHeaders2)
         )
 
-    def headerNormalize(self, value):
-        # type: (str) -> str
+    def headerNormalize(self, value: str) -> str:
         return _twistedHeaderNormalize(value)
 
-    def headers(self, rawHeaders):
-        # type: (RawHeaders) -> IMutableHTTPHeaders
+    def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
         headers = Headers()
         for rawName, rawValue in rawHeaders:
             headers.addRawHeader(rawName, rawValue)
 
         return HTTPHeadersWrappingHeaders(headers=headers)
 
-    def test_rawHeaders(self):
-        # type: () -> None
+    def test_rawHeaders(self) -> None:
         """
         L{MutableHTTPHeaders.rawHeaders} equals raw headers matching the
         L{Headers} given at init time.

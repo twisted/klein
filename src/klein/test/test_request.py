@@ -23,8 +23,7 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
     """
 
     @staticmethod
-    def requestFromBytes(data=b""):
-        # type: (bytes) -> FrozenHTTPRequest
+    def requestFromBytes(data: bytes = b"") -> FrozenHTTPRequest:
         return FrozenHTTPRequest(
             method="GET",
             uri=DecodedURL.fromText("https://twistedmatrix.com/"),
@@ -33,20 +32,17 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
         )
 
     @classmethod
-    def messageFromBytes(cls, data=b""):
-        # type: (bytes) -> IHTTPMessage
+    def messageFromBytes(cls, data: bytes = b"") -> IHTTPMessage:
         return cls.requestFromBytes(data)
 
-    def test_interface(self):
-        # type: () -> None
+    def test_interface(self) -> None:
         """
         L{FrozenHTTPRequest} implements L{IHTTPRequest}.
         """
         request = self.requestFromBytes()
         self.assertProvides(IHTTPRequest, request)
 
-    def test_initInvalidBodyType(self):
-        # type: () -> None
+    def test_initInvalidBodyType(self) -> None:
         """
         L{FrozenHTTPRequest} raises L{TypeError} when given a body of an
         unknown type.

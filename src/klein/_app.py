@@ -54,7 +54,7 @@ KleinErrorHandler = Callable[
 
 
 def _call(
-    __klein_instance__: Optional[Klein],
+    __klein_instance__: Optional["Klein"],
     __klein_f__: Callable,
     *args: Any,
     **kwargs: Any,
@@ -194,7 +194,7 @@ class Klein(object):
 
         return KleinResource(self)
 
-    def __get__(self, instance: Any, owner: object) -> Klein:
+    def __get__(self, instance: Any, owner: object) -> "Klein":
         """
         Get an instance of L{Klein} bound to C{instance}.
         """

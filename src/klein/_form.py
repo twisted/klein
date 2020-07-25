@@ -118,7 +118,7 @@ class Field(object):
             protoForm.addField(self.maybeNamed(parameterName)),
         )
 
-    def maybeNamed(self, name: str) -> Field:
+    def maybeNamed(self, name: str) -> "Field":
         """
         Create a new L{Field} like this one, but with all the name default
         values filled in.
@@ -221,7 +221,7 @@ class Field(object):
             raise ValidationError(str(ve))
 
     @classmethod
-    def text(cls, **kw: Any) -> Field:
+    def text(cls, **kw: Any) -> "Field":
         """
         Shorthand for a form field that contains a short string, and will be
         rendered as a plain <input>.
@@ -229,7 +229,7 @@ class Field(object):
         return cls(converter=textConverter, formInputType="text", **kw)
 
     @classmethod
-    def password(cls, **kw: Any) -> Field:
+    def password(cls, **kw: Any) -> "Field":
         """
         Shorthand for a form field that, like L{text}, contains a short string,
         but should be obscured when typed (and, to the extent possible,
@@ -238,7 +238,7 @@ class Field(object):
         return cls(converter=textConverter, formInputType="password", **kw)
 
     @classmethod
-    def hidden(cls, name: str, value: str, **kw: Any) -> Field:
+    def hidden(cls, name: str, value: str, **kw: Any) -> "Field":
         """
         Shorthand for a hidden field.
         """
@@ -257,7 +257,7 @@ class Field(object):
         maximum: Optional[int] = None,
         kind: Type = float,
         **kw: Any,
-    ) -> Field:
+    ) -> "Field":
         """
         An integer within the range [minimum, maximum].
         """
@@ -277,7 +277,7 @@ class Field(object):
         return cls(converter=bounded_number, formInputType="number", **kw)
 
     @classmethod
-    def submit(cls, value: str) -> Field:
+    def submit(cls, value: str) -> "Field":
         """
         A field representing a submit button, with a value (displayed on the
         button).
@@ -402,7 +402,7 @@ class RenderableForm(object):
 
 @bindable
 def defaultValidationFailureHandler(
-    instance: Optional[object], request: IRequest, fieldValues: FieldValues,
+    instance: Optional[object], request: IRequest, fieldValues: "FieldValues",
 ) -> Element:
     """
     This is the default validation failure handler, which will be used by form
@@ -485,7 +485,7 @@ class ProtoForm(object):
     _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
-    def fromComponentized(cls, componentized: Componentized) -> ProtoForm:
+    def fromComponentized(cls, componentized: Componentized) -> "ProtoForm":
         """
         Create a ProtoForm from a componentized object.
         """
@@ -493,7 +493,7 @@ class ProtoForm(object):
         assert rl is not None
         return cls(componentized, rl)
 
-    def addField(self, field: Field) -> FieldInjector:
+    def addField(self, field: Field) -> "FieldInjector":
         """
         Add the given field to the form ultimately created here.
         """
@@ -726,7 +726,7 @@ class Form(object):
         method: str = "POST",
         enctype: str = RenderableForm.ENCTYPE_FORM_DATA,
         encoding: str = "utf-8",
-    ) -> RenderableFormParam:
+    ) -> "RenderableFormParam":
         """
         A form parameter that can render a form declared as a number of fields
         on another route.
@@ -781,7 +781,7 @@ class RenderableFormParam(object):
         injectionComponents: Componentized,
         parameterName: str,
         requestLifecycle: IRequestLifecycle,
-    ) -> RenderableFormParam:
+    ) -> "RenderableFormParam":
         return self
 
     def injectValue(

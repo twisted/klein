@@ -27,7 +27,7 @@ class IKleinRequest(Interface):
 
     @ifmethod
     def url_for(
-        request: IKleinRequest,
+        request: "IKleinRequest",
         endpoint: str,
         values: Optional[Mapping[str, str]] = None,
         method: Optional[str] = None,

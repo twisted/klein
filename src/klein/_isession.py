@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING, Union
+from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING
 
 import attr
 
@@ -12,11 +12,6 @@ from zope.interface import Attribute, Interface
 from zope.interface.interfaces import IInterface
 
 from ._typing import ifmethod
-
-if TYPE_CHECKING:  # pragma: no cover
-    from ._requirer import RequestLifecycle
-
-    IRequestLifecycleT = Union[RequestLifecycle, "IRequestLifecycle"]
 
 
 class NoSuchSession(Exception):
@@ -325,6 +320,21 @@ class IDependencyInjector(Interface):
         """
 
 
+class _IRequestLifecycle(Interface):
+    """
+    Interface for adding hooks to the phases of a request's lifecycle.
+    """
+
+
+if TYPE_CHECKING:
+    from typing import Union
+    from ._requirer import RequestLifecycle
+
+    IRequestLifecycle = Union[_IRequestLifecycle, RequestLifecycle]
+else:
+    IRequestLifecycle = _IRequestLifecycle
+
+
 class IRequiredParameter(Interface):
     """
     A declaration that a given Python parameter is required to satisfy a given
@@ -335,7 +345,7 @@ class IRequiredParameter(Interface):
     def registerInjector(
         injectionComponents: Componentized,
         parameterName: str,
-        lifecycle: IRequestLifecycleT,
+        lifecycle: IRequestLifecycle,
     ) -> IDependencyInjector:
         """
         Register the given injector at method-decoration time, informing it of
@@ -354,12 +364,6 @@ class IRequiredParameter(Interface):
             DependencyInjectors may cooperate on logic that needs to be
             duplicated, such as provisioning a session.
         """
-
-
-class IRequestLifecycle(Interface):
-    """
-    Interface for adding hooks to the phases of a request's lifecycle.
-    """
 
 
 @attr.s

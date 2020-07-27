@@ -78,10 +78,10 @@ if TYPE_CHECKING:  # pragma: no cover
 
 else:
     IHTTPHeaders = _IHTTPHeaders
-    IMutableHTTPHeaders = _IMutableHTTPHeaders
     IHTTPMessage = _IHTTPMessage
     IHTTPRequest = _IHTTPRequest
     IHTTPResponse = _IHTTPResponse
+    IMutableHTTPHeaders = _IMutableHTTPHeaders
 
 
 __all__ = ()

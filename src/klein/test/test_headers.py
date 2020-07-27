@@ -216,7 +216,7 @@ class GetValuesTestsMixIn(object):
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"), (b"B", b"TWO"))
 
-        normalized = defaultdict(list)  # type: Dict[bytes, List[bytes]]
+        normalized: Dict[bytes, List[bytes]] = defaultdict(list)
         for name, value in rawHeaders:
             normalized[normalizeHeaderName(name)].append(value)
 
@@ -247,7 +247,7 @@ class GetValuesTestsMixIn(object):
             (name, headerValueSanitize(value)) for name, value in textPairs
         )
 
-        textValues = defaultdict(list)  # type: Dict[str, List[str]]
+        textValues: Dict[str, List[str]] = defaultdict(list)
         for name, value in textHeaders:
             textValues[normalizeHeaderName(name)].append(value)
 
@@ -282,7 +282,7 @@ class GetValuesTestsMixIn(object):
             for name, value in pairs
         )
 
-        binaryValues = defaultdict(list)  # type: Dict[str, List[bytes]]
+        binaryValues: Dict[str, List[bytes]] = defaultdict(list)
         for name, value in rawHeaders:
             binaryValues[headerNameAsText(normalizeHeaderName(name))].append(
                 value

@@ -35,15 +35,14 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
     def legacyRequest(
         self,
-        path=b"/",  # type: bytes
-        method=b"GET",  # type: bytes
-        host=b"localhost",  # type: bytes
-        port=8080,  # type: int
-        isSecure=False,  # type: bool
-        body=None,  # type: Optional[bytes]
-        headers=None,  # type: Optional[Headers]
-    ):
-        # type: (...) -> IRequest
+        path: bytes = b"/",
+        method: bytes = b"GET",
+        host: bytes = b"localhost",
+        port: int = 8080,
+        isSecure: bool = False,
+        body: Optional[bytes] = None,
+        headers: Optional[Headers] = None,
+    ) -> IRequest:
         return requestMock(
             path=path,
             method=method,
@@ -54,8 +53,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
             headers=headers,
         )
 
-    def test_interface(self):
-        # type: () -> None
+    def test_interface(self) -> None:
         """
         L{HTTPRequestWrappingIRequest} implements L{IHTTPRequest}.
         """
@@ -63,8 +61,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         self.assertProvides(IHTTPRequest, request)
 
     @given(text(alphabet=ascii_uppercase, min_size=1))
-    def test_method(self, methodText):
-        # type: (str) -> None
+    def test_method(self, methodText: str) -> None:
         """
         L{HTTPRequestWrappingIRequest.method} matches the underlying legacy
         request method.
@@ -74,8 +71,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         self.assertEqual(request.method, methodText)
 
     @given(decoded_urls())
-    def test_uri(self, url):
-        # type: (DecodedURL) -> None
+    def test_uri(self, url: DecodedURL) -> None:
         """
         L{HTTPRequestWrappingIRequest.uri} matches the underlying legacy
         request URI.
@@ -99,8 +95,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         requestURINormalized = request.uri.asURI()
 
         # Needed because non-equal URLs can render as the same strings
-        def strURL(url):
-            # type: (EncodedURL) -> str
+        def strURL(url: EncodedURL) -> str:
             return (
                 "URL(scheme={url.scheme!r}, "
                 "userinfo={url.userinfo!r}, "
@@ -120,8 +115,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
             ),
         )
 
-    def test_headers(self):
-        # type: () -> None
+    def test_headers(self) -> None:
         """
         L{HTTPRequestWrappingIRequest.headers} returns an
         L{HTTPRequestWrappingIRequest} containing the underlying legacy request
@@ -131,8 +125,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
         self.assertProvides(IHTTPHeaders, request.headers)
 
-    def test_bodyAsFountTwice(self):
-        # type: () -> None
+    def test_bodyAsFountTwice(self) -> None:
         """
         L{HTTPRequestWrappingIRequest.bodyAsFount} raises
         L{FountAlreadyAccessedError} if called more than once.
@@ -143,8 +136,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         self.assertRaises(FountAlreadyAccessedError, request.bodyAsFount)
 
     @given(binary())
-    def test_bodyAsBytes(self, data):
-        # type: (bytes) -> None
+    def test_bodyAsBytes(self, data: bytes) -> None:
         """
         L{HTTPRequestWrappingIRequest.bodyAsBytes} matches the underlying
         legacy request body.
@@ -155,8 +147,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
         self.assertEqual(body, data)
 
-    def test_bodyAsBytesCached(self):
-        # type: () -> None
+    def test_bodyAsBytesCached(self) -> None:
         """
         L{HTTPRequestWrappingIRequest.bodyAsBytes} called twice returns the
         same object both times.

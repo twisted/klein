@@ -21,27 +21,23 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
     """
 
     @staticmethod
-    def responseFromBytes(data=b""):
-        # type: (bytes) -> FrozenHTTPResponse
+    def responseFromBytes(data: bytes = b"") -> FrozenHTTPResponse:
         return FrozenHTTPResponse(
             status=200, headers=FrozenHTTPHeaders(rawHeaders=()), body=data,
         )
 
     @classmethod
-    def messageFromBytes(cls, data=b""):
-        # type: (bytes) -> IHTTPMessage
+    def messageFromBytes(cls, data: bytes = b"") -> IHTTPMessage:
         return cls.responseFromBytes(data)
 
-    def test_interface(self):
-        # type: () -> None
+    def test_interface(self) -> None:
         """
         L{FrozenHTTPResponse} implements L{IHTTPResponse}.
         """
         response = self.responseFromBytes()
         self.assertProvides(IHTTPResponse, response)
 
-    def test_initInvalidBodyType(self):
-        # type: () -> None
+    def test_initInvalidBodyType(self) -> None:
         """
         L{FrozenHTTPResponse} raises L{TypeError} when given a body of an
         unknown type.

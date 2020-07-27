@@ -8,7 +8,7 @@ from shutil import rmtree
 from subprocess import CalledProcessError, run
 from sys import exit, stderr
 from tempfile import mkdtemp
-from typing import Any, Dict, NoReturn, Optional, Sequence
+from typing import Any, Dict, NoReturn, Optional, Sequence, cast
 
 from click import group as commandGroup, option as commandOption
 
@@ -109,7 +109,7 @@ def releaseTagName(version: Version) -> str:
     """
     Compute the name of the release tag for the given version.
     """
-    return version.public()
+    return cast(str, version.public())
 
 
 def createReleaseBranch(repository: Repository, version: Version) -> Head:

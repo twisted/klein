@@ -41,8 +41,11 @@ if __name__ == "__main__":
         name="klein",
         packages=["klein", "klein.storage", "klein.test"],
         package_dir={"": "src"},
-        package_data=dict(klein=["test/idna-tables-properties.csv",],),
+        package_data=dict(
+            klein=["py.typed", "test/idna-tables-properties.csv",],
+        ),
         url="https://github.com/twisted/klein",
         maintainer="Twisted Matrix Laboratories",
         maintainer_email="twisted-python@twistedmatrix.com",
+        zip_safe=False,
     )

@@ -24,7 +24,7 @@ _authCB = Callable[[IInterface, ISession, Componentized], Any]
 
 @implementer(ISession)
 @attr.s
-class MemorySession(object):
+class MemorySession:
     """
     An in-memory session.
     """
@@ -51,7 +51,7 @@ class MemorySession(object):
         return succeed(result)
 
 
-class _MemoryAuthorizerFunction(object):
+class _MemoryAuthorizerFunction:
     """
     Type shadow for function with the given attribute.
     """
@@ -91,7 +91,7 @@ def _noAuthorization(interface, session, data):
 
 @implementer(ISessionStore)
 @attr.s
-class MemorySessionStore(object):
+class MemorySessionStore:
     authorizationCallback = attr.ib(type=_authFn, default=_noAuthorization)
     _secureStorage = attr.ib(
         type=Dict[str, Any], default=cast(Dict[str, Any], Factory(dict))

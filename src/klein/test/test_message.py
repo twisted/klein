@@ -18,7 +18,7 @@ from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 __all__ = ()
 
 
-class FrozenHTTPMessageTestsMixIn(object):
+class FrozenHTTPMessageTestsMixIn:
     """
     Mix-In class for implementations of IHTTPMessage.
     """
@@ -30,7 +30,7 @@ class FrozenHTTPMessageTestsMixIn(object):
         Return a new instance of an L{IHTTPMessage} implementation using the
         given bytes as the message body.
         """
-        raise NotImplementedError("{} must implement getValues()".format(cls))
+        raise NotImplementedError(f"{cls} must implement getValues()")
 
     @classmethod
     def messageFromFountFromBytes(cls, data=b""):

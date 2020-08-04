@@ -32,4 +32,4 @@ class TestCase(SynchronousTestCase):
         try:
             self.assertTrue(verifyObject(interface, obj))
         except Invalid:
-            self.fail("{} does not provide {}".format(obj, interface))
+            self.fail(f"{obj} does not provide {interface}")

@@ -1,6 +1,5 @@
 # -*- test-case-name: klein.test.test_form -*-
 
-from __future__ import print_function, unicode_literals
 
 import json
 from typing import (
@@ -44,14 +43,14 @@ from .interfaces import (
 )
 
 
-class CrossSiteRequestForgery(Resource, object):
+class CrossSiteRequestForgery(Resource):
     """
     Cross site request forgery detected.  Request aborted.
     """
 
     def __init__(self, message):
         # type: (str) -> None
-        super(CrossSiteRequestForgery, self).__init__()
+        super().__init__()
         self.message = message
 
     def render(self, request):
@@ -88,7 +87,7 @@ class IParsedJSONBody(Interface):
 
 @implementer(IRequiredParameter)
 @attr.s(frozen=True)
-class Field(object):
+class Field:
     """
     A L{Field} is a static part of a L{Form}.
 
@@ -295,7 +294,7 @@ class Field(object):
 
 @implementer(IRenderable)
 @attr.s
-class RenderableForm(object):
+class RenderableForm:
     """
     An L{IRenderable} representing a renderable form.
 
@@ -486,7 +485,7 @@ class IForm(Interface):
 
 @implementer(IProtoForm)
 @attr.s
-class ProtoForm(object):
+class ProtoForm:
     """
     Form-builder.
     """
@@ -522,7 +521,7 @@ class IFieldValues(Interface):
 
 @implementer(IFieldValues)
 @attr.s
-class FieldValues(object):
+class FieldValues:
     """
     Reified post-parsing values for HTTP form submission.
     """
@@ -553,7 +552,7 @@ class FieldValues(object):
 
 @implementer(IDependencyInjector)
 @attr.s
-class FieldInjector(object):
+class FieldInjector:
     """
     Field injector.
     """
@@ -637,12 +636,12 @@ def checkCSRF(request):
     # leak only the value passed, not the actual token, just in
     # case there's some additional threat vector there
     raise EarlyExit(
-        CrossSiteRequestForgery("Invalid CSRF token: {!r}".format(token))
+        CrossSiteRequestForgery(f"Invalid CSRF token: {token!r}")
     )
 
 
 @attr.s(hash=False)
-class Form(object):
+class Form:
     """
     A L{Form} is a collection of fields attached to a function.
     """
@@ -777,7 +776,7 @@ class Form(object):
 
 @implementer(IRequiredParameter, IDependencyInjector)
 @attr.s
-class RenderableFormParam(object):
+class RenderableFormParam:
     """
     A L{RenderableFormParam} implements L{IRequiredParameter} and
     L{IDependencyInjector} to provide a L{RenderableForm} to your route.

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import sys
 from unittest.mock import Mock, patch
 
@@ -14,7 +12,7 @@ from .._decorators import bindable, modified, originalName
 from .._interfaces import IKleinRequest
 
 
-class DummyRequest(object):
+class DummyRequest:
     def __init__(self, n):
         self.n = n
 
@@ -22,7 +20,7 @@ class DummyRequest(object):
         return other.n == self.n
 
     def __repr__(self):
-        return "<DummyRequest({n})>".format(n=self.n)
+        return f"<DummyRequest({self.n})>"
 
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
@@ -33,7 +31,7 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
     Tests for L{Klein}'s implementation of C{==} and C{!=}.
     """
 
-    class _One(object):
+    class _One:
         app = Klein()
 
         def __eq__(self, other):
@@ -59,7 +57,7 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
         return self._another
 
 
-class DuplicateHasher(object):
+class DuplicateHasher:
     """
     Every L{DuplicateHasher} has the same hash value and compares equal to
     every other L{DuplicateHasher}.
@@ -151,7 +149,7 @@ class KleinTestCase(unittest.TestCase):
         identity.
         """
 
-        class Wrap(object):
+        class Wrap:
             def __init__(self, wrapped):
                 self._wrapped = wrapped
 
@@ -160,7 +158,7 @@ class KleinTestCase(unittest.TestCase):
                     return self
                 return self._wrapped.__get__(instance, owner)
 
-        class TwoRouters(object):
+        class TwoRouters:
 
             app1 = Wrap(Klein())
             app2 = Wrap(Klein())
@@ -176,13 +174,13 @@ class KleinTestCase(unittest.TestCase):
         searching for the bound L{Klein} instance.
         """
 
-        class ClassProperty(object):
+        class ClassProperty:
             def __get__(self, oself, owner):
                 raise AttributeError(
                     "you just don't have that special something"
                 )
 
-        class Oddment(object):
+        class Oddment:
             __something__ = ClassProperty()
             app = Klein()
 
@@ -280,7 +278,7 @@ class KleinTestCase(unittest.TestCase):
         req = object()
         k.execute_endpoint("method", req)
 
-        class BoundTo(object):
+        class BoundTo:
             app = k
 
         b = BoundTo()
@@ -318,7 +316,7 @@ class KleinTestCase(unittest.TestCase):
         """
         bar_calls = []
 
-        class Foo(object):
+        class Foo:
             app = Klein()
 
             @app.route("/bar")
@@ -342,7 +340,7 @@ class KleinTestCase(unittest.TestCase):
         independently.
         """
 
-        class Foo(object):
+        class Foo:
             app = Klein()
 
             def __init__(self):
@@ -374,7 +372,7 @@ class KleinTestCase(unittest.TestCase):
         independently.
         """
 
-        class Foo(object):
+        class Foo:
             app = Klein()
 
             def __init__(self):
@@ -473,7 +471,7 @@ class KleinTestCase(unittest.TestCase):
         """
         app = Klein()
         interface = "2001\\:0DB8\\:f00e\\:eb00\\:\\:1"
-        spec = "tcp6:8080:interface={0}".format(interface)
+        spec = f"tcp6:8080:interface={interface}"
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()
         mock_sfs.assert_called_with(reactor, spec)

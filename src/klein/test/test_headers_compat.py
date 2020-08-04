@@ -49,7 +49,7 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
 
     def assertRawHeadersEqual(self, rawHeaders1, rawHeaders2):
         # type: (RawHeaders, RawHeaders) -> None
-        super(HTTPHeadersWrappingHeadersTests, self).assertRawHeadersEqual(
+        super().assertRawHeadersEqual(
             sorted(rawHeaders1), sorted(rawHeaders2)
         )
 

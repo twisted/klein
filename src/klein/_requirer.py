@@ -21,7 +21,7 @@ from .interfaces import (
 
 @implementer(IRequestLifecycle)
 @attr.s
-class RequestLifecycle(object):
+class RequestLifecycle:
     """
     Mechanism to run hooks at the start of a request managed by a L{Requirer}.
     """
@@ -63,7 +63,7 @@ _prerequisiteCallback = Callable[[IRequestLifecycle], None]
 
 
 @attr.s
-class Requirer(object):
+class Requirer:
     """
     Dependency injection for required parameters.
     """

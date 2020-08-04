@@ -31,7 +31,7 @@ class TestCaseTests(TestCase):
             """
 
     @implementer(IFrobbable)
-    class Frobbable(object):
+    class Frobbable:
         """
         Implements L{IFrobbable}.
         """
@@ -41,7 +41,7 @@ class TestCaseTests(TestCase):
             pass
 
     @implementer(IFrobbable)
-    class NotFrobbable(object):
+    class NotFrobbable:
         """
         Does not implement L{IFrobbable}, despite declaring.
         """

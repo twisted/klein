@@ -27,7 +27,7 @@ __all__ = ()
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
-class FrozenHTTPRequest(object):
+class FrozenHTTPRequest:
     """
     Immutable HTTP request.
     """

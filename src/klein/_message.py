@@ -25,7 +25,7 @@ InternalBody = Union[bytes, IFount]
 
 
 @attrs(frozen=False)
-class MessageState(object):
+class MessageState:
     """
     Internal mutable state for HTTP message implementations in L{klein}.
     """

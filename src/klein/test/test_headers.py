@@ -205,7 +205,7 @@ class RawHeadersConversionTests(TestCase):
         self.assertEqual(normalized, ((b"name", headerValueAsBytes(value)),))
 
 
-class GetValuesTestsMixIn(object):
+class GetValuesTestsMixIn:
     """
     Tests for utilities that access data from the C{RawHeaders} internal
     representation.
@@ -222,7 +222,7 @@ class GetValuesTestsMixIn(object):
         implementation being tested.
         """
         raise NotImplementedError(
-            "{} must implement getValues()".format(self.__class__)
+            f"{self.__class__} must implement getValues()"
         )
 
     def test_getBytesName(self):
@@ -241,7 +241,7 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 values,
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     def headerNormalize(self, value):
@@ -279,7 +279,7 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 [self.headerNormalize(value) for value in _values],
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
@@ -313,7 +313,7 @@ class GetValuesTestsMixIn(object):
                     self.headerNormalize(headerValueAsText(value))
                     for value in values
                 ),
-                "header name: {!r}".format(textName),
+                f"header name: {textName!r}",
             )
 
     def test_getInvalidNameType(self):
@@ -380,7 +380,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
     def headers(self, rawHeaders):
         # type: (RawHeaders) -> IMutableHTTPHeaders
         raise NotImplementedError(
-            "{} must implement headers()".format(self.__class__)
+            f"{self.__class__} must implement headers()"
         )
 
     def getValues(self, rawHeaders, name):

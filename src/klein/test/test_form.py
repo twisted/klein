@@ -37,7 +37,7 @@ class DanglingField(Field):
 
 
 @attr.s(hash=False)
-class TestObject(object):
+class TestObject:
     sessionStore = attr.ib(type=ISessionStore)
     calls = attr.ib(attr.Factory(list), type=List)
 
@@ -725,7 +725,7 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(stub.get("https://localhost/render"))
         self.assertEqual(response.code, 200)
         setCookie = response.cookies()["Klein-Secure-Session"]
-        expected = 'value="{}"'.format(setCookie)
+        expected = f'value="{setCookie}"'
         actual = self.successResultOf(content(response))
         if not isinstance(expected, bytes):  # type: ignore[unreachable]
             actual = actual.decode("utf-8")

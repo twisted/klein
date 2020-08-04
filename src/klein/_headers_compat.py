@@ -31,7 +31,7 @@ __all__ = ()
 
 @implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
-class HTTPHeadersWrappingHeaders(object):
+class HTTPHeadersWrappingHeaders:
     """
     HTTP entity headers.
 
@@ -70,7 +70,7 @@ class HTTPHeadersWrappingHeaders(object):
                 )
             )
         else:
-            raise TypeError("name {!r} must be text or bytes".format(name))
+            raise TypeError(f"name {name!r} must be text or bytes")
 
         return values
 

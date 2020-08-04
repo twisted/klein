@@ -3,7 +3,6 @@
 Applications are great.  Lets have more of them.
 """
 
-from __future__ import absolute_import, division
 
 import sys
 from collections import namedtuple
@@ -93,7 +92,7 @@ def buildURL(
 
 
 @implementer(IKleinRequest)
-class KleinRequest(object):
+class KleinRequest:
     def __init__(self, request):
         # type: (Request) -> None
         self.branch_segments = [""]
@@ -123,7 +122,7 @@ class KleinRequest(object):
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-class Klein(object):
+class Klein:
     """
     L{Klein} is an object which is responsible for maintaining the routing
     configuration of our application.
@@ -218,7 +217,7 @@ class Klein(object):
             else:
                 self._boundAs = "unknown_" + str(id(self))
 
-        boundName = "__klein_bound_{}__".format(self._boundAs)
+        boundName = f"__klein_bound_{self._boundAs}__"
         k = cast(
             Optional["Klein"], getattr(instance, boundName, lambda: None)()
         )
@@ -278,7 +277,7 @@ class Klein(object):
                 branchKwargs = kwargs.copy()
                 branchKwargs["endpoint"] = branchKwargs["endpoint"] + "_branch"
 
-                @modified("branch route '{url}' executor".format(url=url), f)
+                @modified(f"branch route '{url}' executor", f)
                 def branch_f(instance, request, *a, **kw):
                     # type: (Any, IRequest, Any, Any) -> KleinRenderable
                     IKleinRequest(request).branch_segments = kw.pop(
@@ -301,7 +300,7 @@ class Klein(object):
                     )
                 )
 
-            @modified("route '{url}' executor".format(url=url), f)
+            @modified(f"route '{url}' executor", f)
             def _f(instance, request, *a, **kw):
                 # type: (Any, IRequest, Any, Any) -> KleinRenderable
                 return _call(instance, f, request, *a, **kw)
@@ -498,7 +497,7 @@ class Klein(object):
         log.startLogging(logFile)
 
         if not endpoint_description:
-            endpoint_description = "tcp:port={0}:interface={1}".format(
+            endpoint_description = "tcp:port={}:interface={}".format(
                 port, host
             )
 

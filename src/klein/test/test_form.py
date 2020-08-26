@@ -166,7 +166,9 @@ class TestObject(object):
         self.calls.append(("validation", values))
         return b"~special~"
 
-    @requirer.require(router.route("/handle-empty", methods=["POST"]),)
+    @requirer.require(
+        router.route("/handle-empty", methods=["POST"]),
+    )
     def emptyHandler(self) -> bytes:
         """
         Empty form handler; just for testing rendering.
@@ -433,7 +435,8 @@ class TestForms(SynchronousTestCase):
         errorText = cast(str, errors[0].text)
         self.assertIsNot(errorText, None)
         self.assertEqual(
-            errorText, "invalid literal for int() with base 10: 'not a number'",
+            errorText,
+            "invalid literal for int() with base 10: 'not a number'",
         )
 
     def test_handlingJSON(self) -> None:

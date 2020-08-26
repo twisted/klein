@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Union
+from typing import Any, Dict, Mapping, Sequence, Union, cast
 
 import attr
 
@@ -41,7 +41,9 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
-        scheme="https" if request.isSecure() else "http", host=host, port=port,
+        scheme="https" if request.isSecure() else "http",
+        host=host,
+        port=port,
     )
     return url
 
@@ -65,7 +67,10 @@ class RequestURL(object):
 
     @classmethod
     def injectValue(
-        cls, instance: Any, request: IRequest, routeParams: Dict[str, Any],
+        cls,
+        instance: Any,
+        request: IRequest,
+        routeParams: Dict[str, Any],
     ) -> DecodedURL:
         return urlFromRequest(request)
 
@@ -96,7 +101,7 @@ class RequestComponent(object):
     def injectValue(
         self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
     ) -> DecodedURL:
-        return request.getComponent(self.interface)
+        return cast(DecodedURL, request.getComponent(self.interface))
 
     def finalize(cls) -> None:
         "Nothing to do upon finalization."

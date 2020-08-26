@@ -57,7 +57,9 @@ if TYPE_CHECKING:  # pragma: no cover
     ]
 
     IMutableHTTPHeaders = Union[
-        _IMutableHTTPHeaders, HTTPHeadersWrappingHeaders, MutableHTTPHeaders,
+        _IMutableHTTPHeaders,
+        HTTPHeadersWrappingHeaders,
+        MutableHTTPHeaders,
     ]
 
     IHTTPMessage = Union[
@@ -69,11 +71,14 @@ if TYPE_CHECKING:  # pragma: no cover
     ]
 
     IHTTPRequest = Union[
-        _IHTTPRequest, FrozenHTTPRequest, HTTPRequestWrappingIRequest,
+        _IHTTPRequest,
+        FrozenHTTPRequest,
+        HTTPRequestWrappingIRequest,
     ]
 
     IHTTPResponse = Union[
-        _IHTTPResponse, FrozenHTTPResponse,
+        _IHTTPResponse,
+        FrozenHTTPResponse,
     ]
 
 else:

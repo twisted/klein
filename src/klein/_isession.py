@@ -120,7 +120,8 @@ class ISessionStore(Interface):
 
     @ifmethod
     def newSession(
-        isConfidential: bool, authenticatedBy: SessionMechanism,
+        isConfidential: bool,
+        authenticatedBy: SessionMechanism,
     ) -> Deferred:
         """
         Create a new L{ISession}.

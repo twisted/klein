@@ -169,7 +169,9 @@ class ResponseTests(SynchronousTestCase):
         return a Response object that has those attributes.
         """
         response = self.successResultOf(
-            StubTreq(router.resource()).get("https://example.com/set/headers",)
+            StubTreq(router.resource()).get(
+                "https://example.com/set/headers",
+            )
         )
         self.assertEqual(response.code, 209)
         self.assertEqual(

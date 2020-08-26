@@ -160,7 +160,8 @@ class FrozenHTTPHeaders(object):
     """
 
     rawHeaders: RawHeaders = attrib(
-        converter=normalizeRawHeadersFrozen, default=(),
+        converter=normalizeRawHeadersFrozen,
+        default=(),
     )
 
     def getValues(self, name: AnyStr) -> Iterable[AnyStr]:
@@ -175,7 +176,8 @@ class MutableHTTPHeaders(object):
     """
 
     _rawHeaders: MutableRawHeaders = attrib(
-        converter=normalizeRawHeadersMutable, default=Factory(list),
+        converter=normalizeRawHeadersMutable,
+        default=Factory(list),
     )
 
     @property

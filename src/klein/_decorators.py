@@ -28,7 +28,9 @@ def bindable(bindable: C) -> C:
 
 
 def modified(
-    modification: str, original: Callable, modifier: Optional[Callable] = None,
+    modification: str,
+    original: Callable,
+    modifier: Optional[Callable] = None,
 ) -> Callable:
     """
     Annotate a callable as a modified wrapper of an original callable.

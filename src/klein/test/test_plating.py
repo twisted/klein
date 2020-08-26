@@ -46,8 +46,14 @@ page = Plating(
 )
 
 element = Plating(
-    defaults={"a": "NO VALUE FOR A", "b": "NO VALUE FOR B",},
-    tags=tags.div(tags.span("a: ", slot("a")), tags.span("b: ", slot("b")),),
+    defaults={
+        "a": "NO VALUE FOR A",
+        "b": "NO VALUE FOR B",
+    },
+    tags=tags.div(
+        tags.span("a: ", slot("a")),
+        tags.span("b: ", slot("b")),
+    ),
 )
 
 
@@ -244,7 +250,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
 
     @settings(max_examples=500)
     @given(
-        jsonObject=jsonObjects, data=st.data(),
+        jsonObject=jsonObjects,
+        data=st.data(),
     )
     def test_resolveObjects(self, jsonObject, data):
         """
@@ -263,7 +270,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return value
 
         deferredJSONObject = transformJSONObject(
-            jsonObject, maybeWrapInDeferred,
+            jsonObject,
+            maybeWrapInDeferred,
         )
 
         resolved = resolveDeferredObjects(deferredJSONObject)
@@ -274,7 +282,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         self.assertEqual(self.successResultOf(resolved), jsonObject)
 
     @given(
-        jsonObject=jsonObjects, data=st.data(),
+        jsonObject=jsonObjects,
+        data=st.data(),
     )
     def test_elementSerialized(self, jsonObject, data):
         """
@@ -296,7 +305,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return value
 
         withPlatingElements = transformJSONObject(
-            jsonObject, injectPlatingElements,
+            jsonObject,
+            injectPlatingElements,
         )
 
         resolved = resolveDeferredObjects(withPlatingElements)

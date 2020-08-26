@@ -402,7 +402,9 @@ class RenderableForm(object):
 
 @bindable
 def defaultValidationFailureHandler(
-    instance: Optional[object], request: IRequest, fieldValues: "FieldValues",
+    instance: Optional[object],
+    request: IRequest,
+    fieldValues: "FieldValues",
 ) -> Element:
     """
     This is the default validation failure handler, which will be used by form
@@ -579,7 +581,9 @@ class FieldInjector(object):
             )
 
         self._lifecycle.addPrepareHook(
-            populateValuesHook, provides=[IFieldValues], requires=[ISession],
+            populateValuesHook,
+            provides=[IFieldValues],
+            requires=[ISession],
         )
 
 

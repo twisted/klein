@@ -23,7 +23,9 @@ class FrozenHTTPResponseTests(FrozenHTTPMessageTestsMixIn, TestCase):
     @staticmethod
     def responseFromBytes(data: bytes = b"") -> FrozenHTTPResponse:
         return FrozenHTTPResponse(
-            status=200, headers=FrozenHTTPHeaders(rawHeaders=()), body=data,
+            status=200,
+            headers=FrozenHTTPHeaders(rawHeaders=()),
+            body=data,
         )
 
     @classmethod

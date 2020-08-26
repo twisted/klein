@@ -110,7 +110,8 @@ def resolveDeferredObjects(root: Any) -> Deferred:
             stack.append((obj._asJSON(), setter))
         else:
             raise TypeError(
-                obj, "{input} not JSON serializable".format(input=obj),
+                obj,
+                "{input} not JSON serializable".format(input=obj),
             )
 
     returnValue(result[0])
@@ -203,8 +204,7 @@ class Plating(object):
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None, presentation_slots=()):
-        """
-        """
+        """"""
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentationSlots = {self.CONTENT} | set(presentation_slots)
@@ -222,8 +222,7 @@ class Plating(object):
         return renderer
 
     def routed(self, routing, tags):
-        """
-        """
+        """"""
 
         def mydecorator(method):
             loader = TagLoader(tags)

@@ -41,7 +41,9 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
-        scheme="https" if request.isSecure() else "http", host=host, port=port,
+        scheme="https" if request.isSecure() else "http",
+        host=host,
+        port=port,
     )
     return url
 
@@ -65,7 +67,10 @@ class RequestURL(object):
 
     @classmethod
     def injectValue(
-        cls, instance: Any, request: IRequest, routeParams: Dict[str, Any],
+        cls,
+        instance: Any,
+        request: IRequest,
+        routeParams: Dict[str, Any],
     ) -> DecodedURL:
         return urlFromRequest(request)
 

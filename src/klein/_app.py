@@ -178,7 +178,10 @@ class Klein(object):
         return endpoint_f(self._instance, request, *args, **kwargs)
 
     def execute_error_handler(
-        self, handler: KleinErrorHandler, request: IRequest, failure: Failure,
+        self,
+        handler: KleinErrorHandler,
+        request: IRequest,
+        failure: Failure,
     ) -> KleinRenderable:
         """
         Execute the passed error handler, possibly with a bound instance.
@@ -273,7 +276,10 @@ class Klein(object):
 
                 @modified("branch route '{url}' executor".format(url=url), f)
                 def branch_f(
-                    instance: Any, request: IRequest, *a: Any, **kw: Any,
+                    instance: Any,
+                    request: IRequest,
+                    *a: Any,
+                    **kw: Any,
                 ) -> KleinRenderable:
                     IKleinRequest(request).branch_segments = kw.pop(
                         "__rest__", ""
@@ -297,7 +303,10 @@ class Klein(object):
 
             @modified("route '{url}' executor".format(url=url), f)
             def _f(
-                instance: Any, request: IRequest, *a: Any, **kw: Any,
+                instance: Any,
+                request: IRequest,
+                *a: Any,
+                **kw: Any,
             ) -> KleinRenderable:
                 return _call(instance, f, request, *a, **kw)
 

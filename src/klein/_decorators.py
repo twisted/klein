@@ -1,11 +1,10 @@
 from functools import wraps
-from typing import Callable, Optional, Text, TypeVar
+from typing import Callable, Optional, TypeVar
 
 C = TypeVar("C", bound=Callable)
 
 
-def bindable(bindable):
-    # type: (C) -> C
+def bindable(bindable: C) -> C:
     """
     Mark a method as a "bindable" method.
 
@@ -29,11 +28,10 @@ def bindable(bindable):
 
 
 def modified(
-    modification,  # type: Text
-    original,  # type: Callable
-    modifier=None,  # type: Optional[Callable]
-):
-    # type: (...) -> Callable
+    modification: str,
+    original: Callable,
+    modifier: Optional[Callable] = None,
+) -> Callable:
     """
     Annotate a callable as a modified wrapper of an original callable.
 
@@ -53,8 +51,7 @@ def modified(
         likely calls it.
     """
 
-    def decorator(wrapper):
-        # type: (Callable[..., C]) -> Callable[..., C]
+    def decorator(wrapper: Callable[..., C]) -> Callable[..., C]:
         result = named(modification + " for " + original.__name__)(
             wraps(original)(wrapper)
         )
@@ -70,8 +67,7 @@ def modified(
     return decorator
 
 
-def named(name):
-    # type: (Text) -> Callable[[C], C]
+def named(name: str) -> Callable[[C], C]:
     """
     Change the name of a function to the given name.
     """
@@ -85,13 +81,12 @@ def named(name):
     return decorator
 
 
-def originalName(function):
-    # type: (Callable) -> Text
+def originalName(function: Callable) -> str:
     """
     Get the original, user-specified name of C{function}, chasing back any
     wrappers applied with C{modified}.
     """
-    fnext = function  # type: Optional[Callable]
+    fnext: Optional[Callable] = function
     while fnext is not None:
         function = fnext
         fnext = getattr(function, "__original__", None)

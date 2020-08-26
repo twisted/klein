@@ -11,6 +11,7 @@ from __future__ import (
 
 import json
 from string import printable
+from typing import Any
 
 import attr
 
@@ -45,8 +46,14 @@ page = Plating(
 )
 
 element = Plating(
-    defaults={"a": "NO VALUE FOR A", "b": "NO VALUE FOR B",},
-    tags=tags.div(tags.span("a: ", slot("a")), tags.span("b: ", slot("b")),),
+    defaults={
+        "a": "NO VALUE FOR A",
+        "b": "NO VALUE FOR B",
+    },
+    tags=tags.div(
+        tags.span("a: ", slot("a")),
+        tags.span("b: ", slot("b")),
+    ),
 )
 
 
@@ -108,8 +115,8 @@ class DeferredValue(object):
     @param deferred: The L{Deferred} representing the value.
     """
 
-    value = attr.ib()  # type: object
-    deferred = attr.ib(attr.Factory(Deferred))  # type: Deferred
+    value: Any = attr.ib()
+    deferred: Deferred = attr.ib(attr.Factory(Deferred))
 
     def resolve(self):
         """
@@ -243,7 +250,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
 
     @settings(max_examples=500)
     @given(
-        jsonObject=jsonObjects, data=st.data(),
+        jsonObject=jsonObjects,
+        data=st.data(),
     )
     def test_resolveObjects(self, jsonObject, data):
         """
@@ -262,7 +270,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return value
 
         deferredJSONObject = transformJSONObject(
-            jsonObject, maybeWrapInDeferred,
+            jsonObject,
+            maybeWrapInDeferred,
         )
 
         resolved = resolveDeferredObjects(deferredJSONObject)
@@ -273,7 +282,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         self.assertEqual(self.successResultOf(resolved), jsonObject)
 
     @given(
-        jsonObject=jsonObjects, data=st.data(),
+        jsonObject=jsonObjects,
+        data=st.data(),
     )
     def test_elementSerialized(self, jsonObject, data):
         """
@@ -295,7 +305,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return value
 
         withPlatingElements = transformJSONObject(
-            jsonObject, injectPlatingElements,
+            jsonObject,
+            injectPlatingElements,
         )
 
         resolved = resolveDeferredObjects(withPlatingElements)

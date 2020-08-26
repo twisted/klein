@@ -3,14 +3,13 @@ from typing import Callable, TYPE_CHECKING, Union
 try:
     from typing import Awaitable
 except ImportError:
-    Awaitable = Union  # type: ignore
+    Awaitable = Union  # type: ignore[assignment,misc]
 
 
 __all__ = ()
 
 
-def _ifmethod(method):
-    # type: (Callable) -> Callable
+def _ifmethod(method: Callable) -> Callable:
     return method
 
 

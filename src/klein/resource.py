@@ -10,7 +10,7 @@ This module, L{klein.resource}, serves two purposes:
 """
 
 from sys import modules
-from typing import Any, AnyStr, Callable, Text
+from typing import AnyStr, Callable
 
 from ._app import resource as _globalResourceMethod
 from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
@@ -37,12 +37,10 @@ class _SpecialModuleObject(object):
         self.__preserve__ = preserve
 
     @property
-    def ensure_utf8_bytes(self):
-        # type: () -> Callable[[AnyStr], Text]
+    def ensure_utf8_bytes(self) -> Callable[[AnyStr], str]:
         return ensure_utf8_bytes
 
-    def __call__(self):
-        # type: () -> _KleinResource
+    def __call__(self) -> _KleinResource:
         """
         Return an L{IResource} which suitably wraps this app.
 
@@ -52,8 +50,7 @@ class _SpecialModuleObject(object):
         # confusion.
         return _globalResourceMethod()
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self) -> str:
         """
         Give a special C{repr()} to make the dual purpose of this object clear.
         """

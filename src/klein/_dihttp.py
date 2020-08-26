@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Text, Union
+from typing import Any, Dict, Mapping, Sequence, Union, cast
 
 import attr
 
@@ -23,8 +23,7 @@ from .interfaces import (
 )
 
 
-def urlFromRequest(request):
-    # type: (IRequest) -> DecodedURL
+def urlFromRequest(request: IRequest) -> DecodedURL:
     sentHeader = request.getHeader(b"host")
     if sentHeader is not None:
         sentHeader = sentHeader.decode("charmap")
@@ -42,7 +41,9 @@ def urlFromRequest(request):
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
-        scheme="https" if request.isSecure() else "http", host=host, port=port,
+        scheme="https" if request.isSecure() else "http",
+        host=host,
+        port=port,
     )
     return url
 
@@ -57,19 +58,24 @@ class RequestURL(object):
 
     @classmethod
     def registerInjector(
-        cls, injectionComponents, parameterName, requestLifecycle
-    ):
-        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
+        cls,
+        injectionComponents: Componentized,
+        parameterName: str,
+        requestLifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         return cls()
 
     @classmethod
-    def injectValue(cls, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> DecodedURL
+    def injectValue(
+        cls,
+        instance: Any,
+        request: IRequest,
+        routeParams: Dict[str, Any],
+    ) -> DecodedURL:
         return urlFromRequest(request)
 
     @classmethod
-    def finalize(cls):
-        # type: () -> None
+    def finalize(cls) -> None:
         "Nothing to do upon finalization."
 
 
@@ -85,17 +91,19 @@ class RequestComponent(object):
     interface = attr.ib(type=IInterface)
 
     def registerInjector(
-        self, injectionComponents, parameterName, requestLifecycle
-    ):
-        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
+        self,
+        injectionComponents: Componentized,
+        parameterName: str,
+        requestLifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         return self
 
-    def injectValue(self, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> DecodedURL
-        return request.getComponent(self.interface)
+    def injectValue(
+        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> DecodedURL:
+        return cast(DecodedURL, request.getComponent(self.interface))
 
-    def finalize(cls):
-        # type: () -> None
+    def finalize(cls) -> None:
         "Nothing to do upon finalization."
 
 
@@ -112,7 +120,7 @@ class Response(object):
         - some HTTP headers
 
         - a body object, which can be anything else Klein understands; for
-          example, an IResource, an IRenderable, text, bytes, etc.
+          example, an IResource, an IRenderable, str, bytes, etc.
 
     @since: Klein NEXT
     """
@@ -120,14 +128,13 @@ class Response(object):
     code = attr.ib(type=int, default=200)
     headers = attr.ib(
         type=Mapping[
-            Union[Text, bytes], Union[Text, bytes, Sequence[Union[Text, bytes]]]
+            Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
         ],
         default=attr.Factory(dict),
     )
     body = attr.ib(type=Any, default="")
 
-    def _applyToRequest(self, request):
-        # type: (IRequest) -> Any
+    def _applyToRequest(self, request: IRequest) -> Any:
         """
         Apply this L{Response} to the given L{IRequest}, setting its response
         code and headers.

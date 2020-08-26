@@ -307,7 +307,7 @@ class GetValuesTestsMixIn(object):
             TypeError, self.getValues, (), object()
         )
         cast(TestCase, self).assertRegex(
-            str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
+            str(e), "name <object object at 0x[0-9a-f]+> must be str or bytes"
         )
 
 
@@ -423,7 +423,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             TypeError, headers.remove, object()
         )
         cast(TestCase, self).assertRegex(
-            str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
+            str(e), "name <object object at 0x[0-9a-f]+> must be str or bytes"
         )
 
     def test_addValueBytesName(self) -> None:
@@ -477,7 +477,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             TypeError, headers.addValue, "a", b"1"
         )
         cast(TestCase, self).assertRegex(
-            str(e), "value b?'1' must be text to match name u?'a'"
+            str(e), "value b?'1' must be str to match name u?'a'"
         )
 
     def test_addValueInvalidNameType(self) -> None:
@@ -491,7 +491,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
             TypeError, headers.addValue, object(), b"1"
         )
         cast(TestCase, self).assertRegex(
-            str(e), "name <object object at 0x[0-9a-f]+> must be text or bytes"
+            str(e), "name <object object at 0x[0-9a-f]+> must be str or bytes"
         )
 
 

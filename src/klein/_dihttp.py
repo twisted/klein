@@ -115,7 +115,7 @@ class Response(object):
         - some HTTP headers
 
         - a body object, which can be anything else Klein understands; for
-          example, an IResource, an IRenderable, text, bytes, etc.
+          example, an IResource, an IRenderable, str, bytes, etc.
 
     @since: Klein NEXT
     """

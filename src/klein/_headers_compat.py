@@ -40,7 +40,7 @@ class HTTPHeadersWrappingHeaders(object):
     """
 
     # NOTE: In case Headers has different ideas about encoding text than we do,
-    # always interact with it using bytes, not text.
+    # always interact with it using bytes, not str.
 
     _headers: Headers = attrib(validator=instance_of(Headers))
 
@@ -67,7 +67,7 @@ class HTTPHeadersWrappingHeaders(object):
                 )
             )
         else:
-            raise TypeError("name {!r} must be text or bytes".format(name))
+            raise TypeError("name {!r} must be str or bytes".format(name))
 
         return values
 

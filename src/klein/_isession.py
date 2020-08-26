@@ -61,7 +61,7 @@ class ISession(Interface):
 
     identifier = Attribute(
         """
-        L{unicode} identifying a session.
+        L{str} identifying a session.
 
         This value should be:
 

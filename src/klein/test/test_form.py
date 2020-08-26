@@ -1,4 +1,4 @@
-from typing import Any, List, Text, Tuple, cast
+from typing import Any, List, Tuple, cast
 from xml.etree import ElementTree
 
 import attr
@@ -31,8 +31,7 @@ class DanglingField(Field):
     told.
     """
 
-    def maybeNamed(self, name):
-        # type: (Text) -> Field
+    def maybeNamed(self, name: str) -> Field:
         return self
 
 
@@ -46,8 +45,7 @@ class TestObject(object):
 
     @requirer.prerequisite([ISession])
     @inlineCallbacks
-    def procureASession(self, request):
-        # type: (IRequest) -> Any
+    def procureASession(self, request: IRequest) -> Any:
         try:
             yield (
                 SessionProcurer(
@@ -64,8 +62,7 @@ class TestObject(object):
         router.route("/dangling-param", methods=["POST"]),
         dangling=DanglingField(lambda x: x, "text"),
     )
-    def danglingParameter(self, dangling):
-        # type: (str) -> None
+    def danglingParameter(self, dangling: str) -> None:
         "..."
 
     @requirer.require(
@@ -73,8 +70,7 @@ class TestObject(object):
         name=Field.text(),
         value=Field.number(),
     )
-    def handler(self, name, value):
-        # type: (Text, float) -> bytes
+    def handler(self, name: str, value: float) -> bytes:
         self.calls.append((name, value))
         return b"yay"
 
@@ -83,8 +79,7 @@ class TestObject(object):
         name=Field.text(),
         button=Field.submit("OK"),
     )
-    def handlerWithSubmit(self, name, button):
-        # type: (str, str) -> None
+    def handlerWithSubmit(self, name: str, button: str) -> None:
         """
         Form with a submit button.
         """
@@ -92,8 +87,7 @@ class TestObject(object):
     @requirer.require(
         router.route("/password-field", methods=["POST"]), pw=Field.password()
     )
-    def gotPassword(self, pw):
-        # type: (Text) -> bytes
+    def gotPassword(self, pw: str) -> bytes:
         self.calls.append(("password", pw))
         return b"password received"
 
@@ -102,8 +96,7 @@ class TestObject(object):
         name=Field.text(),
         value=Field.number(required=False, default=7.0),
     )
-    def notRequired(self, name, value):
-        # type: (IRequest, Text, float) -> bytes
+    def notRequired(self, name: str, value: float) -> bytes:
         self.calls.append((name, value))
         return b"okay"
 
@@ -111,8 +104,7 @@ class TestObject(object):
         router.route("/constrained", methods=["POST"]),
         goldilocks=Field.number(minimum=3, maximum=9),
     )
-    def constrained(self, goldilocks):
-        # type: (int) -> bytes
+    def constrained(self, goldilocks: int) -> bytes:
         self.calls.append(("constrained", goldilocks))
         return b"got it"
 
@@ -120,24 +112,21 @@ class TestObject(object):
         router.route("/render", methods=["GET"]),
         form=Form.rendererFor(handler, action="/handle"),
     )
-    def renderer(self, form):
-        # type: (IRequest, Form) -> Form
+    def renderer(self, form: Form) -> Form:
         return form
 
     @requirer.require(
         router.route("/render-submit", methods=["GET"]),
         form=Form.rendererFor(handlerWithSubmit, action="/handle-submit"),
     )
-    def submitRenderer(self, form):
-        # type: (IRequest, RenderableForm) -> RenderableForm
+    def submitRenderer(self, form: RenderableForm) -> RenderableForm:
         return form
 
     @requirer.require(
         router.route("/render-custom", methods=["GET"]),
         form=Form.rendererFor(handler, action="/handle"),
     )
-    def customFormRender(self, form):
-        # type: (RenderableForm) -> Any
+    def customFormRender(self, form: RenderableForm) -> Any:
         """
         Include just the glue necessary for CSRF protection and let the
         application render the rest of the form.
@@ -148,13 +137,10 @@ class TestObject(object):
         router.route("/render-cascade", methods=["GET"]),
         form=Form.rendererFor(handler, action="/handle"),
     )
-    def cascadeRenderer(self, form):
-        # type: (RenderableForm) -> RenderableForm
-
+    def cascadeRenderer(self, form: RenderableForm) -> RenderableForm:
         class CustomElement(Element):
             @renderer
-            def customize(self, request, tag):
-                # type: (IRequest, Any) -> Any
+            def customize(self, request: IRequest, tag: Any) -> Any:
                 return tag("customized")
 
         form.validationErrors[form._form.fields[0]] = ValidationError(
@@ -167,15 +153,13 @@ class TestObject(object):
         router.route("/handle-validation", methods=["POST"]),
         value=Field.number(maximum=10),
     )
-    def customValidation(self, value):
-        # type: (int) -> None
+    def customValidation(self, value: int) -> None:
         """
         never called.
         """
 
     @requirer.require(Form.onValidationFailureFor(customValidation))
-    def customFailureHandling(self, values):
-        # type: (RenderableForm) -> bytes
+    def customFailureHandling(self, values: RenderableForm) -> bytes:
         """
         Handle validation failure.
         """
@@ -183,8 +167,7 @@ class TestObject(object):
         return b"~special~"
 
     @requirer.require(router.route("/handle-empty", methods=["POST"]),)
-    def emptyHandler(self):
-        # type: () -> bytes
+    def emptyHandler(self) -> bytes:
         """
         Empty form handler; just for testing rendering.
         """
@@ -193,13 +176,11 @@ class TestObject(object):
         router.route("/render-empty", methods=["GET"]),
         form=Form.rendererFor(emptyHandler, action="/handle-empty"),
     )
-    def emptyRenderer(self, form):
-        # type: (RenderableForm) -> RenderableForm
+    def emptyRenderer(self, form: RenderableForm) -> RenderableForm:
         return form
 
 
-def simpleFormRouter():
-    # type: () -> Tuple[Klein, List[Tuple[str, int]]]
+def simpleFormRouter() -> Tuple[Klein, List[Tuple[str, int]]]:
     """
     Create a simple router hooked up to a field handler.
     """
@@ -213,8 +194,7 @@ def simpleFormRouter():
         value=Field.number(),
         custom=Field(formInputType="number", converter=int, required=False),
     )
-    def justGet(name, value, custom):
-        # type: (str, int, int) -> bytes
+    def justGet(name: str, value: int, custom: int) -> bytes:
         calls.append((name, value or custom))
         return b"got"
 
@@ -226,19 +206,17 @@ class TestForms(SynchronousTestCase):
     Tests for L{klein.Form} and associated tools.
     """
 
-    def test_textConverter(self):
-        # type: () -> None
+    def test_textConverter(self) -> None:
         """
         Convert a string of either type to text.
         """
         text = "f\xf6o"
         for string in (text, text.encode("utf-8")):
             result = textConverter(string)  # type: ignore[type-var]
-            self.assertIsInstance(result, Text)
+            self.assertIsInstance(result, str)
             self.assertEqual(result, text)
 
-    def test_handling(self):
-        # type: () -> None
+    def test_handling(self) -> None:
         """
         A handler for a Form with Fields receives those fields as input, as
         passed by an HTTP client.
@@ -262,8 +240,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(self.successResultOf(content(response)), b"yay")
         self.assertEqual(to.calls, [("hello", 1234)])
 
-    def test_handlingPassword(self):
-        # type: () -> None
+    def test_handlingPassword(self) -> None:
         """
         From the perspective of form handling, passwords are handled like
         strings.
@@ -289,8 +266,7 @@ class TestForms(SynchronousTestCase):
         )
         self.assertEqual(to.calls, [("password", "asdfjkl;")])
 
-    def test_numberConstraints(self):
-        # type: () -> None
+    def test_numberConstraints(self) -> None:
         """
         Number parameters have minimum and maximum validations and the object
         will not be called when the values exceed them.
@@ -331,8 +307,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(self.successResultOf(content(justRight)), b"got it")
         self.assertEqual(to.calls, [("constrained", 7)])
 
-    def test_missingRequiredParameter(self):
-        # type: () -> None
+    def test_missingRequiredParameter(self) -> None:
         """
         If required fields are missing, a default error form is presented and
         the form's handler is not called.
@@ -359,8 +334,7 @@ class TestForms(SynchronousTestCase):
         )
         self.assertEqual(to.calls, [])
 
-    def test_noName(self):
-        # type: () -> None
+    def test_noName(self) -> None:
         """
         A handler for a Form with a Field that doesn't have a name will return
         an error explaining the problem.
@@ -385,8 +359,7 @@ class TestForms(SynchronousTestCase):
             str(errors[0].value), "Cannot extract unnamed form field."
         )
 
-    def test_handlingGET(self):
-        # type: () -> None
+    def test_handlingGET(self) -> None:
         """
         A GET handler for a Form with Fields receives query parameters matching
         those field names as input.
@@ -404,8 +377,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(self.successResultOf(content(response)), b"got")
         self.assertEqual(calls, [("hello, big world", 4321)])
 
-    def test_validatingParameters(self):
-        # type: () -> None
+    def test_validatingParameters(self) -> None:
         """
         When a parameter fails to validate - for example, a non-number passed
         to a numeric Field, the request fails with a 400 and the default
@@ -432,8 +404,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(errors), 1)
         self.assertEquals(errors[0].text, "not a valid number")
 
-    def test_customParameterValidation(self):
-        # type: () -> None
+    def test_customParameterValidation(self) -> None:
         """
         When a custom parameter fails to validate by raising ValueError - for
         example, a non-number passed to a numeric Field, the request fails with
@@ -465,8 +436,7 @@ class TestForms(SynchronousTestCase):
             errorText, "invalid literal for int() with base 10: 'not a number'",
         )
 
-    def test_handlingJSON(self):
-        # type: () -> None
+    def test_handlingJSON(self) -> None:
         """
         A handler for a form with Fields receives those fields as input, as
         passed by an HTTP client that submits a JSON POST body.
@@ -490,8 +460,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(self.successResultOf(content(response)), b"yay")
         self.assertEqual(to.calls, [("hello", 1234)])
 
-    def test_missingOptionalParameterJSON(self):
-        # type: () -> None
+    def test_missingOptionalParameterJSON(self) -> None:
         """
         If a required Field is missing from the JSON body, its default value is
         used.
@@ -524,8 +493,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(self.successResultOf(content(response2)), b"okay")
         self.assertEqual(to.calls, [("one", 7.0), ("two", 2.0)])
 
-    def test_rendering(self):
-        # type: () -> None
+    def test_rendering(self) -> None:
         """
         When a route requires form fields, it renders a form with those fields.
         """
@@ -555,8 +523,7 @@ class TestForms(SynchronousTestCase):
             submitButton[0].attrib["name"], "__klein_auto_submit__"
         )
 
-    def test_renderingExplicitSubmit(self):
-        # type: () -> None
+    def test_renderingExplicitSubmit(self) -> None:
         """
         When a form renderer specifies a submit button, no automatic submit
         button is rendered.
@@ -585,8 +552,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(submitButton), 1)
         self.assertEqual(submitButton[0].attrib["name"], "button")
 
-    def test_renderingFormGlue(self):
-        # type: () -> None
+    def test_renderingFormGlue(self) -> None:
         """
         When a form renderer renders just the glue, none of the rest of the
         form is included.
@@ -618,8 +584,7 @@ class TestForms(SynchronousTestCase):
         )
         self.assertEqual(protectionField[0].attrib["value"], session.identifier)
 
-    def test_renderingEmptyForm(self):
-        # type: () -> None
+    def test_renderingEmptyForm(self) -> None:
         """
         When a form renderer specifies a submit button, no automatic submit
         button is rendered.
@@ -654,8 +619,7 @@ class TestForms(SynchronousTestCase):
         )
         self.assertEqual(protectionField[0].attrib["value"], session.identifier)
 
-    def test_renderLookupError(self):
-        # type: () -> None
+    def test_renderLookupError(self) -> None:
         """
         RenderableForm raises L{MissingRenderMethod} if anything attempst to
         look up a render method on it.
@@ -679,8 +643,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(len(failures), 1)
         self.assertIn("MissingRenderMethod", str(failures[0]))
 
-    def test_customValidationHandling(self):
-        # type: () -> None
+    def test_customValidationHandling(self) -> None:
         """
         L{Form.onValidationFailureFor} handles form validation failures by
         handing its thing a renderable form.
@@ -714,8 +677,7 @@ class TestForms(SynchronousTestCase):
             [("value", 300)],
         )
 
-    def test_renderingWithNoSessionYet(self):
-        # type: () -> None
+    def test_renderingWithNoSessionYet(self) -> None:
         """
         When a route is rendered with no session, it sets a cookie to establish
         a new session.
@@ -731,8 +693,7 @@ class TestForms(SynchronousTestCase):
             actual = actual.decode("utf-8")
         self.assertIn(expected, actual)
 
-    def test_noSessionPOST(self):
-        # type: () -> None
+    def test_noSessionPOST(self) -> None:
         """
         An unauthenticated, CSRF-protected form will return a 403 Forbidden
         status code.
@@ -750,8 +711,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 403)
         self.assertIn(b"CSRF", self.successResultOf(content(response)))
 
-    def test_cookieNoToken(self):
-        # type: () -> None
+    def test_cookieNoToken(self) -> None:
         """
         A cookie-authenticated, CSRF-protected form will return a 403 Forbidden
         status code when a CSRF protection token is not supplied.
@@ -775,8 +735,7 @@ class TestForms(SynchronousTestCase):
         self.assertEqual(response.code, 403)
         self.assertIn(b"CSRF", self.successResultOf(content(response)))
 
-    def test_cookieWithToken(self):
-        # type: () -> None
+    def test_cookieWithToken(self) -> None:
         """
         A cookie-authenticated, CRSF-protected form will call the form as
         expected.

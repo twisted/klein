@@ -11,6 +11,7 @@ from __future__ import (
 
 import json
 from string import printable
+from typing import Any
 
 import attr
 
@@ -108,8 +109,8 @@ class DeferredValue(object):
     @param deferred: The L{Deferred} representing the value.
     """
 
-    value = attr.ib()  # type: object
-    deferred = attr.ib(attr.Factory(Deferred))  # type: Deferred
+    value: Any = attr.ib()
+    deferred: Deferred = attr.ib(attr.Factory(Deferred))
 
     def resolve(self):
         """

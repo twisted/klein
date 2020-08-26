@@ -5,7 +5,7 @@
 Support for interoperability with L{twisted.web.http_headers.Headers}.
 """
 
-from typing import AnyStr, Iterable, Text, Tuple, cast
+from typing import AnyStr, Iterable, Tuple, cast
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -40,15 +40,13 @@ class HTTPHeadersWrappingHeaders(object):
     """
 
     # NOTE: In case Headers has different ideas about encoding text than we do,
-    # always interact with it using bytes, not text.
+    # always interact with it using bytes, not str.
 
-    _headers = attrib(validator=instance_of(Headers))  # type: Headers
+    _headers: Headers = attrib(validator=instance_of(Headers))
 
     @property
-    def rawHeaders(self):
-        # type: () -> RawHeaders
-        def pairs():
-            # type: () -> Iterable[Tuple[bytes, bytes]]
+    def rawHeaders(self) -> RawHeaders:
+        def pairs() -> Iterable[Tuple[bytes, bytes]]:
             for name, values in self._headers.getAllRawHeaders():
                 name = normalizeHeaderName(name)
                 for value in values:
@@ -56,13 +54,12 @@ class HTTPHeadersWrappingHeaders(object):
 
         return tuple(pairs())
 
-    def getValues(self, name):
-        # type: (AnyStr) -> Iterable[AnyStr]
+    def getValues(self, name: AnyStr) -> Iterable[AnyStr]:
         if isinstance(name, bytes):
             values = cast(
                 Iterable[AnyStr], self._headers.getRawHeaders(name, default=())
             )
-        elif isinstance(name, Text):
+        elif isinstance(name, str):
             values = (
                 headerValueAsText(value)
                 for value in self._headers.getRawHeaders(
@@ -70,16 +67,14 @@ class HTTPHeadersWrappingHeaders(object):
                 )
             )
         else:
-            raise TypeError("name {!r} must be text or bytes".format(name))
+            raise TypeError("name {!r} must be str or bytes".format(name))
 
         return values
 
-    def remove(self, name):
-        # type: (String) -> None
+    def remove(self, name: String) -> None:
         self._headers.removeHeader(rawHeaderName(name))
 
-    def addValue(self, name, value):
-        # type: (AnyStr, AnyStr) -> None
+    def addValue(self, name: AnyStr, value: AnyStr) -> None:
         rawName, rawValue = rawHeaderNameAndValue(name, value)
 
         self._headers.addRawHeader(rawName, rawValue)

@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Union
+from typing import Any, Dict, Mapping, Sequence, Union, cast
 
 import attr
 
@@ -101,7 +101,7 @@ class RequestComponent(object):
     def injectValue(
         self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
     ) -> DecodedURL:
-        return request.getComponent(self.interface)
+        return cast(DecodedURL, request.getComponent(self.interface))
 
     def finalize(cls) -> None:
         "Nothing to do upon finalization."

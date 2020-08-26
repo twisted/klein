@@ -30,20 +30,16 @@ class FrozenHTTPResponse(object):
     Immutable HTTP response.
     """
 
-    status = attrib(validator=instance_of(int))  # type: int
+    status: int = attrib(validator=instance_of(int))
 
-    headers = attrib(validator=provides(IHTTPHeaders))  # type: IHTTPHeaders
+    headers: IHTTPHeaders = attrib(validator=provides(IHTTPHeaders))
 
-    _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
+    _body: Union[bytes, IFount] = attrib(validator=validateBody)
 
-    _state = attrib(
-        default=Factory(MessageState), init=False
-    )  # type: MessageState
+    _state: MessageState = attrib(default=Factory(MessageState), init=False)
 
-    def bodyAsFount(self):
-        # type: () -> IFount
+    def bodyAsFount(self) -> IFount:
         return bodyAsFount(self._body, self._state)
 
-    def bodyAsBytes(self):
-        # type: () -> Deferred[bytes]
+    def bodyAsBytes(self) -> Deferred:
         return bodyAsBytes(self._body, self._state)

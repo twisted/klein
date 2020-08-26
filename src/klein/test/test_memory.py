@@ -26,8 +26,7 @@ class MemoryTests(SynchronousTestCase):
     Tests for memory-based session storage.
     """
 
-    def test_interfaceCompliance(self):
-        # type: () -> None
+    def test_interfaceCompliance(self) -> None:
         """
         Verify that the session store complies with the relevant interfaces.
         """
@@ -40,8 +39,7 @@ class MemoryTests(SynchronousTestCase):
             ),
         )
 
-    def test_noAuthorizers(self):
-        # type: () -> None
+    def test_noAuthorizers(self) -> None:
         """
         By default, L{MemorySessionStore} contains no authorizers and the
         sessions it returns will authorize any supplied interfaces as None.
@@ -54,8 +52,7 @@ class MemoryTests(SynchronousTestCase):
             self.successResultOf(session.authorize([IFoo, IBar])), {}
         )
 
-    def test_simpleAuthorization(self):
-        # type: () -> None
+    def test_simpleAuthorization(self) -> None:
         """
         L{MemorySessionStore.fromAuthorizers} takes a set of functions
         decorated with L{declareMemoryAuthorizer} and constructs a session
@@ -63,13 +60,11 @@ class MemoryTests(SynchronousTestCase):
         """
 
         @declareMemoryAuthorizer(IFoo)
-        def fooMe(interface, session, componentized):
-            # type: (Any, Any, Any) -> int
+        def fooMe(interface: Any, session: Any, componentized: Any) -> int:
             return 1
 
         @declareMemoryAuthorizer(IBar)
-        def barMe(interface, session, componentized):
-            # type: (Any, Any, Any) -> int
+        def barMe(interface: Any, session: Any, componentized: Any) -> int:
             return 2
 
         store = MemorySessionStore.fromAuthorizers([fooMe, barMe])

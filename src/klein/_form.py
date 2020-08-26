@@ -12,7 +12,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Text,
     Type,
     cast,
 )
@@ -49,13 +48,11 @@ class CrossSiteRequestForgery(Resource, object):
     Cross site request forgery detected.  Request aborted.
     """
 
-    def __init__(self, message):
-        # type: (str) -> None
+    def __init__(self, message: str) -> None:
         super(CrossSiteRequestForgery, self).__init__()
         self.message = message
 
-    def render(self, request):
-        # type: (IRequest) -> bytes
+    def render(self, request: IRequest) -> bytes:
         """
         For all HTTP methods, return a 403.
         """
@@ -66,8 +63,7 @@ class CrossSiteRequestForgery(Resource, object):
 CSRF_PROTECTION = "__csrf_protection__"
 
 
-def textConverter(value):
-    # type: (AnyStr) -> Text
+def textConverter(value: AnyStr) -> str:
     """
     Converter for form values (which may be any type of string) into text.
     """
@@ -103,14 +99,16 @@ class Field(object):
     default = attr.ib(type=Optional[Any], default=None, cmp=False)
     required = attr.ib(type=bool, default=True)
     noLabel = attr.ib(type=bool, default=False)
-    value = attr.ib(type=Text, default="")
+    value = attr.ib(type=str, default="")
     error = attr.ib(type=ValidationError, default=None)
 
     # IRequiredParameter
     def registerInjector(
-        self, injectionComponents, parameterName, requestLifecycle
-    ):
-        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
+        self,
+        injectionComponents: Componentized,
+        parameterName: str,
+        requestLifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         """
         Register this form field as a dependency injector.
         """
@@ -120,8 +118,7 @@ class Field(object):
             protoForm.addField(self.maybeNamed(parameterName)),
         )
 
-    def maybeNamed(self, name):
-        # type: (str) -> Field
+    def maybeNamed(self, name: str) -> "Field":
         """
         Create a new L{Field} like this one, but with all the name default
         values filled in.
@@ -130,8 +127,9 @@ class Field(object):
         @type name: a native L{str}
         """
 
-        def maybe(it, that=name):
-            # type: (Optional[str], Optional[str]) -> Optional[str]
+        def maybe(
+            it: Optional[str], that: Optional[str] = name
+        ) -> Optional[str]:
             return that if it is None else it
 
         return attr.assoc(
@@ -143,8 +141,7 @@ class Field(object):
             ),
         )
 
-    def asTags(self):
-        # type: () -> Iterable[Tag]
+    def asTags(self) -> Iterable[Tag]:
         """
         Convert this L{Field} into some stuff that can be rendered in a
         L{twisted.web.template}.
@@ -171,13 +168,12 @@ class Field(object):
             yield input_tag
             yield error_tags
 
-    def extractValue(self, request):
-        # type: (IRequest) -> Any
+    def extractValue(self, request: IRequest) -> Any:
         """
         Extract a value from the request.
 
         In the case of key/value form posts, this attempts to reliably make the
-        value into Text.  In the case of a JSON post, however, it will simply
+        value into str.  In the case of a JSON post, however, it will simply
         extract the value from the top-level dictionary, which means it could
         be any arrangement of JSON-serializiable objects.
         """
@@ -205,8 +201,7 @@ class Field(object):
         else:
             return None
 
-    def validateValue(self, value):
-        # type: (Any) -> Any
+    def validateValue(self, value: Any) -> Any:
         """
         Validate the given text and return a converted Python object to use, or
         fail with L{ValidationError}.
@@ -226,7 +221,7 @@ class Field(object):
             raise ValidationError(str(ve))
 
     @classmethod
-    def text(cls, **kw):  # type: (**Any) -> Field
+    def text(cls, **kw: Any) -> "Field":
         """
         Shorthand for a form field that contains a short string, and will be
         rendered as a plain <input>.
@@ -234,7 +229,7 @@ class Field(object):
         return cls(converter=textConverter, formInputType="text", **kw)
 
     @classmethod
-    def password(cls, **kw):  # type: (**Any) -> Field
+    def password(cls, **kw: Any) -> "Field":
         """
         Shorthand for a form field that, like L{text}, contains a short string,
         but should be obscured when typed (and, to the extent possible,
@@ -243,8 +238,7 @@ class Field(object):
         return cls(converter=textConverter, formInputType="password", **kw)
 
     @classmethod
-    def hidden(cls, name, value, **kw):
-        # type: (str, Text, **Any) -> Field
+    def hidden(cls, name: str, value: str, **kw: Any) -> "Field":
         """
         Shorthand for a hidden field.
         """
@@ -257,14 +251,18 @@ class Field(object):
         ).maybeNamed(name)
 
     @classmethod
-    def number(cls, minimum=None, maximum=None, kind=float, **kw):
-        # type: (Optional[int], Optional[int], Type, **Any) -> Field
+    def number(
+        cls,
+        minimum: Optional[int] = None,
+        maximum: Optional[int] = None,
+        kind: Type = float,
+        **kw: Any,
+    ) -> "Field":
         """
         An integer within the range [minimum, maximum].
         """
 
-        def bounded_number(text):
-            # type: (AnyStr) -> Any
+        def bounded_number(text: AnyStr) -> Any:
             try:
                 value = kind(text)
             except (ValueError, ArithmeticError):
@@ -279,8 +277,7 @@ class Field(object):
         return cls(converter=bounded_number, formInputType="number", **kw)
 
     @classmethod
-    def submit(cls, value):
-        # type: (Text) -> Field
+    def submit(cls, value: str) -> "Field":
         """
         A field representing a submit button, with a value (displayed on the
         button).
@@ -300,7 +297,7 @@ class RenderableForm(object):
     An L{IRenderable} representing a renderable form.
 
     @ivar prevalidationValues: a L{dict} mapping {L{Field}: L{list} of
-        L{Text}}, representing the value that each field received as part of
+        L{str}}, representing the value that each field received as part of
         the request.
 
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
@@ -313,8 +310,8 @@ class RenderableForm(object):
     _enctype = attr.ib(type=str)
     _encoding = attr.ib(type=str)
     prevalidationValues = attr.ib(
-        type=Dict[Field, Optional[Text]],
-        default=cast(Dict[Field, Optional[Text]], attr.Factory(dict)),
+        type=Dict[Field, Optional[str]],
+        default=cast(Dict[Field, Optional[str]], attr.Factory(dict)),
     )
     validationErrors = attr.ib(
         type=Dict[Field, ValidationError],
@@ -324,16 +321,14 @@ class RenderableForm(object):
     ENCTYPE_FORM_DATA = "multipart/form-data"
     ENCTYPE_URL_ENCODED = "application/x-www-form-urlencoded"
 
-    def _fieldForCSRF(self):
-        # type: () -> Field
+    def _fieldForCSRF(self) -> Field:
         """
         @return: A hidden L{Field} containing the cross-site request forgery
             protection token.
         """
         return Field.hidden(CSRF_PROTECTION, self._session.identifier)
 
-    def _fieldsToRender(self):
-        # type: () -> Iterable[Field]
+    def _fieldsToRender(self) -> Iterable[Field]:
         """
         @return: an interable of L{Field} objects to include in the HTML
             representation of this form.  This includes:
@@ -367,16 +362,14 @@ class RenderableForm(object):
 
     # Public interface below.
 
-    def lookupRenderMethod(self, name):
-        # type: (str) -> NoReturn
+    def lookupRenderMethod(self, name: str) -> NoReturn:
         """
         Form renderers don't supply any render methods, so this just always
         raises L{MissingRenderMethod}.
         """
         raise MissingRenderMethod(self, name)
 
-    def render(self, request):
-        # type: (IRequest) -> Tag
+    def render(self, request: IRequest) -> Tag:
         """
         Render this form to the given request.
         """
@@ -391,8 +384,7 @@ class RenderableForm(object):
             action=self._action, method=self._method, **formAttributes
         )(field.asTags() for field in self._fieldsToRender())
 
-    def glue(self):
-        # type: () -> Iterable[Tag]
+    def glue(self) -> Iterable[Tag]:
         """
         Provide any glue necessary to render this form; this must be dropped
         into the template within the C{<form>} tag.
@@ -410,11 +402,8 @@ class RenderableForm(object):
 
 @bindable
 def defaultValidationFailureHandler(
-    instance,  # type: Optional[object]
-    request,  # type: IRequest
-    fieldValues,  # type: FieldValues
-):
-    # type: (...) -> Element
+    instance: Optional[object], request: IRequest, fieldValues: "FieldValues",
+) -> Element:
     """
     This is the default validation failure handler, which will be used by form
     handlers (i.e. any routes which use L{klein.Requirer} to require a field)
@@ -496,8 +485,7 @@ class ProtoForm(object):
     _fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
-    def fromComponentized(cls, componentized):
-        # type: (Componentized) -> ProtoForm
+    def fromComponentized(cls, componentized: Componentized) -> "ProtoForm":
         """
         Create a ProtoForm from a componentized object.
         """
@@ -505,8 +493,7 @@ class ProtoForm(object):
         assert rl is not None
         return cls(componentized, rl)
 
-    def addField(self, field):
-        # type: (Field) -> FieldInjector
+    def addField(self, field: Field) -> "FieldInjector":
         """
         Add the given field to the form ultimately created here.
         """
@@ -529,13 +516,12 @@ class FieldValues(object):
 
     form = attr.ib(type="Form")
     arguments = attr.ib(type=Dict[str, Any])
-    prevalidationValues = attr.ib(type=Dict[Field, Optional[Text]])
+    prevalidationValues = attr.ib(type=Dict[Field, Optional[str]])
     validationErrors = attr.ib(type=Dict[Field, ValidationError])
     _injectionComponents = attr.ib(type=Componentized)
 
     @inlineCallbacks
-    def validate(self, instance, request):
-        # type: (Any, IRequest) -> Deferred
+    def validate(self, instance: Any, request: IRequest) -> Deferred:
         """
         If any validation errors have occurred, raise a relevant exception.
         """
@@ -562,8 +548,9 @@ class FieldInjector(object):
     _field = attr.ib(type=Field)
     _lifecycle = attr.ib(type=IRequestLifecycle)
 
-    def injectValue(self, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> Any
+    def injectValue(
+        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> Any:
         """
         Inject the given value into the form.
         """
@@ -571,8 +558,7 @@ class FieldInjector(object):
             self._field.pythonArgumentName
         )
 
-    def finalize(self):
-        # type: () -> None
+    def finalize(self) -> None:
         """
         Finalize this ProtoForm into a real form.
         """
@@ -587,8 +573,7 @@ class FieldInjector(object):
         # side-effect-free (like a search field) that can be handled even
         # without a CSRF token.
         @bindable
-        def populateValuesHook(instance, request):
-            # type: (Any, IRequest) -> Deferred
+        def populateValuesHook(instance: Any, request: IRequest) -> Deferred:
             return finalForm.populateRequestValues(
                 self._componentized, instance, request
             )
@@ -607,8 +592,7 @@ class IValidationFailureHandler(Interface):
     """
 
 
-def checkCSRF(request):
-    # type: (IRequest) -> None
+def checkCSRF(request: IRequest) -> None:
     """
     Check the request for cross-site request forgery, raising an EarlyExit if
     it is found.
@@ -650,8 +634,9 @@ class Form(object):
     fields = attr.ib(type=Sequence[Field])
 
     @staticmethod
-    def onValidationFailureFor(handler):
-        # type: (_requirerFunctionWithForm) -> Callable[[Callable], Callable]
+    def onValidationFailureFor(
+        handler: _requirerFunctionWithForm,
+    ) -> Callable[[Callable], Callable]:
         """
         Register a function to be run in the event of a validation failure for
         the input to a particular form handler.
@@ -684,8 +669,7 @@ class Form(object):
             C{(request, form) -> thing klein can render}.
         """
 
-        def decorate(decoratee):
-            # type: (Callable) -> Callable
+        def decorate(decoratee: Callable) -> Callable:
             handler.injectionComponents.setComponent(
                 IValidationFailureHandler, decoratee
             )
@@ -694,8 +678,12 @@ class Form(object):
         return decorate
 
     @inlineCallbacks
-    def populateRequestValues(self, injectionComponents, instance, request):
-        # type: (Componentized, Any, IRequest) -> Deferred
+    def populateRequestValues(
+        self,
+        injectionComponents: Componentized,
+        instance: Any,
+        request: IRequest,
+    ) -> Deferred:
         """
         Extract the values present in this request and populate a
         L{FieldValues} object.
@@ -733,13 +721,12 @@ class Form(object):
     @classmethod
     def rendererFor(
         cls,
-        decoratedFunction,  # type: _requirerFunctionWithForm
-        action,  # type: Text
-        method="POST",  # type: Text
-        enctype=RenderableForm.ENCTYPE_FORM_DATA,  # type: Text
-        encoding="utf-8",  # type: str
-    ):
-        # type: (...) -> RenderableFormParam
+        decoratedFunction: _requirerFunctionWithForm,
+        action: str,
+        method: str = "POST",
+        enctype: str = RenderableForm.ENCTYPE_FORM_DATA,
+        encoding: str = "utf-8",
+    ) -> "RenderableFormParam":
         """
         A form parameter that can render a form declared as a number of fields
         on another route.
@@ -767,9 +754,9 @@ class Form(object):
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        form = IForm(
+        form: Optional[Form] = IForm(
             decoratedFunction.injectionComponents, None
-        )  # type: Optional[Form]
+        )
         if form is None:
             form = Form([])
         return RenderableFormParam(form, action, method, enctype, encoding)
@@ -784,19 +771,22 @@ class RenderableFormParam(object):
     """
 
     _form = attr.ib(type=Form)
-    _action = attr.ib(type=Text)
-    _method = attr.ib(type=Text)
-    _enctype = attr.ib(type=Text)
-    _encoding = attr.ib(type=Text)
+    _action = attr.ib(type=str)
+    _method = attr.ib(type=str)
+    _enctype = attr.ib(type=str)
+    _encoding = attr.ib(type=str)
 
     def registerInjector(
-        self, injectionComponents, parameterName, requestLifecycle
-    ):
-        # type: (Componentized, str, IRequestLifecycle) -> RenderableFormParam
+        self,
+        injectionComponents: Componentized,
+        parameterName: str,
+        requestLifecycle: IRequestLifecycle,
+    ) -> "RenderableFormParam":
         return self
 
-    def injectValue(self, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> RenderableForm
+    def injectValue(
+        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> RenderableForm:
         """
         Create the renderable form from the request.
         """
@@ -811,8 +801,7 @@ class RenderableFormParam(object):
             validationErrors={},
         )
 
-    def finalize(self):
-        # type: () -> None
+    def finalize(self) -> None:
         """
         Nothing to do upon finalization.
         """

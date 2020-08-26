@@ -21,8 +21,7 @@ class TestCase(SynchronousTestCase):
     Extensions to L{SynchronousTestCase}.
     """
 
-    def assertProvides(self, interface, obj):
-        # type: (Interface, Any) -> None
+    def assertProvides(self, interface: Interface, obj: Any) -> None:
         """
         Assert that a object provides an interface.
 

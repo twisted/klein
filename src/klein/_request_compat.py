@@ -6,7 +6,7 @@ Support for interoperability with L{twisted.web.iweb.IRequest}.
 """
 
 from io import BytesIO
-from typing import Text, cast
+from typing import cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import provides
@@ -43,20 +43,16 @@ class HTTPRequestWrappingIRequest(object):
     This is an L{IHTTPRequest} implementation that wraps an L{IRequest} object.
     """
 
-    _request = attrib(validator=provides(IRequest))  # type: IRequest
+    _request: IRequest = attrib(validator=provides(IRequest))
 
-    _state = attrib(
-        default=Factory(MessageState), init=False
-    )  # type: MessageState
+    _state: MessageState = attrib(default=Factory(MessageState), init=False)
 
     @property
-    def method(self):
-        # type: () -> Text
-        return cast(Text, self._request.method.decode("ascii"))
+    def method(self) -> str:
+        return cast(str, self._request.method.decode("ascii"))
 
     @property
-    def uri(self):
-        # type: () -> DecodedURL
+    def uri(self) -> DecodedURL:
         request = self._request
 
         # This code borrows from t.w.server.Request._prePathURL.
@@ -83,12 +79,10 @@ class HTTPRequestWrappingIRequest(object):
         return DecodedURL.fromText("{}://{}/{}".format(scheme, netloc, path))
 
     @property
-    def headers(self):
-        # type: () -> IHTTPHeaders
+    def headers(self) -> IHTTPHeaders:
         return HTTPHeadersWrappingHeaders(headers=self._request.requestHeaders)
 
-    def bodyAsFount(self):
-        # type: () -> IFount
+    def bodyAsFount(self) -> IFount:
         source = self._request.content
         if source is noneIO:
             raise FountAlreadyAccessedError()
@@ -99,13 +93,11 @@ class HTTPRequestWrappingIRequest(object):
 
         return fount
 
-    def bodyAsBytes(self):
-        # type: () -> Deferred[bytes]
+    def bodyAsBytes(self) -> Deferred:
         if self._state.cachedBody is not None:
             return succeed(self._state.cachedBody)
 
-        def cache(bodyBytes):
-            # type: (bytes) -> bytes
+        def cache(bodyBytes: bytes) -> bytes:
             self._state.cachedBody = bodyBytes
             return bodyBytes
 

@@ -623,9 +623,7 @@ def checkCSRF(request: IRequest) -> None:
             return
     # leak only the value passed, not the actual token, just in
     # case there's some additional threat vector there
-    raise EarlyExit(
-        CrossSiteRequestForgery(f"Invalid CSRF token: {token!r}")
-    )
+    raise EarlyExit(CrossSiteRequestForgery(f"Invalid CSRF token: {token!r}"))
 
 
 @attr.s(hash=False)

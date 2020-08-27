@@ -360,9 +360,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         cast(TestCase, self).assertEqual(rawHeaders1, rawHeaders2)
 
     def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
-        raise NotImplementedError(
-            f"{self.__class__} must implement headers()"
-        )
+        raise NotImplementedError(f"{self.__class__} must implement headers()")
 
     def getValues(
         self, rawHeaders: RawHeaders, name: AnyStr

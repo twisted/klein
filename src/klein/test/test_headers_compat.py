@@ -46,13 +46,10 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     Tests for L{HTTPHeadersWrappingHeaders}.
     """
 
-
     def assertRawHeadersEqual(
         self, rawHeaders1: RawHeaders, rawHeaders2: RawHeaders
     ) -> None:
-        super().assertRawHeadersEqual(
-            sorted(rawHeaders1), sorted(rawHeaders2)
-        )
+        super().assertRawHeadersEqual(sorted(rawHeaders1), sorted(rawHeaders2))
 
     def headerNormalize(self, value: str) -> str:
         return _twistedHeaderNormalize(value)

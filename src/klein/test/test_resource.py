@@ -119,6 +119,8 @@ def requestMock(
 def _render(resource, request, notifyFinish=True):
     result = resource.render(request)
 
+    assert result is server.NOT_DONE_YET or isinstance(result, bytes)
+
     if isinstance(result, bytes):
         request.write(result)
         request.finish()
@@ -128,8 +130,6 @@ def _render(resource, request, notifyFinish=True):
             return succeed(None)
         else:
             return request.notifyFinish()
-    else:
-        raise ValueError("Unexpected return value: {!r}".format(result))
 
 
 class SimpleElement(Element):

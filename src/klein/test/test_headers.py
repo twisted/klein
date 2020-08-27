@@ -5,6 +5,7 @@
 Tests for L{klein._headers}.
 """
 
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import AnyStr, Dict, Iterable, List, Optional, Tuple, cast
 
@@ -188,12 +189,13 @@ class RawHeadersConversionTests(TestCase):
         self.assertEqual(normalized, ((b"name", headerValueAsBytes(value)),))
 
 
-class GetValuesTestsMixIn(object):
+class GetValuesTestsMixIn(ABC):
     """
     Tests for utilities that access data from the C{RawHeaders} internal
     representation.
     """
 
+    @abstractmethod
     def getValues(
         self, rawHeaders: RawHeaders, name: AnyStr
     ) -> Iterable[AnyStr]:
@@ -205,9 +207,6 @@ class GetValuesTestsMixIn(object):
         cases that use it to specify how to perform this look-up in the
         implementation being tested.
         """
-        raise NotImplementedError(
-            "{} must implement getValues()".format(self.__class__)
-        )
 
     def test_getBytesName(self) -> None:
         """
@@ -349,7 +348,7 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         self.assertEqual(headers.rawHeaders, ())
 
 
-class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
+class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn, ABC):
     """
     Tests for L{IMutableHTTPHeaders} implementations.
     """
@@ -359,10 +358,11 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
     ) -> None:
         cast(TestCase, self).assertEqual(rawHeaders1, rawHeaders2)
 
+    @abstractmethod
     def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
-        raise NotImplementedError(
-            "{} must implement headers()".format(self.__class__)
-        )
+        """
+        Given a L{RawHeaders}, return an L{IMutableHTTPHeaders}.
+        """
 
     def getValues(
         self, rawHeaders: RawHeaders, name: AnyStr

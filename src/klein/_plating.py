@@ -11,8 +11,6 @@ from typing import Any, Callable, List, Tuple, cast
 
 import attr
 
-from six import integer_types, string_types, text_type
-
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRequest

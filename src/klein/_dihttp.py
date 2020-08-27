@@ -8,8 +8,6 @@ import attr
 
 from hyperlink import DecodedURL
 
-from six import text_type
-
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 

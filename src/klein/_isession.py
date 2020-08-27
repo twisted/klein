@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING, Text, Union
+from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING
 
 import attr
 
@@ -12,11 +12,6 @@ from zope.interface import Attribute, Interface
 from zope.interface.interfaces import IInterface
 
 from ._typing import ifmethod
-
-if TYPE_CHECKING:  # pragma: no cover
-    from ._requirer import RequestLifecycle
-
-    IRequestLifecycleT = Union[RequestLifecycle, "IRequestLifecycle"]
 
 
 class NoSuchSession(Exception):
@@ -37,14 +32,97 @@ class TransactionEnded(Exception):
     """
 
 
+class SessionMechanism(Names):
+    """
+    Mechanisms which can be used to identify and authenticate a session.
+
+    @cvar Cookie: The Cookie session mechanism involves looking up the session
+        identifier via an HTTP cookie.  Session objects retrieved via this
+        mechanism may be vulnerable to U{CSRF attacks
+        <https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)>}
+        and therefore must have CSRF protections applied to them.
+
+    @cvar Header: The Header mechanism retrieves the session identifier via a
+        separate header such as C{"X-Auth-Token"}.  Since a different-origin
+        site in a browser can easily send a form submission including cookies,
+        but I{can't} easily put stuff into other arbitrary headers, this does
+        not require additional protections.
+    """
+
+    Cookie = NamedConstant()
+    Header = NamedConstant()
+
+
+class ISession(Interface):
+    """
+    An L{ISession} provider contains an identifier for the session, information
+    about how the session was negotiated with the client software, and
+    """
+
+    identifier = Attribute(
+        """
+        L{str} identifying a session.
+
+        This value should be:
+
+            1. I{unique} - no two sessions have the same identifier
+
+            2. I{unpredictable} - no one but the receipient of the session
+               should be able to guess what it is
+
+            3. I{opaque} - it should contain no interesting information
+        """
+    )
+
+    isConfidential = Attribute(
+        """
+        A L{bool} indicating whether this session mechanism transmitted over an
+        encrypted transport, i.e., HTTPS.  If C{True}, this means that this
+        session can be used for sensitive information; otherwise, the
+        information contained in it should be considered to be available to
+        attackers.
+        """
+    )
+
+    authenticatedBy = Attribute(
+        """
+        A L{SessionMechanism} indicating what mechanism was used to
+        authenticate this session.
+        """
+    )
+
+    @ifmethod
+    def authorize(interfaces: Iterable[IInterface]) -> Deferred:
+        """
+        Retrieve other objects from this session.
+
+        This method is how you can retrieve application-specific objects from
+        the general-purpose session; define interfaces for each facet of
+        something accessible to a session, then pass it here and to the
+        L{ISessionStore} implementation you're using.
+
+        @param interfaces: A list of interfaces.
+        @type interfaces: L{iterable} of
+            L{zope.interface.interfaces.IInterface}
+
+        @return: all of the providers that could be retrieved from the session.
+        @rtype: L{Deferred} firing with L{dict} mapping
+            L{zope.interface.interfaces.IInterface} to providers of each
+            interface.  Interfaces which cannot be authorized will not be
+            present as keys in this dictionary.
+        """
+
+
 class ISessionStore(Interface):
     """
     Backing storage for sessions.
     """
 
     @ifmethod
-    def newSession(isConfidential, authenticatedBy):
-        # type: (bool, SessionMechanism) -> Deferred
+    def newSession(
+        isConfidential: bool,
+        authenticatedBy: SessionMechanism,
+    ) -> Deferred:
         """
         Create a new L{ISession}.
 
@@ -53,8 +131,11 @@ class ISessionStore(Interface):
         """
 
     @ifmethod
-    def loadSession(identifier, isConfidential, authenticatedBy):
-        # type: (Text, bool, SessionMechanism) -> Deferred
+    def loadSession(
+        identifier: str,
+        isConfidential: bool,
+        authenticatedBy: SessionMechanism,
+    ) -> Deferred:
         """
         Load a session given the given identifier and security properties.
 
@@ -74,8 +155,7 @@ class ISessionStore(Interface):
         """
 
     @ifmethod
-    def sentInsecurely(identifiers):
-        # type: (Sequence[Text]) -> None
+    def sentInsecurely(identifiers: Sequence[str]) -> None:
         """
         The transport layer has detected that the given identifiers have been
         sent over an unauthenticated transport.
@@ -93,8 +173,7 @@ class ISimpleAccountBinding(Interface):
     """
 
     @ifmethod
-    def bindIfCredentialsMatch(username, password):
-        # type: (Text, Text) -> None
+    def bindIfCredentialsMatch(username: str, password: str) -> None:
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
@@ -102,8 +181,7 @@ class ISimpleAccountBinding(Interface):
         """
 
     @ifmethod
-    def boundAccounts():
-        # type: () -> Deferred
+    def boundAccounts() -> Deferred:
         """
         Retrieve the accounts currently associated with the session this is a
         component of.
@@ -112,16 +190,14 @@ class ISimpleAccountBinding(Interface):
         """
 
     @ifmethod
-    def unbindThisSession():
-        # type: () -> None
+    def unbindThisSession() -> None:
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
         """
 
     @ifmethod
-    def createAccount(username, email, password):
-        # type: (Text, Text, Text) -> None
+    def createAccount(username: str, email: str, password: str) -> None:
         """
         Create a new account with the given username, email and password.
         """
@@ -144,15 +220,13 @@ class ISimpleAccount(Interface):
         """
     )
 
-    def bindSession(self, session):
-        # type: (ISession) -> None
+    def bindSession(self, session: ISession) -> None:
         """
         Bind the given session to this account; i.e. authorize the given
         session to act on behalf of this account.
         """
 
-    def changePassword(self, newPassword):
-        # type: (Text) -> None
+    def changePassword(self, newPassword: str) -> None:
         """
         Change the password of this account.
         """
@@ -164,8 +238,9 @@ class ISessionProcurer(Interface):
     that store, given HTTP request objects.
     """
 
-    def procureSession(self, request, forceInsecure=False):
-        # type: (IRequest, bool, bool) -> Deferred
+    def procureSession(
+        self, request: IRequest, forceInsecure: bool = False
+    ) -> Deferred:
         """
         Retrieve a session using whatever technique is necessary.
 
@@ -205,96 +280,15 @@ class ISessionProcurer(Interface):
         """
 
 
-class SessionMechanism(Names):
-    """
-    Mechanisms which can be used to identify and authenticate a session.
-
-    @cvar Cookie: The Cookie session mechanism involves looking up the session
-        identifier via an HTTP cookie.  Session objects retrieved via this
-        mechanism may be vulnerable to U{CSRF attacks
-        <https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)>}
-        and therefore must have CSRF protections applied to them.
-
-    @cvar Header: The Header mechanism retrieves the session identifier via a
-        separate header such as C{"X-Auth-Token"}.  Since a different-origin
-        site in a browser can easily send a form submission including cookies,
-        but I{can't} easily put stuff into other arbitrary headers, this does
-        not require additional protections.
-    """
-
-    Cookie = NamedConstant()
-    Header = NamedConstant()
-
-
-class ISession(Interface):
-    """
-    An L{ISession} provider contains an identifier for the session, information
-    about how the session was negotiated with the client software, and
-    """
-
-    identifier = Attribute(
-        """
-        L{unicode} identifying a session.
-
-        This value should be:
-
-            1. I{unique} - no two sessions have the same identifier
-
-            2. I{unpredictable} - no one but the receipient of the session
-               should be able to guess what it is
-
-            3. I{opaque} - it should contain no interesting information
-        """
-    )
-
-    isConfidential = Attribute(
-        """
-        A L{bool} indicating whether this session mechanism transmitted over an
-        encrypted transport, i.e., HTTPS.  If C{True}, this means that this
-        session can be used for sensitive information; otherwise, the
-        information contained in it should be considered to be available to
-        attackers.
-        """
-    )
-
-    authenticatedBy = Attribute(
-        """
-        A L{SessionMechanism} indicating what mechanism was used to
-        authenticate this session.
-        """
-    )
-
-    @ifmethod
-    def authorize(interfaces):
-        # type: (Iterable[IInterface]) -> Deferred
-        """
-        Retrieve other objects from this session.
-
-        This method is how you can retrieve application-specific objects from
-        the general-purpose session; define interfaces for each facet of
-        something accessible to a session, then pass it here and to the
-        L{ISessionStore} implementation you're using.
-
-        @param interfaces: A list of interfaces.
-        @type interfaces: L{iterable} of
-            L{zope.interface.interfaces.IInterface}
-
-        @return: all of the providers that could be retrieved from the session.
-        @rtype: L{Deferred} firing with L{dict} mapping
-            L{zope.interface.interfaces.IInterface} to providers of each
-            interface.  Interfaces which cannot be authorized will not be
-            present as keys in this dictionary.
-        """
-
-
 class IDependencyInjector(Interface):
     """
     An injector for a given dependency.
     """
 
     @ifmethod
-    def injectValue(instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> Any
+    def injectValue(
+        instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> Any:
         """
         Return a value to be injected into the parameter name specified by the
         IRequiredParameter.  This may return a Deferred, or an object, or an
@@ -311,8 +305,7 @@ class IDependencyInjector(Interface):
         """
 
     @ifmethod
-    def finalize():
-        # type: () -> None
+    def finalize() -> None:
         """
         Finalize this injector before allowing the route to be created.
 
@@ -328,6 +321,21 @@ class IDependencyInjector(Interface):
         """
 
 
+class _IRequestLifecycle(Interface):
+    """
+    Interface for adding hooks to the phases of a request's lifecycle.
+    """
+
+
+if TYPE_CHECKING:
+    from typing import Union
+    from ._requirer import RequestLifecycle
+
+    IRequestLifecycle = Union[_IRequestLifecycle, RequestLifecycle]
+else:
+    IRequestLifecycle = _IRequestLifecycle
+
+
 class IRequiredParameter(Interface):
     """
     A declaration that a given Python parameter is required to satisfy a given
@@ -335,8 +343,11 @@ class IRequiredParameter(Interface):
     """
 
     @ifmethod
-    def registerInjector(injectionComponents, parameterName, lifecycle):
-        # type: (Componentized, str, IRequestLifecycleT) -> IDependencyInjector
+    def registerInjector(
+        injectionComponents: Componentized,
+        parameterName: str,
+        lifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         """
         Register the given injector at method-decoration time, informing it of
         its Python parameter name.
@@ -354,12 +365,6 @@ class IRequiredParameter(Interface):
             DependencyInjectors may cooperate on logic that needs to be
             duplicated, such as provisioning a session.
         """
-
-
-class IRequestLifecycle(Interface):
-    """
-    Interface for adding hooks to the phases of a request's lifecycle.
-    """
 
 
 @attr.s

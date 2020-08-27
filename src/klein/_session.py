@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Text, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 import attr
 
@@ -85,8 +85,9 @@ class SessionProcurer:
     _setCookieOnGET = attr.ib(type=bool, default=True)
 
     @inlineCallbacks
-    def procureSession(self, request, forceInsecure=False):
-        # type: (IRequest, bool) -> Any
+    def procureSession(
+        self, request: IRequest, forceInsecure: bool = False
+    ) -> Any:
         alreadyProcured = request.getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
@@ -95,7 +96,7 @@ class SessionProcurer:
         if request.isSecure():
             if forceInsecure:
                 tokenHeader = self._insecureTokenHeader
-                cookieName = self._insecureCookie  # type: Union[Text, bytes]
+                cookieName: Union[str, bytes] = self._insecureCookie
                 sentSecurely = False
             else:
                 tokenHeader = self._secureTokenHeader
@@ -104,7 +105,7 @@ class SessionProcurer:
         else:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
-            allPossibleSentTokens = sum(
+            allPossibleSentTokens: Sequence[str] = sum(
                 [
                     request.requestHeaders.getRawHeaders(header, [])
                     for header in [
@@ -120,7 +121,7 @@ class SessionProcurer:
                     for cookie in [self._secureCookie, self._insecureCookie]
                 ]
                 if it
-            ]  # type: Sequence[Text]
+            ]
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
             yield self._store.sentInsecurely(allPossibleSentTokens)
@@ -213,13 +214,11 @@ _requirerResult = Callable[
 
 
 class AuthorizationDenied(Resource):
-    def __init__(self, interface, instance):
-        # type: (IInterface, Any) -> None
+    def __init__(self, interface: IInterface, instance: Any) -> None:
         self._interface = interface
         super().__init__()
 
-    def render(self, request):
-        # type: (IRequest) -> bytes
+    def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)
         return "{} DENIED".format(qual(self._interface)).encode("utf-8")
 
@@ -285,16 +284,21 @@ class Authorization:
         type=Callable[[IInterface, Any], Any], default=AuthorizationDenied
     )
 
-    def registerInjector(self, injectionComponents, parameterName, lifecycle):
-        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
+    def registerInjector(
+        self,
+        injectionComponents: Componentized,
+        parameterName: str,
+        lifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         """
         Register this authorization to inject a parameter.
         """
         return self
 
     @inlineCallbacks
-    def injectValue(self, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> Any
+    def injectValue(
+        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> Any:
         """
         Inject a value by asking the request's session.
         """
@@ -310,8 +314,7 @@ class Authorization:
         # TODO: CSRF protection should probably go here
         returnValue(provider)
 
-    def finalize(self):
-        # type: () -> None
+    def finalize(self) -> None:
         """
         Nothing to finalize when registering.
         """

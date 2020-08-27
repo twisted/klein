@@ -32,8 +32,7 @@ ATOM_TYPES = (
 )
 
 
-def _should_return_json(request):
-    # type: (IRequest) -> bool
+def _should_return_json(request: IRequest) -> bool:
     """
     Should the given request result in a JSON entity-body?
     """
@@ -41,8 +40,7 @@ def _should_return_json(request):
 
 
 @inlineCallbacks
-def resolveDeferredObjects(root):
-    # type: (Any) -> Deferred
+def resolveDeferredObjects(root: Any) -> Deferred:
     """
     Wait on possibly nested L{Deferred}s that represent a JSON
     serializable object.
@@ -58,7 +56,7 @@ def resolveDeferredObjects(root):
 
     result = [None]
     setResult = partial(setitem, result, 0)
-    stack = [(root, setResult)]  # type: StackType
+    stack: StackType = [(root, setResult)]
 
     while stack:
         mightBeDeferred, setter = stack.pop()
@@ -69,7 +67,7 @@ def resolveDeferredObjects(root):
         if isinstance(obj, ATOM_TYPES):
             setter(obj)
         elif isinstance(obj, list):
-            parent = [None] * len(obj)  # type: Any
+            parent: Any = [None] * len(obj)
             setter(parent)
             stack.extend(
                 reversed(
@@ -112,7 +110,8 @@ def resolveDeferredObjects(root):
             stack.append((obj._asJSON(), setter))
         else:
             raise TypeError(
-                obj, f"{obj} not JSON serializable",
+                obj,
+                f"{obj} not JSON serializable",
             )
 
     returnValue(result[0])
@@ -170,8 +169,9 @@ class PlatedElement(Element):
             wrapped = self._renderers[name]
 
             @modified("plated render wrapper", wrapped)
-            def renderWrapper(request, tag, *args, **kw):
-                # type: (IRequest, Tag, *Any, **Any) -> Any
+            def renderWrapper(
+                request: IRequest, tag: Tag, *args: Any, **kw: Any
+            ) -> Any:
                 return _call(
                     self._boundInstance, wrapped, request, tag, *args, **kw
                 )
@@ -204,8 +204,7 @@ class Plating:
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None, presentation_slots=()):
-        """
-        """
+        """"""
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentationSlots = {self.CONTENT} | set(presentation_slots)
@@ -223,8 +222,7 @@ class Plating:
         return renderer
 
     def routed(self, routing, tags):
-        """
-        """
+        """"""
 
         def mydecorator(method):
             loader = TagLoader(tags)
@@ -232,8 +230,9 @@ class Plating:
             @modified("plating route renderer", method, routing)
             @bindable
             @inlineCallbacks
-            def mymethod(instance, request, *args, **kw):
-                # type: (Any, IRequest, *Any, **Any) -> Any
+            def mymethod(
+                instance: Any, request: IRequest, *args: Any, **kw: Any
+            ) -> Any:
                 data = yield _call(instance, method, request, *args, **kw)
                 if _should_return_json(request):
                     json_data = self._defaults.copy()

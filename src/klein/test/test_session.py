@@ -29,8 +29,7 @@ class ISimpleTest(Interface):
     """
 
     @ifmethod
-    def doTest():
-        # type: () -> None
+    def doTest() -> None:
         """
         Test method.
         """
@@ -48,8 +47,7 @@ class SimpleTest:
     Implementation of L{ISimpleTest} for testing.
     """
 
-    def doTest(self):
-        # type: () -> int
+    def doTest(self) -> int:
         """
         Implementation of L{ISimpleTest}.  Returns 3.
         """
@@ -57,16 +55,16 @@ class SimpleTest:
 
 
 @declareMemoryAuthorizer(ISimpleTest)
-def memoryAuthorizer(interface, session, data):
-    # type: (IInterface, ISession, Componentized) -> SimpleTest
+def memoryAuthorizer(
+    interface: IInterface, session: ISession, data: Componentized
+) -> SimpleTest:
     """
     Authorize the ISimpleTest interface; it always works.
     """
     return SimpleTest()
 
 
-def simpleSessionRouter():
-    # type: () -> Tuple[Sessions, Errors, str, str, StubTreq]
+def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
     """
     Construct a simple router.
     """
@@ -84,8 +82,7 @@ def simpleSessionRouter():
 
     @router.route("/")
     @inlineCallbacks
-    def route(request):
-        # type: (IRequest) -> Deferred
+    def route(request: IRequest) -> Deferred:
         try:
             sessions.append((yield sproc.procureSession(request)))
         except NoSuchSession as nss:
@@ -95,18 +92,15 @@ def simpleSessionRouter():
     requirer = Requirer()
 
     @requirer.prerequisite([ISession])
-    def procure(request):
-        # type: (IRequest) -> Deferred
+    def procure(request: IRequest) -> Deferred:
         return sproc.procureSession(request)
 
     @requirer.require(router.route("/test"), simple=Authorization(ISimpleTest))
-    def testRoute(simple):
-        # type: (SimpleTest) -> str
+    def testRoute(simple: SimpleTest) -> str:
         return "ok: " + str(simple.doTest() + 4)
 
     @requirer.require(router.route("/denied"), nope=Authorization(IDenyMe))
-    def testDenied(nope):
-        # type: (IDenyMe) -> str
+    def testDenied(nope: IDenyMe) -> str:
         return "bad"
 
     treq = StubTreq(router.resource())
@@ -118,8 +112,7 @@ class ProcurementTests(SynchronousTestCase):
     Tests for L{klein.SessionProcurer}.
     """
 
-    def test_procurementSecurity(self):
-        # type: () -> None
+    def test_procurementSecurity(self) -> None:
         """
         Once a session is negotiated, it should be the identical object to
         avoid duplicate work - unless we are using forceInsecure to retrieve
@@ -132,8 +125,7 @@ class ProcurementTests(SynchronousTestCase):
 
         @router.route("/")
         @inlineCallbacks
-        def route(request):
-            # type: (IRequest) -> Deferred
+        def route(request: IRequest) -> Deferred:
             sproc = SessionProcurer(mss)
             sessions.append((yield sproc.procureSession(request)))
             sessions.append((yield sproc.procureSession(request)))
@@ -150,8 +142,7 @@ class ProcurementTests(SynchronousTestCase):
         self.assertIs(sessions[3], sessions[4])
         self.assertIsNot(sessions[3], sessions[5])
 
-    def test_procuredTooLate(self):
-        # type: () -> None
+    def test_procuredTooLate(self) -> None:
         """
         If you start writing stuff to the response before procuring the
         session, when cookies need to be set, you will get a comprehensible
@@ -162,8 +153,7 @@ class ProcurementTests(SynchronousTestCase):
 
         @router.route("/")
         @inlineCallbacks
-        def route(request):
-            # type: (IRequest) -> Deferred
+        def route(request: IRequest) -> Deferred:
             sproc = SessionProcurer(mss)
             request.write(b"oops...")
             with self.assertRaises(TooLateForCookies):
@@ -175,8 +165,7 @@ class ProcurementTests(SynchronousTestCase):
         result = self.successResultOf(treq.get("http://unittest.example.com/"))
         self.assertEqual(self.successResultOf(result.content()), b"oops...bye")
 
-    def test_cookiesTurnedOff(self):
-        # type: () -> None
+    def test_cookiesTurnedOff(self) -> None:
         """
         If cookies can't be set, then C{procureSession} raises
         L{NoSuchSession}.
@@ -186,8 +175,7 @@ class ProcurementTests(SynchronousTestCase):
 
         @router.route("/")
         @inlineCallbacks
-        def route(request):
-            # type: (IRequest) -> Deferred
+        def route(request: IRequest) -> Deferred:
             sproc = SessionProcurer(mss, setCookieOnGET=False)
             with self.assertRaises(NoSuchSession):
                 yield sproc.procureSession(request)
@@ -197,8 +185,7 @@ class ProcurementTests(SynchronousTestCase):
         result = self.successResultOf(treq.get("http://unittest.example.com/"))
         self.assertEqual(self.successResultOf(result.content()), b"no session")
 
-    def test_unknownSessionHeader(self):
-        # type: () -> None
+    def test_unknownSessionHeader(self) -> None:
         """
         Unknown session IDs in auth headers will be immediately rejected with
         L{NoSuchSession}.
@@ -212,8 +199,7 @@ class ProcurementTests(SynchronousTestCase):
         self.assertEqual(len(sessions), 0)
         self.assertEqual(len(exceptions), 1)
 
-    def test_unknownSessionCookieGET(self):
-        # type: () -> None
+    def test_unknownSessionCookieGET(self) -> None:
         """
         Unknown session IDs in cookies will result in a new session being
         created.
@@ -230,8 +216,7 @@ class ProcurementTests(SynchronousTestCase):
         self.assertEqual(len(sessions), 1)
         self.assertNotEqual(sessions[0].identifier, badSessionID)
 
-    def test_unknownSessionCookiePOST(self):
-        # type: () -> None
+    def test_unknownSessionCookiePOST(self) -> None:
         """
         Unknown session IDs in cookies for POST requests will result in a
         NoSuchSession error.
@@ -247,8 +232,7 @@ class ProcurementTests(SynchronousTestCase):
         self.assertEqual(len(exceptions), 1)
         self.assertEqual(len(sessions), 0)
 
-    def test_authorization(self):
-        # type: () -> None
+    def test_authorization(self) -> None:
         """
         When L{Requirer.require} is used with L{Authorization} and the session
         knows how to supply that authorization, it is passed to the object.
@@ -259,8 +243,7 @@ class ProcurementTests(SynchronousTestCase):
         )
         self.assertEqual(self.successResultOf(response.content()), b"ok: 7")
 
-    def test_authorizationDenied(self):
-        # type: () -> None
+    def test_authorizationDenied(self) -> None:
         """
         When L{Requirer.require} is used with an L{Authorization} and the
         session does I{not} know how to supply that authorization, the callable

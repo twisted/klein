@@ -28,8 +28,12 @@ class RequestLifecycle:
 
     _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
 
-    def addPrepareHook(self, beforeHook, requires=(), provides=()):
-        # type: (Callable, Sequence[IInterface], Sequence[IInterface]) -> None
+    def addPrepareHook(
+        self,
+        beforeHook: Callable,
+        requires: Sequence[IInterface] = (),
+        provides: Sequence[IInterface] = (),
+    ) -> None:
         """
         Add a hook that promises to prepare the request by supplying the given
         interfaces as components on the request, and requires the given
@@ -42,8 +46,7 @@ class RequestLifecycle:
         self._prepareHooks.append(beforeHook)
 
     @inlineCallbacks
-    def runPrepareHooks(self, instance, request):
-        # type: (Any, IRequest) -> Deferred
+    def runPrepareHooks(self, instance: Any, request: IRequest) -> Deferred:
         """
         Execute all the hooks added with L{RequestLifecycle.addPrepareHook}.
         This is invoked by the L{requires} route machinery.
@@ -74,10 +77,9 @@ class Requirer:
 
     def prerequisite(
         self,
-        providesComponents,  # type: Sequence[IInterface]
-        requiresComponents=(),  # type: Sequence[IInterface]
-    ):
-        # type: (...) -> Callable[[Callable], Callable]
+        providesComponents: Sequence[IInterface],
+        requiresComponents: Sequence[IInterface] = (),
+    ) -> Callable[[Callable], Callable]:
         """
         Specify a component that is a pre-requisite of every request routed
         through this requirer's C{require} method.  Used like so::
@@ -95,10 +97,8 @@ class Requirer:
             order you want them to be called.
         """
 
-        def decorator(prerequisiteMethod):
-            # type: (Callable) -> Callable
-            def oneHook(lifecycle):
-                # type: (IRequestLifecycle) -> None
+        def decorator(prerequisiteMethod: Callable) -> Callable:
+            def oneHook(lifecycle: IRequestLifecycle) -> None:
                 lifecycle.addPrepareHook(
                     prerequisiteMethod,
                     requires=requiresComponents,
@@ -110,19 +110,19 @@ class Requirer:
 
         return decorator
 
-    def require(self, routeDecorator, **requiredParameters):
-        # type: (_routeT, **IRequiredParameter) -> _routeDecorator
+    def require(
+        self, routeDecorator: _routeT, **requiredParameters: IRequiredParameter
+    ) -> _routeDecorator:
         """
         Inject the given dependencies while running the given route.
         """
 
-        def decorator(functionWithRequirements):
-            # type: (Callable) -> Callable
+        def decorator(functionWithRequirements: Callable) -> Callable:
             injectionComponents = Componentized()
             lifecycle = RequestLifecycle()
             injectionComponents.setComponent(IRequestLifecycle, lifecycle)
 
-            injectors = {}  # type: Dict[str, IDependencyInjector]
+            injectors: Dict[str, IDependencyInjector] = {}
 
             for parameterName, required in requiredParameters.items():
                 injectors[parameterName] = required.registerInjector(
@@ -138,8 +138,9 @@ class Requirer:
             @modified("dependency-injecting route", functionWithRequirements)
             @bindable
             @inlineCallbacks
-            def router(instance, request, *args, **routeParams):
-                # type: (Any, IRequest, *Any, **Any) -> Any
+            def router(
+                instance: Any, request: IRequest, *args: Any, **routeParams: Any
+            ) -> Any:
                 injected = routeParams.copy()
                 try:
                     yield lifecycle.runPrepareHooks(instance, request)

@@ -21,9 +21,6 @@ class DummyRequest(object):
     def __eq__(self, other):
         return other.n == self.n
 
-    def __repr__(self):
-        return "<DummyRequest({n})>".format(n=self.n)
-
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
 

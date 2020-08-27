@@ -24,10 +24,8 @@ __all__ = ()
 
 
 # See https://github.com/twisted/tubes/issues/60
-def fountToBytes(fount):
-    # type: (IFount) -> Deferred[bytes]
-    def collect(chunks):
-        # type: (Iterable[bytes]) -> bytes
+def fountToBytes(fount: IFount) -> Deferred:
+    def collect(chunks: Iterable[bytes]) -> bytes:
         return b"".join(chunks)
 
     d = fountToDeferred(fount)
@@ -36,8 +34,7 @@ def fountToBytes(fount):
 
 
 # See https://github.com/twisted/tubes/issues/60
-def bytesToFount(data):
-    # type: (bytes) -> IFount
+def bytesToFount(data: bytes) -> IFount:
     return IOFount(source=BytesIO(data))
 
 
@@ -51,44 +48,37 @@ class IOFount(object):
 
     outputType = ISegment
 
-    _source = attrib()  # type: BinaryIO
+    _source: BinaryIO = attrib()
 
-    drain = attrib(
+    drain: IDrain = attrib(
         validator=optional(provides(IDrain)), default=None, init=False
-    )  # type: IDrain
+    )
     _paused = attrib(validator=instance_of(bool), default=False, init=False)
 
-    def __attrs_post_init__(self):
-        # type: () -> None
+    def __attrs_post_init__(self) -> None:
         self._pauser = Pauser(self._pause, self._resume)
 
-    def _flowToDrain(self):
-        # type: () -> None
+    def _flowToDrain(self) -> None:
         if self.drain is not None and not self._paused:
             data = self._source.read()
             if data:
                 self.drain.receive(data)
             self.drain.flowStopped(Failure(StopIteration()))
 
-    def flowTo(self, drain):
-        # type: (IDrain) -> IFount
+    def flowTo(self, drain: IDrain) -> IFount:
         result = beginFlowingTo(self, drain)
         self._flowToDrain()
         return result
 
-    def pauseFlow(self):
-        # type: () -> Any
+    def pauseFlow(self) -> Any:
         return self._pauser.pause()
 
-    def stopFlow(self):
-        # type: () -> Any
+    def stopFlow(self) -> Any:
         return self._pauser.resume()
 
-    def _pause(self):
-        # type: () -> None
+    def _pause(self) -> None:
         self._paused = True
 
-    def _resume(self):
-        # type: () -> None
+    def _resume(self) -> None:
         self._paused = False
         self._flowToDrain()

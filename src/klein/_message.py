@@ -30,15 +30,12 @@ class MessageState(object):
     Internal mutable state for HTTP message implementations in L{klein}.
     """
 
-    cachedBody = attrib(
-        type=Optional[bytes],
-        validator=optional(instance_of(bytes)),
-        default=None,
-        init=False,
+    cachedBody: Optional[bytes] = attrib(
+        validator=optional(instance_of(bytes)), default=None, init=False
     )
 
-    fountExhausted = attrib(
-        type=bool, validator=instance_of(bool), default=False, init=False
+    fountExhausted: bool = attrib(
+        validator=instance_of(bool), default=False, init=False
     )
 
 

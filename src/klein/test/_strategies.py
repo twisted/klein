@@ -24,7 +24,7 @@ from hypothesis.strategies import (
 
 from idna import IDNAError, check_label, encode as idna_encode
 
-from twisted.python.compat import _PY3, unicode
+from twisted.python.compat import unicode
 
 
 __all__ = ()
@@ -32,10 +32,6 @@ __all__ = ()
 
 T = TypeVar("T")
 DrawCallable = Callable[[Callable[..., T]], T]
-
-
-if _PY3:
-    unichr = chr
 
 
 def idna_characters():  # pragma: no cover
@@ -73,7 +69,7 @@ def idna_characters():  # pragma: no cover
                 for i in range(start, end + 1):
                     if i > maxunicode:
                         break
-                    result.append(unichr(i))
+                    result.append(chr(i))
 
         _idnaCharacters = "".join(result)
 
@@ -259,7 +255,7 @@ def path_characters():
         def chars():
             # type: () -> Iterable[Text]
             for i in range(maxunicode):
-                c = unichr(i)
+                c = chr(i)
 
                 # Exclude reserved characters
                 if c in "#/?":

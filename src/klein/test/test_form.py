@@ -690,7 +690,7 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(stub.get("https://localhost/render"))
         self.assertEqual(response.code, 200)
         setCookie = response.cookies()["Klein-Secure-Session"]
-        expected = 'value="{}"'.format(setCookie)
+        expected = f'value="{setCookie}"'
         actual = self.successResultOf(content(response)).decode("utf-8")
         self.assertIn(expected, actual)
 

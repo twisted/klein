@@ -223,7 +223,7 @@ class GetValuesTestsMixIn(ABC):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 values,
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     def headerNormalize(self, value: str) -> str:
@@ -259,7 +259,7 @@ class GetValuesTestsMixIn(ABC):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 [self.headerNormalize(value) for value in _values],
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
@@ -294,7 +294,7 @@ class GetValuesTestsMixIn(ABC):
                     self.headerNormalize(headerValueAsText(value))
                     for value in values
                 ),
-                "header name: {!r}".format(textName),
+                f"header name: {textName!r}",
             )
 
     def test_getInvalidNameType(self) -> None:

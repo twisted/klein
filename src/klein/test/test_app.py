@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import sys
 from unittest.mock import Mock, patch
 
@@ -470,7 +468,7 @@ class KleinTestCase(unittest.TestCase):
         """
         app = Klein()
         interface = "2001\\:0DB8\\:f00e\\:eb00\\:\\:1"
-        spec = "tcp6:8080:interface={0}".format(interface)
+        spec = f"tcp6:8080:interface={interface}"
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()
         mock_sfs.assert_called_with(reactor, spec)

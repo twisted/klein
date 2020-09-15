@@ -111,7 +111,7 @@ def resolveDeferredObjects(root: Any) -> Deferred:
         else:
             raise TypeError(
                 obj,
-                "{input} not JSON serializable".format(input=obj),
+                f"{obj} not JSON serializable",
             )
 
     returnValue(result[0])

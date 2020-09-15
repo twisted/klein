@@ -5,6 +5,7 @@
 Tests for L{klein._message}.
 """
 
+from abc import ABC, abstractmethod
 from typing import cast
 
 from hypothesis import given
@@ -18,18 +19,18 @@ from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 __all__ = ()
 
 
-class FrozenHTTPMessageTestsMixIn:
+class FrozenHTTPMessageTestsMixIn(ABC):
     """
     Mix-In class for implementations of IHTTPMessage.
     """
 
     @classmethod
+    @abstractmethod
     def messageFromBytes(cls, data: bytes = b"") -> IHTTPMessage:
         """
         Return a new instance of an L{IHTTPMessage} implementation using the
         given bytes as the message body.
         """
-        raise NotImplementedError(f"{cls} must implement getValues()")
 
     @classmethod
     def messageFromFountFromBytes(cls, data: bytes = b"") -> IHTTPMessage:

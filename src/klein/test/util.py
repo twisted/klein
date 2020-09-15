@@ -2,20 +2,22 @@
 Shared tools for Klein's test suite.
 """
 
+from abc import ABC, abstractmethod
 
-class EqualityTestsMixin:
+class EqualityTestsMixin(ABC):
     """
     A mixin defining tests for the standard implementation of C{==} and C{!=}.
     """
 
+    @abstractmethod
     def anInstance(self):
         """
         Return an instance of the class under test.  Each call to this method
         must return a different object.  All objects returned must be equal to
         each other.
         """
-        raise NotImplementedError()
 
+    @abstractmethod
     def anotherInstance(self):
         """
         Return an instance of the class under test.  Each call to this method
@@ -23,7 +25,6 @@ class EqualityTestsMixin:
         objects returned by C{anInstance}.  They may or may not be equal to
         each other (they will not be compared against each other).
         """
-        raise NotImplementedError()
 
     def test_identicalEq(self):
         """

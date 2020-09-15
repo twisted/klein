@@ -499,7 +499,7 @@ class Klein:
         log.startLogging(logFile)
 
         if not endpoint_description:
-            endpoint_description = "tcp:port={}:interface={}".format(port, host)
+            endpoint_description = f"tcp:port={port}:interface={host}"
 
         endpoint = serverFromString(reactor, endpoint_description)
 

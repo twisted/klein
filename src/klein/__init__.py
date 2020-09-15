@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 from typing import TYPE_CHECKING
 
 from ._app import (

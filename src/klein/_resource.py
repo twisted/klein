@@ -51,7 +51,7 @@ class _URLDecodeError(Exception):
         self.errors = errors
 
     def __repr__(self):
-        return "<URLDecodeError(errors={0!r})>".format(self.errors)
+        return f"<URLDecodeError(errors={self.errors!r})>"
 
 
 def _extractURLparts(request):
@@ -152,7 +152,7 @@ class KleinResource(Resource):
             ) = _extractURLparts(request)
         except _URLDecodeError as e:
             for what, fail in e.errors:
-                log.err(fail, "Invalid encoding in {what}.".format(what=what))
+                log.err(fail, f"Invalid encoding in {what}.")
             request.setResponseCode(400)
             return b"Non-UTF-8 encoding in URL."
 

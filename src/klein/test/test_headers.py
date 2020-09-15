@@ -206,7 +206,7 @@ class GetValuesTestsMixIn(object):
         implementation being tested.
         """
         raise NotImplementedError(
-            "{} must implement getValues()".format(self.__class__)
+            f"{self.__class__} must implement getValues()"
         )
 
     def test_getBytesName(self) -> None:
@@ -224,7 +224,7 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 values,
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     def headerNormalize(self, value: str) -> str:
@@ -260,7 +260,7 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 [self.headerNormalize(value) for value in _values],
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
@@ -295,7 +295,7 @@ class GetValuesTestsMixIn(object):
                     self.headerNormalize(headerValueAsText(value))
                     for value in values
                 ),
-                "header name: {!r}".format(textName),
+                f"header name: {textName!r}",
             )
 
     def test_getInvalidNameType(self) -> None:
@@ -360,9 +360,7 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
         cast(TestCase, self).assertEqual(rawHeaders1, rawHeaders2)
 
     def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
-        raise NotImplementedError(
-            "{} must implement headers()".format(self.__class__)
-        )
+        raise NotImplementedError(f"{self.__class__} must implement headers()")
 
     def getValues(
         self, rawHeaders: RawHeaders, name: AnyStr

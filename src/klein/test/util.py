@@ -4,6 +4,7 @@ Shared tools for Klein's test suite.
 
 from abc import ABC, abstractmethod
 
+
 class EqualityTestsMixin(ABC):
     """
     A mixin defining tests for the standard implementation of C{==} and C{!=}.

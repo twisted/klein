@@ -67,7 +67,7 @@ class HTTPHeadersWrappingHeaders(object):
                 )
             )
         else:
-            raise TypeError("name {!r} must be str or bytes".format(name))
+            raise TypeError(f"name {name!r} must be str or bytes")
 
         return values
 

@@ -129,7 +129,7 @@ def _render(resource, request, notifyFinish=True):
         else:
             return request.notifyFinish()
     else:
-        raise ValueError("Unexpected return value: {!r}".format(result))
+        raise ValueError(f"Unexpected return value: {result!r}")
 
 
 class SimpleElement(Element):

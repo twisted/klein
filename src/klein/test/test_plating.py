@@ -182,7 +182,7 @@ def transformJSONObject(jsonObject, transformer):
         elif isinstance(obj, dict):
             return {transformer(k): transformer(v) for k, v in obj.items()}
         else:
-            raise AssertionError("Object of unknown type {!r}".format(obj))
+            raise AssertionError(f"Object of unknown type {obj!r}")
 
     return visit(jsonObject)
 

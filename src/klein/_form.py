@@ -734,7 +734,7 @@ class Form:
 
         Use like so::
 
-            class MyFormApp(object):
+            class MyFormApp:
                 router = Klein()
                 requirer = Requirer()
 

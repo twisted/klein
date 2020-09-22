@@ -30,7 +30,6 @@ if __name__ == "__main__":
             "attrs",
             "hyperlink",
             "incremental",
-            "six",
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
             "Werkzeug",

@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from unittest.mock import Mock, call
 
-from six.moves.urllib.parse import parse_qs
+from urllib.parse import parse_qs
 
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost

@@ -34,8 +34,6 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
     else:
         host = request.client.host
         port = request.client.port
-        if not isinstance(host, str):
-            host = host.decode("ascii")
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(

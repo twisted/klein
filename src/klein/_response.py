@@ -25,7 +25,7 @@ __all__ = ()
 
 @implementer(IHTTPResponse)
 @attrs(frozen=True)
-class FrozenHTTPResponse(object):
+class FrozenHTTPResponse:
     """
     Immutable HTTP response.
     """

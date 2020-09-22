@@ -31,7 +31,7 @@ __all__ = ()
 
 @implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
-class HTTPHeadersWrappingHeaders(object):
+class HTTPHeadersWrappingHeaders:
     """
     HTTP entity headers.
 

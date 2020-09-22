@@ -101,7 +101,7 @@ class EqualityTestsMixin(ABC):
         operand if it is of an unrelated type.
         """
 
-        class Delegate(object):
+        class Delegate:
             def __eq__(self, other):
                 # Do something crazy and obvious.
                 return [self]
@@ -116,7 +116,7 @@ class EqualityTestsMixin(ABC):
         operand if it is of an unrelated type.
         """
 
-        class Delegate(object):
+        class Delegate:
             def __ne__(self, other):
                 # Do something crazy and obvious.
                 return [self]

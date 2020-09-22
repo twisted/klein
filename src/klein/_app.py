@@ -94,7 +94,7 @@ def buildURL(
 
 
 @implementer(IKleinRequest)
-class KleinRequest(object):
+class KleinRequest:
     def __init__(self, request: Request) -> None:
         self.branch_segments = [""]
 
@@ -122,7 +122,7 @@ class KleinRequest(object):
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-class Klein(object):
+class Klein:
     """
     L{Klein} is an object which is responsible for maintaining the routing
     configuration of our application.

@@ -31,7 +31,7 @@ from .interfaces import (
 
 @implementer(ISessionProcurer)
 @attr.s
-class SessionProcurer(object):
+class SessionProcurer:
     """
     A L{SessionProcurer} procures a session from a request and a store.
 
@@ -225,7 +225,7 @@ class AuthorizationDenied(Resource, object):
 
 @implementer(IDependencyInjector, IRequiredParameter)
 @attr.s
-class Authorization(object):
+class Authorization:
     """
     Declare that a C{require}-decorated function requires a certain interface
     be authorized from the session.

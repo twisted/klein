@@ -36,7 +36,7 @@ class DanglingField(Field):
 
 
 @attr.s(hash=False)
-class TestObject(object):
+class TestObject:
     sessionStore = attr.ib(type=ISessionStore)
     calls = attr.ib(attr.Factory(list), type=List)
 

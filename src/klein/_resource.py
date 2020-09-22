@@ -26,7 +26,7 @@ def ensure_utf8_bytes(v):
     return v
 
 
-class _StandInResource(object):
+class _StandInResource:
     """
     A standin for a Resource.
 

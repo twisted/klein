@@ -85,7 +85,7 @@ def registeredRenderMethod(*args):
     return tag("(self)" if len(args) == 3 else "", "some text!")
 
 
-class InstanceWidget(object):
+class InstanceWidget:
     """
     A class with a method that's a L{Plating.widget}.
     """
@@ -106,7 +106,7 @@ class InstanceWidget(object):
 
 
 @attr.s
-class DeferredValue(object):
+class DeferredValue:
     """
     A value within a JSON serializable object that is deferred.
 
@@ -321,7 +321,7 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         """
 
         @attr.s
-        class ConsistentRepr(object):
+        class ConsistentRepr:
             """
             Objects with a predictable repr
             """
@@ -377,7 +377,7 @@ class PlatingTests(AsynchronousTestCase):
         in the decorated method receiving the appropriate C{self}.
         """
 
-        class AppObj(object):
+        class AppObj:
             app = Klein()
 
             def __init__(self, x):

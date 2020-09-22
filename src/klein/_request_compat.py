@@ -36,7 +36,7 @@ noneIO = BytesIO()
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
-class HTTPRequestWrappingIRequest(object):
+class HTTPRequestWrappingIRequest:
     """
     HTTP request.
 

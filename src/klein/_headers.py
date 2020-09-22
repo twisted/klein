@@ -154,7 +154,7 @@ def rawHeaderNameAndValue(name: String, value: String) -> Tuple[bytes, bytes]:
 
 @implementer(IHTTPHeaders)
 @attrs(frozen=True)
-class FrozenHTTPHeaders(object):
+class FrozenHTTPHeaders:
     """
     Immutable HTTP entity headers.
     """
@@ -170,7 +170,7 @@ class FrozenHTTPHeaders(object):
 
 @implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
-class MutableHTTPHeaders(object):
+class MutableHTTPHeaders:
     """
     Mutable HTTP entity headers.
     """

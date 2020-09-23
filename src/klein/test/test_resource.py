@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import os
 from io import BytesIO
 from unittest.mock import Mock, call
@@ -9,7 +7,6 @@ from six.moves.urllib.parse import parse_qs
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
-from twisted.python.compat import unicode
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
@@ -120,6 +117,8 @@ def requestMock(
 def _render(resource, request, notifyFinish=True):
     result = resource.render(request)
 
+    assert result is server.NOT_DONE_YET or isinstance(result, bytes)
+
     if isinstance(result, bytes):
         request.write(result)
         request.finish()
@@ -129,8 +128,6 @@ def _render(resource, request, notifyFinish=True):
             return succeed(None)
         else:
             return request.notifyFinish()
-    else:
-        raise ValueError("Unexpected return value: {!r}".format(result))
 
 
 class SimpleElement(Element):
@@ -196,7 +193,7 @@ class ProducingResource(Resource):
         return server.NOT_DONE_YET
 
 
-class MockProducer(object):
+class MockProducer:
     def __init__(self, request, strings):
         self.request = request
         self.strings = strings
@@ -217,17 +214,16 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
     Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
     """
 
-    class _One(object):
+    class _One:
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
-        def foo(self, resource):
-            # type: (IRequest) -> KleinRenderable
+        def foo(self, resource: IRequest) -> KleinRenderable:
             pass
 
     _one = _One()
 
-    class _Another(object):
+    class _Another:
         anotherKlein = Klein()
 
         @anotherKlein.route("/bar")
@@ -1097,9 +1093,9 @@ class KleinResourceTests(SynchronousTestCase):
 
         _render(self.kr, request)
         kreq = IKleinRequest(request)
-        self.assertIsInstance(kreq.mapper.server_name, unicode)
-        self.assertIsInstance(kreq.mapper.path_info, unicode)
-        self.assertIsInstance(kreq.mapper.script_name, unicode)
+        self.assertIsInstance(kreq.mapper.server_name, str)
+        self.assertIsInstance(kreq.mapper.path_info, str)
+        self.assertIsInstance(kreq.mapper.script_name, str)
 
     def test_failedDecodePathInfo(self):
         """
@@ -1185,11 +1181,11 @@ class ExtractURLpartsTests(SynchronousTestCase):
             script_name,
         ) = _extractURLparts(requestMock(b"/f\xc3\xb6\xc3\xb6"))
 
-        self.assertIsInstance(url_scheme, unicode)
-        self.assertIsInstance(server_name, unicode)
+        self.assertIsInstance(url_scheme, str)
+        self.assertIsInstance(server_name, str)
         self.assertIsInstance(server_port, int)
-        self.assertIsInstance(path_info, unicode)
-        self.assertIsInstance(script_name, unicode)
+        self.assertIsInstance(path_info, str)
+        self.assertIsInstance(script_name, str)
 
     def assertDecodingFailure(self, exception, part):
         """
@@ -1257,11 +1253,11 @@ class ExtractURLpartsTests(SynchronousTestCase):
             script_name,
         ) = _extractURLparts(request)
 
-        self.assertIsInstance(url_scheme, unicode)
-        self.assertIsInstance(server_name, unicode)
+        self.assertIsInstance(url_scheme, str)
+        self.assertIsInstance(server_name, str)
         self.assertIsInstance(server_port, int)
-        self.assertIsInstance(path_info, unicode)
-        self.assertIsInstance(script_name, unicode)
+        self.assertIsInstance(path_info, str)
+        self.assertIsInstance(script_name, str)
 
 
 class GlobalAppTests(SynchronousTestCase):

@@ -24,30 +24,27 @@ class TestCaseTests(TestCase):
         """
 
         @ifmethod
-        def frob():
-            # type: () -> None
+        def frob() -> None:
             """
             Frob the object.
             """
 
     @implementer(IFrobbable)
-    class Frobbable(object):
+    class Frobbable:
         """
         Implements L{IFrobbable}.
         """
 
-        def frob(self):
-            # type: () -> None
+        def frob(self) -> None:
             pass
 
     @implementer(IFrobbable)
-    class NotFrobbable(object):
+    class NotFrobbable:
         """
         Does not implement L{IFrobbable}, despite declaring.
         """
 
-    def test_assertProvidesPass(self):
-        # type: () -> None
+    def test_assertProvidesPass(self) -> None:
         """
         L{TestCase.assertProvides} does not raise when C{interface} is provided
         by C{obj}.
@@ -56,8 +53,7 @@ class TestCaseTests(TestCase):
         self.assertProvides(self.IFrobbable, frobbable)
         frobbable.frob()  # Coverage
 
-    def test_assertProvidesFail(self):
-        # type: () -> None
+    def test_assertProvidesFail(self) -> None:
         """
         L{TestCase.assertProvides} does not raise when C{interface} is not
         provided by C{obj}.

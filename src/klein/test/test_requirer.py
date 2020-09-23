@@ -1,4 +1,4 @@
-from typing import Iterable, List, Text, Tuple
+from typing import Iterable, List, Tuple
 
 from hyperlink import DecodedURL
 
@@ -19,8 +19,7 @@ class BadlyBehavedHeaders(Headers):
     getAllRequestHeaders.
     """
 
-    def getAllRawHeaders(self):
-        # type: () -> Iterable[Tuple[bytes, List[bytes]]]
+    def getAllRawHeaders(self) -> Iterable[Tuple[bytes, List[bytes]]]:
         """
         Don't return a host header.
         """
@@ -36,12 +35,12 @@ requirer = Requirer()
 @requirer.require(
     router.route("/hello/world", methods=["GET"]), url=RequestURL()
 )
-def requiresURL(url):
-    # type: (DecodedURL) -> Text
+def requiresURL(url: DecodedURL) -> str:
     """
     This is a route that requires a URL.
     """
-    return url.child("hello/ world").asText()
+    text: str = url.child("hello/ world").asText()
+    return text
 
 
 class ISample(Interface):
@@ -51,8 +50,7 @@ class ISample(Interface):
 
 
 @requirer.prerequisite([ISample])
-def provideSample(request):
-    # type: (IRequest) -> None
+def provideSample(request: IRequest) -> None:
     """
     This requirer prerequisite installs a string as the provider of ISample.
     """
@@ -63,8 +61,7 @@ def provideSample(request):
     router.route("/retrieve/component", methods=["GET"]),
     component=RequestComponent(ISample),
 )
-def needsComponent(component):
-    # type: (Text) -> Text
+def needsComponent(component: str) -> str:
     """
     This route requires and returns an L{ISample}.
     """
@@ -72,8 +69,7 @@ def needsComponent(component):
 
 
 @requirer.require(router.route("/set/headers"))
-def someHeaders():
-    # type: () -> Response
+def someHeaders() -> Response:
     """
     Set some response attributes.
     """
@@ -89,8 +85,7 @@ class RequireURLTests(SynchronousTestCase):
     Tests for RequestURL() required parameter.
     """
 
-    def test_requiresURL(self):
-        # type: () -> None
+    def test_requiresURL(self) -> None:
         """
         When RequestURL is specified to a requirer, a DecodedURL object will be
         passed in to the decorated route.
@@ -107,8 +102,7 @@ class RequireURLTests(SynchronousTestCase):
             response, "https://example.com/hello/world/hello%2F%20world"
         )
 
-    def test_requiresURLNonStandardPort(self):
-        # type: () -> None
+    def test_requiresURLNonStandardPort(self) -> None:
         """
         When RequestURL is specified to a requirer, a DecodedURL object will be
         passed in to the decorated route.
@@ -125,8 +119,7 @@ class RequireURLTests(SynchronousTestCase):
             response, "http://example.com:8080/hello/world/hello%2F%20world"
         )
 
-    def test_requiresURLBadlyBehavedClient(self):
-        # type: () -> None
+    def test_requiresURLBadlyBehavedClient(self) -> None:
         """
         requiresURL will press on in the face of badly-behaved client code.
         """
@@ -150,8 +143,7 @@ class RequireComponentTests(SynchronousTestCase):
     Tests for RequestComponent.
     """
 
-    def test_requestComponent(self):
-        # type: () -> None
+    def test_requestComponent(self) -> None:
         """
         Test for requiring a component installed on the request.
         """
@@ -170,15 +162,16 @@ class ResponseTests(SynchronousTestCase):
     Tests for L{klein.Response}.
     """
 
-    def test_basicResponse(self):
-        # type: () -> None
+    def test_basicResponse(self) -> None:
         """
         Since methods decorated with C{@require} don't receive the request and
         can't access it to set headers and response codes, instead, they can
         return a Response object that has those attributes.
         """
         response = self.successResultOf(
-            StubTreq(router.resource()).get("https://example.com/set/headers",)
+            StubTreq(router.resource()).get(
+                "https://example.com/set/headers",
+            )
         )
         self.assertEqual(response.code, 209)
         self.assertEqual(

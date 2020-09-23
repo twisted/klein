@@ -1,10 +1,9 @@
 # -*- test-case-name: klein.test.test_resource -*-
 
-from __future__ import absolute_import, division
 
 from twisted.internet import defer
 from twisted.python import failure, log
-from twisted.python.compat import intToBytes, unicode
+from twisted.python.compat import intToBytes
 from twisted.web import server
 from twisted.web.iweb import IRenderable
 from twisted.web.resource import IResource, Resource, getChildForRequest
@@ -19,15 +18,15 @@ from ._interfaces import IKleinRequest
 
 def ensure_utf8_bytes(v):
     """
-    Coerces a value which is either a C{unicode} or C{str} to a C{str}.
-    If ``v`` is a C{unicode} object it is encoded as utf-8.
+    Coerces a value which is either a C{str} or C{bytes} to a C{bytes}.
+    If ``v`` is a C{str} object it is encoded as utf-8.
     """
-    if isinstance(v, unicode):
+    if isinstance(v, str):
         v = v.encode("utf-8")
     return v
 
 
-class _StandInResource(object):
+class _StandInResource:
     """
     A standin for a Resource.
 
@@ -52,7 +51,7 @@ class _URLDecodeError(Exception):
         self.errors = errors
 
     def __repr__(self):
-        return "<URLDecodeError(errors={0!r})>".format(self.errors)
+        return f"<URLDecodeError(errors={self.errors!r})>"
 
 
 def _extractURLparts(request):
@@ -68,7 +67,7 @@ def _extractURLparts(request):
 
     @return: L{tuple} of the URL scheme, the server name, the server port, the
         path info and the script name.
-    @rtype: L{tuple} of L{unicode}, L{unicode}, L{int}, L{unicode}, L{unicode}
+    @rtype: L{tuple} of L{str}, L{str}, L{int}, L{str}, L{str}
     """
     server_name = request.getRequestHostname()
     if hasattr(request.getHost(), "port"):
@@ -153,7 +152,7 @@ class KleinResource(Resource):
             ) = _extractURLparts(request)
         except _URLDecodeError as e:
             for what, fail in e.errors:
-                log.err(fail, "Invalid encoding in {what}.".format(what=what))
+                log.err(fail, f"Invalid encoding in {what}.")
             request.setResponseCode(400)
             return b"Non-UTF-8 encoding in URL."
 
@@ -274,7 +273,7 @@ class KleinResource(Resource):
 
         def write_response(r):
             if r is not _StandInResource:
-                if isinstance(r, unicode):
+                if isinstance(r, str):
                     r = r.encode("utf-8")
 
                 if (r is not None) and (r != NOT_DONE_YET):

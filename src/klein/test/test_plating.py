@@ -11,6 +11,7 @@ from __future__ import (
 
 import json
 from string import printable
+from typing import Any
 
 import attr
 
@@ -45,8 +46,14 @@ page = Plating(
 )
 
 element = Plating(
-    defaults={"a": "NO VALUE FOR A", "b": "NO VALUE FOR B",},
-    tags=tags.div(tags.span("a: ", slot("a")), tags.span("b: ", slot("b")),),
+    defaults={
+        "a": "NO VALUE FOR A",
+        "b": "NO VALUE FOR B",
+    },
+    tags=tags.div(
+        tags.span("a: ", slot("a")),
+        tags.span("b: ", slot("b")),
+    ),
 )
 
 
@@ -78,7 +85,7 @@ def registeredRenderMethod(*args):
     return tag("(self)" if len(args) == 3 else "", "some text!")
 
 
-class InstanceWidget(object):
+class InstanceWidget:
     """
     A class with a method that's a L{Plating.widget}.
     """
@@ -99,7 +106,7 @@ class InstanceWidget(object):
 
 
 @attr.s
-class DeferredValue(object):
+class DeferredValue:
     """
     A value within a JSON serializable object that is deferred.
 
@@ -108,8 +115,8 @@ class DeferredValue(object):
     @param deferred: The L{Deferred} representing the value.
     """
 
-    value = attr.ib()  # type: object
-    deferred = attr.ib(attr.Factory(Deferred))  # type: Deferred
+    value: Any = attr.ib()
+    deferred: Deferred = attr.ib(attr.Factory(Deferred))
 
     def resolve(self):
         """
@@ -175,7 +182,7 @@ def transformJSONObject(jsonObject, transformer):
         elif isinstance(obj, dict):
             return {transformer(k): transformer(v) for k, v in obj.items()}
         else:
-            raise AssertionError("Object of unknown type {!r}".format(obj))
+            raise AssertionError(f"Object of unknown type {obj!r}")
 
     return visit(jsonObject)
 
@@ -243,7 +250,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
 
     @settings(max_examples=500)
     @given(
-        jsonObject=jsonObjects, data=st.data(),
+        jsonObject=jsonObjects,
+        data=st.data(),
     )
     def test_resolveObjects(self, jsonObject, data):
         """
@@ -262,7 +270,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return value
 
         deferredJSONObject = transformJSONObject(
-            jsonObject, maybeWrapInDeferred,
+            jsonObject,
+            maybeWrapInDeferred,
         )
 
         resolved = resolveDeferredObjects(deferredJSONObject)
@@ -273,7 +282,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         self.assertEqual(self.successResultOf(resolved), jsonObject)
 
     @given(
-        jsonObject=jsonObjects, data=st.data(),
+        jsonObject=jsonObjects,
+        data=st.data(),
     )
     def test_elementSerialized(self, jsonObject, data):
         """
@@ -295,7 +305,8 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
                 return value
 
         withPlatingElements = transformJSONObject(
-            jsonObject, injectPlatingElements,
+            jsonObject,
+            injectPlatingElements,
         )
 
         resolved = resolveDeferredObjects(withPlatingElements)
@@ -310,7 +321,7 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         """
 
         @attr.s
-        class ConsistentRepr(object):
+        class ConsistentRepr:
             """
             Objects with a predictable repr
             """
@@ -366,7 +377,7 @@ class PlatingTests(AsynchronousTestCase):
         in the decorated method receiving the appropriate C{self}.
         """
 
-        class AppObj(object):
+        class AppObj:
             app = Klein()
 
             def __init__(self, x):

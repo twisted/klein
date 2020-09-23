@@ -14,7 +14,7 @@ We can now use ``@app.route`` to decorate the methods of the class.
     from klein import Klein
 
 
-    class ItemStore(object):
+    class ItemStore:
         app = Klein()
 
         def __init__(self):

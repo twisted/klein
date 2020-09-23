@@ -5,7 +5,7 @@
 Tests for L{klein._headers}.
 """
 
-from typing import Text
+from typing import cast
 
 from twisted.web.http_headers import Headers
 
@@ -24,18 +24,18 @@ except ImportError:
     _sanitizeLinearWhitespace = None
 
 
-def _twistedHeaderNormalize(value):
-    # type: (Text) -> Text
+def _twistedHeaderNormalize(value: str) -> str:
     """
     Normalize the given header value according to the rules of the installed
     Twisted version.
     """
-    if _sanitizeLinearWhitespace is not None:
-        valueBytes = value.encode("utf-8")
-        valueBytes = _sanitizeLinearWhitespace(valueBytes)
-        value = valueBytes.decode("utf-8")
-
-    return value
+    if _sanitizeLinearWhitespace is None:
+        return value
+    else:
+        return cast(
+            str,
+            _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8"),
+        )
 
 
 __all__ = ()
@@ -46,26 +46,24 @@ class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     Tests for L{HTTPHeadersWrappingHeaders}.
     """
 
-    def assertRawHeadersEqual(self, rawHeaders1, rawHeaders2):
-        # type: (RawHeaders, RawHeaders) -> None
+    def assertRawHeadersEqual(
+        self, rawHeaders1: RawHeaders, rawHeaders2: RawHeaders
+    ) -> None:
         super(HTTPHeadersWrappingHeadersTests, self).assertRawHeadersEqual(
             sorted(rawHeaders1), sorted(rawHeaders2)
         )
 
-    def headerNormalize(self, value):
-        # type: (Text) -> Text
+    def headerNormalize(self, value: str) -> str:
         return _twistedHeaderNormalize(value)
 
-    def headers(self, rawHeaders):
-        # type: (RawHeaders) -> IMutableHTTPHeaders
+    def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
         headers = Headers()
         for rawName, rawValue in rawHeaders:
             headers.addRawHeader(rawName, rawValue)
 
         return HTTPHeadersWrappingHeaders(headers=headers)
 
-    def test_rawHeaders(self):
-        # type: () -> None
+    def test_rawHeaders(self) -> None:
         """
         L{MutableHTTPHeaders.rawHeaders} equals raw headers matching the
         L{Headers} given at init time.

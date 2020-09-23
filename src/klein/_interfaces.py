@@ -7,7 +7,7 @@ All Zope Interface classes should be imported from here so that type checking
 works, since mypy doesn't otherwise get along with Zope Interface.
 """
 
-from typing import Mapping, Optional, TYPE_CHECKING, Text
+from typing import Mapping, Optional, TYPE_CHECKING
 
 from zope.interface import Attribute, Interface
 
@@ -27,14 +27,13 @@ class IKleinRequest(Interface):
 
     @ifmethod
     def url_for(
-        request,  # type: IKleinRequest
-        endpoint,  # type: Text
-        values=None,  # type: Optional[Mapping[Text, Text]]
-        method=None,  # type: Optional[Text]
-        force_external=False,  # type: bool
-        append_unknown=True,  # type: bool
-    ):
-        # type: (...) -> Text
+        request: "IKleinRequest",
+        endpoint: str,
+        values: Optional[Mapping[str, str]] = None,
+        method: Optional[str] = None,
+        force_external: bool = False,
+        append_unknown: bool = True,
+    ) -> str:
         """
         L{werkzeug.routing.MapAdapter.build}
         """
@@ -58,7 +57,9 @@ if TYPE_CHECKING:  # pragma: no cover
     ]
 
     IMutableHTTPHeaders = Union[
-        _IMutableHTTPHeaders, HTTPHeadersWrappingHeaders, MutableHTTPHeaders,
+        _IMutableHTTPHeaders,
+        HTTPHeadersWrappingHeaders,
+        MutableHTTPHeaders,
     ]
 
     IHTTPMessage = Union[
@@ -70,19 +71,22 @@ if TYPE_CHECKING:  # pragma: no cover
     ]
 
     IHTTPRequest = Union[
-        _IHTTPRequest, FrozenHTTPRequest, HTTPRequestWrappingIRequest,
+        _IHTTPRequest,
+        FrozenHTTPRequest,
+        HTTPRequestWrappingIRequest,
     ]
 
     IHTTPResponse = Union[
-        _IHTTPResponse, FrozenHTTPResponse,
+        _IHTTPResponse,
+        FrozenHTTPResponse,
     ]
 
 else:
     IHTTPHeaders = _IHTTPHeaders
-    IMutableHTTPHeaders = _IMutableHTTPHeaders
     IHTTPMessage = _IHTTPMessage
     IHTTPRequest = _IHTTPRequest
     IHTTPResponse = _IHTTPResponse
+    IMutableHTTPHeaders = _IMutableHTTPHeaders
 
 
 __all__ = ()

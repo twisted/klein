@@ -21,8 +21,7 @@ class TestCase(SynchronousTestCase):
     Extensions to L{SynchronousTestCase}.
     """
 
-    def assertProvides(self, interface, obj):
-        # type: (Interface, Any) -> None
+    def assertProvides(self, interface: Interface, obj: Any) -> None:
         """
         Assert that a object provides an interface.
 
@@ -32,4 +31,4 @@ class TestCase(SynchronousTestCase):
         try:
             self.assertTrue(verifyObject(interface, obj))
         except Invalid:
-            self.fail("{} does not provide {}".format(obj, interface))
+            self.fail(f"{obj} does not provide {interface}")

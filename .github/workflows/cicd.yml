@@ -235,9 +235,9 @@ jobs:
           fi;
           twisted="${{ matrix.twisted }}";
           twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
-          envs="coverage-${py_test}-${twisted}";
-          echo "Test environments: ${envs}";
-          tox -e "${envs}";
+          env_test="coverage-${py_test}-${twisted}";
+          echo "Test environment: ${env_test}";
+          tox -e "${env_test}";
           ln -s ".tox/${env_test}" testenv;  # Fixed location for upload step below
 
       - name: Upload Trial log artifact

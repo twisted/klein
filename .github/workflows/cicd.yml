@@ -226,7 +226,7 @@ jobs:
         # This hairy shell code is here to map the python and Twisted versions
         # specified above to the equivalents used in Tox environments.
         run: |
-          set -eu
+          set -eux
           py="${{ matrix.python }}";
           if [ "${py#pypy}" != "${py}" ]; then  # PyPy
               py_test="${py}";
@@ -255,10 +255,11 @@ jobs:
 
       - name: "Combine coverage"
         run: |
-          set -eu
+          set -eux
           pip install coverage[toml];
           coverage combine;
           coverage xml;
+          ls -l . .tox;
         env:
           COVERAGE_FILE: .tox/coverage
 

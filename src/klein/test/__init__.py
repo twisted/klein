@@ -9,6 +9,9 @@ from hypothesis import HealthCheck, settings
 
 settings.register_profile(
     "patience",
-    settings(deadline=None, suppress_health_check=[HealthCheck.too_slow],),
+    settings(
+        deadline=None,
+        suppress_health_check=[HealthCheck.too_slow],
+    ),
 )
 settings.load_profile("patience")

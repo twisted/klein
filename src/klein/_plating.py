@@ -111,7 +111,7 @@ def resolveDeferredObjects(root: Any) -> Deferred:
         else:
             raise TypeError(
                 obj,
-                "{input} not JSON serializable".format(input=obj),
+                f"{obj} not JSON serializable",
             )
 
     returnValue(result[0])
@@ -194,7 +194,7 @@ class PlatedElement(Element):
             raise MissingRenderMethod(self, name)
 
 
-class Plating(object):
+class Plating:
     """
     A L{Plating} is a container which can be used to generate HTML from data.
 
@@ -277,7 +277,7 @@ class Plating(object):
         )
 
     @attr.s
-    class _Widget(object):
+    class _Widget:
         """
         Implementation of L{Plating.widgeted}.  This is a L{callable}
         descriptor that records the instance to which its wrapped

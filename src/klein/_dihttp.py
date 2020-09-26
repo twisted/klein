@@ -49,7 +49,7 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
 
 
 @provider(IRequiredParameter, IDependencyInjector)
-class RequestURL(object):
+class RequestURL:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
@@ -81,7 +81,7 @@ class RequestURL(object):
 
 @implementer(IRequiredParameter, IDependencyInjector)
 @attr.s(frozen=True)
-class RequestComponent(object):
+class RequestComponent:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
@@ -108,7 +108,7 @@ class RequestComponent(object):
 
 
 @attr.s(frozen=True)
-class Response(object):
+class Response:
     """
     Metadata about an HTTP response, with an object that Klein knows how to
     understand.

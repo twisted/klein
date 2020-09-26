@@ -5,6 +5,7 @@
 Tests for L{klein._headers}.
 """
 
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from string import ascii_letters
 from typing import (
@@ -259,12 +260,13 @@ class RawHeadersConversionTests(TestCase):
         self.assertEqual(normalized, ((b"name", headerValueAsBytes(value)),))
 
 
-class GetValuesTestsMixIn(object):
+class GetValuesTestsMixIn(ABC):
     """
     Tests for utilities that access data from the C{RawHeaders} internal
     representation.
     """
 
+    @abstractmethod
     def getValues(
         self, rawHeaders: RawHeaders, name: AnyStr
     ) -> Iterable[AnyStr]:
@@ -276,9 +278,6 @@ class GetValuesTestsMixIn(object):
         cases that use it to specify how to perform this look-up in the
         implementation being tested.
         """
-        raise NotImplementedError(
-            "{} must implement getValues()".format(self.__class__)
-        )
 
     def test_getBytesName(self) -> None:
         """
@@ -295,7 +294,7 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 values,
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     def headerNormalize(self, value: str) -> str:
@@ -331,7 +330,7 @@ class GetValuesTestsMixIn(object):
             cast(TestCase, self).assertEqual(
                 list(self.getValues(rawHeaders, name)),
                 [self.headerNormalize(value) for value in _values],
-                "header name: {!r}".format(name),
+                f"header name: {name!r}",
             )
 
     @given(iterables(tuples(ascii_text(min_size=1), binary())))
@@ -366,7 +365,7 @@ class GetValuesTestsMixIn(object):
                     self.headerNormalize(headerValueAsText(value))
                     for value in values
                 ),
-                "header name: {!r}".format(textName),
+                f"header name: {textName!r}",
             )
 
     def test_getInvalidNameType(self) -> None:
@@ -420,7 +419,7 @@ class FrozenHTTPHeadersTests(GetValuesTestsMixIn, TestCase):
         self.assertEqual(headers.rawHeaders, ())
 
 
-class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
+class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn, ABC):
     """
     Tests for L{IMutableHTTPHeaders} implementations.
     """
@@ -430,10 +429,11 @@ class MutableHTTPHeadersTestsMixIn(GetValuesTestsMixIn):
     ) -> None:
         cast(TestCase, self).assertEqual(rawHeaders1, rawHeaders2)
 
+    @abstractmethod
     def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
-        raise NotImplementedError(
-            "{} must implement headers()".format(self.__class__)
-        )
+        """
+        Given a L{RawHeaders}, return an L{IMutableHTTPHeaders}.
+        """
 
     def getValues(
         self, rawHeaders: RawHeaders, name: AnyStr

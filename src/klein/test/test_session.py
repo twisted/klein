@@ -42,7 +42,7 @@ class IDenyMe(Interface):
 
 
 @implementer(ISimpleTest)
-class SimpleTest(object):
+class SimpleTest:
     """
     Implementation of L{ISimpleTest} for testing.
     """

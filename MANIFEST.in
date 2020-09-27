@@ -3,6 +3,7 @@ include .travis/twistedchecker-diff
 include AUTHORS
 include CONTRIBUTING.rst
 include docs/Makefile
+include codecov.yml
 include LICENSE
 include NEWS.rst
 include pyproject.toml

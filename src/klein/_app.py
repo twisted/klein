@@ -52,11 +52,6 @@ KleinErrorHandler = Callable[
 ]
 
 
-def someOncoveredCode():
-    x = 1
-    print(x + 1)
-
-
 def _call(
     __klein_instance__: Optional["Klein"],
     __klein_f__: Callable,

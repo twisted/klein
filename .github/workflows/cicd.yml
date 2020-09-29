@@ -259,14 +259,12 @@ jobs:
           pip install coverage[toml];
           coverage combine;
           coverage xml;
-          ls -l . .tox;
         env:
           COVERAGE_FILE: .tox/coverage
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v1"
         with:
-          directory: .tox
           env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW
           fail_ci_if_error: true
         env:

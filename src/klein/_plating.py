@@ -119,7 +119,7 @@ def _extra_types(input):
     """
     Renderability for a few additional types.
     """
-    if isinstance(input, (float,) + (int,)):
+    if isinstance(input, (float, int)):
         return str(input)
     return input
 

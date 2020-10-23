@@ -2,7 +2,7 @@ from setuptools import setup
 
 if __name__ == "__main__":
 
-    with open("README.rst", "r") as f:
+    with open("README.rst") as f:
         long_description = f.read()
 
     setup(

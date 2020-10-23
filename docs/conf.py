@@ -9,8 +9,8 @@ extensions = []
 templates_path = ['_templates']
 source_suffix = '.rst'
 master_doc = 'index'
-project = u'Klein'
-copyright = u'2011-2019, Twisted Matrix Labs'
+project = 'Klein'
+copyright = '2011-2019, Twisted Matrix Labs'
 version = _version.__version__.base()
 release = version
 exclude_patterns = ['_build']
@@ -27,16 +27,16 @@ html_static_path = ['_static']
 htmlhelp_basename = 'Kleindoc'
 latex_elements = {}
 latex_documents = [
-  ('index', 'Klein.tex', u'Klein Documentation',
-   u'Twisted Matrix Labs', 'manual'),
+  ('index', 'Klein.tex', 'Klein Documentation',
+   'Twisted Matrix Labs', 'manual'),
 ]
 man_pages = [
-    ('index', 'klein', u'Klein Documentation',
-     [u'Twisted Matrix Labs'], 1)
+    ('index', 'klein', 'Klein Documentation',
+     ['Twisted Matrix Labs'], 1)
 ]
 texinfo_documents = [
-  ('index', 'Klein', u'Klein Documentation',
-   u'Twisted Matrix Labs', 'Klein', 'One line description of project.',
+  ('index', 'Klein', 'Klein Documentation',
+   'Twisted Matrix Labs', 'Klein', 'One line description of project.',
    'Miscellaneous'),
 ]
 

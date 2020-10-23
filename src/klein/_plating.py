@@ -237,21 +237,15 @@ class Plating:
                     json_data.update(data)
                     for ignored in self._presentationSlots:
                         json_data.pop(ignored, None)
-                    str = "json"
+                    request.setHeader(b"content-type", b"application/json")
                     ready = yield resolveDeferredObjects(json_data)
                     result = dumps(ready)
                 else:
                     data[self.CONTENT] = loader.load()
-                    str = "html"
+                    request.setHeader(
+                        b"content-type", b"text/html; charset=utf-8"
+                    )
                     result = self._elementify(instance, data)
-                request.setHeader(
-                    b"content-type",
-                    (
-                        "text/{format}; charset=utf-8".format(
-                            format=str
-                        ).encode("charmap")
-                    ),
-                )
                 returnValue(result)
 
             return method

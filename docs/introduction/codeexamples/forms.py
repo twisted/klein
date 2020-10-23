@@ -34,7 +34,7 @@ def postHandler(foo, bar):
         app.route("/", methods=["GET"]),
         tags.div(slot("anForm"))
     ),
-    theForm=Form.rendererFor(postHandler, action=u"/?post=yes")
+    theForm=Form.rendererFor(postHandler, action="/?post=yes")
 )
 def formRenderer(theForm):
     return {"anForm": theForm}
@@ -43,7 +43,7 @@ def formRenderer(theForm):
     style.routed(Form.onValidationFailureFor(postHandler),
                  [tags.h1('invalid form'),
                   tags.div(slot('the-invalid-form'))]),
-    renderer=Form.rendererFor(postHandler, action=u"/?post=yes"),
+    renderer=Form.rendererFor(postHandler, action="/?post=yes"),
 )
 def validationFailed(values, renderer):
     renderer.prevalidationValues = values.prevalidationValues

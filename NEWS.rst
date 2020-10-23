@@ -1,6 +1,10 @@
 NEWS
 ====
 
+NEXT
+-------------------
+ * ``Plating`` now sets the ``Content-Type`` header to ``application/json`` instead of ``text/json``.
+
 20.6.0 - 2020-06-07
 -------------------
  * This is the last release of Klein expected to support Python 2.

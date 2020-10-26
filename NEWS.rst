@@ -3,7 +3,7 @@ NEWS
 
 NEXT
 -------------------
- * ``Plating`` now sets the ``Content-Type`` header to ``application/json`` instead of ``text/json``.
+ * ``Plating`` now sets the ``Content-Type`` header to ``application/json`` instead of ``text/json; charset=utf8``.
 
 20.6.0 - 2020-06-07
 -------------------

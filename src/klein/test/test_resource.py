@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import os
 from io import BytesIO
 from unittest.mock import Mock, call
@@ -119,6 +117,8 @@ def requestMock(
 def _render(resource, request, notifyFinish=True):
     result = resource.render(request)
 
+    assert result is server.NOT_DONE_YET or isinstance(result, bytes)
+
     if isinstance(result, bytes):
         request.write(result)
         request.finish()
@@ -128,8 +128,6 @@ def _render(resource, request, notifyFinish=True):
             return succeed(None)
         else:
             return request.notifyFinish()
-    else:
-        raise ValueError("Unexpected return value: {!r}".format(result))
 
 
 class SimpleElement(Element):
@@ -195,7 +193,7 @@ class ProducingResource(Resource):
         return server.NOT_DONE_YET
 
 
-class MockProducer(object):
+class MockProducer:
     def __init__(self, request, strings):
         self.request = request
         self.strings = strings
@@ -216,7 +214,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
     Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
     """
 
-    class _One(object):
+    class _One:
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
@@ -225,7 +223,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
     _one = _One()
 
-    class _Another(object):
+    class _Another:
         anotherKlein = Klein()
 
         @anotherKlein.route("/bar")

@@ -18,7 +18,7 @@ from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
 KleinResource = _KleinResource
 
 
-class _SpecialModuleObject(object):
+class _SpecialModuleObject:
     """
     See the test in
     L{klein.test.test_resource.GlobalAppTests.test_weird_resource_situation}

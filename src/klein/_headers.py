@@ -116,7 +116,7 @@ def getFromRawHeaders(rawHeaders: RawHeaders, name: AnyStr) -> Iterable[AnyStr]:
         rawName = headerNameAsBytes(normalizeHeaderName(name))
         return (headerValueAsText(v) for n, v in rawHeaders if rawName == n)
 
-    raise TypeError("name {!r} must be str or bytes".format(name))
+    raise TypeError(f"name {name!r} must be str or bytes")
 
 
 def rawHeaderName(name: String) -> bytes:
@@ -125,7 +125,7 @@ def rawHeaderName(name: String) -> bytes:
     elif isinstance(name, str):
         return headerNameAsBytes(name)
     else:
-        raise TypeError("name {!r} must be str or bytes".format(name))
+        raise TypeError(f"name {name!r} must be str or bytes")
 
 
 def rawHeaderNameAndValue(name: String, value: String) -> Tuple[bytes, bytes]:
@@ -141,12 +141,12 @@ def rawHeaderNameAndValue(name: String, value: String) -> Tuple[bytes, bytes]:
     elif isinstance(name, str):
         if not isinstance(value, str):
             raise TypeError(
-                "value {!r} must be str to match name {!r}".format(value, name)
+                f"value {value!r} must be str to match name {name!r}"
             )
         return (headerNameAsBytes(name), headerValueAsBytes(value))
 
     else:
-        raise TypeError("name {!r} must be str or bytes".format(name))
+        raise TypeError(f"name {name!r} must be str or bytes")
 
 
 # Implementation
@@ -154,7 +154,7 @@ def rawHeaderNameAndValue(name: String, value: String) -> Tuple[bytes, bytes]:
 
 @implementer(IHTTPHeaders)
 @attrs(frozen=True)
-class FrozenHTTPHeaders(object):
+class FrozenHTTPHeaders:
     """
     Immutable HTTP entity headers.
     """
@@ -170,7 +170,7 @@ class FrozenHTTPHeaders(object):
 
 @implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
-class MutableHTTPHeaders(object):
+class MutableHTTPHeaders:
     """
     Mutable HTTP entity headers.
     """

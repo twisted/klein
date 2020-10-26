@@ -41,7 +41,7 @@ def bytesToFount(data: bytes) -> IFount:
 # https://github.com/twisted/tubes/issues/61
 @implementer(IFount)
 @attrs(frozen=False)
-class IOFount(object):
+class IOFount:
     """
     Fount that reads from a file-like-object.
     """

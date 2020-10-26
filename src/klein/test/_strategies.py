@@ -24,8 +24,6 @@ from hypothesis.strategies import (
 
 from idna import IDNAError, check_label, encode as idna_encode
 
-from twisted.python.compat import unicode
-
 
 __all__ = ()
 
@@ -191,7 +189,7 @@ def hostname_labels(draw, allow_idn=True):  # pragma: no cover
                 text(
                     min_size=1,
                     max_size=63,
-                    alphabet=unicode(ascii_letters + digits + "-"),
+                    alphabet=ascii_letters + digits + "-",
                 )
             ),
         )

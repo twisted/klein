@@ -23,7 +23,7 @@ class BadlyBehavedHeaders(Headers):
         """
         Don't return a host header.
         """
-        for key, values in super(BadlyBehavedHeaders, self).getAllRawHeaders():
+        for key, values in super().getAllRawHeaders():
             if key != b"Host":
                 yield (key, values)
 

@@ -42,13 +42,13 @@ from .interfaces import (
 )
 
 
-class CrossSiteRequestForgery(Resource, object):
+class CrossSiteRequestForgery(Resource):
     """
     Cross site request forgery detected.  Request aborted.
     """
 
     def __init__(self, message: str) -> None:
-        super(CrossSiteRequestForgery, self).__init__()
+        super().__init__()
         self.message = message
 
     def render(self, request: IRequest) -> bytes:

@@ -213,10 +213,10 @@ _requirerResult = Callable[
 ]
 
 
-class AuthorizationDenied(Resource, object):
+class AuthorizationDenied(Resource):
     def __init__(self, interface: IInterface, instance: Any) -> None:
         self._interface = interface
-        super(AuthorizationDenied, self).__init__()
+        super().__init__()
 
     def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)

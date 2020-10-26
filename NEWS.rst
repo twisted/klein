@@ -1,6 +1,13 @@
 NEWS
 ====
 
+NEXT
+-------------------
+ * Python 2 is no longer supported by Klein.
+ * Python 3.5 is no longer supported by Klein.
+ * Python 3.9 is now supported by Klein. [`#412 <https://github.com/twisted/klein/pull/412>`_]
+ * Klein now exports (incomplete, but growing) type hints. [`#379 <https://github.com/twisted/klein/pull/379>`_]
+
 20.6.0 - 2020-06-07
 -------------------
  * This is the last release of Klein expected to support Python 2.

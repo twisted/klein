@@ -1,3 +1,4 @@
+include .codecov.yml
 include .coveragerc
 include .travis/twistedchecker-diff
 include AUTHORS

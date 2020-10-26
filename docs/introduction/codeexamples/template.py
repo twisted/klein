@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function, unicode_literals
 # Cobble together a deterministic random function using a string as a seed.
 from random import Random
 from hashlib import sha256
@@ -46,7 +44,7 @@ def root(request):
 def one_food(request, food):
     random = random_from_string(food)
     return {"name": food,
-            "pageTitle": "Food: {}".format(food),
+            "pageTitle": f"Food: {food}",
             "rating": random.randint(1, 5),
             "carbohydrates": random.randint(0, 100)}
 
@@ -64,7 +62,7 @@ def one_place(request, place):
                       "叉烧", "皮蛋", "foie gras"]
     random.shuffle(possible_foods)
     return {"name": place,
-            "pageTitle": "Place: {}".format(place),
+            "pageTitle": f"Place: {place}",
             "latitude": random.uniform(-90, 90),
             "longitude": random.uniform(-180, 180),
             "foods": possible_foods[:3]}

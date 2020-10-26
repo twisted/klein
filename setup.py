@@ -2,7 +2,7 @@ from setuptools import setup
 
 if __name__ == "__main__":
 
-    with open("README.rst", "r") as f:
+    with open("README.rst") as f:
         long_description = f.read()
 
     setup(
@@ -30,7 +30,6 @@ if __name__ == "__main__":
             "attrs",
             "hyperlink",
             "incremental",
-            "six",
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
             "Werkzeug",

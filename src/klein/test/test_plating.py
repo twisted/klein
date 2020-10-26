@@ -2,12 +2,6 @@
 Tests for L{klein.plating}.
 """
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
 
 import json
 from string import printable
@@ -408,7 +402,7 @@ class PlatingTests(AsynchronousTestCase):
         request, written = self.get(b"/?json=true")
         self.assertEqual(
             request.responseHeaders.getRawHeaders(b"content-type")[0],
-            b"text/json; charset=utf-8",
+            b"application/json",
         )
         self.assertEquals(
             {"ok": "an-plating-test", "title": "default title unchanged"},
@@ -429,7 +423,7 @@ class PlatingTests(AsynchronousTestCase):
         request, written = self.get(b"/?json=true")
         self.assertEqual(
             request.responseHeaders.getRawHeaders(b"content-type")[0],
-            b"text/json; charset=utf-8",
+            b"application/json",
         )
         self.assertEquals(
             {"ok": "an-plating-test", "title": "default title unchanged"},

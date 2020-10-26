@@ -8,8 +8,6 @@ import attr
 
 from hyperlink import DecodedURL
 
-from six import text_type
-
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
@@ -36,8 +34,6 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
     else:
         host = request.client.host
         port = request.client.port
-        if not isinstance(host, text_type):
-            host = host.decode("ascii")
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
@@ -148,7 +144,7 @@ class Response:
         """
         request.setResponseCode(self.code)
         for headerName, headerValueOrValues in self.headers.items():
-            if not isinstance(headerValueOrValues, (text_type, bytes)):
+            if not isinstance(headerValueOrValues, (str, bytes)):
                 headerValues = headerValueOrValues
             else:
                 headerValues = [headerValueOrValues]

@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from unittest.mock import Mock, call
 
-from six.moves.urllib.parse import parse_qs
+from urllib.parse import parse_qs
 
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
@@ -1233,8 +1233,8 @@ class ExtractURLpartsTests(SynchronousTestCase):
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertEqual(
-            set(["SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"]),
-            set(part for part, _ in e.errors),
+            {"SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"},
+            {part for part, _ in e.errors},
         )
 
     def test_afUnixSocket(self):

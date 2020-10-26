@@ -237,8 +237,8 @@ jobs:
           twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
           env_test="coverage-${py_test}-${twisted}";
           echo "Test environment: ${env_test}";
-          tox -e "${env_test}";
           ln -s ".tox/${env_test}" testenv;  # Fixed location for upload step below
+          tox -e "${env_test}";
 
       - name: Upload Trial log artifact
         if: failure()

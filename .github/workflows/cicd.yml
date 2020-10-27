@@ -54,28 +54,28 @@ jobs:
         run: echo "${MATRIX_CONTEXT}";
 
 
-  lint:
+  # lint:
 
-    name: Linters
+  #   name: Linters
 
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 5
 
-    steps:
+  #   steps:
 
-      - name: Checkout source code
-        uses: actions/checkout@v2
+  #     - name: Checkout source code
+  #       uses: actions/checkout@v2
 
-      - name: Install Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: "3.8"
+  #     - name: Install Python
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: "3.8"
 
-      - name: Install Tox
-        run: pip install tox;
+  #     - name: Install Tox
+  #       run: pip install tox;
 
-      - name: Run Linters
-        run: tox -e lint;
+  #     - name: Run Linters
+  #       run: tox -e lint;
 
 
   mypy:

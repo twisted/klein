@@ -1,6 +1,5 @@
 # -*- test-case-name: klein.test.test_form -*-
 
-
 import json
 from typing import (
     Any,

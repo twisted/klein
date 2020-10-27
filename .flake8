@@ -8,14 +8,14 @@ doctests    = True
 
 max-line-length = 80
 
-exclude =
+extend-exclude =
     .git,
     .tox,
     __pycache__,
     dist
 
 # Codes: http://flake8.pycqa.org/en/latest/user/error-codes.html
-ignore =
+extend-ignore =
     ######## WARNINGS BELOW SHOULD BE FIXED ########
 
     # Missing docstring in public module

@@ -8,7 +8,7 @@ doctests    = True
 
 max-line-length = 80
 
-exclude =
+extend-exclude =
     .git,
     .tox,
     __pycache__,

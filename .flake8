@@ -95,9 +95,6 @@ ignore =
     # line break before binary operator
     W503,
 
-    # End of list (allows last item to end with trailing ',')
-    EOL
-
 # flake8-import-order: local module name space
 application-import-names = klein
 

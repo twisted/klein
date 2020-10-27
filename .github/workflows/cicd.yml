@@ -79,6 +79,7 @@ jobs:
 
 
   mypy:
+
     name: Mypy (static type checker)
 
     runs-on: ubuntu-latest

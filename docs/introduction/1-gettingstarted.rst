@@ -62,9 +62,9 @@ Add more decorated functions to add more routes to your Klein applications.
 Variable Routes
 ===============
 
-You can also make `variable routes`.
+You can also make variable routes.
 This gives your functions extra arguments which match up with the parts of the routes that you have specified.
-By using this, you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository. 
+By using this, you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository.
 
 .. literalinclude:: codeexamples/variableRoutes.py
 

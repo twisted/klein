@@ -6,6 +6,11 @@ repos:
       - id: black
         args: ["--target-version", "py36"]
 
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: "0.44"
+    hooks:
+      - id: check-manifest
+
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:

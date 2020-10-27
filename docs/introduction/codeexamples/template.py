@@ -3,13 +3,14 @@ from random import Random
 from hashlib import sha256
 from struct import unpack
 
+from twisted.web.template import tags, slot
+
+from klein import Klein, Plating
+
 
 def random_from_string(string):
     return Random(unpack("!I", sha256(string.encode("utf-8")).digest()[:4])[0])
 
-
-from twisted.web.template import tags, slot
-from klein import Klein, Plating
 
 app = Klein()
 

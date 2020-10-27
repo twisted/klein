@@ -1,7 +1,9 @@
 from klein import run, route
 
-@route('/')
+
+@route("/")
 def home(request):
-    return 'Hello, world!'
+    return "Hello, world!"
+
 
 run("localhost", 8080)

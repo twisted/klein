@@ -1,9 +1,9 @@
 # Cobble together a deterministic random function using a string as a seed.
-from random import Random
 from hashlib import sha256
+from random import Random
 from struct import unpack
 
-from twisted.web.template import tags, slot
+from twisted.web.template import slot, tags
 
 from klein import Klein, Plating
 

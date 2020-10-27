@@ -1,4 +1,4 @@
-from klein import run, route
+from klein import route, run
 
 
 @route("/")

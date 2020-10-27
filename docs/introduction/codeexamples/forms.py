@@ -1,5 +1,6 @@
-from twisted.web.template import tags, slot
-from klein import Klein, Plating, Form, Field, Requirer, SessionProcurer
+from twisted.web.template import slot, tags
+
+from klein import Field, Form, Klein, Plating, Requirer, SessionProcurer
 from klein.interfaces import ISession
 from klein.storage.memory import MemorySessionStore
 

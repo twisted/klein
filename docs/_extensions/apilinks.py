@@ -10,9 +10,20 @@ for example::
 
 """
 
+from types import MappingProxyType
 
-def make_api_link(name, rawtext, text, lineno, inliner, options={}, content=[]):
+emptyMapping = MappingProxyType({})
 
+
+def make_api_link(
+    name,
+    rawtext,
+    text,
+    lineno,
+    inliner,
+    options=emptyMapping,
+    content=(),
+):
     from docutils import nodes, utils
 
     # quick, dirty, and ugly...

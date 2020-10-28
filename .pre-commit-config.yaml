@@ -1,16 +1,5 @@
 repos:
 
-  - repo: https://github.com/psf/black
-    rev: "20.8b1"
-    hooks:
-      - id: black
-        args: ["--target-version", "py36"]
-
-  - repo: https://github.com/mgedmin/check-manifest
-    rev: "0.44"
-    hooks:
-      - id: check-manifest
-
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
     hooks:
@@ -26,6 +15,17 @@ repos:
           - pycodestyle==2.6.0
           - pydocstyle==5.1.1
           - pyflakes==2.2.0
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: "v2.7.3"
+    hooks:
+      - id: pyupgrade
+        args: ["--py36-plus"]
+
+  - repo: https://github.com/asottile/yesqa
+    rev: "v1.2.2"
+    hooks:
+      - id: yesqa
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: "v3.3.0"
@@ -45,13 +45,13 @@ repos:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: "v2.7.3"
+  - repo: https://github.com/psf/black
+    rev: "20.8b1"
     hooks:
-      - id: pyupgrade
-        args: ["--py36-plus"]
+      - id: black
+        args: ["--target-version", "py36"]
 
-  - repo: https://github.com/asottile/yesqa
-    rev: "v1.2.2"
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: "0.44"
     hooks:
-      - id: yesqa
+      - id: check-manifest

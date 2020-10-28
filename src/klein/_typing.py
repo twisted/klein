@@ -1,4 +1,4 @@
-from typing import Callable, TYPE_CHECKING, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Type, Union
 
 try:
     from typing import Awaitable
@@ -18,10 +18,15 @@ if TYPE_CHECKING:  # pragma: no cover
 
     ifmethod = staticmethod
 else:
-    Arg = KwArg = VarArg = lambda t, *x: t
 
-    def DefaultNamedArg(*ignore):
-        pass
+    # Match signatures from:
+    # https://github.com/python/mypy_extensions/blob/master/mypy_extensions.py#L109
+    def _argumentConstructor(
+        type=Type[Any], name: Optional[str] = None
+    ) -> Type[Any]:
+        return type
+
+    Arg = KwArg = VarArg = DefaultNamedArg = _argumentConstructor
 
     NoReturn = None
 

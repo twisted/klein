@@ -208,7 +208,10 @@ _routeCallable = Any
 _kleinCallable = Callable[..., _kleinRenderable]
 _kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
 _requirerResult = Callable[
-    [Arg(_routeCallable, "route"), KwArg(Any)],
+    [
+        Arg(_routeCallable, "route"),  # noqa: F821
+        KwArg(Any),
+    ],
     Callable[[_kleinCallable], _kleinCallable],
 ]
 

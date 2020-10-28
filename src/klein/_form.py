@@ -452,7 +452,8 @@ def defaultValidationFailureHandler(
 _requirerFunctionWithForm = Any
 _routeCallable = Any
 _routeDecorator = Callable[
-    [_routeCallable, DefaultNamedArg(Any, "__session__")], _routeCallable
+    [_routeCallable, DefaultNamedArg(Any, "__session__")],  # noqa: F821
+    _routeCallable,
 ]
 _validationFailureHandler = Callable[
     [Optional[object], IRequest, "Form", Dict[str, str]], Element

@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    NoReturn,
     Optional,
     Sequence,
     Type,
@@ -29,7 +30,6 @@ from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
-from ._typing import NoReturn
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,

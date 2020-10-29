@@ -11,6 +11,7 @@ from inspect import iscoroutine
 
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     IO,
@@ -39,7 +40,7 @@ from zope.interface import implementer
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest
 from ._resource import KleinResource
-from ._typing import Awaitable, KwArg, VarArg
+from ._typing import KwArg, VarArg
 
 
 KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]

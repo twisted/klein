@@ -67,7 +67,7 @@ class KleinErrorHandler(Protocol):
     ) -> KleinRenderable:
         """
         Method that, when registered with L{Klein.handle_errors}, handles
-        errors that occur within a L{KleinRoute}.
+        errors raised during request routing.
         """
 
 
@@ -411,11 +411,13 @@ class Klein:
         successfully, L{twisted.web.server.Request}'s processingFailed() method
         will be called.
 
-        In addition to handling errors that occur within a route handler, error
-        handlers also handle any C{werkzeug.exceptions.HTTPException} which is
-        raised during routing. In particular, C{werkzeug.exceptions.NotFound}
-        will be raised if no matching route is found, so to return a custom 404
-        users can do the following::
+        In addition to handling errors that occur within a L{KleinRoute}, error
+        handlers also handle any L{werkzeug.exceptions.HTTPException} which is
+        raised during request routing.
+
+        In particular, C{werkzeug.exceptions.NotFound} will be raised if no
+        matching route is found, so to return a custom 404 users can do the
+        following::
 
             @app.handle_errors(NotFound)
             def error_handler(request, failure):

@@ -8,7 +8,6 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from inspect import iscoroutine
-
 from typing import (
     Any,
     Awaitable,
@@ -18,7 +17,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Protocol,
     Union,
     cast,
 )
@@ -49,26 +47,33 @@ KleinRenderable = Union[
 ]
 
 
-class KleinRoute(Protocol):
-    __name__: str
+# Protocol is new in Python 3.8
+try:
+    from typing import Protocol
+except ImportError:
+    KleinRoute = Callable[..., KleinRenderable]
+    KleinErrorHandler = Callable[..., KleinRenderable]
+else:
 
-    def __call__(
-        self, request: IRequest, *args: Any, **kwargs: Any
-    ) -> KleinRenderable:
-        """
-        Function that, when decorated by L{Klein.route}, handles a Klein
-        request.
-        """
+    class KleinRoute(Protocol):  # type: ignore[no-redef]
+        __name__: str
 
+        def __call__(
+            self, request: IRequest, *args: Any, **kwargs: Any
+        ) -> KleinRenderable:
+            """
+            Function that, when decorated by L{Klein.route}, handles a Klein
+            request.
+            """
 
-class KleinErrorHandler(Protocol):
-    def __call__(
-        self, klein: Optional["Klein"], request: IRequest, failure: Failure
-    ) -> KleinRenderable:
-        """
-        Method that, when registered with L{Klein.handle_errors}, handles
-        errors raised during request routing.
-        """
+    class KleinErrorHandler(Protocol):  # type: ignore[no-redef]
+        def __call__(
+            self, klein: Optional["Klein"], request: IRequest, failure: Failure
+        ) -> KleinRenderable:
+            """
+            Method that, when registered with L{Klein.handle_errors}, handles
+            errors raised during request routing.
+            """
 
 
 def _call(

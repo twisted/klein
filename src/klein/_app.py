@@ -18,6 +18,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Protocol,
     Union,
     cast,
 )
@@ -40,17 +41,34 @@ from zope.interface import implementer
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest
 from ._resource import KleinResource
-from ._typing import KwArg, VarArg
 
 
 KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]
-KleinRoute = Callable[[Any, IRequest, VarArg(Any), KwArg(Any)], KleinRenderable]
-KleinErrorHandler = Callable[
-    [Optional["Klein"], IRequest, Failure], KleinRenderable
-]
+
+
+class KleinRoute(Protocol):
+    __name__: str
+
+    def __call__(
+        self, request: IRequest, *args: Any, **kwargs: Any
+    ) -> KleinRenderable:
+        """
+        Function that, when decorated by L{Klein.route}, handles a Klein
+        request.
+        """
+
+
+class KleinErrorHandler(Protocol):
+    def __call__(
+        self, klein: Optional["Klein"], request: IRequest, failure: Failure
+    ) -> KleinRenderable:
+        """
+        Method that, when registered with L{Klein.handle_errors}, handles
+        errors that occur within a L{KleinRoute}.
+        """
 
 
 def _call(

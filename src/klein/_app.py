@@ -17,10 +17,14 @@ from typing import (
     List,
     Mapping,
     Optional,
-    TYPE_CHECKING,
     Union,
     cast,
 )
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore[misc]
 from weakref import ref
 
 from twisted.internet import reactor
@@ -48,30 +52,22 @@ KleinRenderable = Union[
 ]
 
 
-if TYPE_CHECKING:
-    # Protocol is new in Python 3.8
-    from typing import Protocol
-
-    class KleinRoute(Protocol):
-        def __call__(self, request: IRequest) -> KleinRenderable:
-            """
-            Function that, when decorated by L{Klein.route}, handles a Klein
-            request.
-            """
-
-    class KleinErrorHandler(Protocol):
-        def __call__(
-            self, klein: Optional["Klein"], request: IRequest, failure: Failure
-        ) -> KleinRenderable:
-            """
-            Method that, when registered with L{Klein.handle_errors}, handles
-            errors raised during request routing.
-            """
+class KleinRoute(Protocol):
+    def __call__(self, request: IRequest) -> KleinRenderable:
+        """
+        Function that, when decorated by L{Klein.route}, handles a Klein
+        request.
+        """
 
 
-else:
-    KleinRoute = Callable[..., KleinRenderable]
-    KleinErrorHandler = Callable[..., KleinRenderable]
+class KleinErrorHandler(Protocol):
+    def __call__(
+        self, klein: Optional["Klein"], request: IRequest, failure: Failure
+    ) -> KleinRenderable:
+        """
+        Method that, when registered with L{Klein.handle_errors}, handles
+        errors raised during request routing.
+        """
 
 
 def _call(

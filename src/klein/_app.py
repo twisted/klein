@@ -53,9 +53,7 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     class KleinRoute(Protocol):
-        def __call__(
-            self, request: IRequest, *args: Any, **kwargs: Any
-        ) -> KleinRenderable:
+        def __call__(self, request: IRequest) -> KleinRenderable:
             """
             Function that, when decorated by L{Klein.route}, handles a Klein
             request.
@@ -198,7 +196,12 @@ class Klein:
         instance.
         """
         endpoint_f = self._endpoints[endpoint]
-        return endpoint_f(self._instance, request, *args, **kwargs)
+        # type note: endpoint_f is a KleinRoute, which is not defined as taking
+        # *args, **kwargs (because they aren't required), but we're going to
+        # pass them along here anyway.
+        return endpoint_f(
+            self._instance, request, *args, **kwargs
+        )  # type: ignore[call-arg]
 
     def execute_error_handler(
         self,

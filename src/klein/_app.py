@@ -17,6 +17,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    TYPE_CHECKING,
     Union,
     cast,
 )
@@ -47,17 +48,11 @@ KleinRenderable = Union[
 ]
 
 
-# Protocol is new in Python 3.8
-try:
+if TYPE_CHECKING:
+    # Protocol is new in Python 3.8
     from typing import Protocol
-except ImportError:
-    KleinRoute = Callable[..., KleinRenderable]
-    KleinErrorHandler = Callable[..., KleinRenderable]
-else:
 
-    class KleinRoute(Protocol):  # type: ignore[no-redef]
-        __name__: str
-
+    class KleinRoute(Protocol):
         def __call__(
             self, request: IRequest, *args: Any, **kwargs: Any
         ) -> KleinRenderable:
@@ -66,7 +61,7 @@ else:
             request.
             """
 
-    class KleinErrorHandler(Protocol):  # type: ignore[no-redef]
+    class KleinErrorHandler(Protocol):
         def __call__(
             self, klein: Optional["Klein"], request: IRequest, failure: Failure
         ) -> KleinRenderable:
@@ -74,6 +69,11 @@ else:
             Method that, when registered with L{Klein.handle_errors}, handles
             errors raised during request routing.
             """
+
+
+else:
+    KleinRoute = Callable[..., KleinRenderable]
+    KleinErrorHandler = Callable[..., KleinRenderable]
 
 
 def _call(
@@ -292,7 +292,10 @@ class Klein:
 
         @named("router for '" + url + "'")
         def deco(f: KleinRoute) -> KleinRoute:
-            kwargs.setdefault("endpoint", f.__name__)
+            kwargs.setdefault(
+                "endpoint",
+                f.__name__,  # type: ignore[attr-defined]
+            )
             if kwargs.pop("branch", False):
                 branchKwargs = kwargs.copy()
                 branchKwargs["endpoint"] = branchKwargs["endpoint"] + "_branch"

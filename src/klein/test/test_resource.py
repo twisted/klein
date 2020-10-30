@@ -218,7 +218,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
-        def foo(self, resource: IRequest) -> KleinRenderable:
+        def foo(self, request: IRequest) -> KleinRenderable:
             pass
 
     _one = _One()

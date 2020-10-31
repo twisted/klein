@@ -5,7 +5,6 @@ Applications are great.  Lets have more of them.
 
 
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from inspect import iscoroutine
 from typing import (
@@ -14,6 +13,7 @@ from typing import (
     Callable,
     Dict,
     IO,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -28,7 +28,7 @@ except ImportError:
     from typing_extensions import Protocol  # type: ignore[misc]
 
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, ensureDeferred
+from twisted.internet.defer import ensureDeferred
 from twisted.internet.endpoints import serverFromString
 from twisted.python import log
 from twisted.python.components import registerAdapter
@@ -75,10 +75,10 @@ class KleinErrorHandler(Protocol):
 
 def _call(
     __klein_instance__: Optional["Klein"],
-    __klein_f__: Callable,
+    __klein_f__: Callable[..., KleinRenderable],
     *args: Any,
     **kwargs: Any,
-) -> Deferred:
+) -> KleinRenderable:
     """
     Call C{__klein_f__} with the given C{*args} and C{**kwargs}.
 
@@ -351,7 +351,7 @@ class Klein:
         return deco
 
     @contextmanager
-    def subroute(self, prefix):
+    def subroute(self, prefix: str) -> Iterator["Klein"]:
         """
         Within this block, C{@route} adds rules to a
         C{werkzeug.routing.Submount}.
@@ -381,12 +381,17 @@ class Klein:
 
         segments = self._segments_in_url(prefix)
 
-        submount_map = namedtuple("submount", ["rules", "add"])(
-            [], lambda r: submount_map.rules.append(r)
-        )
+        class SubmountMap:
+            def __init__(self) -> None:
+                self.rules: List[Rule] = []
+
+            def add(self, rule: Rule) -> None:
+                self.rules.append(rule)
+
+        submount_map = SubmountMap()
 
         try:
-            self._url_map = submount_map
+            self._url_map = cast(Map, submount_map)
             self._subroute_segments += segments
             yield self
             _map_before_submount.add(Submount(prefix, submount_map.rules))

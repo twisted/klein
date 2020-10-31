@@ -53,7 +53,7 @@ KleinRenderable = Union[
 
 
 class KleinRoute(Protocol):
-    def __call__(_self, /, self: Any, request: IRequest) -> KleinRenderable:
+    def __call__(_self, self: Any, request: IRequest) -> KleinRenderable:
         """
         Function that, when decorated by L{Klein.route}, handles a Klein
         request.

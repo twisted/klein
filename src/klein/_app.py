@@ -13,19 +13,21 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Generic,
     IO,
     List,
     Mapping,
     Optional,
+    TypeVar,
     Union,
     cast,
 )
+from weakref import ref
 
 try:
     from typing import Protocol
 except ImportError:
     from typing_extensions import Protocol  # type: ignore[misc]
-from weakref import ref
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, ensureDeferred
@@ -46,14 +48,16 @@ from ._interfaces import IKleinRequest
 from ._resource import KleinResource
 
 
+T_co = TypeVar("T_co", contravariant=True)
+
 KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]
 
 
-class KleinRoute(Protocol):
-    def __call__(self, request: IRequest) -> KleinRenderable:
+class KleinRoute(Protocol[T_co]):
+    def __call__(_self, /, self: T_co, request: IRequest) -> KleinRenderable:
         """
         Function that, when decorated by L{Klein.route}, handles a Klein
         request.
@@ -62,7 +66,10 @@ class KleinRoute(Protocol):
 
 class KleinErrorHandler(Protocol):
     def __call__(
-        self, klein: Optional["Klein"], request: IRequest, failure: Failure
+        self,
+        klein: Optional["Klein"],
+        request: IRequest,
+        failure: Failure,
     ) -> KleinRenderable:
         """
         Method that, when registered with L{Klein.handle_errors}, handles
@@ -140,7 +147,7 @@ class KleinRequest:
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-class Klein:
+class Klein(Generic[T_co]):
     """
     L{Klein} is an object which is responsible for maintaining the routing
     configuration of our application.
@@ -152,7 +159,7 @@ class Klein:
 
     _subroute_segments = 0
 
-    def __init__(self) -> None:
+    def __init__(self: "Klein[None]") -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRoute] = {}
         self._error_handlers: List[KleinErrorHandler] = []
@@ -264,7 +271,9 @@ class Klein:
             segment_count -= 1
         return segment_count
 
-    def route(self, url, *args, **kwargs):
+    def route(
+        self, url: str, *args: Any, **kwargs: Any
+    ) -> Callable[[KleinRoute[T_co]], KleinRoute[T_co]]:
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
         C{werkzeug.routing.Rule}.  The handler function will be passed at least

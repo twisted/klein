@@ -13,12 +13,10 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Generic,
     IO,
     List,
     Mapping,
     Optional,
-    TypeVar,
     Union,
     cast,
 )
@@ -48,16 +46,14 @@ from ._interfaces import IKleinRequest
 from ._resource import KleinResource
 
 
-T_co = TypeVar("T_co", contravariant=True)
-
 KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]
 
 
-class KleinRoute(Protocol[T_co]):
-    def __call__(_self, /, self: T_co, request: IRequest) -> KleinRenderable:
+class KleinRoute(Protocol):
+    def __call__(_self, /, self: Any, request: IRequest) -> KleinRenderable:
         """
         Function that, when decorated by L{Klein.route}, handles a Klein
         request.
@@ -147,7 +143,7 @@ class KleinRequest:
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-class Klein(Generic[T_co]):
+class Klein:
     """
     L{Klein} is an object which is responsible for maintaining the routing
     configuration of our application.
@@ -159,7 +155,7 @@ class Klein(Generic[T_co]):
 
     _subroute_segments = 0
 
-    def __init__(self: "Klein[None]") -> None:
+    def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRoute] = {}
         self._error_handlers: List[KleinErrorHandler] = []
@@ -273,7 +269,7 @@ class Klein(Generic[T_co]):
 
     def route(
         self, url: str, *args: Any, **kwargs: Any
-    ) -> Callable[[KleinRoute[T_co]], KleinRoute[T_co]]:
+    ) -> Callable[[KleinRoute], KleinRoute]:
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
         C{werkzeug.routing.Rule}.  The handler function will be passed at least

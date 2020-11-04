@@ -822,7 +822,6 @@ class KleinResourceTests(SynchronousTestCase):
             generic_error_handled[0] = True
 
         d = _render(self.kr, request)
-
         self.assertFired(d)
         self.assertEqual(request.processingFailed.called, False)
         self.assertEqual(type_error_handled[0], False)
@@ -830,10 +829,22 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(len(failures), 1)
         self.assertEqual(request.code, 501)
 
-        # Verify that handlers would otherwise have worked
-        handle_type_error(request, None)
+        # Verify that above handlers would otherwise have worked
+
+        @app.route("/type_error")
+        def type_error(request):
+            return fail(TypeError("type error"))
+
+        d = _render(self.kr, requestMock(b"/type_error"))
+        self.assertFired(d)
         self.assertEqual(type_error_handled[0], True)
-        handle_generic_error(request, None)
+
+        @app.route("/generic_error")
+        def generic_error(request):
+            return fail(Exception("generic error"))
+
+        d = _render(self.kr, requestMock(b"/generic_error"))
+        self.assertFired(d)
         self.assertEqual(generic_error_handled[0], True)
 
     def test_notFoundException(self):
@@ -859,8 +870,14 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.getWrittenData(), b"Custom Not Found")
         self.assertEqual(request.writeCount, 1)
 
-        # Verify that handlers would otherwise have worked
-        handle_generic_error(request, None)
+        # Verify that above handlers would otherwise have worked
+
+        @app.route("/generic_error")
+        def generic_error(request):
+            return fail(Exception("generic error"))
+
+        d = _render(self.kr, requestMock(b"/generic_error"))
+        self.assertFired(d)
         self.assertEqual(generic_error_handled[0], True)
 
     def test_errorHandlerNeedsRendering(self):

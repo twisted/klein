@@ -89,12 +89,12 @@ def _extractURLparts(request):
         if not script_name.startswith(b"/"):
             script_name = b"/" + script_name
 
-    path_name = b""
+    path_info = b""
     if request.postpath:
-        path_name = b"/".join(request.postpath)
+        path_info = b"/".join(request.postpath)
 
-        if not path_name.startswith(b"/"):
-            path_name = b"/" + path_name
+        if not path_info.startswith(b"/"):
+            path_info = b"/" + path_info
 
     url_scheme = "https" if request.isSecure() else "http"
 
@@ -104,7 +104,7 @@ def _extractURLparts(request):
     except UnicodeDecodeError:
         utf8Failures.append(("SERVER_NAME", failure.Failure()))
     try:
-        path_info = path_name.decode("utf-8")
+        path_text = path_info.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("PATH_INFO", failure.Failure()))
     try:
@@ -115,7 +115,7 @@ def _extractURLparts(request):
     if utf8Failures:
         raise _URLDecodeError(utf8Failures)
 
-    return url_scheme, server_name, server_port, path_info, script_text
+    return url_scheme, server_name, server_port, path_text, script_text
 
 
 class KleinResource(Resource):

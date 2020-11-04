@@ -52,7 +52,7 @@ KleinRenderable = Union[
 ]
 
 
-class KleinRoute(Protocol):
+class KleinRouteHandler(Protocol):
     def __call__(_self, self: Any, request: IRequest) -> KleinRenderable:
         """
         Function that, when decorated by L{Klein.route}, handles a Klein
@@ -157,7 +157,7 @@ class Klein:
 
     def __init__(self) -> None:
         self._url_map = Map()
-        self._endpoints: Dict[str, KleinRoute] = {}
+        self._endpoints: Dict[str, KleinRouteHandler] = {}
         self._error_handlers: List[KleinErrorHandler] = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
@@ -181,7 +181,7 @@ class Klein:
         return self._url_map
 
     @property
-    def endpoints(self) -> Dict[str, KleinRoute]:
+    def endpoints(self) -> Dict[str, KleinRouteHandler]:
         """
         Read only property exposing L{Klein._endpoints}.
         """
@@ -195,9 +195,9 @@ class Klein:
         instance.
         """
         endpoint_f = self._endpoints[endpoint]
-        # type note: endpoint_f is a KleinRoute, which is not defined as taking
-        # *args, **kwargs (because they aren't required), but we're going to
-        # pass them along here anyway.
+        # type note: endpoint_f is a KleinRouteHandler, which is not defined as
+        # taking *args, **kwargs (because they aren't required), but we're
+        # going to pass them along here anyway.
         return endpoint_f(
             self._instance, request, *args, **kwargs
         )  # type: ignore[call-arg]
@@ -269,7 +269,7 @@ class Klein:
 
     def route(
         self, url: str, *args: Any, **kwargs: Any
-    ) -> Callable[[KleinRoute], KleinRoute]:
+    ) -> Callable[[KleinRouteHandler], KleinRouteHandler]:
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
         C{werkzeug.routing.Rule}.  The handler function will be passed at least
@@ -295,7 +295,7 @@ class Klein:
         segment_count = self._segments_in_url(url) + self._subroute_segments
 
         @named("router for '" + url + "'")
-        def deco(f: KleinRoute) -> KleinRoute:
+        def deco(f: KleinRouteHandler) -> KleinRouteHandler:
             kwargs.setdefault(
                 "endpoint",
                 f.__name__,  # type: ignore[attr-defined]
@@ -316,7 +316,7 @@ class Klein:
                     ).split("/")
                     return _call(instance, f, request, *a, **kw)
 
-                branch_f = cast(KleinRoute, branch_f)
+                branch_f = cast(KleinRouteHandler, branch_f)
 
                 branch_f.segment_count = (  # type: ignore[attr-defined]
                     segment_count
@@ -340,7 +340,7 @@ class Klein:
             ) -> KleinRenderable:
                 return _call(instance, f, request, *a, **kw)
 
-            _f = cast(KleinRoute, _f)
+            _f = cast(KleinRouteHandler, _f)
 
             _f.segment_count = segment_count  # type: ignore[attr-defined]
 
@@ -428,9 +428,9 @@ class Klein:
         successfully, L{twisted.web.server.Request}'s processingFailed() method
         will be called.
 
-        In addition to handling errors that occur within a L{KleinRoute}, error
-        handlers also handle any L{werkzeug.exceptions.HTTPException} which is
-        raised during request routing.
+        In addition to handling errors that occur within a L{KleinRouteHandler},
+        error handlers also handle any L{werkzeug.exceptions.HTTPException}
+        which is raised during request routing.
 
         In particular, C{werkzeug.exceptions.NotFound} will be raised if no
         matching route is found, so to return a custom 404 users can do the

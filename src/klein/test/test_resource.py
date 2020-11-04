@@ -786,7 +786,6 @@ class KleinResourceTests(SynchronousTestCase):
         def handle_errors(request, failure):
             failures.append(failure)
             request.setResponseCode(501)
-            return
 
         d = _render(self.kr, request)
 
@@ -812,18 +811,15 @@ class KleinResourceTests(SynchronousTestCase):
         @app.handle_errors(TypeError)
         def handle_type_error(request, failure):
             type_error_handled[0] = True
-            return
 
         @app.handle_errors(TypeFilterTestError)
         def handle_type_filter_test_error(request, failure):
             failures.append(failure)
             request.setResponseCode(501)
-            return
 
         @app.handle_errors
         def handle_generic_error(request, failure):
             generic_error_handled[0] = True
-            return
 
         d = _render(self.kr, request)
 
@@ -833,6 +829,12 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(generic_error_handled[0], False)
         self.assertEqual(len(failures), 1)
         self.assertEqual(request.code, 501)
+
+        # Verify that handlers would otherwise have worked
+        handle_type_error(request, None)
+        self.assertEqual(type_error_handled[0], True)
+        handle_generic_error(request, None)
+        self.assertEqual(generic_error_handled[0], True)
 
     def test_notFoundException(self):
         app = self.app
@@ -847,7 +849,6 @@ class KleinResourceTests(SynchronousTestCase):
         @app.handle_errors
         def handle_generic_error(request, failure):
             generic_error_handled[0] = True
-            return
 
         d = _render(self.kr, request)
 
@@ -857,6 +858,10 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.code, 404)
         self.assertEqual(request.getWrittenData(), b"Custom Not Found")
         self.assertEqual(request.writeCount, 1)
+
+        # Verify that handlers would otherwise have worked
+        handle_generic_error(request, None)
+        self.assertEqual(generic_error_handled[0], True)
 
     def test_errorHandlerNeedsRendering(self):
         """

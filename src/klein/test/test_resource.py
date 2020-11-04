@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+from typing import List, Optional
 from unittest.mock import Mock, call
 
 from urllib.parse import parse_qs
@@ -7,6 +8,7 @@ from urllib.parse import parse_qs
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.unix import Server
+from twisted.python.failure import Failure
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web import server
 from twisted.web.http_headers import Headers
@@ -795,8 +797,8 @@ class KleinResourceTests(SynchronousTestCase):
     def test_typeSpecificErrorHandlers(self):
         app = self.app
         request = requestMock(b"/")
-        type_error_handled = False
-        generic_error_handled = False
+        type_error_handled = [False]
+        generic_error_handled = [False]
 
         failures = []
 
@@ -809,8 +811,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.handle_errors(TypeError)
         def handle_type_error(request, failure):
-            global type_error_handled
-            type_error_handled = True
+            type_error_handled[0] = True
             return
 
         @app.handle_errors(TypeFilterTestError)
@@ -821,23 +822,22 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.handle_errors
         def handle_generic_error(request, failure):
-            global generic_error_handled
-            generic_error_handled = True
+            generic_error_handled[0] = True
             return
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         self.assertEqual(request.processingFailed.called, False)
-        self.assertEqual(type_error_handled, False)
-        self.assertEqual(generic_error_handled, False)
+        self.assertEqual(type_error_handled[0], False)
+        self.assertEqual(generic_error_handled[0], False)
         self.assertEqual(len(failures), 1)
         self.assertEqual(request.code, 501)
 
     def test_notFoundException(self):
         app = self.app
         request = requestMock(b"/")
-        generic_error_handled = False
+        generic_error_handled = [False]
 
         @app.handle_errors(NotFound)
         def handle_not_found(request, failure):
@@ -846,15 +846,14 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.handle_errors
         def handle_generic_error(request, failure):
-            global generic_error_handled
-            generic_error_handled = True
+            generic_error_handled[0] = True
             return
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         self.assertEqual(request.processingFailed.called, False)
-        self.assertEqual(generic_error_handled, False)
+        self.assertEqual(generic_error_handled[0], False)
         self.assertEqual(request.code, 404)
         self.assertEqual(request.getWrittenData(), b"Custom Not Found")
         self.assertEqual(request.writeCount, 1)
@@ -963,7 +962,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = requestMock(b"/")
 
-        cancelled = []
+        cancelled: List[Failure] = []
 
         @app.route("/")
         def root(request):
@@ -987,7 +986,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = requestMock(b"/foo/1")
 
-        relative_url = [None]
+        relative_url: List[Optional[str]] = [None]
 
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
@@ -1020,7 +1019,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = requestMock(b"/foo/1")
 
-        relative_url = [None]
+        relative_url: List[Optional[str]] = [None]
 
         @app.route("/foo/<int:bar>")
         def foo(request, bar):
@@ -1268,11 +1267,11 @@ class GlobalAppTests(SynchronousTestCase):
     def test_global_app(self):
         from klein.app import run, route, resource, handle_errors
 
-        globalApp = run.__self__
+        globalApp = run.__self__  # type: ignore[attr-defined]
 
-        self.assertIs(route.__self__, globalApp)
-        self.assertIs(resource.__self__, globalApp)
-        self.assertIs(handle_errors.__self__, globalApp)
+        self.assertIs(route.__self__, globalApp)  # type: ignore[attr-defined]
+        self.assertIs(resource.__self__, globalApp)  # type: ignore[attr-defined]
+        self.assertIs(handle_errors.__self__, globalApp)  # type: ignore[attr-defined]
 
         @route("/")
         def index(request):

@@ -3,6 +3,9 @@ Shared tools for Klein's test suite.
 """
 
 from abc import ABC, abstractmethod
+from typing import cast
+
+from twisted.trial.unittest import SynchronousTestCase
 
 
 class EqualityTestsMixin(ABC):
@@ -32,14 +35,14 @@ class EqualityTestsMixin(ABC):
         An object compares equal to itself using the C{==} operator.
         """
         o = self.anInstance()
-        self.assertTrue(o == o)
+        cast(SynchronousTestCase, self).assertTrue(o == o)
 
     def test_identicalNe(self):
         """
         An object doesn't compare not equal to itself using the C{!=} operator.
         """
         o = self.anInstance()
-        self.assertFalse(o != o)
+        cast(SynchronousTestCase, self).assertFalse(o != o)
 
     def test_sameEq(self):
         """
@@ -48,7 +51,7 @@ class EqualityTestsMixin(ABC):
         """
         a = self.anInstance()
         b = self.anInstance()
-        self.assertTrue(a == b)
+        cast(SynchronousTestCase, self).assertTrue(a == b)
 
     def test_sameNe(self):
         """
@@ -57,7 +60,7 @@ class EqualityTestsMixin(ABC):
         """
         a = self.anInstance()
         b = self.anInstance()
-        self.assertFalse(a != b)
+        cast(SynchronousTestCase, self).assertFalse(a != b)
 
     def test_differentEq(self):
         """
@@ -66,7 +69,7 @@ class EqualityTestsMixin(ABC):
         """
         a = self.anInstance()
         b = self.anotherInstance()
-        self.assertFalse(a == b)
+        cast(SynchronousTestCase, self).assertFalse(a == b)
 
     def test_differentNe(self):
         """
@@ -75,7 +78,7 @@ class EqualityTestsMixin(ABC):
         """
         a = self.anInstance()
         b = self.anotherInstance()
-        self.assertTrue(a != b)
+        cast(SynchronousTestCase, self).assertTrue(a != b)
 
     def test_anotherTypeEq(self):
         """
@@ -84,7 +87,7 @@ class EqualityTestsMixin(ABC):
         """
         a = self.anInstance()
         b = object()
-        self.assertFalse(a == b)
+        cast(SynchronousTestCase, self).assertFalse(a == b)
 
     def test_anotherTypeNe(self):
         """
@@ -93,7 +96,7 @@ class EqualityTestsMixin(ABC):
         """
         a = self.anInstance()
         b = object()
-        self.assertTrue(a != b)
+        cast(SynchronousTestCase, self).assertTrue(a != b)
 
     def test_delegatedEq(self):
         """
@@ -108,7 +111,7 @@ class EqualityTestsMixin(ABC):
 
         a = self.anInstance()
         b = Delegate()
-        self.assertEqual(a == b, [b])
+        cast(SynchronousTestCase, self).assertEqual(a == b, [b])
 
     def test_delegateNe(self):
         """
@@ -123,4 +126,4 @@ class EqualityTestsMixin(ABC):
 
         a = self.anInstance()
         b = Delegate()
-        self.assertEqual(a != b, [b])
+        cast(SynchronousTestCase, self).assertEqual(a != b, [b])

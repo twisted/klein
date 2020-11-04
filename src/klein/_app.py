@@ -17,6 +17,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
     Union,
     cast,
 )
@@ -51,6 +52,8 @@ KleinErrorHandler = Callable[
     [Optional["Klein"], IRequest, Failure], KleinRenderable
 ]
 
+KleinQueryValue = Union[int, str]
+
 
 def _call(
     __klein_instance__: Optional["Klein"],
@@ -82,7 +85,7 @@ def _call(
 def buildURL(
     mapper: MapAdapter,
     endpoint: str,
-    values: Optional[Mapping[str, str]] = None,
+    values: Optional[Mapping[str, KleinQueryValue]] = None,
     method: Optional[str] = None,
     force_external: bool = False,
     append_unknown: bool = True,
@@ -137,7 +140,7 @@ class Klein:
     def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRoute] = {}
-        self._error_handlers: List[KleinErrorHandler] = []
+        self._error_handlers: List[Tuple[List[Exception], KleinErrorHandler]] = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
 
@@ -350,12 +353,17 @@ class Klein:
 
         segments = self._segments_in_url(prefix)
 
-        submount_map = namedtuple("submount", ["rules", "add"])(
-            [], lambda r: submount_map.rules.append(r)
-        )
+        class SubmountMap:
+            def __init__(self) -> None:
+                self.rules: List[Rule] = []
+
+            def add(self, rule: Rule) -> None:
+                self.rules.append(rule)
+
+        submount_map = SubmountMap()
 
         try:
-            self._url_map = submount_map
+            self._url_map = cast(Map, submount_map)
             self._subroute_segments += segments
             yield self
             _map_before_submount.add(Submount(prefix, submount_map.rules))
@@ -435,9 +443,9 @@ class Klein:
 
     def urlFor(
         self,
-        request: IKleinRequest,
+        request: IRequest,
         endpoint: str,
-        values: Optional[Mapping[str, str]] = None,
+        values: Optional[Mapping[str, KleinQueryValue]] = None,
         method: Optional[str] = None,
         force_external: bool = False,
         append_unknown: bool = True,

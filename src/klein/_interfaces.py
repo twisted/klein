@@ -21,7 +21,7 @@ from ._imessage import (
 from ._typing import ifmethod
 
 
-class IKleinRequest(Interface):
+class _IKleinRequest(Interface):
     branch_segments = Attribute("Segments consumed by a branch route.")
     mapper = Attribute("L{werkzeug.routing.MapAdapter}")
 
@@ -42,11 +42,14 @@ class IKleinRequest(Interface):
 if TYPE_CHECKING:  # pragma: no cover
     from typing import Union
 
+    from ._app import KleinRequest
     from ._headers import FrozenHTTPHeaders, MutableHTTPHeaders
     from ._headers_compat import HTTPHeadersWrappingHeaders
     from ._request import FrozenHTTPRequest
     from ._request_compat import HTTPRequestWrappingIRequest
     from ._response import FrozenHTTPResponse
+
+    IKleinRequest = KleinRequest
 
     IHTTPHeaders = Union[
         _IHTTPHeaders,
@@ -86,6 +89,7 @@ else:
     IHTTPMessage = _IHTTPMessage
     IHTTPRequest = _IHTTPRequest
     IHTTPResponse = _IHTTPResponse
+    IKleinRequest = _IKleinRequest
     IMutableHTTPHeaders = _IMutableHTTPHeaders
 
 

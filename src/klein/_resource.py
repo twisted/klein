@@ -82,19 +82,19 @@ def _extractURLparts(request):
     ]:
         server_name = server_name + b":" + intToBytes(server_port)
 
-    script_name = b""
+    script_bytes = b""
     if request.prepath:
-        script_name = b"/".join(request.prepath)
+        script_bytes = b"/".join(request.prepath)
 
-        if not script_name.startswith(b"/"):
-            script_name = b"/" + script_name
+        if not script_bytes.startswith(b"/"):
+            script_bytes = b"/" + script_bytes
 
-    path_info = b""
+    path_bytes = b""
     if request.postpath:
-        path_info = b"/".join(request.postpath)
+        path_bytes = b"/".join(request.postpath)
 
-        if not path_info.startswith(b"/"):
-            path_info = b"/" + path_info
+        if not path_bytes.startswith(b"/"):
+            path_bytes = b"/" + path_bytes
 
     url_scheme = "https" if request.isSecure() else "http"
 
@@ -104,11 +104,11 @@ def _extractURLparts(request):
     except UnicodeDecodeError:
         utf8Failures.append(("SERVER_NAME", failure.Failure()))
     try:
-        path_info = path_info.decode("utf-8")
+        path_info = path_bytes.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("PATH_INFO", failure.Failure()))
     try:
-        script_name = script_name.decode("utf-8")
+        script_name = script_bytes.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("SCRIPT_NAME", failure.Failure()))
 

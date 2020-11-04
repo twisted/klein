@@ -5,7 +5,6 @@ Applications are great.  Lets have more of them.
 
 
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from inspect import iscoroutine
 
@@ -140,7 +139,9 @@ class Klein:
     def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRoute] = {}
-        self._error_handlers: List[Tuple[List[Exception], KleinErrorHandler]] = []
+        self._error_handlers: List[
+            Tuple[List[Exception], KleinErrorHandler]
+        ] = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
 

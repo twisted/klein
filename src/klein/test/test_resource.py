@@ -1269,9 +1269,18 @@ class GlobalAppTests(SynchronousTestCase):
 
         globalApp = run.__self__  # type: ignore[attr-defined]
 
-        self.assertIs(route.__self__, globalApp)  # type: ignore[attr-defined]
-        self.assertIs(resource.__self__, globalApp)  # type: ignore[attr-defined]
-        self.assertIs(handle_errors.__self__, globalApp)  # type: ignore[attr-defined]
+        self.assertIs(
+            route.__self__,  # type: ignore[attr-defined]
+            globalApp,
+        )
+        self.assertIs(
+            resource.__self__,  # type: ignore[attr-defined]
+            globalApp,
+        )
+        self.assertIs(
+            handle_errors.__self__,  # type: ignore[attr-defined]
+            globalApp,
+        )
 
         @route("/")
         def index(request):

@@ -82,19 +82,19 @@ def _extractURLparts(request):
     ]:
         server_name = server_name + b":" + intToBytes(server_port)
 
-    script_bytes = b""
+    script_name = b""
     if request.prepath:
-        script_bytes = b"/".join(request.prepath)
+        script_name = b"/".join(request.prepath)
 
-        if not script_bytes.startswith(b"/"):
-            script_bytes = b"/" + script_bytes
+        if not script_name.startswith(b"/"):
+            script_name = b"/" + script_name
 
-    path_bytes = b""
+    path_name = b""
     if request.postpath:
-        path_bytes = b"/".join(request.postpath)
+        path_name = b"/".join(request.postpath)
 
-        if not path_bytes.startswith(b"/"):
-            path_bytes = b"/" + path_bytes
+        if not path_name.startswith(b"/"):
+            path_name = b"/" + path_name
 
     url_scheme = "https" if request.isSecure() else "http"
 
@@ -104,18 +104,18 @@ def _extractURLparts(request):
     except UnicodeDecodeError:
         utf8Failures.append(("SERVER_NAME", failure.Failure()))
     try:
-        path_info = path_bytes.decode("utf-8")
+        path_info = path_name.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("PATH_INFO", failure.Failure()))
     try:
-        script_name = script_bytes.decode("utf-8")
+        script_text = script_name.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("SCRIPT_NAME", failure.Failure()))
 
     if utf8Failures:
         raise _URLDecodeError(utf8Failures)
 
-    return url_scheme, server_name, server_port, path_info, script_name
+    return url_scheme, server_name, server_port, path_info, script_text
 
 
 class KleinResource(Resource):

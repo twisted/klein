@@ -2,128 +2,129 @@
 Shared tools for Klein's test suite.
 """
 
-from abc import ABC, abstractmethod
-from typing import cast
+from typing import Generic, Protocol, TypeVar, cast
 
 from twisted.trial.unittest import SynchronousTestCase
 
 
-class EqualityTestsMixin(ABC):
-    """
-    A mixin defining tests for the standard implementation of C{==} and C{!=}.
-    """
+T_co = TypeVar("T_co", covariant=True)
 
-    @abstractmethod
-    def anInstance(self):
+
+class EqualityTestProtocol(Protocol[T_co], SynchronousTestCase):
+    def anInstance(self) -> T_co:
         """
         Return an instance of the class under test.  Each call to this method
         must return a different object.  All objects returned must be equal to
         each other.
         """
 
-    @abstractmethod
-    def anotherInstance(self):
+    def anotherInstance(self) -> T_co:
         """
         Return an instance of the class under test.  Each call to this method
-        must return a different object.  The objects must not be equal to the
-        objects returned by C{anInstance}.  They may or may not be equal to
-        each other (they will not be compared against each other).
+        must return a different object.  All objects returned must be equal to
+        each other.
         """
 
-    def test_identicalEq(self):
+
+class EqualityTestsMixin(Generic[T_co]):
+    """
+    A mixin defining tests for the standard implementation of C{==} and C{!=}.
+    """
+
+    def test_identicalEq(self: EqualityTestProtocol[T_co]) -> None:
         """
         An object compares equal to itself using the C{==} operator.
         """
         o = self.anInstance()
-        cast(SynchronousTestCase, self).assertTrue(o == o)
+        self.assertTrue(o == o)
 
-    def test_identicalNe(self):
+    def test_identicalNe(self: EqualityTestProtocol[T_co]) -> None:
         """
         An object doesn't compare not equal to itself using the C{!=} operator.
         """
         o = self.anInstance()
-        cast(SynchronousTestCase, self).assertFalse(o != o)
+        self.assertFalse(o != o)
 
-    def test_sameEq(self):
+    def test_sameEq(self: EqualityTestProtocol[T_co]) -> None:
         """
         Two objects that are equal to each other compare equal to each other
         using the C{==} operator.
         """
         a = self.anInstance()
         b = self.anInstance()
-        cast(SynchronousTestCase, self).assertTrue(a == b)
+        self.assertTrue(a == b)
 
-    def test_sameNe(self):
+    def test_sameNe(self: EqualityTestProtocol[T_co]) -> None:
         """
         Two objects that are equal to each other do not compare not equal to
         each other using the C{!=} operator.
         """
         a = self.anInstance()
         b = self.anInstance()
-        cast(SynchronousTestCase, self).assertFalse(a != b)
+        self.assertFalse(a != b)
 
-    def test_differentEq(self):
+    def test_differentEq(self: EqualityTestProtocol[T_co]) -> None:
         """
         Two objects that are not equal to each other do not compare equal to
         each other using the C{==} operator.
         """
         a = self.anInstance()
         b = self.anotherInstance()
-        cast(SynchronousTestCase, self).assertFalse(a == b)
+        self.assertFalse(a == b)
 
-    def test_differentNe(self):
+    def test_differentNe(self: EqualityTestProtocol[T_co]) -> None:
         """
         Two objects that are not equal to each other compare not equal to each
         other using the C{!=} operator.
         """
         a = self.anInstance()
         b = self.anotherInstance()
-        cast(SynchronousTestCase, self).assertTrue(a != b)
+        self.assertTrue(a != b)
 
-    def test_anotherTypeEq(self):
+    def test_anotherTypeEq(self: EqualityTestProtocol[T_co]) -> None:
         """
         The object does not compare equal to an object of an unrelated type
         (which does not implement the comparison) using the C{==} operator.
         """
         a = self.anInstance()
         b = object()
-        cast(SynchronousTestCase, self).assertFalse(a == b)
+        self.assertFalse(a == b)
 
-    def test_anotherTypeNe(self):
+    def test_anotherTypeNe(self: EqualityTestProtocol[T_co]) -> None:
         """
         The object compares not equal to an object of an unrelated type (which
         does not implement the comparison) using the C{!=} operator.
         """
         a = self.anInstance()
         b = object()
-        cast(SynchronousTestCase, self).assertTrue(a != b)
+        self.assertTrue(a != b)
 
-    def test_delegatedEq(self):
+    def test_delegatedEq(self: EqualityTestProtocol[T_co]) -> None:
         """
         The result of comparison using C{==} is delegated to the right-hand
         operand if it is of an unrelated type.
         """
 
         class Delegate:
-            def __eq__(self, other):
-                # Do something crazy and obvious.
-                return [self]
+            def __eq__(self, other: object) -> bool:
+                # Do something crazy and easily identifiable.
+                return cast(bool, [self])
 
         a = self.anInstance()
         b = Delegate()
-        cast(SynchronousTestCase, self).assertEqual(a == b, [b])
+        self.assertEqual(a == b, [b])
 
-    def test_delegateNe(self):
+    def test_delegateNe(self: EqualityTestProtocol[T_co]) -> None:
         """
         The result of comparison using C{!=} is delegated to the right-hand
         operand if it is of an unrelated type.
         """
 
         class Delegate:
-            def __ne__(self, other):
-                # Do something crazy and obvious.
-                return [self]
+            def __ne__(self, other: object) -> bool:
+                # Do something crazy and easily identifiable.
+                return cast(bool, [self])
 
         a = self.anInstance()
         b = Delegate()
-        cast(SynchronousTestCase, self).assertEqual(a != b, [b])
+        self.assertEqual(a != b, [b])

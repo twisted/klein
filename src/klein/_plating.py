@@ -11,8 +11,6 @@ from typing import Any, Callable, List, Tuple, cast
 
 import attr
 
-from six import integer_types, string_types, text_type
-
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRequest
@@ -26,8 +24,8 @@ StackType = List[Tuple[Any, Callable[[Any], None]]]
 
 # https://github.com/python/mypy/issues/224
 ATOM_TYPES = (
-    cast(Tuple[Any, ...], integer_types)
-    + cast(Tuple[Any, ...], string_types)
+    cast(Tuple[Any, ...], (int,))
+    + cast(Tuple[Any, ...], (str,))
     + cast(Tuple[Any, ...], (float, None.__class__))
 )
 
@@ -111,7 +109,7 @@ def resolveDeferredObjects(root: Any) -> Deferred:
         else:
             raise TypeError(
                 obj,
-                "{input} not JSON serializable".format(input=obj),
+                f"{obj} not JSON serializable",
             )
 
     returnValue(result[0])
@@ -121,8 +119,8 @@ def _extra_types(input):
     """
     Renderability for a few additional types.
     """
-    if isinstance(input, (float,) + integer_types):
-        return text_type(input)
+    if isinstance(input, (float, int)):
+        return str(input)
     return input
 
 
@@ -144,7 +142,7 @@ class PlatedElement(Element):
         self._boundInstance = boundInstance
         self._presentationSlots = presentationSlots
         self._renderers = renderers
-        super(PlatedElement, self).__init__(
+        super().__init__(
             loader=TagLoader(
                 preloaded.fillSlots(
                     **{k: _extra_types(v) for k, v in slot_data.items()}
@@ -194,7 +192,7 @@ class PlatedElement(Element):
             raise MissingRenderMethod(self, name)
 
 
-class Plating(object):
+class Plating:
     """
     A L{Plating} is a container which can be used to generate HTML from data.
 
@@ -218,7 +216,7 @@ class Plating(object):
         The name of the renderer to use within the template is the name of the
         decorated function.
         """
-        self._renderers[text_type(originalName(renderer))] = renderer
+        self._renderers[str(originalName(renderer))] = renderer
         return renderer
 
     def routed(self, routing, tags):
@@ -239,21 +237,15 @@ class Plating(object):
                     json_data.update(data)
                     for ignored in self._presentationSlots:
                         json_data.pop(ignored, None)
-                    text_type = "json"
+                    request.setHeader(b"content-type", b"application/json")
                     ready = yield resolveDeferredObjects(json_data)
                     result = dumps(ready)
                 else:
                     data[self.CONTENT] = loader.load()
-                    text_type = "html"
+                    request.setHeader(
+                        b"content-type", b"text/html; charset=utf-8"
+                    )
                     result = self._elementify(instance, data)
-                request.setHeader(
-                    b"content-type",
-                    (
-                        "text/{format}; charset=utf-8".format(
-                            format=text_type
-                        ).encode("charmap")
-                    ),
-                )
                 returnValue(result)
 
             return method
@@ -277,7 +269,7 @@ class Plating(object):
         )
 
     @attr.s
-    class _Widget(object):
+    class _Widget:
         """
         Implementation of L{Plating.widgeted}.  This is a L{callable}
         descriptor that records the instance to which its wrapped

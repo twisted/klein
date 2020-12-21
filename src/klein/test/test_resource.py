@@ -1,10 +1,8 @@
-from __future__ import absolute_import, division
-
 import os
 from io import BytesIO
 from unittest.mock import Mock, call
 
-from six.moves.urllib.parse import parse_qs
+from urllib.parse import parse_qs
 
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
@@ -119,6 +117,8 @@ def requestMock(
 def _render(resource, request, notifyFinish=True):
     result = resource.render(request)
 
+    assert result is server.NOT_DONE_YET or isinstance(result, bytes)
+
     if isinstance(result, bytes):
         request.write(result)
         request.finish()
@@ -128,8 +128,6 @@ def _render(resource, request, notifyFinish=True):
             return succeed(None)
         else:
             return request.notifyFinish()
-    else:
-        raise ValueError("Unexpected return value: {!r}".format(result))
 
 
 class SimpleElement(Element):
@@ -195,7 +193,7 @@ class ProducingResource(Resource):
         return server.NOT_DONE_YET
 
 
-class MockProducer(object):
+class MockProducer:
     def __init__(self, request, strings):
         self.request = request
         self.strings = strings
@@ -216,20 +214,20 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
     Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
     """
 
-    class _One(object):
+    class _One:
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
-        def foo(self, resource: IRequest) -> KleinRenderable:
+        def foo(self, request: IRequest) -> KleinRenderable:
             pass
 
     _one = _One()
 
-    class _Another(object):
+    class _Another:
         anotherKlein = Klein()
 
         @anotherKlein.route("/bar")
-        def bar(self):
+        def bar(self, request: IRequest) -> KleinRenderable:
             pass
 
     _another = _Another()
@@ -1235,8 +1233,8 @@ class ExtractURLpartsTests(SynchronousTestCase):
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertEqual(
-            set(["SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"]),
-            set(part for part, _ in e.errors),
+            {"SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"},
+            {part for part, _ in e.errors},
         )
 
     def test_afUnixSocket(self):

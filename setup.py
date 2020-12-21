@@ -2,7 +2,7 @@ from setuptools import setup
 
 if __name__ == "__main__":
 
-    with open("README.rst", "r") as f:
+    with open("README.rst") as f:
         long_description = f.read()
 
     setup(
@@ -15,6 +15,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
             "Programming Language :: Python :: Implementation :: CPython",
             "Programming Language :: Python :: Implementation :: PyPy",
             "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
@@ -30,9 +31,9 @@ if __name__ == "__main__":
             "attrs",
             "hyperlink",
             "incremental",
-            "six",
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
+            "typing_extensions",
             "Werkzeug",
             "zope.interface",
         ],

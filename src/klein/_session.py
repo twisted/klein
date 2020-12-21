@@ -14,7 +14,6 @@ from twisted.web.resource import Resource
 from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
-from ._typing import Arg, KwArg
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -31,7 +30,7 @@ from .interfaces import (
 
 @implementer(ISessionProcurer)
 @attr.s
-class SessionProcurer(object):
+class SessionProcurer:
     """
     A L{SessionProcurer} procures a session from a request and a store.
 
@@ -199,24 +198,10 @@ class SessionProcurer(object):
         returnValue(session)
 
 
-_procureProcurerType = Union[
-    Callable[[Any], ISessionProcurer], Callable[[], ISessionProcurer]
-]
-
-_kleinRenderable = Any
-_routeCallable = Any
-_kleinCallable = Callable[..., _kleinRenderable]
-_kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
-_requirerResult = Callable[
-    [Arg(_routeCallable, "route"), KwArg(Any)],
-    Callable[[_kleinCallable], _kleinCallable],
-]
-
-
-class AuthorizationDenied(Resource, object):
+class AuthorizationDenied(Resource):
     def __init__(self, interface: IInterface, instance: Any) -> None:
         self._interface = interface
-        super(AuthorizationDenied, self).__init__()
+        super().__init__()
 
     def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)
@@ -225,7 +210,7 @@ class AuthorizationDenied(Resource, object):
 
 @implementer(IDependencyInjector, IRequiredParameter)
 @attr.s
-class Authorization(object):
+class Authorization:
     """
     Declare that a C{require}-decorated function requires a certain interface
     be authorized from the session.

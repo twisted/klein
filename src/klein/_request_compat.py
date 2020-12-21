@@ -36,7 +36,7 @@ noneIO = BytesIO()
 
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
-class HTTPRequestWrappingIRequest(object):
+class HTTPRequestWrappingIRequest:
     """
     HTTP request.
 
@@ -70,13 +70,13 @@ class HTTPRequestWrappingIRequest(object):
         else:
             default = 80
         if port != default:
-            netloc += ":{}".format(port)
+            netloc += f":{port}"
 
         path = nativeString(request.uri)
         if path and path[0] == "/":
             path = path[1:]
 
-        return DecodedURL.fromText("{}://{}/{}".format(scheme, netloc, path))
+        return DecodedURL.fromText(f"{scheme}://{netloc}/{path}")
 
     @property
     def headers(self) -> IHTTPHeaders:

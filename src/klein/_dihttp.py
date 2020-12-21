@@ -8,8 +8,6 @@ import attr
 
 from hyperlink import DecodedURL
 
-from six import text_type
-
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
@@ -36,8 +34,6 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
     else:
         host = request.client.host
         port = request.client.port
-        if not isinstance(host, text_type):
-            host = host.decode("ascii")
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
@@ -49,7 +45,7 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
 
 
 @provider(IRequiredParameter, IDependencyInjector)
-class RequestURL(object):
+class RequestURL:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
@@ -81,7 +77,7 @@ class RequestURL(object):
 
 @implementer(IRequiredParameter, IDependencyInjector)
 @attr.s(frozen=True)
-class RequestComponent(object):
+class RequestComponent:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
@@ -108,7 +104,7 @@ class RequestComponent(object):
 
 
 @attr.s(frozen=True)
-class Response(object):
+class Response:
     """
     Metadata about an HTTP response, with an object that Klein knows how to
     understand.
@@ -148,7 +144,7 @@ class Response(object):
         """
         request.setResponseCode(self.code)
         for headerName, headerValueOrValues in self.headers.items():
-            if not isinstance(headerValueOrValues, (text_type, bytes)):
+            if not isinstance(headerValueOrValues, (str, bytes)):
                 headerValues = headerValueOrValues
             else:
                 headerValues = [headerValueOrValues]

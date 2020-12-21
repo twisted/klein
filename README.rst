@@ -27,7 +27,7 @@ Klein's documentation can be found at `Read The Docs <http://klein.readthedocs.o
 
 
 Example
-=======
+========
 
 This is a sample Klein application that returns 'Hello, world!', running on port ``8080``.
 

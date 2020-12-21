@@ -227,7 +227,7 @@ Just remember not to give Klein any ``unicode``, you have to encode it into ``by
 
 
 Onwards
-=======
+========
 
 That covers most of the general Klein concepts.
 The next chapter is about deploying your Klein application using Twisted's ``tap`` functionality.

@@ -5,15 +5,15 @@ Applications are great.  Lets have more of them.
 
 
 import sys
-from collections import namedtuple
 from contextlib import contextmanager
 from inspect import iscoroutine
-
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Dict,
     IO,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -22,8 +22,13 @@ from typing import (
 )
 from weakref import ref
 
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore[misc]
+
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, ensureDeferred
+from twisted.internet.defer import ensureDeferred
 from twisted.internet.endpoints import serverFromString
 from twisted.python import log
 from twisted.python.components import registerAdapter
@@ -39,25 +44,41 @@ from zope.interface import implementer
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest
 from ._resource import KleinResource
-from ._typing import Awaitable, KwArg, VarArg
 
 
 KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]
-KleinRoute = Callable[[Any, IRequest, VarArg(Any), KwArg(Any)], KleinRenderable]
-KleinErrorHandler = Callable[
-    [Optional["Klein"], IRequest, Failure], KleinRenderable
-]
+
+
+class KleinRouteHandler(Protocol):
+    def __call__(_self, self: Any, request: IRequest) -> KleinRenderable:
+        """
+        Function that, when decorated by L{Klein.route}, handles a Klein
+        request.
+        """
+
+
+class KleinErrorHandler(Protocol):
+    def __call__(
+        self,
+        klein: Optional["Klein"],
+        request: IRequest,
+        failure: Failure,
+    ) -> KleinRenderable:
+        """
+        Method that, when registered with L{Klein.handle_errors}, handles
+        errors raised during request routing.
+        """
 
 
 def _call(
     __klein_instance__: Optional["Klein"],
-    __klein_f__: Callable,
+    __klein_f__: Callable[..., KleinRenderable],
     *args: Any,
     **kwargs: Any,
-) -> Deferred:
+) -> KleinRenderable:
     """
     Call C{__klein_f__} with the given C{*args} and C{**kwargs}.
 
@@ -136,7 +157,7 @@ class Klein:
 
     def __init__(self) -> None:
         self._url_map = Map()
-        self._endpoints: Dict[str, KleinRoute] = {}
+        self._endpoints: Dict[str, KleinRouteHandler] = {}
         self._error_handlers: List[KleinErrorHandler] = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
@@ -160,7 +181,7 @@ class Klein:
         return self._url_map
 
     @property
-    def endpoints(self) -> Dict[str, KleinRoute]:
+    def endpoints(self) -> Dict[str, KleinRouteHandler]:
         """
         Read only property exposing L{Klein._endpoints}.
         """
@@ -174,7 +195,12 @@ class Klein:
         instance.
         """
         endpoint_f = self._endpoints[endpoint]
-        return endpoint_f(self._instance, request, *args, **kwargs)
+        # type note: endpoint_f is a KleinRouteHandler, which is not defined as
+        # taking *args, **kwargs (because they aren't required), but we're
+        # going to pass them along here anyway.
+        return endpoint_f(
+            self._instance, request, *args, **kwargs
+        )  # type: ignore[call-arg]
 
     def execute_error_handler(
         self,
@@ -241,7 +267,9 @@ class Klein:
             segment_count -= 1
         return segment_count
 
-    def route(self, url, *args, **kwargs):
+    def route(
+        self, url: str, *args: Any, **kwargs: Any
+    ) -> Callable[[KleinRouteHandler], KleinRouteHandler]:
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
         C{werkzeug.routing.Rule}.  The handler function will be passed at least
@@ -267,8 +295,11 @@ class Klein:
         segment_count = self._segments_in_url(url) + self._subroute_segments
 
         @named("router for '" + url + "'")
-        def deco(f: KleinRoute) -> KleinRoute:
-            kwargs.setdefault("endpoint", f.__name__)
+        def deco(f: KleinRouteHandler) -> KleinRouteHandler:
+            kwargs.setdefault(
+                "endpoint",
+                f.__name__,  # type: ignore[attr-defined]
+            )
             if kwargs.pop("branch", False):
                 branchKwargs = kwargs.copy()
                 branchKwargs["endpoint"] = branchKwargs["endpoint"] + "_branch"
@@ -285,7 +316,7 @@ class Klein:
                     ).split("/")
                     return _call(instance, f, request, *a, **kw)
 
-                branch_f = cast(KleinRoute, branch_f)
+                branch_f = cast(KleinRouteHandler, branch_f)
 
                 branch_f.segment_count = (  # type: ignore[attr-defined]
                     segment_count
@@ -309,7 +340,7 @@ class Klein:
             ) -> KleinRenderable:
                 return _call(instance, f, request, *a, **kw)
 
-            _f = cast(KleinRoute, _f)
+            _f = cast(KleinRouteHandler, _f)
 
             _f.segment_count = segment_count  # type: ignore[attr-defined]
 
@@ -320,7 +351,7 @@ class Klein:
         return deco
 
     @contextmanager
-    def subroute(self, prefix):
+    def subroute(self, prefix: str) -> Iterator["Klein"]:
         """
         Within this block, C{@route} adds rules to a
         C{werkzeug.routing.Submount}.
@@ -350,12 +381,17 @@ class Klein:
 
         segments = self._segments_in_url(prefix)
 
-        submount_map = namedtuple("submount", ["rules", "add"])(
-            [], lambda r: submount_map.rules.append(r)
-        )
+        class SubmountMap:
+            def __init__(self) -> None:
+                self.rules: List[Rule] = []
+
+            def add(self, rule: Rule) -> None:
+                self.rules.append(rule)
+
+        submount_map = SubmountMap()
 
         try:
-            self._url_map = submount_map
+            self._url_map = cast(Map, submount_map)
             self._subroute_segments += segments
             yield self
             _map_before_submount.add(Submount(prefix, submount_map.rules))
@@ -392,11 +428,13 @@ class Klein:
         successfully, L{twisted.web.server.Request}'s processingFailed() method
         will be called.
 
-        In addition to handling errors that occur within a route handler, error
-        handlers also handle any C{werkzeug.exceptions.HTTPException} which is
-        raised during routing. In particular, C{werkzeug.exceptions.NotFound}
-        will be raised if no matching route is found, so to return a custom 404
-        users can do the following::
+        In addition to handling errors that occur within a L{KleinRouteHandler},
+        error handlers also handle any L{werkzeug.exceptions.HTTPException}
+        which is raised during request routing.
+
+        In particular, C{werkzeug.exceptions.NotFound} will be raised if no
+        matching route is found, so to return a custom 404 users can do the
+        following::
 
             @app.handle_errors(NotFound)
             def error_handler(request, failure):

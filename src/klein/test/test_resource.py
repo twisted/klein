@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from unittest.mock import Mock, call
 
-from six.moves.urllib.parse import parse_qs
+from urllib.parse import parse_qs
 
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
@@ -218,7 +218,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
-        def foo(self, resource: IRequest) -> KleinRenderable:
+        def foo(self, request: IRequest) -> KleinRenderable:
             pass
 
     _one = _One()
@@ -227,7 +227,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         anotherKlein = Klein()
 
         @anotherKlein.route("/bar")
-        def bar(self):
+        def bar(self, request: IRequest) -> KleinRenderable:
             pass
 
     _another = _Another()
@@ -1233,8 +1233,8 @@ class ExtractURLpartsTests(SynchronousTestCase):
         request.getRequestHostname = lambda: b"f\xc3\xc3\xb6"
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertEqual(
-            set(["SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"]),
-            set(part for part, _ in e.errors),
+            {"SERVER_NAME", "PATH_INFO", "SCRIPT_NAME"},
+            {part for part, _ in e.errors},
         )
 
     def test_afUnixSocket(self):

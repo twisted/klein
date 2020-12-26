@@ -3,7 +3,7 @@ app = Klein()
 
 @app.route('/user/<username>')
 def pg_user(request, username):
-    return 'Hi %s!' % (username,)
+    return f'Hi {username}!'
 
 @app.route('/user/bob')
 def pg_user_bob(request):

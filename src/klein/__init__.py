@@ -4,7 +4,7 @@ from ._app import (
     Klein,
     KleinErrorHandler,
     KleinRenderable,
-    KleinRoute,
+    KleinRouteHandler,
     handle_errors,
     route,
     run,
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     # Inform mypy of import shenanigans.
     from .resource import _SpecialModuleObject
 
-    resource = _SpecialModuleObject()
+    resource = _SpecialModuleObject(None)
 else:
     from . import resource
 
@@ -31,7 +31,7 @@ __all__ = (
     "Klein",
     "KleinErrorHandler",
     "KleinRenderable",
-    "KleinRoute",
+    "KleinRouteHandler",
     "Plating",
     "Field",
     "FieldValues",

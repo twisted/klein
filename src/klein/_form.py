@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    NoReturn,
     Optional,
     Sequence,
     Type,
@@ -29,7 +30,6 @@ from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
-from ._typing import DefaultNamedArg, NoReturn
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -42,13 +42,13 @@ from .interfaces import (
 )
 
 
-class CrossSiteRequestForgery(Resource, object):
+class CrossSiteRequestForgery(Resource):
     """
     Cross site request forgery detected.  Request aborted.
     """
 
     def __init__(self, message: str) -> None:
-        super(CrossSiteRequestForgery, self).__init__()
+        super().__init__()
         self.message = message
 
     def render(self, request: IRequest) -> bytes:
@@ -451,13 +451,6 @@ def defaultValidationFailureHandler(
 
 
 _requirerFunctionWithForm = Any
-_routeCallable = Any
-_routeDecorator = Callable[
-    [_routeCallable, DefaultNamedArg(Any, "__session__")], _routeCallable
-]
-_validationFailureHandler = Callable[
-    [Optional[object], IRequest, "Form", Dict[str, str]], Element
-]
 
 validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
 

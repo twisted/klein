@@ -7,7 +7,7 @@ class ValidationError(Exception):
         """
         Initialize a L{ValidationError} with a message to show to the user.
         """
-        super(ValidationError, self).__init__(message)
+        super().__init__(message)
         self.message = message
 
 

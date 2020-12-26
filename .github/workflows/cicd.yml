@@ -1,0 +1,274 @@
+# Docs:
+# https://help.github.com/en/actions/automating-your-workflow-with-github-actions
+
+
+
+name: CI/CD
+
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+
+jobs:
+
+  info:
+
+    name: Workflow information
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+
+      - name: Print GitHub Context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "${GITHUB_CONTEXT}";
+
+      - name: Print Job Context
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
+        run: echo "${JOB_CONTEXT}";
+
+      - name: Print Steps Context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: echo "${STEPS_CONTEXT}";
+
+      - name: Print Runner Context
+        env:
+          RUNNER_CONTEXT: ${{ toJson(runner) }}
+        run: echo "${RUNNER_CONTEXT}";
+
+      - name: Print Strategy Context
+        env:
+          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
+        run: echo "${STRATEGY_CONTEXT}";
+
+      - name: Print Matrix Context
+        env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+        run: echo "${MATRIX_CONTEXT}";
+
+
+  flake8:
+
+    name: Flake8 (linter)
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Run Flake8
+        run: tox -e flake8;
+
+
+  black:
+
+    name: Black (linter)
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Run Black
+        run: tox -e black;
+
+
+  mypy:
+    name: Mypy (static type checker)
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Run Mypy
+        run: tox -e mypy;
+
+
+  docs:
+
+    name: Build documentation
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Build documentation
+        run: tox -e docs;
+
+
+  docs-linkcheck:
+
+    name: Documentation link check
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Check for broken links in documentation
+        run: tox -e docs-linkcheck;
+
+
+  packaging:
+    name: Packaging
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.9"
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Check packaging
+        run: tox -e packaging;
+
+
+  unit:
+    name: Unit Tests using Python ${{ matrix.python }} on Ubuntu with Twisted ${{ matrix.twisted }}
+
+    needs: [flake8, black, mypy, docs, packaging]
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
+        twisted: ["18.4", "19.2", "current"]
+
+    steps:
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install Tox
+        run: pip install tox;
+
+      - name: Run unit tests
+        shell: bash
+        # This hairy shell code is here to map the python and Twisted versions
+        # specified above to the equivalents used in Tox environments.
+        run: |
+          set -eux
+          py="${{ matrix.python }}";
+          if [ "${py#pypy}" != "${py}" ]; then  # PyPy
+              py_test="${py}";
+          else  # CPython
+              py_test="py${py/./}";  # Add "py" prefix, remove "."
+          fi;
+          twisted="${{ matrix.twisted }}";
+          twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
+          env_test="coverage-${py_test}-${twisted}";
+          echo "Test environment: ${env_test}";
+          ln -s ".tox/${env_test}" testenv;  # Fixed location for upload step below
+          tox -e "${env_test}";
+
+      - name: Upload Trial log artifact
+        if: failure()
+        uses: actions/upload-artifact@v1
+        with:
+          name: trial
+          path: testenv/log/trial.log
+
+      # Use the latest supported Python version for combining coverage to
+      # prevent parsing errors in older versions when looking at modern code.
+      - uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+
+      - name: "Combine coverage"
+        run: |
+          set -eux
+          pip install coverage[toml];
+          coverage combine;
+          coverage xml;
+        env:
+          COVERAGE_FILE: .tox/coverage
+
+      - name: "Upload coverage to Codecov"
+        uses: "codecov/codecov-action@v1"
+        with:
+          env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW
+          fail_ci_if_error: true
+        env:
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_COMMIT: ${{ github.sha }}
+          GITHUB_USER: ${{ github.actor }}
+          GITHUB_WORKFLOW: ${{ github.workflow }}

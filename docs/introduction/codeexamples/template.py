@@ -1,4 +1,3 @@
-# Cobble together a deterministic random function using a string as a seed.
 from hashlib import sha256
 from random import Random
 from struct import unpack
@@ -8,6 +7,7 @@ from twisted.web.template import slot, tags
 from klein import Klein, Plating
 
 
+# Cobble together a deterministic random function using a string as a seed.
 def random_from_string(string):
     return Random(unpack("!I", sha256(string.encode("utf-8")).digest()[:4])[0])
 

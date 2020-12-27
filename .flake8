@@ -14,7 +14,7 @@ extend-exclude =
     __pycache__,
     dist
 
-# Codes: http://flake8.pycqa.org/en/latest/user/error-codes.html
+# Codes: https://flake8.pycqa.org/en/latest/user/error-codes.html
 extend-ignore =
     ######## WARNINGS BELOW SHOULD BE FIXED ########
 

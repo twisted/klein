@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_irequest -*-
-# Copyright (c) 2011-2019. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Support for interoperability with L{twisted.web.iweb.IRequest}.

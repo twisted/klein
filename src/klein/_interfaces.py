@@ -1,4 +1,4 @@
-# Copyright (c) 2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Internal interface definitions.

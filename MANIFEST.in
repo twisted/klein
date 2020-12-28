@@ -1,5 +1,7 @@
 include .codecov.yml
 include .coveragerc
+include .flake8
+exclude .pre-commit-config.yaml
 include .travis/twistedchecker-diff
 include AUTHORS
 include CONTRIBUTING.rst

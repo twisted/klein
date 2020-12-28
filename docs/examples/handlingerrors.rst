@@ -96,4 +96,3 @@ Use cURL to verify that only ``/api`` and ``/api/v1`` return content, all other 
 
 
 This method can also be used on the root route, in which case it will catch every request which doesn't match a route.
-

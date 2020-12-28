@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_response -*-
-# Copyright (c) 2011-2019. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 HTTP response API.

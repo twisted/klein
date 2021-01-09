@@ -62,9 +62,9 @@ Add more decorated functions to add more routes to your Klein applications.
 Variable Routes
 ===============
 
-You can also make `variable routes`.
+You can also make variable routes.
 This gives your functions extra arguments which match up with the parts of the routes that you have specified.
-By using this, you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository. 
+By using this, you can implement pages that change depending on this -- for example, by displaying users on a site, or documents in a repository.
 
 .. literalinclude:: codeexamples/variableRoutes.py
 
@@ -131,7 +131,7 @@ First, we'll create a top-level Plating for the site.  This takes a
 appear.  That'll look something like this:
 
 .. literalinclude:: codeexamples/template.py
-    :lines: 13-24
+    :lines: 15-26
 
 Notice that we have defined a ``"pageTitle"`` slot in the template - individual
 pages must each provide a value for the title themselves in order to use the
@@ -151,7 +151,7 @@ Let's start with a really simple page that just has a static template to fill
 the content slot.
 
 .. literalinclude:: codeexamples/template.py
-    :lines: 26-37
+    :lines: 29-49
 
 This page generates some links to various sub-pages which we'll get to in a
 moment.  But first, if you load ``http://localhost:8080/``, you'll see that the
@@ -161,7 +161,7 @@ template specified for ``root`` is inserted at the point in the template for
 Next, we should actually try injecting some data.
 
 .. literalinclude:: codeexamples/template.py
-    :lines: 39-50
+    :lines: 52-67
 
 Here you can see the ``/foods/...`` route for showing information about a food.
 In the content template, we've got slots for ``"name"``, ``"rating"``, and
@@ -174,7 +174,7 @@ need to put multiple items into the template?  The route for ``/places/...``
 can show us:
 
 .. literalinclude:: codeexamples/template.py
-    :lines: 52-68
+    :lines: 70-103
 
 Here you can see the special ``<slotname>:list`` renderer in use.  By
 specifying the ``render=`` attribute of a tag (in this case, a ``li`` tag) to
@@ -227,7 +227,7 @@ Just remember not to give Klein any ``unicode``, you have to encode it into ``by
 
 
 Onwards
-=======
+========
 
 That covers most of the general Klein concepts.
 The next chapter is about deploying your Klein application using Twisted's ``tap`` functionality.

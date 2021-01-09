@@ -1,6 +1,5 @@
 # -*- test-case-name: klein.test.test_form -*-
 
-
 import json
 from typing import (
     Any,
@@ -451,8 +450,7 @@ def defaultValidationFailureHandler(
 
 
 _requirerFunctionWithForm = Any
-
-validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
+_routeCallable = Any
 
 
 class IProtoForm(Interface):

@@ -58,7 +58,7 @@ def currentVersion() -> Version:
     # code from its source tree. Boo.
     versionInfo: Dict[str, Any] = {}
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
-    exec(versonFile.read_text(), versionInfo)  # noqa: E211  # black py2.7
+    exec(versonFile.read_text(), versionInfo)
     return versionInfo["__version__"]
 
 

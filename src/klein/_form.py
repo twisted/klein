@@ -1,6 +1,5 @@
 # -*- test-case-name: klein.test.test_form -*-
 
-
 import json
 from typing import (
     Any,
@@ -9,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    NoReturn,
     Optional,
     Sequence,
     Type,
@@ -29,7 +29,6 @@ from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
-from ._typing import DefaultNamedArg, NoReturn
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -452,14 +451,6 @@ def defaultValidationFailureHandler(
 
 _requirerFunctionWithForm = Any
 _routeCallable = Any
-_routeDecorator = Callable[
-    [_routeCallable, DefaultNamedArg(Any, "__session__")], _routeCallable
-]
-_validationFailureHandler = Callable[
-    [Optional[object], IRequest, "Form", Dict[str, str]], Element
-]
-
-validationFailureHandlerAttribute = "__kleinFormValidationFailureHandlers__"
 
 
 class IProtoForm(Interface):

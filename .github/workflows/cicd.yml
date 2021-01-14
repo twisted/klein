@@ -54,33 +54,9 @@ jobs:
         run: echo "${MATRIX_CONTEXT}";
 
 
-  flake8:
+  lint:
 
-    name: Flake8 (linter)
-
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-
-      - name: Checkout source code
-        uses: actions/checkout@v2
-
-      - name: Install Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: "3.9"
-
-      - name: Install Tox
-        run: pip install tox;
-
-      - name: Run Flake8
-        run: tox -e flake8;
-
-
-  black:
-
-    name: Black (linter)
+    name: Linters
 
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -98,11 +74,12 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
-      - name: Run Black
-        run: tox -e black;
+      - name: Run Linters
+        run: tox -e lint;
 
 
   mypy:
+
     name: Mypy (static type checker)
 
     runs-on: ubuntu-latest
@@ -199,14 +176,14 @@ jobs:
   unit:
     name: Unit Tests using Python ${{ matrix.python }} on Ubuntu with Twisted ${{ matrix.twisted }}
 
-    needs: [flake8, black, mypy, docs, packaging]
+    needs: [lint, mypy, docs, packaging]
 
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       matrix:
         python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
-        twisted: ["18.4", "19.2", "current"]
+        twisted: ["19.2", "current"]
 
     steps:
 

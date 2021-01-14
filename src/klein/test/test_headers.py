@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_headers -*-
-# Copyright (c) 2011-2019. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Tests for L{klein._headers}.
@@ -7,12 +7,30 @@ Tests for L{klein._headers}.
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import AnyStr, Dict, Iterable, List, Optional, Tuple, cast
+from string import ascii_letters
+from typing import (
+    AnyStr,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+)
 
 from hypothesis import given
-from hypothesis.strategies import binary, iterables, text, tuples
+from hypothesis.strategies import (
+    binary,
+    characters,
+    composite,
+    iterables,
+    lists,
+    text,
+    tuples,
+)
 
-from ._strategies import ascii_text, latin1_text
 from ._trial import TestCase
 from .._headers import (
     FrozenHTTPHeaders,
@@ -34,6 +52,59 @@ from .._headers import (
 
 
 __all__ = ()
+
+
+T = TypeVar("T")
+DrawCallable = Callable[[Callable[..., T]], T]
+
+
+@composite
+def ascii_text(
+    draw: DrawCallable,
+    min_size: Optional[int] = 0,
+    max_size: Optional[int] = None,
+) -> str:  # pragma: no cover
+    """
+    A strategy which generates ASCII-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return cast(
+        str,
+        draw(
+            text(min_size=min_size, max_size=max_size, alphabet=ascii_letters)
+        ),
+    )
+
+
+@composite  # pragma: no cover
+def latin1_text(
+    draw: DrawCallable,
+    min_size: Optional[int] = 0,
+    max_size: Optional[int] = None,
+) -> str:
+    """
+    A strategy which generates ISO-8859-1-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return "".join(
+        draw(
+            lists(
+                characters(max_codepoint=255),
+                min_size=min_size,
+                max_size=max_size,
+            )
+        )
+    )
 
 
 def encodeName(name: str) -> Optional[bytes]:

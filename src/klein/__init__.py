@@ -4,7 +4,7 @@ from ._app import (
     Klein,
     KleinErrorHandler,
     KleinRenderable,
-    KleinRoute,
+    KleinRouteHandler,
     handle_errors,
     route,
     run,
@@ -31,7 +31,7 @@ __all__ = (
     "Klein",
     "KleinErrorHandler",
     "KleinRenderable",
-    "KleinRoute",
+    "KleinRouteHandler",
     "Plating",
     "Field",
     "FieldValues",
@@ -62,4 +62,4 @@ __version__ = _incremental_version.base()
 
 __author__ = "The Klein contributors (see AUTHORS)"
 __license__ = "MIT"
-__copyright__ = f"Copyright 2011-2019 {__author__}"
+__copyright__ = f"Copyright 2011-2021 {__author__}"

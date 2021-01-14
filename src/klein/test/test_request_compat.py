@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_request_compat -*-
-# Copyright (c) 2011-2019. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Tests for L{klein._irequest}.
@@ -9,6 +9,7 @@ from string import ascii_uppercase
 from typing import Optional
 
 from hyperlink import DecodedURL, EncodedURL
+from hyperlink.hypothesis import decoded_urls
 
 from hypothesis import given
 from hypothesis.strategies import binary, text
@@ -16,7 +17,6 @@ from hypothesis.strategies import binary, text
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
 
-from ._strategies import decoded_urls
 from ._trial import TestCase
 from .test_resource import requestMock
 from .._headers import IHTTPHeaders

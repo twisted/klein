@@ -14,7 +14,6 @@ from twisted.web.resource import Resource
 from zope.interface import implementer
 from zope.interface.interfaces import IInterface
 
-from ._typing import Arg, KwArg
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -197,20 +196,6 @@ class SessionProcurer:
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
         returnValue(session)
-
-
-_procureProcurerType = Union[
-    Callable[[Any], ISessionProcurer], Callable[[], ISessionProcurer]
-]
-
-_kleinRenderable = Any
-_routeCallable = Any
-_kleinCallable = Callable[..., _kleinRenderable]
-_kleinDecorator = Callable[[_kleinCallable], _kleinCallable]
-_requirerResult = Callable[
-    [Arg(_routeCallable, "route"), KwArg(Any)],
-    Callable[[_kleinCallable], _kleinCallable],
-]
 
 
 class AuthorizationDenied(Resource):

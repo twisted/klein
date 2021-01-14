@@ -33,6 +33,7 @@ if __name__ == "__main__":
             "incremental",
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
+            "typing_extensions",
             "Werkzeug",
             "zope.interface",
         ],
@@ -42,10 +43,7 @@ if __name__ == "__main__":
         packages=["klein", "klein.storage", "klein.test"],
         package_dir={"": "src"},
         package_data=dict(
-            klein=[
-                "py.typed",
-                "test/idna-tables-properties.csv",
-            ],
+            klein=["py.typed"],
         ),
         url="https://github.com/twisted/klein",
         maintainer="Twisted Matrix Laboratories",

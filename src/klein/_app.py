@@ -17,6 +17,8 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
+    Type,
     Union,
     cast,
 )
@@ -161,7 +163,9 @@ class Klein:
     def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRouteHandler] = {}
-        self._error_handlers: List[KleinErrorHandler] = []
+        self._error_handlers: List[
+            Tuple[List[Type[Exception]], KleinErrorHandler]
+        ] = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
 
@@ -402,7 +406,10 @@ class Klein:
             self._url_map = _map_before_submount
             self._subroute_segments -= segments
 
-    def handle_errors(self, f_or_exception, *additional_exceptions):
+    def handle_errors(  # type: ignore[no-untyped-def]
+        self, f_or_exception: Union[KleinErrorHandler, Exception],
+        *additional_exceptions: Type[Exception],
+    ):
         """
         Register an error handler. This decorator supports two syntaxes. The
         simpler of these can be used to register a handler for all C{Exception}
@@ -460,15 +467,22 @@ class Klein:
         if not isinstance(f_or_exception, type) or not issubclass(
             f_or_exception, Exception
         ):
-            return self.handle_errors(Exception)(f_or_exception)
+            # f_or_exception is a KleinErrorHandler
+            f = cast(KleinErrorHandler, f_or_exception)
+            return self.handle_errors(Exception)(f)
 
-        def deco(f):
+        # f_or_exception is an Exception class
+        exception = cast(Type[Exception], f_or_exception)
+
+        def deco(f: KleinErrorHandler):  # type: ignore[no-untyped-def]
             @modified("error handling wrapper", f)
-            def _f(instance, request, failure):
+            def _f(
+                instance: Optional["Klein"], request: IRequest, failure: Failure
+            ) -> KleinRenderable:
                 return _call(instance, f, request, failure)
 
             self._error_handlers.append(
-                ([f_or_exception] + list(additional_exceptions), _f)
+                ([exception] + list(additional_exceptions), _f)
             )
             return _f
 

@@ -17,7 +17,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Tuple,
     Union,
     cast,
 )
@@ -72,6 +71,7 @@ class KleinErrorHandler(Protocol):
         Method that, when registered with L{Klein.handle_errors}, handles
         errors raised during request routing.
         """
+
 
 KleinQueryValue = Union[int, str]
 

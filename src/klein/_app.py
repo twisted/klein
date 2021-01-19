@@ -24,10 +24,7 @@ from typing import (
 )
 from weakref import ref
 
-try:
-    from typing import Protocol
-except ImportError:
-    from typing_extensions import Protocol  # type: ignore[misc]
+from typing_extensions import Protocol
 
 from twisted.internet import reactor
 from twisted.internet.defer import ensureDeferred

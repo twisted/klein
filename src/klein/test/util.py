@@ -2,7 +2,8 @@
 Shared tools for Klein's test suite.
 """
 
-from typing import Generic, Protocol, TypeVar, cast
+from typing import Generic, TypeVar, cast
+from typing_extensions import Protocol
 
 from twisted.trial.unittest import SynchronousTestCase
 

@@ -405,7 +405,7 @@ class KleinResourceTests(SynchronousTestCase):
     def test_elementRendering(self):
         app = self.app
 
-        @app.route("/element/<string:name>")
+        @app.route("/element/<string:name>")  # type: ignore[arg-type]
         def element(request, name):
             return SimpleElement(name)
 
@@ -423,7 +423,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         elements = []
 
-        @app.route("/element/<string:name>")
+        @app.route("/element/<string:name>")  # type: ignore[arg-type]
         def element(request, name):
             it = DeferredElement(name)
             elements.append(it)
@@ -1010,7 +1010,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         relative_url: List[Optional[str]] = [None]
 
-        @app.route("/foo/<int:bar>")
+        @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
         def foo(request, bar):
             krequest = IKleinRequest(request)
             relative_url[0] = krequest.url_for("foo", {"bar": bar + 1})
@@ -1043,7 +1043,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         relative_url: List[Optional[str]] = [None]
 
-        @app.route("/foo/<int:bar>")
+        @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
         def foo(request, bar):
             krequest = IKleinRequest(request)
             relative_url[0] = krequest.url_for(

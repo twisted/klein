@@ -72,7 +72,7 @@ class KleinRouteMethod(Protocol):
 
 class KleinErrorFunction(Protocol):
     def __call__(
-        self,
+        _self,
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:
@@ -84,8 +84,8 @@ class KleinErrorFunction(Protocol):
 
 class KleinErrorMethod(Protocol):
     def __call__(
-        self,
-        klein: Optional["Klein"],
+        _self,
+        self: Optional["Klein"],
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:
@@ -234,7 +234,7 @@ class Klein:
 
     def execute_error_handler(
         self,
-        handler: KleinErrorHandler,
+        handler: KleinErrorMethod,
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:

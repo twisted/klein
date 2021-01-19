@@ -24,8 +24,6 @@ from typing import (
 )
 from weakref import ref
 
-from typing_extensions import Protocol
-
 from twisted.internet import reactor
 from twisted.internet.defer import ensureDeferred
 from twisted.internet.endpoints import serverFromString
@@ -35,6 +33,11 @@ from twisted.python.failure import Failure
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource
 from twisted.web.server import Request, Site
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore[misc]
 
 from werkzeug.routing import Map, MapAdapter, Rule, Submount
 

@@ -3,7 +3,11 @@ Shared tools for Klein's test suite.
 """
 
 from typing import Generic, TypeVar, cast
-from typing_extensions import Protocol
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol  # type: ignore[misc]
 
 from twisted.trial.unittest import SynchronousTestCase
 

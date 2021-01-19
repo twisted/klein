@@ -73,6 +73,9 @@ class KleinErrorHandler(Protocol):
         """
 
 
+KleinQueryValue = Union[str, int, float]
+
+
 def _call(
     __klein_instance__: Optional["Klein"],
     __klein_f__: Callable[..., KleinRenderable],
@@ -103,7 +106,7 @@ def _call(
 def buildURL(
     mapper: MapAdapter,
     endpoint: str,
-    values: Optional[Mapping[str, str]] = None,
+    values: Optional[Mapping[str, KleinQueryValue]] = None,
     method: Optional[str] = None,
     force_external: bool = False,
     append_unknown: bool = True,
@@ -475,7 +478,7 @@ class Klein:
         self,
         request: IKleinRequest,
         endpoint: str,
-        values: Optional[Mapping[str, str]] = None,
+        values: Optional[Mapping[str, KleinQueryValue]] = None,
         method: Optional[str] = None,
         force_external: bool = False,
         append_unknown: bool = True,

@@ -96,6 +96,8 @@ class KleinErrorMethod(Protocol):
 KleinRouteHandler = Union[KleinRouteFunction, KleinRouteMethod]
 KleinErrorHandler = Union[KleinErrorFunction, KleinErrorMethod]
 
+KleinQueryValue = Union[str, int, float]
+
 
 def _call(
     __klein_instance__: Optional["Klein"],
@@ -127,7 +129,7 @@ def _call(
 def buildURL(
     mapper: MapAdapter,
     endpoint: str,
-    values: Optional[Mapping[str, str]] = None,
+    values: Optional[Mapping[str, KleinQueryValue]] = None,
     method: Optional[str] = None,
     force_external: bool = False,
     append_unknown: bool = True,
@@ -499,7 +501,7 @@ class Klein:
         self,
         request: IKleinRequest,
         endpoint: str,
-        values: Optional[Mapping[str, str]] = None,
+        values: Optional[Mapping[str, KleinQueryValue]] = None,
         method: Optional[str] = None,
         force_external: bool = False,
         append_unknown: bool = True,

@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "incremental",
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
-            "typing_extensions",
+            "typing_extensions ; python_version<'3.8'",
             "Werkzeug",
             "zope.interface",
         ],

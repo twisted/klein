@@ -7,6 +7,7 @@ include AUTHORS
 include CONTRIBUTING.rst
 include docs/Makefile
 include LICENSE
+include mypy.ini
 include NEWS.rst
 include pyproject.toml
 include README.rst

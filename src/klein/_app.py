@@ -52,18 +52,38 @@ KleinRenderable = Union[
 ]
 
 
-class KleinRouteHandler(Protocol):
-    def __call__(_self, self: Any, request: IRequest) -> KleinRenderable:
+class KleinRouteFunction(Protocol):
+    def __call__(_self, request: IRequest) -> KleinRenderable:
         """
         Function that, when decorated by L{Klein.route}, handles a Klein
         request.
         """
 
 
-class KleinErrorHandler(Protocol):
+class KleinRouteMethod(Protocol):
+    def __call__(_self, self: Any, request: IRequest) -> KleinRenderable:
+        """
+        Method that, when decorated by L{Klein.route}, handles a Klein
+        request.
+        """
+
+
+class KleinErrorFunction(Protocol):
     def __call__(
-        self,
-        klein: Optional["Klein"],
+        _self,
+        request: IRequest,
+        failure: Failure,
+    ) -> KleinRenderable:
+        """
+        Function that, when registered with L{Klein.handle_errors}, handles
+        errors raised during request routing.
+        """
+
+
+class KleinErrorMethod(Protocol):
+    def __call__(
+        _self,
+        self: Optional["Klein"],
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:
@@ -72,6 +92,9 @@ class KleinErrorHandler(Protocol):
         errors raised during request routing.
         """
 
+
+KleinRouteHandler = Union[KleinRouteFunction, KleinRouteMethod]
+KleinErrorHandler = Union[KleinErrorFunction, KleinErrorMethod]
 
 KleinQueryValue = Union[str, int, float]
 
@@ -207,7 +230,7 @@ class Klein:
 
     def execute_error_handler(
         self,
-        handler: KleinErrorHandler,
+        handler: KleinErrorMethod,
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:
@@ -301,7 +324,7 @@ class Klein:
         def deco(f: KleinRouteHandler) -> KleinRouteHandler:
             kwargs.setdefault(
                 "endpoint",
-                f.__name__,  # type: ignore[attr-defined]
+                f.__name__,  # type: ignore[union-attr]
             )
             if kwargs.pop("branch", False):
                 branchKwargs = kwargs.copy()
@@ -321,7 +344,7 @@ class Klein:
 
                 branch_f = cast(KleinRouteHandler, branch_f)
 
-                branch_f.segment_count = (  # type: ignore[attr-defined]
+                branch_f.segment_count = (  # type: ignore[union-attr]
                     segment_count
                 )
 
@@ -345,7 +368,7 @@ class Klein:
 
             _f = cast(KleinRouteHandler, _f)
 
-            _f.segment_count = segment_count  # type: ignore[attr-defined]
+            _f.segment_count = segment_count  # type: ignore[union-attr]
 
             self._endpoints[kwargs["endpoint"]] = _f
             self._url_map.add(Rule(url, *args, **kwargs))

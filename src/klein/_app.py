@@ -98,7 +98,7 @@ class KleinErrorMethod(Protocol):
 KleinRouteHandler = Union[KleinRouteFunction, KleinRouteMethod]
 KleinErrorHandler = Union[KleinErrorFunction, KleinErrorMethod]
 
-KleinQueryValue = Union[int, str]
+KleinQueryValue = Union[str, int, float]
 
 
 def _call(

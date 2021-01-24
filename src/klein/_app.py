@@ -17,6 +17,8 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Tuple,
+    Type,
     Union,
     cast,
 )
@@ -184,7 +186,9 @@ class Klein:
     def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRouteHandler] = {}
-        self._error_handlers: List[KleinErrorHandler] = []
+        self._error_handlers: List[
+            Tuple[List[Type[Exception]], KleinErrorHandler]
+        ] = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
 

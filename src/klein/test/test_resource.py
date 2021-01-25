@@ -211,7 +211,7 @@ class MockProducer:
             self.request.finish()
 
 
-class KleinResourceEqualityTests(EqualityTestsMixin):
+class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
     """
     Tests for L{KleinResource}'s implementation of C{==} and C{!=}.
     """

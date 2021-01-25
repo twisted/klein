@@ -40,7 +40,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         host: bytes = b"localhost",
         port: int = 8080,
         isSecure: bool = False,
-        body: Optional[bytes] = None,
+        body: bytes = b"",
         headers: Optional[Headers] = None,
     ) -> IRequest:
         return requestMock(

@@ -785,7 +785,6 @@ class KleinResourceTests(SynchronousTestCase):
         def handle_errors(request, failure):
             failures.append(failure)
             request.setResponseCode(501)
-            return
 
         d = _render(self.kr, request)
 
@@ -796,8 +795,8 @@ class KleinResourceTests(SynchronousTestCase):
     def test_typeSpecificErrorHandlers(self) -> None:
         app = self.app
         request = requestMock(b"/")
-        type_error_handled = False
-        generic_error_handled = False
+        type_error_handled = [False]
+        generic_error_handled = [False]
 
         failures = []
 
@@ -810,35 +809,30 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.handle_errors(TypeError)
         def handle_type_error(request, failure):
-            global type_error_handled
-            type_error_handled = True
-            return
+            type_error_handled[0] = True
 
         @app.handle_errors(TypeFilterTestError)
         def handle_type_filter_test_error(request, failure):
             failures.append(failure)
             request.setResponseCode(501)
-            return
 
         @app.handle_errors
         def handle_generic_error(request, failure):
-            global generic_error_handled
-            generic_error_handled = True
-            return
+            generic_error_handled[0] = True
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         self.assertEqual(request.processingFailed.called, False)
-        self.assertEqual(type_error_handled, False)
-        self.assertEqual(generic_error_handled, False)
+        self.assertEqual(type_error_handled[0], False)
+        self.assertEqual(generic_error_handled[0], False)
         self.assertEqual(len(failures), 1)
         self.assertEqual(request.code, 501)
 
     def test_notFoundException(self) -> None:
         app = self.app
         request = requestMock(b"/")
-        generic_error_handled = False
+        generic_error_handled = [False]
 
         @app.handle_errors(NotFound)
         def handle_not_found(request, failure):
@@ -847,15 +841,13 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.handle_errors
         def handle_generic_error(request, failure):
-            global generic_error_handled
-            generic_error_handled = True
-            return
+            generic_error_handled[0] = True
 
         d = _render(self.kr, request)
 
         self.assertFired(d)
         self.assertEqual(request.processingFailed.called, False)
-        self.assertEqual(generic_error_handled, False)
+        self.assertEqual(generic_error_handled[0], False)
         self.assertEqual(request.code, 404)
         self.assertEqual(request.getWrittenData(), b"Custom Not Found")
         self.assertEqual(request.writeCount, 1)

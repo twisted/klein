@@ -304,7 +304,7 @@ class KleinTestCase(unittest.TestCase):
             return add(a * 1000, b * 10000)
 
         self.assertEqual(megaAdd.supersized, True)
-        self.assertEqual(add.supersized, True)
+        self.assertEqual(add.supersized, True)  # type: ignore[attr-defined]
         self.assertIn("supersizer for add", str(megaAdd))
         self.assertEqual(megaAdd(3, 4), 43000)
 

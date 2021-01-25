@@ -503,7 +503,7 @@ class Klein:
 
     def urlFor(
         self,
-        request: IKleinRequest,
+        request: IRequest,
         endpoint: str,
         values: Optional[Mapping[str, KleinQueryValue]] = None,
         method: Optional[str] = None,

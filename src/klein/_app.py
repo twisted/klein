@@ -435,13 +435,17 @@ class Klein:
         self,
         f_or_exception: KleinErrorHandler,
         *additional_exceptions: Type[Exception],
-    ) -> Callable[[KleinErrorHandler], Callable]: ...
+    ) -> Callable[[KleinErrorHandler], Callable]:
+        ...
+
     @overload
     def handle_errors(
         self,
         f_or_exception: Type[Exception],
         *additional_exceptions: Type[Exception],
-    ) -> Callable[[KleinErrorHandler], Callable]: ...
+    ) -> Callable[[KleinErrorHandler], Callable]:
+        ...
+
     def handle_errors(
         self,
         f_or_exception: Union[KleinErrorHandler, Type[Exception]],

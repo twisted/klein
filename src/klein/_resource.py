@@ -104,18 +104,18 @@ def _extractURLparts(request):
     except UnicodeDecodeError:
         utf8Failures.append(("SERVER_NAME", failure.Failure()))
     try:
-        path_info = path_info.decode("utf-8")
+        path_text = path_info.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("PATH_INFO", failure.Failure()))
     try:
-        script_name = script_name.decode("utf-8")
+        script_text = script_name.decode("utf-8")
     except UnicodeDecodeError:
         utf8Failures.append(("SCRIPT_NAME", failure.Failure()))
 
     if utf8Failures:
         raise _URLDecodeError(utf8Failures)
 
-    return url_scheme, server_name, server_port, path_info, script_name
+    return url_scheme, server_name, server_port, path_text, script_text
 
 
 class KleinResource(Resource):

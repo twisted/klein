@@ -17,17 +17,17 @@ class EqualityTestsMixin(ABC):
     def anInstance(self) -> object:
         """
         Return an instance of the class under test.  Each call to this method
-        must return a different object.  The objects must not be equal to the
-        objects returned by C{anInstance}.  They may or may not be equal to
-        each other (they will not be compared against each other).
+        must return a different object.  All objects returned must be equal to
+        each other.
         """
 
     @abstractmethod
     def anotherInstance(self) -> object:
         """
         Return an instance of the class under test.  Each call to this method
-        must return a different object.  All objects returned must be equal to
-        each other.
+        must return a different object.  The objects must not be equal to the
+        objects returned by C{anInstance}.  They may or may not be equal to
+        each other (they will not be compared against each other).
         """
 
     def test_identicalEq(self) -> None:

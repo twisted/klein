@@ -1,8 +1,7 @@
 import os
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Mapping, Optional, Sequence
 from unittest.mock import Mock, call
-
 from urllib.parse import parse_qs
 
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
@@ -32,14 +31,14 @@ from .._resource import (
 
 
 def requestMock(
-    path,
-    method=b"GET",
-    host=b"localhost",
-    port=8080,
-    isSecure=False,
-    body=None,
-    headers=None,
-):
+    path: bytes,
+    method: bytes = b"GET",
+    host: bytes = b"localhost",
+    port: int = 8080,
+    isSecure: bool = False,
+    body: bytes = b"",
+    headers: Optional[Mapping[bytes, Sequence[bytes]]] = None,
+) -> IRequest:
     if not headers:
         headers = {}
 
@@ -200,10 +199,10 @@ class MockProducer:
         self.request = request
         self.strings = strings
 
-    def start(self):
+    def start(self) -> None:
         self.request.registerProducer(self, False)
 
-    def resumeProducing(self):
+    def resumeProducing(self) -> None:
         if self.strings:
             self.request.write(self.strings.pop(0))
         else:
@@ -242,7 +241,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
 
 class KleinResourceTests(SynchronousTestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.app = Klein()
         self.kr = KleinResource(self.app)
 
@@ -265,7 +264,7 @@ class KleinResourceTests(SynchronousTestCase):
                 )
             )
 
-    def test_simplePost(self):
+    def test_simplePost(self) -> None:
         app = self.app
 
         # The order in which these functions are defined
@@ -292,7 +291,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), b"gotted")
 
-    def test_simpleRouting(self):
+    def test_simpleRouting(self) -> None:
         app = self.app
 
         @app.route("/")
@@ -306,7 +305,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"ok")
 
-    def test_branchRendering(self):
+    def test_branchRendering(self) -> None:
         app = self.app
 
         @app.route("/", branch=True)
@@ -320,7 +319,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"ok")
 
-    def test_branchWithExplicitChildrenRouting(self):
+    def test_branchWithExplicitChildrenRouting(self) -> None:
         app = self.app
 
         @app.route("/")
@@ -344,7 +343,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), b"ok")
 
-    def test_branchWithExplicitChildBranch(self):
+    def test_branchWithExplicitChildBranch(self) -> None:
         app = self.app
 
         @app.route("/", branch=True)
@@ -368,7 +367,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d2)
         self.assertEqual(request2.getWrittenData(), b"ok")
 
-    def test_deferredRendering(self):
+    def test_deferredRendering(self) -> None:
         app = self.app
 
         deferredResponse = Deferred()
@@ -388,7 +387,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"ok")
 
-    def test_asyncRendering(self):
+    def test_asyncRendering(self) -> None:
         app = self.app
         resource = self.kr
 
@@ -402,7 +401,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertEqual(request.getWrittenData(), LeafResource.content)
 
-    def test_elementRendering(self):
+    def test_elementRendering(self) -> None:
         app = self.app
 
         @app.route("/element/<string:name>")  # type: ignore[arg-type]
@@ -418,7 +417,7 @@ class KleinResourceTests(SynchronousTestCase):
             request.getWrittenData(), b"<!DOCTYPE html>\n<h1>foo</h1>"
         )
 
-    def test_deferredElementRendering(self):
+    def test_deferredElementRendering(self) -> None:
         app = self.app
 
         elements = []
@@ -441,7 +440,7 @@ class KleinResourceTests(SynchronousTestCase):
             request.getWrittenData(), b"<!DOCTYPE html>\n<h1>bar</h1>"
         )
 
-    def test_leafResourceRendering(self):
+    def test_leafResourceRendering(self) -> None:
         app = self.app
 
         request = requestMock(b"/resource/leaf")
@@ -455,7 +454,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), LeafResource.content)
 
-    def test_childResourceRendering(self):
+    def test_childResourceRendering(self) -> None:
         app = self.app
         request = requestMock(b"/resource/children/betty")
 
@@ -468,7 +467,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"I'm a child named betty!")
 
-    def test_childrenResourceRendering(self):
+    def test_childrenResourceRendering(self) -> None:
         app = self.app
 
         request = requestMock(b"/resource/children/")
@@ -482,7 +481,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"I have children!")
 
-    def test_producerResourceRendering(self):
+    def test_producerResourceRendering(self) -> None:
         """
         Test that Klein will correctly handle producing L{Resource}s.
 
@@ -515,7 +514,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.finishCount, 1)
         self.assertEqual(request.producer, None)
 
-    def test_notFound(self):
+    def test_notFound(self) -> None:
         request = requestMock(b"/fourohofour")
 
         d = _render(self.kr, request)
@@ -524,7 +523,7 @@ class KleinResourceTests(SynchronousTestCase):
         request.setResponseCode.assert_called_with(404)
         self.assertIn(b"404 Not Found", request.getWrittenData())
 
-    def test_renderUnicode(self):
+    def test_renderUnicode(self) -> None:
         app = self.app
 
         request = requestMock(b"/snowman")
@@ -538,7 +537,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"\xE2\x98\x83")
 
-    def test_renderNone(self):
+    def test_renderNone(self) -> None:
         app = self.app
 
         request = requestMock(b"/None")
@@ -554,7 +553,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.finishCount, 1)
         self.assertEqual(request.writeCount, 1)
 
-    def test_staticRoot(self):
+    def test_staticRoot(self) -> None:
         app = self.app
 
         request = requestMock(b"/__init__.py")
@@ -572,7 +571,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.getWrittenData(), expected)
         self.assertEqual(request.finishCount, 1)
 
-    def test_explicitStaticBranch(self):
+    def test_explicitStaticBranch(self) -> None:
         app = self.app
 
         request = requestMock(b"/static/__init__.py")
@@ -591,7 +590,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
-    def test_staticDirlist(self):
+    def test_staticDirlist(self) -> None:
         app = self.app
 
         request = requestMock(b"/")
@@ -607,7 +606,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.finishCount, 1)
 
-    def test_addSlash(self):
+    def test_addSlash(self) -> None:
         app = self.app
         request = requestMock(b"/foo")
 
@@ -627,7 +626,7 @@ class KleinResourceTests(SynchronousTestCase):
             ]
         )
 
-    def test_methodNotAllowed(self):
+    def test_methodNotAllowed(self) -> None:
         app = self.app
         request = requestMock(b"/foo", method=b"DELETE")
 
@@ -640,7 +639,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.code, 405)
 
-    def test_methodNotAllowedWithRootCollection(self):
+    def test_methodNotAllowedWithRootCollection(self) -> None:
         app = self.app
         request = requestMock(b"/foo/bar", method=b"DELETE")
 
@@ -657,7 +656,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.code, 405)
 
-    def test_noImplicitBranch(self):
+    def test_noImplicitBranch(self) -> None:
         app = self.app
         request = requestMock(b"/foo")
 
@@ -670,7 +669,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.code, 404)
 
-    def test_strictSlashes(self):
+    def test_strictSlashes(self) -> None:
         app = self.app
         request = requestMock(b"/foo/bar")
 
@@ -688,7 +687,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.getWrittenData(), b"foo")
         self.assertEqual(request.code, 200)
 
-    def test_URLPath(self):
+    def test_URLPath(self) -> None:
         app = self.app
         request = requestMock(b"/egg/chicken")
 
@@ -706,7 +705,7 @@ class KleinResourceTests(SynchronousTestCase):
             str(request_url[0]), "http://localhost:8080/egg/chicken"
         )
 
-    def test_URLPath_root(self):
+    def test_URLPath_root(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -721,7 +720,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(str(request_url[0]), "http://localhost:8080/")
 
-    def test_URLPath_traversedResource(self):
+    def test_URLPath_traversedResource(self) -> None:
         app = self.app
         request = requestMock(b"/resource/foo")
 
@@ -745,7 +744,7 @@ class KleinResourceTests(SynchronousTestCase):
             str(request_url[0]), "http://localhost:8080/resource/foo"
         )
 
-    def test_handlerRaises(self):
+    def test_handlerRaises(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -769,7 +768,7 @@ class KleinResourceTests(SynchronousTestCase):
         request.processingFailed.assert_called_once_with(failures[0])
         self.flushLoggedErrors(RouteFailureTest)
 
-    def test_genericErrorHandler(self):
+    def test_genericErrorHandler(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -793,7 +792,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.code, 501)
         assert not request.processingFailed.called
 
-    def test_typeSpecificErrorHandlers(self):
+    def test_typeSpecificErrorHandlers(self) -> None:
         app = self.app
         request = requestMock(b"/")
         type_error_handled = [False]
@@ -847,7 +846,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(generic_error_handled[0], True)
 
-    def test_notFoundException(self):
+    def test_notFoundException(self) -> None:
         app = self.app
         request = requestMock(b"/")
         generic_error_handled = [False]
@@ -880,7 +879,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(generic_error_handled[0], True)
 
-    def test_errorHandlerNeedsRendering(self):
+    def test_errorHandlerNeedsRendering(self) -> None:
         """
         Renderables returned by L{handle_errors} are rendered.
         """
@@ -899,7 +898,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.processingFailed.called, False)
         self.assertEqual(request.getWrittenData(), rendered)
 
-    def test_errorHandlerReturnsResource(self):
+    def test_errorHandlerReturnsResource(self) -> None:
         """
         Resources returned by L{Klein.handle_errors} are rendered
         """
@@ -923,7 +922,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.code, 404)
         self.assertEqual(request.getWrittenData(), b"Nothing found")
 
-    def test_requestWriteAfterFinish(self):
+    def test_requestWriteAfterFinish(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -947,7 +946,7 @@ class KleinResourceTests(SynchronousTestCase):
             ),
         )
 
-    def test_requestFinishAfterConnectionLost(self):
+    def test_requestFinishAfterConnectionLost(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -980,7 +979,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
 
-    def test_routeHandlesRequestFinished(self):
+    def test_routeHandlesRequestFinished(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -1004,7 +1003,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(request.processingFailed.call_count, 0)
 
-    def test_url_for(self):
+    def test_url_for(self) -> None:
         app = self.app
         request = requestMock(b"/foo/1")
 
@@ -1020,7 +1019,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(relative_url[0], "/foo/2")
 
-    def test_cancelledDeferred(self):
+    def test_cancelledDeferred(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -1037,7 +1036,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.flushLoggedErrors(CancelledError)
 
-    def test_external_url_for(self):
+    def test_external_url_for(self) -> None:
         app = self.app
         request = requestMock(b"/foo/1")
 
@@ -1055,7 +1054,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(relative_url[0], "http://localhost:8080/foo/2")
 
-    def test_cancelledIsEatenOnConnectionLost(self):
+    def test_cancelledIsEatenOnConnectionLost(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -1078,7 +1077,7 @@ class KleinResourceTests(SynchronousTestCase):
         d.addCallback(_cb)
         self.assertFired(d)
 
-    def test_cancelsOnConnectionLost(self):
+    def test_cancelsOnConnectionLost(self) -> None:
         app = self.app
         request = requestMock(b"/")
 
@@ -1100,12 +1099,12 @@ class KleinResourceTests(SynchronousTestCase):
         d.addCallback(lambda _: handler_d)
         self.assertFired(d)
 
-    def test_ensure_utf8_bytes(self):
+    def test_ensure_utf8_bytes(self) -> None:
         self.assertEqual(ensure_utf8_bytes("abc"), b"abc")
         self.assertEqual(ensure_utf8_bytes("\u2202"), b"\xe2\x88\x82")
         self.assertEqual(ensure_utf8_bytes(b"\xe2\x88\x82"), b"\xe2\x88\x82")
 
-    def test_decodesPath(self):
+    def test_decodesPath(self) -> None:
         """
         server_name, path_info, and script_name are decoded as UTF-8 before
         being handed to werkzeug.
@@ -1118,7 +1117,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertIsInstance(kreq.mapper.path_info, str)
         self.assertIsInstance(kreq.mapper.script_name, str)
 
-    def test_failedDecodePathInfo(self):
+    def test_failedDecodePathInfo(self) -> None:
         """
         If decoding of one of the URL parts (in this case PATH_INFO) fails, the
         error is logged and 400 returned.
@@ -1129,7 +1128,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(b"Non-UTF-8 encoding in URL.", rv)
         self.assertEqual(1, len(self.flushLoggedErrors(UnicodeDecodeError)))
 
-    def test_urlDecodeErrorRepr(self):
+    def test_urlDecodeErrorRepr(self) -> None:
         """
         URLDecodeError.__repr__ formats properly.
         """
@@ -1138,7 +1137,7 @@ class KleinResourceTests(SynchronousTestCase):
             repr(_URLDecodeError(ValueError)),
         )
 
-    def test_subroutedBranch(self):
+    def test_subroutedBranch(self) -> None:
         subapp = Klein()
 
         @subapp.route("/foo")
@@ -1158,7 +1157,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.getWrittenData(), b"foo")
 
-    def test_correctContentLengthForRequestRedirect(self):
+    def test_correctContentLengthForRequestRedirect(self) -> None:
         app = self.app
 
         @app.route("/alias", alias=True)
@@ -1190,7 +1189,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
     Tests for L{klein.resource._extractURLparts}.
     """
 
-    def test_types(self):
+    def test_types(self) -> None:
         """
         Returns the correct types.
         """
@@ -1218,7 +1217,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         self.assertEqual(part, actualPart)
         self.assertIsInstance(actualFail.value, UnicodeDecodeError)
 
-    def test_failServerName(self):
+    def test_failServerName(self) -> None:
         """
         Raises URLDecodeError if SERVER_NAME can't be decoded.
         """
@@ -1227,7 +1226,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "SERVER_NAME")
 
-    def test_failPathInfo(self):
+    def test_failPathInfo(self) -> None:
         """
         Raises URLDecodeError if PATH_INFO can't be decoded.
         """
@@ -1235,7 +1234,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "PATH_INFO")
 
-    def test_failScriptName(self):
+    def test_failScriptName(self) -> None:
         """
         Raises URLDecodeError if SCRIPT_NAME can't be decoded.
         """
@@ -1244,7 +1243,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         e = self.assertRaises(_URLDecodeError, _extractURLparts, request)
         self.assertDecodingFailure(e, "SCRIPT_NAME")
 
-    def test_failAll(self):
+    def test_failAll(self) -> None:
         """
         If multiple parts fail, they all get appended to the errors list of
         URLDecodeError.
@@ -1258,7 +1257,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
             {part for part, _ in e.errors},
         )
 
-    def test_afUnixSocket(self):
+    def test_afUnixSocket(self) -> None:
         """
         Test proper handling of AF_UNIX sockets
         """
@@ -1286,7 +1285,7 @@ class GlobalAppTests(SynchronousTestCase):
     Tests for the global app object
     """
 
-    def test_global_app(self):
+    def test_global_app(self) -> None:
         from klein.app import run, route, resource, handle_errors
 
         globalApp = run.__self__  # type: ignore[attr-defined]
@@ -1317,7 +1316,7 @@ class GlobalAppTests(SynchronousTestCase):
         self.assertIsNone(self.successResultOf(d))
         self.assertEqual(request.getWrittenData(), b"alive")
 
-    def test_weird_resource_situation(self):
+    def test_weird_resource_situation(self) -> None:
         """
         Historically, the object named "C{klein.resource}" has had two
         meanings:

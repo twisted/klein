@@ -36,7 +36,7 @@ def requestMock(
     host: bytes = b"localhost",
     port: int = 8080,
     isSecure: bool = False,
-    body: Optional[bytes] = None,
+    body: bytes = b"",
     headers: Optional[Mapping[bytes, Sequence[bytes]]] = None,
 ) -> IRequest:
     if not headers:

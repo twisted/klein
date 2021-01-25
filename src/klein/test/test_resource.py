@@ -980,7 +980,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = requestMock(b"/foo/1")
 
-        relative_url = [None]
+        relative_url: List[Optional[str]] = [None]
 
         @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
         def foo(request, bar):
@@ -1013,7 +1013,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = requestMock(b"/foo/1")
 
-        relative_url = [None]
+        relative_url: List[Optional[str]] = [None]
 
         @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
         def foo(request, bar):

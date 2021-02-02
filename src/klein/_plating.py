@@ -290,7 +290,9 @@ class Plating:
         def __get__(self, instance, owner=None):
             return self.__class__(
                 self._plating,
-                self._function.__get__(instance, owner),
+                self._function.__get__(  # type: ignore[attr-defined]
+                    instance, owner
+                ),
                 instance=instance,
             )
 

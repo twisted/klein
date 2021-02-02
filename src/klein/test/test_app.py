@@ -243,11 +243,13 @@ class KleinTestCase(unittest.TestCase):
         )
 
         self.assertEquals(
-            app.endpoints["branchfunc"].__name__,
+            app.endpoints["branchfunc"].__name__,  # type: ignore[union-attr]
             "route '/foo/' executor for branchfunc",
         )
         self.assertEquals(
-            app.endpoints["branchfunc_branch"].__name__,
+            app.endpoints[
+                "branchfunc_branch"
+            ].__name__,  # type: ignore[union-attr]
             "branch route '/foo/' executor for branchfunc",
         )
         self.assertEquals(
@@ -302,7 +304,7 @@ class KleinTestCase(unittest.TestCase):
             return add(a * 1000, b * 10000)
 
         self.assertEqual(megaAdd.supersized, True)
-        self.assertEqual(add.supersized, True)
+        self.assertEqual(add.supersized, True)  # type: ignore[attr-defined]
         self.assertIn("supersizer for add", str(megaAdd))
         self.assertEqual(megaAdd(3, 4), 43000)
 

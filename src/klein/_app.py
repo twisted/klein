@@ -21,6 +21,7 @@ from typing import (
     Type,
     Union,
     cast,
+    overload,
 )
 from weakref import ref
 
@@ -429,11 +430,27 @@ class Klein:
             self._url_map = _map_before_submount
             self._subroute_segments -= segments
 
-    def handle_errors(  # type: ignore[no-untyped-def]
+    @overload
+    def handle_errors(
         self,
-        f_or_exception: Union[KleinErrorHandler, Exception],
+        f_or_exception: KleinErrorHandler,
         *additional_exceptions: Type[Exception],
-    ):
+    ) -> Callable[[KleinErrorHandler], Callable]:
+        ...  # pragma: no cover
+
+    @overload
+    def handle_errors(
+        self,
+        f_or_exception: Type[Exception],
+        *additional_exceptions: Type[Exception],
+    ) -> Callable[[KleinErrorHandler], Callable]:
+        ...  # pragma: no cover
+
+    def handle_errors(
+        self,
+        f_or_exception: Union[KleinErrorHandler, Type[Exception]],
+        *additional_exceptions: Type[Exception],
+    ) -> Callable[[KleinErrorHandler], Callable]:
         """
         Register an error handler. This decorator supports two syntaxes. The
         simpler of these can be used to register a handler for all C{Exception}
@@ -496,19 +513,20 @@ class Klein:
             return self.handle_errors(Exception)(f)
 
         # f_or_exception is an Exception class
-        exception = cast(Type[Exception], f_or_exception)
+        exceptions = [f_or_exception] + list(additional_exceptions)
 
-        def deco(f: KleinErrorHandler):  # type: ignore[no-untyped-def]
+        def deco(f: KleinErrorHandler) -> Callable:
             @modified("error handling wrapper", f)
             def _f(
-                instance: Optional["Klein"], request: IRequest, failure: Failure
+                instance: Optional["Klein"],
+                request: IRequest,
+                failure: Failure,
             ) -> KleinRenderable:
                 return _call(instance, f, request, failure)
 
-            self._error_handlers.append(
-                ([exception] + list(additional_exceptions), _f)
-            )
-            return _f
+            self._error_handlers.append((exceptions, _f))
+
+            return cast(Callable, _f)
 
         return deco
 

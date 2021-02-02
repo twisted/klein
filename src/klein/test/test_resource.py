@@ -828,7 +828,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(len(failures), 1)
         self.assertEqual(request.code, 501)
 
-        # Verify that above handlers would otherwise have worked
+        # Test the above handlers, which otherwise lack test coverage.
 
         @app.route("/type_error")
         def type_error(request):
@@ -869,7 +869,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.getWrittenData(), b"Custom Not Found")
         self.assertEqual(request.writeCount, 1)
 
-        # Verify that above handlers would otherwise have worked
+        # Test the above handlers, which otherwise lack test coverage.
 
         @app.route("/generic_error")
         def generic_error(request):
@@ -1007,7 +1007,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = requestMock(b"/foo/1")
 
-        relative_url: List[Optional[str]] = [None]
+        relative_url: List[str] = ["** ROUTE NOT CALLED **"]
 
         @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
         def foo(request, bar):

@@ -198,31 +198,25 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
-      - name: Run unit tests
-        shell: bash
-        # This hairy shell code is here to map the python and Twisted versions
-        # specified above to the equivalents used in Tox environments.
+      - name: Translate Python version to Tox environment
+        id: tox_env
+        shell: python
         run: |
-          set -eux
-          py="${{ matrix.python }}";
-          if [ "${py#pypy}" != "${py}" ]; then  # PyPy
-              py_test="${py}";
-          else  # CPython
-              py_test="py${py/./}";  # Add "py" prefix, remove "."
-          fi;
-          twisted="${{ matrix.twisted }}";
-          twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
-          env_test="coverage-${py_test}-${twisted}";
-          echo "Test environment: ${env_test}";
-          ln -s ".tox/${env_test}" testenv;  # Fixed location for upload step below
-          tox -e "${env_test}";
+          tox_env = "py{}-tw{}".format(
+            "${{ matrix.python-version }}".replace(".", ""),
+            "${{ matrix.python-version }}".replace(".", ""),
+          )
+          print("::set-output name=value::" + tox_env)
+
+      - name: Run unit tests
+        run: tox -e ${{ steps.tox_env.outputs.value }};
 
       - name: Upload Trial log artifact
         if: failure()
         uses: actions/upload-artifact@v1
         with:
           name: trial
-          path: testenv/log/trial.log
+          path: .tox/${{ steps.tox_env.outputs.value }}/log/trial.log
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.

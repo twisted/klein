@@ -204,7 +204,7 @@ jobs:
         run: |
           py = "${{ matrix.python }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
-          print(f"::set-output name=value::py{py}-tw{tw}")
+          print(f"::set-output name=value::coverage-py{py}-tw{tw}")
 
       - name: Run unit tests
         run: tox -e ${{ steps.tox_env.outputs.value }};

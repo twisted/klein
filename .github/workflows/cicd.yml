@@ -202,11 +202,9 @@ jobs:
         id: tox_env
         shell: python
         run: |
-          tox_env = "py{}-tw{}".format(
-            "${{ matrix.python-version }}".replace(".", ""),
-            "${{ matrix.python-version }}".replace(".", ""),
-          )
-          print("::set-output name=value::" + tox_env)
+          py = "${{ matrix.python }}".replace(".", "")
+          tw = "${{ matrix.twisted }}".replace(".", "")
+          print(f"::set-output name=value::py{py}-tw{tw}")
 
       - name: Run unit tests
         run: tox -e ${{ steps.tox_env.outputs.value }};

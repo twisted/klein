@@ -202,7 +202,7 @@ jobs:
         id: tox_env
         shell: python
         run: |
-          py = "${{ matrix.python }}".replace(".", "")
+          py = "${{ matrix.python }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
           print(f"::set-output name=value::py{py}-tw{tw}")
 

@@ -189,6 +189,8 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Install Python
         uses: actions/setup-python@v1

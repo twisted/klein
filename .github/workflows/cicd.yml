@@ -178,10 +178,11 @@ jobs:
 
     needs: [lint, mypy, docs, packaging]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       matrix:
+        os: ["ubuntu-latest"]
         python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
         twisted: ["19.2", "current"]
 

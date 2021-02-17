@@ -180,11 +180,18 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.optional }}
     strategy:
       matrix:
         os: ["ubuntu-latest"]
         python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
         twisted: ["19.2", "current"]
+        optional: [false]
+        include:
+          os: "ubuntu-latest"
+          python: "3.9"
+          twisted: "trunk"
+          optional: true
 
     steps:
 

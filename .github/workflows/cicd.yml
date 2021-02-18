@@ -178,17 +178,27 @@ jobs:
 
     needs: [lint, mypy, docs, packaging]
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    continue-on-error: ${{ matrix.optional }}
     strategy:
       matrix:
+        os: ["ubuntu-latest"]
         python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
         twisted: ["19.2", "current"]
+        optional: [false]
+        include:
+          - os: "ubuntu-latest"
+            python: "3.9"
+            twisted: "trunk"
+            optional: true
 
     steps:
 
       - name: Checkout source code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
 
       - name: Install Python
         uses: actions/setup-python@v1
@@ -198,31 +208,23 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
-      - name: Run unit tests
-        shell: bash
-        # This hairy shell code is here to map the python and Twisted versions
-        # specified above to the equivalents used in Tox environments.
+      - name: Translate Python version to Tox environment
+        id: tox_env
+        shell: python
         run: |
-          set -eux
-          py="${{ matrix.python }}";
-          if [ "${py#pypy}" != "${py}" ]; then  # PyPy
-              py_test="${py}";
-          else  # CPython
-              py_test="py${py/./}";  # Add "py" prefix, remove "."
-          fi;
-          twisted="${{ matrix.twisted }}";
-          twisted="tw${twisted/./}";  # Add "tw" prefix, remove "."
-          env_test="coverage-${py_test}-${twisted}";
-          echo "Test environment: ${env_test}";
-          ln -s ".tox/${env_test}" testenv;  # Fixed location for upload step below
-          tox -e "${env_test}";
+          py = "${{ matrix.python }}".replace(".", "").replace("pypy", "py")
+          tw = "${{ matrix.twisted }}".replace(".", "")
+          print(f"::set-output name=value::coverage-py{py}-tw{tw}")
+
+      - name: Run unit tests
+        run: tox -e ${{ steps.tox_env.outputs.value }};
 
       - name: Upload Trial log artifact
         if: failure()
         uses: actions/upload-artifact@v1
         with:
           name: trial
-          path: testenv/log/trial.log
+          path: .tox/${{ steps.tox_env.outputs.value }}/log/trial.log
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.

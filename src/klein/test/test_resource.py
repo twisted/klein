@@ -222,8 +222,6 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         def foo(self, request: IRequest) -> KleinRenderable:
             pass
 
-    _one = _One()
-
     class _Another:
         anotherKlein = Klein()
 
@@ -231,13 +229,11 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         def bar(self, request: IRequest) -> KleinRenderable:
             pass
 
-    _another = _Another()
-
     def anInstance(self):
-        return self._one.oneKlein
+        return _One().oneKlein
 
     def anotherInstance(self):
-        return self._another.anotherKlein
+        return _Another().anotherKlein
 
 
 class KleinResourceTests(SynchronousTestCase):

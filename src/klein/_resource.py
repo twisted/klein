@@ -2,7 +2,8 @@
 
 from typing import Any, List, TYPE_CHECKING, Tuple, Union, cast
 
-from twisted.internet.defer import CancelledError, Deferred, maybeDeferred
+from twisted.internet import defer
+from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.python import log
 from twisted.python.compat import intToBytes
 from twisted.python.failure import Failure
@@ -239,7 +240,7 @@ class KleinResource(Resource):
             # is no way to surface this failure to the user if the
             # request is finished.
             if request_finished[0]:
-                if not failure.check(CancelledError):
+                if not failure.check(defer.CancelledError):
                     log.err(failure, "Unhandled Error Processing Request.")
                 return
 

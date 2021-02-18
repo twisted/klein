@@ -422,7 +422,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.Site")
     @patch("klein._app.log")
     @patch("klein._app.reactor")
-    def test_run(self, reactor: IReactorTCP, mock_log: Any, mock_site: Any, mock_kr: Any) -> None:
+    def test_run(
+        self, reactor: IReactorTCP, mock_log: Any, mock_site: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} configures a L{KleinResource} and a L{Site}
         listening on the specified interface and port, and logs
@@ -446,7 +448,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.Site")
     @patch("klein._app.log")
     @patch("klein._app.reactor")
-    def test_runWithLogFile(self, reactor: IReactorTCP, mock_log: Any, mock_site: Any, mock_kr: Any) -> None:
+    def test_runWithLogFile(
+        self, reactor: IReactorTCP, mock_log: Any, mock_site: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} logs to the specified C{logFile}.
         """
@@ -469,7 +473,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.log")
     @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
-    def test_runTCP6(self, reactor: IReactorCore, mock_sfs: Any, mock_log: Any, mock_kr: Any) -> None:
+    def test_runTCP6(
+        self, reactor: IReactorCore, mock_sfs: Any, mock_log: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} called with tcp6 endpoint description.
         """
@@ -486,7 +492,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.log")
     @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
-    def test_runSSL(self, reactor: IReactorCore, mock_sfs: Any, mock_log: Any, mock_kr: Any) -> None:
+    def test_runSSL(
+        self, reactor: IReactorCore, mock_sfs: Any, mock_log: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} called with SSL endpoint specification.
         """

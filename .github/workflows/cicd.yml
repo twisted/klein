@@ -23,35 +23,7 @@ jobs:
 
     steps:
 
-      - name: Print GitHub Context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "${GITHUB_CONTEXT}";
-
-      - name: Print Job Context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "${JOB_CONTEXT}";
-
-      - name: Print Steps Context
-        env:
-          STEPS_CONTEXT: ${{ toJson(steps) }}
-        run: echo "${STEPS_CONTEXT}";
-
-      - name: Print Runner Context
-        env:
-          RUNNER_CONTEXT: ${{ toJson(runner) }}
-        run: echo "${RUNNER_CONTEXT}";
-
-      - name: Print Strategy Context
-        env:
-          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
-        run: echo "${STRATEGY_CONTEXT}";
-
-      - name: Print Matrix Context
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-        run: echo "${MATRIX_CONTEXT}";
+      - uses: twisted/python-info-action@v1
 
 
   lint:

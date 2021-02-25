@@ -174,7 +174,7 @@ jobs:
 
 
   unit:
-    name: "Python ${{ matrix.python }} with Twisted ${{ matrix.twisted }} on ${{ matrix.os }}"
+    name: Unit Tests using Python ${{ matrix.python }} on Ubuntu with Twisted ${{ matrix.twisted }}
 
     needs: [lint, mypy, docs, packaging]
 

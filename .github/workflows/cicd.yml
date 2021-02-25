@@ -184,12 +184,12 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
         twisted: ["19.2", "current"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python: "3.9"
+            python-version: "3.9"
             twisted: "trunk"
             optional: true
 
@@ -203,7 +203,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Tox
         run: pip install tox;
@@ -212,7 +212,7 @@ jobs:
         id: tox_env
         shell: python
         run: |
-          py = "${{ matrix.python }}".replace(".", "").replace("pypy", "py")
+          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
           print(f"::set-output name=value::coverage-py{py}-tw{tw}")
 

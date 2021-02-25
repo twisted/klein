@@ -15,18 +15,6 @@ on:
 
 jobs:
 
-  info:
-
-    name: Workflow information
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-
-    steps:
-
-      - name: Python Information
-        uses: twisted/python-info-action@v1
-
-
   lint:
 
     name: Linters

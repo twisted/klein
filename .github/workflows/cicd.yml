@@ -15,45 +15,6 @@ on:
 
 jobs:
 
-  info:
-
-    name: Workflow information
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
-
-    steps:
-
-      - name: Print GitHub Context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "${GITHUB_CONTEXT}";
-
-      - name: Print Job Context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "${JOB_CONTEXT}";
-
-      - name: Print Steps Context
-        env:
-          STEPS_CONTEXT: ${{ toJson(steps) }}
-        run: echo "${STEPS_CONTEXT}";
-
-      - name: Print Runner Context
-        env:
-          RUNNER_CONTEXT: ${{ toJson(runner) }}
-        run: echo "${RUNNER_CONTEXT}";
-
-      - name: Print Strategy Context
-        env:
-          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
-        run: echo "${STRATEGY_CONTEXT}";
-
-      - name: Print Matrix Context
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-        run: echo "${MATRIX_CONTEXT}";
-
-
   lint:
 
     name: Linters
@@ -73,6 +34,9 @@ jobs:
 
       - name: Install Tox
         run: pip install tox;
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Run Linters
         run: tox -e lint;
@@ -98,6 +62,9 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
+      - name: Python Information
+        uses: twisted/python-info-action@v1
+
       - name: Run Mypy
         run: tox -e mypy;
 
@@ -121,6 +88,9 @@ jobs:
 
       - name: Install Tox
         run: pip install tox;
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Build documentation
         run: tox -e docs;
@@ -146,6 +116,9 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
+      - name: Python Information
+        uses: twisted/python-info-action@v1
+
       - name: Check for broken links in documentation
         run: tox -e docs-linkcheck;
 
@@ -168,6 +141,9 @@ jobs:
 
       - name: Install Tox
         run: pip install tox;
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Check packaging
         run: tox -e packaging;
@@ -215,6 +191,9 @@ jobs:
           py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
           print(f"::set-output name=value::coverage-py{py}-tw{tw}")
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Run unit tests
         run: tox -e ${{ steps.tox_env.outputs.value }};

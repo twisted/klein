@@ -67,7 +67,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: "3.9"
 
@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: "3.9"
 
@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: "3.9"
 
@@ -139,7 +139,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: "3.9"
 
@@ -162,7 +162,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: "3.9"
 
@@ -174,7 +174,7 @@ jobs:
 
 
   unit:
-    name: Unit Tests using Python ${{ matrix.python }} on Ubuntu with Twisted ${{ matrix.twisted }}
+    name: Unit Tests using Python ${{ matrix.python-version }} on Ubuntu with Twisted ${{ matrix.twisted }}
 
     needs: [lint, mypy, docs, packaging]
 
@@ -184,12 +184,12 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
         twisted: ["19.2", "current"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python: "3.9"
+            python-version: "3.9"
             twisted: "trunk"
             optional: true
 
@@ -201,9 +201,9 @@ jobs:
           fetch-depth: 2
 
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Tox
         run: pip install tox;
@@ -212,7 +212,7 @@ jobs:
         id: tox_env
         shell: python
         run: |
-          py = "${{ matrix.python }}".replace(".", "").replace("pypy", "py")
+          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
           print(f"::set-output name=value::coverage-py{py}-tw{tw}")
 

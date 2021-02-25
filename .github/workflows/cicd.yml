@@ -23,7 +23,8 @@ jobs:
 
     steps:
 
-      - uses: twisted/python-info-action@v1
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
 
   lint:
@@ -45,6 +46,9 @@ jobs:
 
       - name: Install Tox
         run: pip install tox;
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Run Linters
         run: tox -e lint;
@@ -70,6 +74,9 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
+      - name: Python Information
+        uses: twisted/python-info-action@v1
+
       - name: Run Mypy
         run: tox -e mypy;
 
@@ -93,6 +100,9 @@ jobs:
 
       - name: Install Tox
         run: pip install tox;
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Build documentation
         run: tox -e docs;
@@ -118,6 +128,9 @@ jobs:
       - name: Install Tox
         run: pip install tox;
 
+      - name: Python Information
+        uses: twisted/python-info-action@v1
+
       - name: Check for broken links in documentation
         run: tox -e docs-linkcheck;
 
@@ -140,6 +153,9 @@ jobs:
 
       - name: Install Tox
         run: pip install tox;
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Check packaging
         run: tox -e packaging;
@@ -187,6 +203,9 @@ jobs:
           py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
           print(f"::set-output name=value::coverage-py{py}-tw{tw}")
+
+      - name: Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Run unit tests
         run: tox -e ${{ steps.tox_env.outputs.value }};

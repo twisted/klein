@@ -14,7 +14,7 @@ formats:
 
 
 python:
-  version: 3.8
+  version: 3.9
   system_packages: False
   install:
     - method: pip

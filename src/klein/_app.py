@@ -172,6 +172,9 @@ class KleinRequest:
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
+ErrorHandlers = List[Tuple[List[Type[Exception]], KleinErrorHandler]]
+
+
 class Klein:
     """
     L{Klein} is an object which is responsible for maintaining the routing
@@ -187,9 +190,7 @@ class Klein:
     def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRouteHandler] = {}
-        self._error_handlers: List[
-            Tuple[List[Type[Exception]], KleinErrorHandler]
-        ] = []
+        self._error_handlers: ErrorHandlers = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
 

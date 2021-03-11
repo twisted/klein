@@ -1133,9 +1133,11 @@ class KleinResourceTests(SynchronousTestCase):
         """
         URLDecodeError.__repr__ formats properly.
         """
+        error = _URLDecodeError([("VALUE", ValueError), ("TYPE", TypeError)])
         self.assertEqual(
-            "<URLDecodeError(errors=<class 'ValueError'>)>",
-            repr(_URLDecodeError(ValueError)),
+            "<URLDecodeError(errors=[('VALUE', <class 'ValueError'>), "
+            "('TYPE', <class 'TypeError'>)])>",
+            repr(error),
         )
 
     def test_subroutedBranch(self) -> None:

@@ -38,7 +38,7 @@ class TestCaseTests(TestCase):
             pass
 
     @implementer(IFrobbable)
-    class NotFrobbable:
+    class NotFrobbable:  # type: ignore [misc] # …intentional for test
         """
         Does not implement L{IFrobbable}, despite declaring.
         """

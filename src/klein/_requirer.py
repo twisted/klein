@@ -34,14 +34,6 @@ class RequestLifecycle:
         requires: Sequence[IInterface] = (),
         provides: Sequence[IInterface] = (),
     ) -> None:
-        """
-        Add a hook that promises to prepare the request by supplying the given
-        interfaces as components on the request, and requires the given
-        requirements.
-
-        Prepare hooks are run I{before any} L{IDependencyInjector}s I{inject
-        their values}.
-        """
         # TODO: topological requirements sort
         self._prepareHooks.append(beforeHook)
 

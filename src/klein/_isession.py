@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Sequence
+from typing import Any, Callable, Dict, Iterable, Sequence
 
 import attr
 
@@ -313,6 +313,20 @@ class IRequestLifecycle(Interface):
     """
     Interface for adding hooks to the phases of a request's lifecycle.
     """
+
+    def addPrepareHook(
+        beforeHook: Callable,
+        requires: Sequence[IInterface] = (),
+        provides: Sequence[IInterface] = (),
+    ) -> None:
+        """
+        Add a hook that promises to prepare the request by supplying the given
+        interfaces as components on the request, and requires the given
+        requirements.
+
+        Prepare hooks are run I{before any} L{IDependencyInjector}s I{inject
+        their values}.
+        """
 
 
 class IRequiredParameter(Interface):

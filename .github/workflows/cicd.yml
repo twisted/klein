@@ -150,7 +150,7 @@ jobs:
 
 
   unit:
-    name: Unit Tests using Python ${{ matrix.python-version }} on Ubuntu with Twisted ${{ matrix.twisted }}
+    name: "Twisted ${{ matrix.twisted }} on Python ${{ matrix.python }} on ${{ matrix.os }}"
 
     needs: [lint, mypy, docs, packaging]
 
@@ -161,7 +161,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
-        twisted: ["19.2", "current"]
+        twisted: ["19.2", "20.3", "current"]
         optional: [false]
         include:
           - os: "ubuntu-latest"

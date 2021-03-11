@@ -290,7 +290,7 @@ class Authorization:
         # TODO: this could be optimized to do fewer calls to 'authorize' by
         # collecting all the interfaces that are necessary and then using
         # addBeforeHook; the interface would not need to change.
-        session = ISession(request)  # type: ignore[operator]
+        session = ISession(request)
         provider = (yield session.authorize([self._interface])).get(
             self._interface
         )

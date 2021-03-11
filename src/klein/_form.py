@@ -481,7 +481,7 @@ class ProtoForm:
         """
         Create a ProtoForm from a componentized object.
         """
-        rl = IRequestLifecycle(componentized)  # type: ignore[operator]
+        rl = IRequestLifecycle(componentized)
         assert rl is not None
         return cls(componentized, rl)
 
@@ -592,7 +592,7 @@ def checkCSRF(request: IRequest) -> None:
     it is found.
     """
     # TODO: optionalize CSRF protection for GET forms
-    session = ISession(request, None)  # type: ignore[operator]
+    session = ISession(request, None)
     token = None
     if request.method in (b"GET", b"HEAD"):
         # Idempotent requests don't require CRSF validation.  (Don't have
@@ -784,7 +784,7 @@ class RenderableFormParam:
         """
         return RenderableForm(
             self._form,
-            ISession(request),  # type: ignore[operator]
+            ISession(request),
             self._action,
             self._method,
             self._enctype,

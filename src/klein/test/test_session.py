@@ -15,7 +15,6 @@ from zope.interface import Interface, implementer
 from zope.interface.interfaces import IInterface
 
 from klein import Authorization, Klein, Requirer, SessionProcurer
-from klein._typing import ifmethod
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
@@ -28,7 +27,6 @@ class ISimpleTest(Interface):
     Interface for testing.
     """
 
-    @ifmethod
     def doTest() -> None:
         """
         Test method.

@@ -10,7 +10,7 @@ from hyperlink import DecodedURL
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
 from .._headers import FrozenHTTPHeaders
-from .._interfaces import IHTTPMessage
+from .._imessage import IHTTPMessage
 from .._request import FrozenHTTPRequest, IHTTPRequest
 
 

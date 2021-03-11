@@ -17,7 +17,6 @@ class IKleinRequest(Interface):
     mapper = Attribute("L{werkzeug.routing.MapAdapter}")
 
     def url_for(
-        request: "IKleinRequest",
         endpoint: str,
         values: Optional[Mapping[str, str]] = None,
         method: Optional[str] = None,

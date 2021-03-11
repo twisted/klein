@@ -123,7 +123,7 @@ class SessionProcurer:
             ]
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
-            yield self._store.sentInsecurely(allPossibleSentTokens)
+            self._store.sentInsecurely(allPossibleSentTokens)
             tokenHeader = self._insecureTokenHeader
             cookieName = self._insecureCookie
             sentSecurely = False

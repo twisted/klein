@@ -150,7 +150,7 @@ jobs:
 
 
   unit:
-    name: "Twisted ${{ matrix.twisted }} on Python ${{ matrix.python }} on ${{ matrix.os }}"
+    name: "Twisted ${{ matrix.twisted }} on Python ${{ matrix.python-version }} on ${{ matrix.os }}"
 
     needs: [lint, mypy, docs, packaging]
 

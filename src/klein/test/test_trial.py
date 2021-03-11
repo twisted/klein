@@ -7,27 +7,26 @@ Tests for L{klein.test._trial}.
 from zope.interface import Interface, implementer
 
 from ._trial import TestCase
-from .._typing import ifmethod
 
 
 __all__ = ()
+
+
+class IFrobbable(Interface):
+    """
+    Frobbable object.
+    """
+
+    def frob() -> None:
+        """
+        Frob the object.
+        """
 
 
 class TestCaseTests(TestCase):
     """
     Tests for L{TestCase}.
     """
-
-    class IFrobbable(Interface):
-        """
-        Frobbable object.
-        """
-
-        @ifmethod
-        def frob() -> None:
-            """
-            Frob the object.
-            """
 
     @implementer(IFrobbable)
     class Frobbable:

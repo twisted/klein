@@ -111,6 +111,7 @@ class MemorySessionStore:
         """
         interfaceToCallable = {}
         for authorizer in authorizers:
+            assert authorizer.__memoryAuthInterface__ is not None
             specifiedInterface = authorizer.__memoryAuthInterface__
             interfaceToCallable[specifiedInterface] = authorizer
 

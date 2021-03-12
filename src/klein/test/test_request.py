@@ -33,7 +33,10 @@ class FrozenHTTPRequestTests(FrozenHTTPMessageTestsMixIn, TestCase):
 
     @classmethod
     def messageFromBytes(cls, data: bytes = b"") -> IHTTPMessage:
-        return cls.requestFromBytes(data)
+        # type note: This returns a FrozenHTTPRequest, which implements
+        # IHTTPRequest, which is a subclass of IHTTPMessage.
+        # Seems like a bug in mypy-zope.
+        return cls.requestFromBytes(data)  # type: ignore[return-value]
 
     def test_interface(self) -> None:
         """

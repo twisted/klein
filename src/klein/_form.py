@@ -458,6 +458,11 @@ class IProtoForm(Interface):
     Marker interface for L{ProtoForm}.
     """
 
+    def addField(field: Field) -> "FieldInjector":
+        """
+        Add the given field to the form ultimately created here.
+        """
+
 
 class IForm(Interface):
     """
@@ -486,9 +491,6 @@ class ProtoForm:
         return cls(componentized, rl)
 
     def addField(self, field: Field) -> "FieldInjector":
-        """
-        Add the given field to the form ultimately created here.
-        """
         self._fields.append(field)
         return FieldInjector(self._componentized, field, self._lifecycle)
 

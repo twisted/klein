@@ -27,7 +27,7 @@ class ISimpleTest(Interface):
     Interface for testing.
     """
 
-    def doTest() -> None:
+    def doTest() -> int:
         """
         Test method.
         """

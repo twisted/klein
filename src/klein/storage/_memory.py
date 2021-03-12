@@ -55,7 +55,7 @@ class _MemoryAuthorizerFunction:
     Type shadow for function with the given attribute.
     """
 
-    __memoryAuthInterface__: IInterface = None
+    __memoryAuthInterface__: IInterface = None  # type: ignore[assignment]
 
     def __call__(
         self, interface: IInterface, session: ISession, data: Componentized

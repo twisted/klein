@@ -305,7 +305,6 @@ class IDependencyInjector(Interface):
             - attaching any finalized component objects to the
               injectionComponents originally passed along to the
               IRequiredParameter that created this IDependencyInjector.
-
         """
 
 

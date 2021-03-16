@@ -27,7 +27,7 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from zope.interface import Attribute, Interface, implementer
 
-from ._app import _call
+from ._app import KleinRenderable, _call
 from ._decorators import bindable
 from .interfaces import (
     EarlyExit,
@@ -609,6 +609,11 @@ class IValidationFailureHandler(Interface):
     """
     Validation failure handler callable interface.
     """
+
+    def __call__(request: IRequest) -> KleinRenderable:
+        """
+        Called to handle a validation failure.
+        """
 
 
 def checkCSRF(request: IRequest) -> None:

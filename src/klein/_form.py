@@ -573,6 +573,7 @@ class FieldInjector:
         """
         Inject the given value into the form.
         """
+        assert self._field.pythonArgumentName is not None
         return IFieldValues(request).arguments.get(
             self._field.pythonArgumentName
         )

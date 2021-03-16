@@ -25,7 +25,7 @@ from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import Resource
 from twisted.web.template import Element, Tag, TagLoader, tags
 
-from zope.interface import Interface, implementer
+from zope.interface import Attribute, Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable
@@ -469,6 +469,18 @@ class IForm(Interface):
     Marker interface for form attached to dependency injection components.
     """
 
+    fields: Sequence[Field] = Attribute("Form fields")
+
+    def populateRequestValues(
+        injectionComponents: Componentized,
+        instance: Any,
+        request: IRequest,
+    ) -> Deferred:
+        """
+        Extract the values present in this request and populate a
+        L{FieldValues} object.
+        """
+
 
 @implementer(IProtoForm)
 @attr.s
@@ -500,6 +512,20 @@ class IFieldValues(Interface):
     Marker interface for parsed fields.
     """
 
+    form: IForm = Attribute("Form")
+    arguments: Dict[str, Any] = Attribute("Arguments")
+    prevalidationValues: Dict[Field, Optional[str]] = Attribute(
+        "Pre-validation values"
+    )
+    validationErrors: Dict[Field, ValidationError] = Attribute(
+        "Validation errors"
+    )
+
+    def validate(instance: Any, request: IRequest) -> Deferred:
+        """
+        If any validation errors have occurred, raise a relevant exception.
+        """
+
 
 @implementer(IFieldValues)
 @attr.s
@@ -516,9 +542,6 @@ class FieldValues:
 
     @inlineCallbacks
     def validate(self, instance: Any, request: IRequest) -> Deferred:
-        """
-        If any validation errors have occurred, raise a relevant exception.
-        """
         if self.validationErrors:
             result = yield _call(
                 instance,
@@ -678,10 +701,6 @@ class Form:
         instance: Any,
         request: IRequest,
     ) -> Deferred:
-        """
-        Extract the values present in this request and populate a
-        L{FieldValues} object.
-        """
         assert IFieldValues(request, None) is None
 
         validationErrors = {}

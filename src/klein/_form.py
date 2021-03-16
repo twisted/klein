@@ -301,7 +301,7 @@ class RenderableForm:
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
 
-    _form = attr.ib(type="Form")
+    _form = attr.ib(type="IForm")
     _session = attr.ib(type=ISession)
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
@@ -650,6 +650,7 @@ def checkCSRF(request: IRequest) -> None:
     raise EarlyExit(CrossSiteRequestForgery(f"Invalid CSRF token: {token!r}"))
 
 
+@implementer(IForm)
 @attr.s(hash=False)
 class Form:
     """
@@ -775,7 +776,7 @@ class Form:
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        form: Optional[Form] = IForm(
+        form: Optional[IForm] = IForm(
             decoratedFunction.injectionComponents, None
         )
         if form is None:
@@ -791,7 +792,7 @@ class RenderableFormParam:
     L{IDependencyInjector} to provide a L{RenderableForm} to your route.
     """
 
-    _form = attr.ib(type=Form)
+    _form = attr.ib(type=IForm)
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
     _enctype = attr.ib(type=str)

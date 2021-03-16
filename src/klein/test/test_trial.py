@@ -12,21 +12,20 @@ from ._trial import TestCase
 __all__ = ()
 
 
-class IFrobbable(Interface):
-    """
-    Frobbable object.
-    """
-
-    def frob() -> None:
-        """
-        Frob the object.
-        """
-
-
 class TestCaseTests(TestCase):
     """
     Tests for L{TestCase}.
     """
+
+    class IFrobbable(Interface):
+        """
+        Frobbable object.
+        """
+
+        def frob() -> None:
+            """
+            Frob the object.
+            """
 
     @implementer(IFrobbable)
     class Frobbable:

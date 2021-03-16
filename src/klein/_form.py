@@ -458,6 +458,8 @@ class IProtoForm(Interface):
     Marker interface for L{ProtoForm}.
     """
 
+    fields: Sequence[Field] = Attribute("Form fields")
+
     def addField(field: Field) -> "FieldInjector":
         """
         Add the given field to the form ultimately created here.
@@ -491,7 +493,7 @@ class ProtoForm:
 
     _componentized = attr.ib(type=Componentized)
     _lifecycle = attr.ib(type=IRequestLifecycle)
-    _fields = attr.ib(type=List[Field], default=attr.Factory(list))
+    fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
     def fromComponentized(cls, componentized: Componentized) -> "ProtoForm":
@@ -503,7 +505,7 @@ class ProtoForm:
         return cls(componentized, rl)
 
     def addField(self, field: Field) -> "FieldInjector":
-        self._fields.append(field)
+        self.fields.append(field)
         return FieldInjector(self._componentized, field, self._lifecycle)
 
 
@@ -582,7 +584,7 @@ class FieldInjector:
         if IForm(self._componentized, None) is not None:
             return
 
-        finalForm = cast(IForm, Form(IProtoForm(self._componentized)._fields))
+        finalForm = cast(IForm, Form(IProtoForm(self._componentized).fields))
         self._componentized.setComponent(IForm, finalForm)
 
         # XXX set requiresComponents argument here to ISession if CSRF is

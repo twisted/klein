@@ -2,7 +2,7 @@
 Tests for L{klein._session}.
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Type
 
 from treq.testing import StubTreq
 
@@ -12,10 +12,8 @@ from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.iweb import IRequest
 
 from zope.interface import Interface, implementer
-from zope.interface.interfaces import IInterface
 
 from klein import Authorization, Klein, Requirer, SessionProcurer
-from klein._typing import ifmethod
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
@@ -28,8 +26,7 @@ class ISimpleTest(Interface):
     Interface for testing.
     """
 
-    @ifmethod
-    def doTest() -> None:
+    def doTest() -> int:
         """
         Test method.
         """
@@ -56,7 +53,7 @@ class SimpleTest:
 
 @declareMemoryAuthorizer(ISimpleTest)
 def memoryAuthorizer(
-    interface: IInterface, session: ISession, data: Componentized
+    interface: Type[Interface], session: ISession, data: Componentized
 ) -> SimpleTest:
     """
     Authorize the ISimpleTest interface; it always works.

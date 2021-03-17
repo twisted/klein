@@ -7,7 +7,6 @@ Tests for L{klein.test._trial}.
 from zope.interface import Interface, implementer
 
 from ._trial import TestCase
-from .._typing import ifmethod
 
 
 __all__ = ()
@@ -23,7 +22,6 @@ class TestCaseTests(TestCase):
         Frobbable object.
         """
 
-        @ifmethod
         def frob() -> None:
             """
             Frob the object.
@@ -39,7 +37,7 @@ class TestCaseTests(TestCase):
             pass
 
     @implementer(IFrobbable)
-    class NotFrobbable:
+    class NotFrobbable:  # type: ignore [misc] # …intentional for test
         """
         Does not implement L{IFrobbable}, despite declaring.
         """

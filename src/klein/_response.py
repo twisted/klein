@@ -16,7 +16,7 @@ from twisted.internet.defer import Deferred
 
 from zope.interface import implementer
 
-from ._interfaces import IHTTPHeaders, IHTTPResponse
+from ._imessage import IHTTPHeaders, IHTTPResponse
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 
 

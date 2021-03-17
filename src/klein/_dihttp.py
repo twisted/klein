@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Union, cast
+from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
 
 import attr
 
@@ -11,8 +11,7 @@ from hyperlink import DecodedURL
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
-from zope.interface import implementer, provider
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer, provider
 
 from .interfaces import (
     IDependencyInjector,
@@ -85,7 +84,7 @@ class RequestComponent:
     @since: Klein NEXT
     """
 
-    interface = attr.ib(type=IInterface)
+    interface = attr.ib(type=Type[Interface])
 
     def registerInjector(
         self,

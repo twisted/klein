@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, List, Sequence, Type
 
 import attr
 
@@ -6,8 +6,7 @@ from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
-from zope.interface import implementer
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable, modified
@@ -31,8 +30,8 @@ class RequestLifecycle:
     def addPrepareHook(
         self,
         beforeHook: Callable,
-        requires: Sequence[IInterface] = (),
-        provides: Sequence[IInterface] = (),
+        requires: Sequence[Type[Interface]] = (),
+        provides: Sequence[Type[Interface]] = (),
     ) -> None:
         # TODO: topological requirements sort
         self._prepareHooks.append(beforeHook)
@@ -69,8 +68,8 @@ class Requirer:
 
     def prerequisite(
         self,
-        providesComponents: Sequence[IInterface],
-        requiresComponents: Sequence[IInterface] = (),
+        providesComponents: Sequence[Type[Interface]],
+        requiresComponents: Sequence[Type[Interface]] = (),
     ) -> Callable[[Callable], Callable]:
         """
         Specify a component that is a pre-requisite of every request routed

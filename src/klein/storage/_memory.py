@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_memory -*-
 from binascii import hexlify
 from os import urandom
-from typing import Any, Callable, Dict, Iterable, cast
+from typing import Any, Callable, Dict, Iterable, Type, cast
 
 import attr
 from attr import Factory
@@ -9,8 +9,7 @@ from attr import Factory
 from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python.components import Componentized
 
-from zope.interface import implementer
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer
 
 from klein.interfaces import (
     ISession,
@@ -19,7 +18,7 @@ from klein.interfaces import (
     SessionMechanism,
 )
 
-_authCB = Callable[[IInterface, ISession, Componentized], Any]
+_authCB = Callable[[Type[Interface], ISession, Componentized], Any]
 
 
 @implementer(ISession)
@@ -35,7 +34,7 @@ class MemorySession:
     _authorizationCallback = attr.ib(type=_authCB)
     _components = attr.ib(default=Factory(Componentized), type=Componentized)
 
-    def authorize(self, interfaces: Iterable[IInterface]) -> Deferred:
+    def authorize(self, interfaces: Iterable[Type[Interface]]) -> Deferred:
         """
         Authorize each interface by calling back to the session store's
         authorization callback.
@@ -55,21 +54,21 @@ class _MemoryAuthorizerFunction:
     Type shadow for function with the given attribute.
     """
 
-    __memoryAuthInterface__: IInterface = None  # type: ignore[assignment]
+    __memoryAuthInterface__: Type[Interface] = None  # type: ignore[assignment]
 
     def __call__(
-        self, interface: IInterface, session: ISession, data: Componentized
+        self, interface: Type[Interface], session: ISession, data: Componentized
     ) -> Any:
         """
         Return a provider of the given interface.
         """
 
 
-_authFn = Callable[[IInterface, ISession, Componentized], Any]
+_authFn = Callable[[Type[Interface], ISession, Componentized], Any]
 
 
 def declareMemoryAuthorizer(
-    forInterface: IInterface,
+    forInterface: Type[Interface],
 ) -> Callable[[Callable], _MemoryAuthorizerFunction]:
     """
     Declare that the decorated function is an authorizer usable with a memory
@@ -85,7 +84,7 @@ def declareMemoryAuthorizer(
 
 
 def _noAuthorization(
-    interface: IInterface, session: ISession, data: Componentized
+    interface: Type[Interface], session: ISession, data: Componentized
 ) -> None:
     return None
 
@@ -116,7 +115,7 @@ class MemorySessionStore:
             interfaceToCallable[specifiedInterface] = authorizer
 
         def authorizationCallback(
-            interface: IInterface, session: ISession, data: Componentized
+            interface: Type[Interface], session: ISession, data: Componentized
         ) -> Any:
             return interfaceToCallable.get(interface, _noAuthorization)(
                 interface, session, data

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterable, Sequence
+from typing import Any, Callable, Dict, Iterable, Sequence, Type
 
 import attr
 
@@ -9,7 +9,6 @@ from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface
-from zope.interface.interfaces import IInterface
 
 
 class NoSuchSession(Exception):
@@ -89,7 +88,7 @@ class ISession(Interface):
         """
     )
 
-    def authorize(interfaces: Iterable[IInterface]) -> Deferred:
+    def authorize(interfaces: Iterable[Type[Interface]]) -> Deferred:
         """
         Retrieve other objects from this session.
 
@@ -315,8 +314,8 @@ class IRequestLifecycle(Interface):
 
     def addPrepareHook(
         beforeHook: Callable,
-        requires: Sequence[IInterface] = (),
-        provides: Sequence[IInterface] = (),
+        requires: Sequence[Type[Interface]] = (),
+        provides: Sequence[Type[Interface]] = (),
     ) -> None:
         """
         Add a hook that promises to prepare the request by supplying the given

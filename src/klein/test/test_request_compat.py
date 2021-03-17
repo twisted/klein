@@ -147,7 +147,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
         self.assertEqual(body, data)
 
-    def test_bodyAsBytesCached(self) -> None:
+    async def test_bodyAsBytesCached(self) -> None:
         """
         L{HTTPRequestWrappingIRequest.bodyAsBytes} called twice returns the
         same object both times.
@@ -155,7 +155,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         data = b"some data"
         legacyRequest = self.legacyRequest(body=data)
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
-        body1 = self.successResultOf(request.bodyAsBytes())
-        body2 = self.successResultOf(request.bodyAsBytes())
+        body1 = await request.bodyAsBytes()
+        body2 = await request.bodyAsBytes()
 
         self.assertIdentical(body1, body2)

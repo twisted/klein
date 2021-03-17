@@ -1,4 +1,4 @@
-from typing import Iterable, List, Tuple
+from typing import Iterable, List, Tuple, cast
 
 from hyperlink import DecodedURL
 
@@ -11,6 +11,7 @@ from twisted.web.iweb import IRequest
 from zope.interface import Interface
 
 from klein import Klein, RequestComponent, RequestURL, Requirer, Response
+from klein.interfaces import IRequiredParameter
 
 
 class BadlyBehavedHeaders(Headers):
@@ -33,7 +34,9 @@ requirer = Requirer()
 
 
 @requirer.require(
-    router.route("/hello/world", methods=["GET"]), url=RequestURL()
+    router.route("/hello/world", methods=["GET"]),
+    # type note: https://github.com/Shoobx/mypy-zope/issues/39
+    url=cast(IRequiredParameter, RequestURL()),
 )
 def requiresURL(url: DecodedURL) -> str:
     """

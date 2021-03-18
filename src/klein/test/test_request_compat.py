@@ -15,6 +15,7 @@ from hyperlink.hypothesis import decoded_urls
 from hypothesis import given
 from hypothesis.strategies import binary, text
 
+from twisted.internet.defer import ensureDeferred
 from twisted.web.iweb import IRequest
 
 from ._trial import TestCase
@@ -146,7 +147,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         legacyRequest = self.legacyRequest(body=data)
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
-        body = self.successResultOf(request.bodyAsBytes())
+        body = self.successResultOf(ensureDeferred(request.bodyAsBytes()))
 
         self.assertEqual(body, data)
 

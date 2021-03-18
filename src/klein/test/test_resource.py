@@ -1166,19 +1166,22 @@ class KleinResourceTests(SynchronousTestCase):
         URLDecodeError.__repr__ formats properly.
         """
         try:
-            raise ValueError()
+            raise ValueError("value")
         except ValueError:
             valueFailure = Failure()
 
         try:
-            raise TypeError()
+            raise TypeError("type")
         except TypeError:
             typeFailure = Failure()
 
         error = URLDecodeError([("VALUE", valueFailure), ("TYPE", typeFailure)])
         self.assertEqual(
-            "<URLDecodeError(errors=[('VALUE', <class 'ValueError'>), "
-            "('TYPE', <class 'TypeError'>)])>",
+            "<URLDecodeError(errors=["
+            "('VALUE', "
+            "<twisted.python.failure.Failure builtins.ValueError: value>), "
+            "('TYPE', "
+            "<twisted.python.failure.Failure builtins.TypeError: type>)])>",
             repr(error),
         )
 

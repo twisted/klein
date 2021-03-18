@@ -8,7 +8,7 @@ from twisted.web.iweb import IRequest
 
 from zope.interface import implementer
 
-from .test_resource import requestMock
+from .test_resource import MockRequest
 from .util import EqualityTestsMixin
 from .. import Klein
 from .._app import KleinRequest
@@ -526,20 +526,20 @@ class KleinTestCase(unittest.TestCase):
         def foo(req, postid):
             return str(postid)
 
-        request = requestMock(b"/user/john")
+        request = MockRequest(b"/user/john")
         self.assertEqual(
             app.execute_endpoint("userpage", request, "john"), "john"
         )
         self.assertEqual(
-            app.execute_endpoint("bar", requestMock(b"/post/123"), 123), "123"
+            app.execute_endpoint("bar", MockRequest(b"/post/123"), 123), "123"
         )
 
-        request = requestMock(b"/addr")
+        request = MockRequest(b"/addr")
         self.assertEqual(
             app.urlFor(request, "userpage", {"name": "john"}), "/user/john"
         )
 
-        request = requestMock(b"/addr")
+        request = MockRequest(b"/addr")
         self.assertEqual(
             app.urlFor(
                 request, "userpage", {"name": "john"}, force_external=True
@@ -547,7 +547,7 @@ class KleinTestCase(unittest.TestCase):
             "http://localhost:8080/user/john",
         )
 
-        request = requestMock(b"/addr", host=b"example.com", port=4321)
+        request = MockRequest(b"/addr", host=b"example.com", port=4321)
         self.assertEqual(
             app.urlFor(
                 request, "userpage", {"name": "john"}, force_external=True
@@ -555,7 +555,7 @@ class KleinTestCase(unittest.TestCase):
             "http://example.com:4321/user/john",
         )
 
-        request = requestMock(b"/addr")
+        request = MockRequest(b"/addr")
         url = app.urlFor(
             request,
             "userpage",
@@ -564,18 +564,18 @@ class KleinTestCase(unittest.TestCase):
         )
         self.assertEqual(url, "/user/john?age=29")
 
-        request = requestMock(b"/addr")
+        request = MockRequest(b"/addr")
         self.assertEqual(
             app.urlFor(request, "bar", {"postid": 123}), "/post/123"
         )
 
-        request = requestMock(b"/addr")
+        request = MockRequest(b"/addr")
         request.requestHeaders.removeHeader(b"host")
         self.assertEqual(
             app.urlFor(request, "bar", {"postid": 123}), "/post/123"
         )
 
-        request = requestMock(b"/addr")
+        request = MockRequest(b"/addr")
         request.requestHeaders.removeHeader(b"host")
         with self.assertRaises(ValueError):
             app.urlFor(request, "bar", {"postid": 123}, force_external=True)

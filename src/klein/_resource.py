@@ -44,7 +44,7 @@ class _StandInResource:
 StandInResource = cast("KleinResource", _StandInResource())
 
 
-class _URLDecodeError(Exception):
+class URLDecodeError(Exception):
     """
     Raised if one or more string parts of the URL could not be decoded.
     """
@@ -62,7 +62,7 @@ class _URLDecodeError(Exception):
         return f"<URLDecodeError(errors={self.errors!r})>"
 
 
-def _extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
+def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
     """
     Extracts and decodes URI parts from C{request}.
 
@@ -119,7 +119,7 @@ def _extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         utf8Failures.append(("SCRIPT_NAME", Failure()))
 
     if utf8Failures:
-        raise _URLDecodeError(utf8Failures)
+        raise URLDecodeError(utf8Failures)
 
     return url_scheme, server_name, server_port, path_text, script_text
 
@@ -155,8 +155,8 @@ class KleinResource(Resource):
                 server_port,
                 path_info,
                 script_name,
-            ) = _extractURLparts(request)
-        except _URLDecodeError as e:
+            ) = extractURLparts(request)
+        except URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, f"Invalid encoding in {what}.")
             request.setResponseCode(400)

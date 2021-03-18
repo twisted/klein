@@ -18,7 +18,7 @@ from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
 
 from ._trial import TestCase
-from .test_resource import requestMock
+from .test_resource import MockRequest
 from .._headers import IHTTPHeaders
 from .._message import FountAlreadyAccessedError
 from .._request import IHTTPRequest
@@ -43,7 +43,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         body: bytes = b"",
         headers: Optional[Headers] = None,
     ) -> IRequest:
-        return requestMock(
+        return MockRequest(
             path=path,
             method=method,
             host=host,

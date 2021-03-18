@@ -19,7 +19,7 @@ from twisted.trial.unittest import (
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
 
-from .test_resource import _render, requestMock
+from .test_resource import MockRequest, _render
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
 
@@ -345,7 +345,7 @@ class PlatingTests(AsynchronousTestCase):
         succeed synchronously, and return the generated request object and
         written bytes.
         """
-        request = requestMock(uri)
+        request = MockRequest(uri)
         d = _render(self.kr, request)
         self.successResultOf(d)
         return request, request.getWrittenData()

@@ -1,8 +1,12 @@
-import sys
+from sys import stdout
+from typing import cast
 from unittest.mock import Mock, patch
 
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
+from twisted.web.iweb import IRequest
+
+from zope.interface import implementer
 
 from .test_resource import requestMock
 from .util import EqualityTestsMixin
@@ -12,7 +16,8 @@ from .._decorators import bindable, modified, originalName
 from .._interfaces import IKleinRequest
 
 
-class DummyRequest:
+@implementer(IRequest)
+class DummyRequest:  # type: ignore[misc]  # incomplete interface
     def __init__(self, n):
         self.n = n
 
@@ -274,7 +279,7 @@ class KleinTestCase(unittest.TestCase):
             calls.append(args)
             return 7
 
-        req = object()
+        req = cast(IRequest, object())
         k.execute_endpoint("method", req)
 
         class BoundTo:
@@ -435,7 +440,7 @@ class KleinTestCase(unittest.TestCase):
 
         mock_site.assert_called_with(mock_kr.return_value)
         mock_kr.assert_called_with(app)
-        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_log.startLogging.assert_called_with(stdout)
 
     @patch("klein._app.KleinResource")
     @patch("klein._app.Site")
@@ -474,7 +479,7 @@ class KleinTestCase(unittest.TestCase):
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()
         mock_sfs.assert_called_with(reactor, spec)
-        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_log.startLogging.assert_called_with(stdout)
         mock_kr.assert_called_with(app)
 
     @patch("klein._app.KleinResource")
@@ -494,7 +499,7 @@ class KleinTestCase(unittest.TestCase):
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()
         mock_sfs.assert_called_with(reactor, spec)
-        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_log.startLogging.assert_called_with(stdout)
         mock_kr.assert_called_with(app)
 
     @patch("klein._app.KleinResource")

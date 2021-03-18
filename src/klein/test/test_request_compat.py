@@ -6,7 +6,8 @@ Tests for L{klein._irequest}.
 """
 
 from string import ascii_uppercase
-from typing import Optional
+from types import MappingProxyType
+from typing import Any, Mapping, Sequence
 
 from hyperlink import DecodedURL, EncodedURL
 from hyperlink.hypothesis import decoded_urls
@@ -14,7 +15,6 @@ from hyperlink.hypothesis import decoded_urls
 from hypothesis import given
 from hypothesis.strategies import binary, text
 
-from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
 
 from ._trial import TestCase
@@ -26,6 +26,9 @@ from .._request_compat import HTTPRequestWrappingIRequest
 
 
 __all__ = ()
+
+
+emptyMapping: Mapping[Any, Any] = MappingProxyType({})
 
 
 class HTTPRequestWrappingIRequestTests(TestCase):
@@ -41,7 +44,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         port: int = 8080,
         isSecure: bool = False,
         body: bytes = b"",
-        headers: Optional[Headers] = None,
+        headers: Mapping[bytes, Sequence[bytes]] = emptyMapping,
     ) -> IRequest:
         return MockRequest(
             path=path,

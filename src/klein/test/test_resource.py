@@ -1,6 +1,7 @@
 import os
 from io import BytesIO
-from typing import List, Mapping, Optional, Sequence
+from types import MappingProxyType
+from typing import Any, List, Mapping, Optional, Sequence
 from unittest.mock import Mock, call
 from urllib.parse import parse_qs
 
@@ -31,6 +32,9 @@ from .._resource import (
 )
 
 
+emptyMapping: Mapping[Any, Any] = MappingProxyType({})
+
+
 class MockRequest(server.Request):
     def __init__(
         self,
@@ -40,7 +44,7 @@ class MockRequest(server.Request):
         port: int = 8080,
         isSecure: bool = False,
         body: bytes = b"",
-        headers: Optional[Mapping[bytes, Sequence[bytes]]] = None,
+        headers: Mapping[bytes, Sequence[bytes]] = emptyMapping,
     ):
         super().__init__(DummyChannel(), False)
 

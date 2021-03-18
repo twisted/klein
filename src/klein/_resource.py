@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_resource -*-
 
-from typing import Any, List, TYPE_CHECKING, Tuple, Union, cast
+from typing import Any, Sequence, TYPE_CHECKING, Tuple, Union, cast
 
 from twisted.internet import defer
 from twisted.internet.defer import Deferred, maybeDeferred
@@ -51,9 +51,10 @@ class _URLDecodeError(Exception):
 
     __slots__ = ["errors"]
 
-    def __init__(self, errors: List[Tuple[str, Failure]]) -> None:
+    def __init__(self, errors: Sequence[Tuple[str, Failure]]) -> None:
         """
-        @param errors: List of decoding errors.
+        @param errors: Sequence of decoding errors, expressed as tuples
+            of names and an associated failure.
         """
         self.errors = errors
 

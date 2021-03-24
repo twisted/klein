@@ -1343,7 +1343,7 @@ class GlobalAppTests(SynchronousTestCase):
         def index(request: IRequest) -> KleinRenderable:
             raise RuntimeError("oops")
 
-        @handle_errors(ZeroDivisionError)
+        @handle_errors(RuntimeError)
         def on_zero(request: IRequest, failure: Failure) -> KleinRenderable:
             return b"alive"
 

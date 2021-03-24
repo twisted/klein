@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
 
 import attr
 
@@ -193,7 +193,7 @@ class SessionProcurer:
             )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
-            request.setComponent(ISession, session)
+            cast(Componentized, request).setComponent(ISession, session)
         returnValue(session)
 
 

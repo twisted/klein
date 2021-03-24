@@ -137,7 +137,7 @@ class TestObject:
         router.route("/render-cascade", methods=["GET"]),
         form=Form.rendererFor(handler, action="/handle"),
     )
-    def cascadeRenderer(self, form: RenderableForm) -> RenderableForm:
+    def cascadeRenderer(self, form: RenderableForm) -> Element:
         class CustomElement(Element):
             @renderer
             def customize(self, request: IRequest, tag: Any) -> Any:

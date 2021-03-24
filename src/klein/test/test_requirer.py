@@ -4,6 +4,7 @@ from hyperlink import DecodedURL
 
 from treq.testing import StubTreq
 
+from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
@@ -57,7 +58,7 @@ def provideSample(request: IRequest) -> None:
     """
     This requirer prerequisite installs a string as the provider of ISample.
     """
-    request.setComponent(ISample, "sample component")
+    cast(Componentized, request).setComponent(ISample, "sample component")
 
 
 @requirer.require(

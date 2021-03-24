@@ -189,7 +189,9 @@ class Field:
                 octets = request.content.read()
                 characters = octets.decode("utf-8")
                 parsed = json.loads(characters)
-                request.setComponent(IParsedJSONBody, parsed)
+                cast(Componentized, request).setComponent(
+                    IParsedJSONBody, parsed
+                )
             if fieldName not in parsed:
                 return None
             return parsed[fieldName]
@@ -738,7 +740,7 @@ class Form:
             injectionComponents,
         )
         yield values.validate(instance, request)
-        request.setComponent(IFieldValues, values)
+        cast(Componentized, request).setComponent(IFieldValues, values)
 
     @classmethod
     def rendererFor(

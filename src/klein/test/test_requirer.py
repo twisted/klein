@@ -1,4 +1,4 @@
-from typing import Iterable, List, Tuple, cast
+from typing import Iterator, List, Tuple, cast
 
 from hyperlink import DecodedURL
 
@@ -21,7 +21,7 @@ class BadlyBehavedHeaders(Headers):
     getAllRequestHeaders.
     """
 
-    def getAllRawHeaders(self) -> Iterable[Tuple[bytes, List[bytes]]]:
+    def getAllRawHeaders(self) -> Iterator[Tuple[bytes, List[bytes]]]:
         """
         Don't return a host header.
         """

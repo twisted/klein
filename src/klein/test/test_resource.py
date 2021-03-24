@@ -102,7 +102,7 @@ def requestMock(
             )
 
     def getWrittenData() -> bytes:
-        return cast(bytes, request._written.getvalue())
+        return cast(BytesIO, request._written).getvalue()
 
     request.finish = finish
     request.write = write

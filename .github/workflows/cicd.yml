@@ -32,11 +32,18 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install Tox
-        run: pip install tox;
-
-      - name: Python Information
+      - name: System Python Information
         uses: twisted/python-info-action@v1
+
+      - name: Set up Tox environment
+        run: |
+          pip install tox;
+          tox -e lint --notest;
+
+      - name: Tox Python Information
+        uses: twisted/python-info-action@v1
+        with:
+          python-path: .tox/lint/*/python
 
       - name: Run Linters
         run: tox -e lint;
@@ -59,11 +66,18 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install Tox
-        run: pip install tox;
-
-      - name: Python Information
+      - name: System Python Information
         uses: twisted/python-info-action@v1
+
+      - name: Set up Tox environment
+        run: |
+          pip install tox;
+          tox -e mypy --notest;
+
+      - name: Tox Python Information
+        uses: twisted/python-info-action@v1
+        with:
+          python-path: .tox/mypy/*/python
 
       - name: Run Mypy
         run: tox -e mypy;
@@ -86,11 +100,18 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install Tox
-        run: pip install tox;
-
-      - name: Python Information
+      - name: System Python Information
         uses: twisted/python-info-action@v1
+
+      - name: Set up Tox environment
+        run: |
+          pip install tox;
+          tox -e docs --notest;
+
+      - name: Tox Python Information
+        uses: twisted/python-info-action@v1
+        with:
+          python-path: .tox/docs/*/python
 
       - name: Build documentation
         run: tox -e docs;
@@ -113,11 +134,18 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install Tox
-        run: pip install tox;
-
-      - name: Python Information
+      - name: System Python Information
         uses: twisted/python-info-action@v1
+
+      - name: Set up Tox environment
+        run: |
+          pip install tox;
+          tox -e docs-linkcheck --notest;
+
+      - name: Tox Python Information
+        uses: twisted/python-info-action@v1
+        with:
+          python-path: .tox/docs-linkcheck/*/python
 
       - name: Check for broken links in documentation
         run: tox -e docs-linkcheck;
@@ -139,11 +167,18 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Install Tox
-        run: pip install tox;
-
-      - name: Python Information
+      - name: System Python Information
         uses: twisted/python-info-action@v1
+
+      - name: Set up Tox environment
+        run: |
+          pip install tox;
+          tox -e packaging --notest;
+
+      - name: Tox Python Information
+        uses: twisted/python-info-action@v1
+        with:
+          python-path: .tox/packaging/*/python
 
       - name: Check packaging
         run: tox -e packaging;
@@ -181,8 +216,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Tox
-        run: pip install tox;
+      - name: System Python Information
+        uses: twisted/python-info-action@v1
 
       - name: Translate Python version to Tox environment
         id: tox_env
@@ -192,8 +227,15 @@ jobs:
           tw = "${{ matrix.twisted }}".replace(".", "")
           print(f"::set-output name=value::coverage-py{py}-tw{tw}")
 
-      - name: Python Information
+      - name: Set up Tox environment
+        run: |
+          pip install tox;
+          tox -e ${{ steps.tox_env.outputs.value }} --notest;
+
+      - name: Tox Python Information
         uses: twisted/python-info-action@v1
+        with:
+          python-path: .tox/${{ steps.tox_env.outputs.value }}/*/python
 
       - name: Run unit tests
         run: tox -e ${{ steps.tox_env.outputs.value }};

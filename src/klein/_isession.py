@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, Sequence, TYPE_CHECKING
+from typing import Any, Callable, Dict, Iterable, Sequence, Type
 
 import attr
 
@@ -9,9 +9,6 @@ from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface
-from zope.interface.interfaces import IInterface
-
-from ._typing import ifmethod
 
 
 class NoSuchSession(Exception):
@@ -91,8 +88,7 @@ class ISession(Interface):
         """
     )
 
-    @ifmethod
-    def authorize(interfaces: Iterable[IInterface]) -> Deferred:
+    def authorize(interfaces: Iterable[Type[Interface]]) -> Deferred:
         """
         Retrieve other objects from this session.
 
@@ -118,7 +114,6 @@ class ISessionStore(Interface):
     Backing storage for sessions.
     """
 
-    @ifmethod
     def newSession(
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
@@ -130,7 +125,6 @@ class ISessionStore(Interface):
         @rtype: L{Deferred} firing with L{ISession}.
         """
 
-    @ifmethod
     def loadSession(
         identifier: str,
         isConfidential: bool,
@@ -154,7 +148,6 @@ class ISessionStore(Interface):
             L{NoSuchSession}.
         """
 
-    @ifmethod
     def sentInsecurely(identifiers: Sequence[str]) -> None:
         """
         The transport layer has detected that the given identifiers have been
@@ -172,7 +165,6 @@ class ISimpleAccountBinding(Interface):
     attribute as a component.
     """
 
-    @ifmethod
     def bindIfCredentialsMatch(username: str, password: str) -> None:
         """
         Attach the session this is a component of to an account with the given
@@ -180,7 +172,6 @@ class ISimpleAccountBinding(Interface):
         authenticate a principal.
         """
 
-    @ifmethod
     def boundAccounts() -> Deferred:
         """
         Retrieve the accounts currently associated with the session this is a
@@ -189,14 +180,12 @@ class ISimpleAccountBinding(Interface):
         @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
         """
 
-    @ifmethod
     def unbindThisSession() -> None:
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
         """
 
-    @ifmethod
     def createAccount(username: str, email: str, password: str) -> None:
         """
         Create a new account with the given username, email and password.
@@ -220,13 +209,13 @@ class ISimpleAccount(Interface):
         """
     )
 
-    def bindSession(self, session: ISession) -> None:
+    def bindSession(session: ISession) -> None:
         """
         Bind the given session to this account; i.e. authorize the given
         session to act on behalf of this account.
         """
 
-    def changePassword(self, newPassword: str) -> None:
+    def changePassword(newPassword: str) -> None:
         """
         Change the password of this account.
         """
@@ -239,7 +228,7 @@ class ISessionProcurer(Interface):
     """
 
     def procureSession(
-        self, request: IRequest, forceInsecure: bool = False
+        request: IRequest, forceInsecure: bool = False
     ) -> Deferred:
         """
         Retrieve a session using whatever technique is necessary.
@@ -285,7 +274,6 @@ class IDependencyInjector(Interface):
     An injector for a given dependency.
     """
 
-    @ifmethod
     def injectValue(
         instance: Any, request: IRequest, routeParams: Dict[str, Any]
     ) -> Any:
@@ -304,7 +292,6 @@ class IDependencyInjector(Interface):
             parameters).
         """
 
-    @ifmethod
     def finalize() -> None:
         """
         Finalize this injector before allowing the route to be created.
@@ -317,23 +304,27 @@ class IDependencyInjector(Interface):
             - attaching any finalized component objects to the
               injectionComponents originally passed along to the
               IRequiredParameter that created this IDependencyInjector.
-
         """
 
 
-class _IRequestLifecycle(Interface):
+class IRequestLifecycle(Interface):
     """
     Interface for adding hooks to the phases of a request's lifecycle.
     """
 
+    def addPrepareHook(
+        beforeHook: Callable,
+        requires: Sequence[Type[Interface]] = (),
+        provides: Sequence[Type[Interface]] = (),
+    ) -> None:
+        """
+        Add a hook that promises to prepare the request by supplying the given
+        interfaces as components on the request, and requires the given
+        requirements.
 
-if TYPE_CHECKING:
-    from typing import Union
-    from ._requirer import RequestLifecycle
-
-    IRequestLifecycle = Union[_IRequestLifecycle, RequestLifecycle]
-else:
-    IRequestLifecycle = _IRequestLifecycle
+        Prepare hooks are run I{before any} L{IDependencyInjector}s I{inject
+        their values}.
+        """
 
 
 class IRequiredParameter(Interface):
@@ -342,7 +333,6 @@ class IRequiredParameter(Interface):
     dependency at request-handling time.
     """
 
-    @ifmethod
     def registerInjector(
         injectionComponents: Componentized,
         parameterName: str,

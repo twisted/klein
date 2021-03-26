@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
 
 import attr
 
@@ -11,8 +11,7 @@ from twisted.web.http import UNAUTHORIZED
 from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
 
-from zope.interface import implementer
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer
 
 from .interfaces import (
     EarlyExit,
@@ -123,7 +122,7 @@ class SessionProcurer:
             ]
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
-            yield self._store.sentInsecurely(allPossibleSentTokens)
+            self._store.sentInsecurely(allPossibleSentTokens)
             tokenHeader = self._insecureTokenHeader
             cookieName = self._insecureCookie
             sentSecurely = False
@@ -199,7 +198,7 @@ class SessionProcurer:
 
 
 class AuthorizationDenied(Resource):
-    def __init__(self, interface: IInterface, instance: Any) -> None:
+    def __init__(self, interface: Type[Interface], instance: Any) -> None:
         self._interface = interface
         super().__init__()
 
@@ -263,10 +262,10 @@ class Authorization:
         C{required} is set to C{False}.
     """
 
-    _interface = attr.ib(type=IInterface)
+    _interface = attr.ib(type=Type[Interface])
     _required = attr.ib(type=bool, default=True)
     _whenDenied = attr.ib(
-        type=Callable[[IInterface, Any], Any], default=AuthorizationDenied
+        type=Callable[[Type[Interface], Any], Any], default=AuthorizationDenied
     )
 
     def registerInjector(
@@ -290,7 +289,7 @@ class Authorization:
         # TODO: this could be optimized to do fewer calls to 'authorize' by
         # collecting all the interfaces that are necessary and then using
         # addBeforeHook; the interface would not need to change.
-        session = ISession(request)  # type: ignore[operator]
+        session = ISession(request)
         provider = (yield session.authorize([self._interface])).get(
             self._interface
         )

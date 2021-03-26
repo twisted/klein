@@ -11,8 +11,13 @@ from attr import Factory, attrib, attrs
 
 from zope.interface import implementer
 
-from ._imessage import MutableRawHeaders, RawHeader, RawHeaders
-from ._interfaces import IHTTPHeaders, IMutableHTTPHeaders
+from ._imessage import (
+    IHTTPHeaders,
+    IMutableHTTPHeaders,
+    MutableRawHeaders,
+    RawHeader,
+    RawHeaders,
+)
 
 
 __all__ = ()

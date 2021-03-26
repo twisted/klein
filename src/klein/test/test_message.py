@@ -12,7 +12,7 @@ from hypothesis import given
 from hypothesis.strategies import binary
 
 from ._trial import TestCase
-from .._interfaces import IHTTPMessage
+from .._imessage import IHTTPMessage
 from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 
 

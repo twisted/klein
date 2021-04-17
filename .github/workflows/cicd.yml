@@ -225,7 +225,13 @@ jobs:
         run: |
           py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
           tw = "${{ matrix.twisted }}".replace(".", "")
-          print(f"::set-output name=value::coverage-py{py}-tw{tw}")
+          with_coverage = 'coverage-'
+          if 'py' in py:
+              # Coverage is disabled on PYPY as the run is slow and we
+              # don't have PYPY specific code.
+              with_coverage = ''
+          print(f"::set-output name=value::{with_coverage}py{py}-tw{tw}")
+          print(f"::set-output name=has_coverage::{with_coverage}")
 
       - name: Set up Tox environment
         run: |
@@ -253,17 +259,9 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: "Combine coverage"
-        run: |
-          set -eux
-          pip install coverage[toml];
-          coverage combine;
-          coverage xml;
-        env:
-          COVERAGE_FILE: .tox/coverage
-
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v1"
+        if: steps.tox_env.outputs.has_coverage
         with:
           env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW
           fail_ci_if_error: true

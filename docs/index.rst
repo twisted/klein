@@ -2,8 +2,6 @@
 Klein, a Web Micro-Framework
 ============================
 
-.. image:: https://travis-ci.org/twisted/klein.png?branch=master
-
 Klein is a micro-framework for developing production-ready web services with Python.
 It's built on widely used and well tested components like Werkzeug and Twisted, and has near-complete test coverage.
 

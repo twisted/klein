@@ -5,7 +5,7 @@ Contributing to Klein
 Klein is an open source project that welcomes contributions of all kinds coming from the community, including:
 
 - code patches,
-- `documentation <https://klein.readthedocs.org/>`_ improvements,
+- `documentation <https://klein.readthedocs.io/en/latest/>`_ improvements,
 - `bug reports <https://github.com/twisted/klein/issues>`_,
 - reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
 
@@ -58,7 +58,7 @@ Code
 Documentation
 -------------
 
-Klein uses `Epydoc <http://epydoc.sourceforge.net/manual-epytext.html>`_ for docstrings in code and uses `Sphinx <https://sphinx.readthedocs.io/>`_ for standalone documentation.
+Klein uses `Epydoc <http://epydoc.sourceforge.net/manual-epytext.html>`_ for docstrings in code and uses `Sphinx <https://www.sphinx-doc.org/en/master/>`_ for standalone documentation.
 
 - In documents with headers, use this format and order for headers::
 

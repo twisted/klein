@@ -12,7 +12,7 @@ Klein, a Web Micro-Framework
     :target: https://requires.io/github/twisted/klein/requirements/?branch=master
     :alt: Requirements Status
 .. image:: https://img.shields.io/pypi/pyversions/klein.svg
-    :target: https://pypi.python.org/pypi/klein
+    :target: https://pypi.org/project/klein
     :alt: Python Version Compatibility
 
 Klein is a micro-framework for developing production-ready web services with Python.

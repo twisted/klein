@@ -18,18 +18,18 @@ So the ``POST`` handler must be defined before the handler with no ``methods``.
     from twisted.internet.defer import succeed
     from klein import run, route
 
-    name='world'
+    name = b"world"
 
-    @route('/', methods=['POST'])
+    @route("/", methods=["POST"])
     def setname(request):
         global name
-        name = request.args.get('name', ['world'])[0]
+        name = request.args.get(b'name', [b'world'])[0]
         request.redirect('/')
         return succeed(None)
 
     @route('/')
     def hello(request):
-        return "Hello, {0}!".format(name)
+        return b"Hello, %s!" % (name,)
 
     run("localhost", 8080)
 

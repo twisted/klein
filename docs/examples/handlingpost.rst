@@ -43,22 +43,22 @@ Accessing the request content
 =============================
 
 To read the content of the request use the ``read`` method of
-:api:`twisted.web.iweb.IRequest.content <IRequest.content>`
+:api:`twisted.web.iweb.IRequest <IRequest.content>`
 
 .. code-block:: python
 
     from klein import run, route
     import json
-    
+
     @route('/', methods=['POST'])
     def do_post(request):
         content = json.loads(request.content.read())
         response = json.dumps(dict(the_data=content), indent=4)
         return response
-    
+
     run("localhost", 8080)
- 
- 
+
+
 The following curl command can be used to test this behaviour::
- 
-	 curl -XPOST -v -H 'Content-Type: appliction/json' -d '{"name":"bob"}'  http://localhost:8080/
+
+     curl -XPOST -v -H 'Content-Type: appliction/json' -d '{"name":"bob"}'  http://localhost:8080/

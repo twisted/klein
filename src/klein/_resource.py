@@ -84,7 +84,7 @@ def _extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         (False, 0),
         (True, 0),
     ]:
-        server_name = b'%s:%d' % (server_name, server_port)
+        server_name = b"%s:%d" % (server_name, server_port)
 
     script_name = b""
     if request.prepath:

@@ -5,7 +5,6 @@ from typing import Any, List, TYPE_CHECKING, Tuple, Union, cast
 from twisted.internet import defer
 from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.python import log
-from twisted.python.compat import intToBytes
 from twisted.python.failure import Failure
 from twisted.web import server
 from twisted.web.iweb import IRenderable, IRequest
@@ -85,7 +84,7 @@ def _extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         (False, 0),
         (True, 0),
     ]:
-        server_name = server_name + b":" + intToBytes(server_port)
+        server_name = b'%s:%d' % (server_name, server_port)
 
     script_name = b""
     if request.prepath:

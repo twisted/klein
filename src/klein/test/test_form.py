@@ -624,7 +624,7 @@ class TestForms(SynchronousTestCase):
 
     def test_renderLookupError(self) -> None:
         """
-        RenderableForm raises L{MissingRenderMethod} if anything attempst to
+        RenderableForm raises L{MissingRenderMethod} if anything attempts to
         look up a render method on it.
         """
         mem = MemorySessionStore()

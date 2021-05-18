@@ -328,7 +328,7 @@ class RenderableForm:
 
     def _fieldsToRender(self) -> Iterable[Field]:
         """
-        @return: an interable of L{Field} objects to include in the HTML
+        @return: an iterable of L{Field} objects to include in the HTML
             representation of this form.  This includes:
 
                 - all the user-specified fields in the form

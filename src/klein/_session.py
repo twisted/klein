@@ -214,7 +214,7 @@ class Authorization:
     Declare that a C{require}-decorated function requires a certain interface
     be authorized from the session.
 
-    This is a dependnecy injector used in conjunction with a L{klein.Requirer},
+    This is a dependency injector used in conjunction with a L{klein.Requirer},
     like so::
 
         from klein import Requirer, SesssionProcurer

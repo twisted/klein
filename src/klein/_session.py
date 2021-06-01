@@ -86,7 +86,7 @@ class SessionProcurer:
     def procureSession(
         self, request: IRequest, forceInsecure: bool = False
     ) -> Any:
-        alreadyProcured = request.getComponent(ISession)
+        alreadyProcured = cast(Componentized, request).getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
                 returnValue(alreadyProcured)

@@ -202,7 +202,7 @@ class Plating:
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None, presentation_slots=()):
-        """"""
+        """ """
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentationSlots = {self.CONTENT} | set(presentation_slots)
@@ -220,7 +220,7 @@ class Plating:
         return renderer
 
     def routed(self, routing, tags):
-        """"""
+        """ """
 
         def mydecorator(method):
             loader = TagLoader(tags)

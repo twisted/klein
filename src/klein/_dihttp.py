@@ -97,7 +97,10 @@ class RequestComponent:
     def injectValue(
         self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
     ) -> DecodedURL:
-        return cast(DecodedURL, request.getComponent(self.interface))
+        return cast(
+            DecodedURL,
+            cast(Componentized, request).getComponent(self.interface),
+        )
 
     def finalize(cls) -> None:
         "Nothing to do upon finalization."

@@ -183,7 +183,7 @@ class Field:
             b"application/json"
         ):
             # TODO: parse only once, please.
-            parsed = request.getComponent(IParsedJSONBody)
+            parsed = cast(Componentized, request).getComponent(IParsedJSONBody)
             if parsed is None:
                 request.content.seek(0)
                 octets = request.content.read()
@@ -424,7 +424,7 @@ def defaultValidationFailureHandler(
 
     @return: Any object acceptable from a Klein route.
     """
-    session = request.getComponent(ISession)
+    session = cast(Componentized, request).getComponent(ISession)
     request.setResponseCode(400)
     enctype = (
         (

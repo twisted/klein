@@ -20,7 +20,7 @@ def bindable(bindable: C) -> C:
     C{instance, request} as its first two arguments, even if C{instance} is
     C{None} when the L{Klein} object is not bound to an instance.
 
-    @return: its argument, modified to mark it as unconditinally requiring an
+    @return: its argument, modified to mark it as unconditionally requiring an
         instance argument.
     """
     bindable.__klein_bound__ = True  # type: ignore[attr-defined]

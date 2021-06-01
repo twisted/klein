@@ -239,11 +239,11 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
     _another = _Another()
 
-    def anInstance(self) -> Klein:
-        return self._one.oneKlein.resource
+    def anInstance(self) -> KleinResource:
+        return self._one.oneKlein.resource()
 
-    def anotherInstance(self) -> Klein:
-        return self._another.anotherKlein.resource
+    def anotherInstance(self) -> KleinResource:
+        return self._another.anotherKlein.resource()
 
 
 class KleinResourceTests(SynchronousTestCase):

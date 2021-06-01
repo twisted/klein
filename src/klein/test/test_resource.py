@@ -1,6 +1,6 @@
 import os
 from io import BytesIO
-from typing import List, Mapping, Optional, Sequence, cast
+from typing import Callable, List, Mapping, Optional, Sequence, cast
 from unittest.mock import Mock, call
 from urllib.parse import parse_qs
 
@@ -239,10 +239,10 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
     _another = _Another()
 
-    def anInstance(self) -> Klein:
+    def anInstance(self) -> Callable[[], KleinResource]:
         return self._one.oneKlein.resource
 
-    def anotherInstance(self) -> Klein:
+    def anotherInstance(self) -> Callable[[], KleinResource]:
         return self._another.anotherKlein.resource
 
 

@@ -137,9 +137,8 @@ def buildURL(
     force_external: bool = False,
     append_unknown: bool = True,
 ) -> str:
-    return cast(
-        str,
-        mapper.build(endpoint, values, method, force_external, append_unknown),
+    return mapper.build(
+        endpoint, values, method, force_external, append_unknown
     )
 
 

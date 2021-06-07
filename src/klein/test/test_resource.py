@@ -621,7 +621,7 @@ class KleinResourceTests(SynchronousTestCase):
         request.setHeader.assert_has_calls(
             [
                 call(b"Content-Type", b"text/html; charset=utf-8"),
-                call(b"Content-Length", b"259"),
+                call(b"Content-Length", b"258"),
                 call(b"Location", b"http://localhost:8080/foo/"),
             ]
         )

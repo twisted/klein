@@ -45,7 +45,7 @@ from werkzeug.routing import Map, MapAdapter, Rule, Submount
 from zope.interface import implementer
 
 from ._decorators import modified, named
-from ._interfaces import IKleinRequest
+from ._interfaces import IKleinRequest, KleinQueryValue
 from ._resource import KleinResource
 
 
@@ -99,8 +99,6 @@ class KleinErrorMethod(Protocol):
 KleinRouteHandler = Union[KleinRouteFunction, KleinRouteMethod]
 KleinErrorHandler = Union[KleinErrorFunction, KleinErrorMethod]
 
-KleinQueryValue = Union[str, int, float]
-
 
 def _call(
     __klein_instance__: Optional["Klein"],
@@ -153,7 +151,7 @@ class KleinRequest:
     def url_for(
         self,
         endpoint: str,
-        values: Optional[Mapping[str, str]] = None,
+        values: Optional[Mapping[str, KleinQueryValue]] = None,
         method: Optional[str] = None,
         force_external: bool = False,
         append_unknown: bool = True,

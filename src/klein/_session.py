@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED

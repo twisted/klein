@@ -6,7 +6,7 @@ from typing import List, Tuple, Type
 
 from treq.testing import StubTreq
 
-from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.iweb import IRequest

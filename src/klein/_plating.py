@@ -11,7 +11,7 @@ from typing import Any, Callable, List, Tuple, cast
 
 import attr
 
-from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRequest
 from twisted.web.template import Element, Tag, TagLoader

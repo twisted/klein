@@ -11,12 +11,12 @@ from twisted.internet.interfaces import IProducer
 from twisted.internet.unix import Server
 from twisted.python.failure import Failure
 from twisted.trial.unittest import SynchronousTestCase
-from twisted.web import server
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
+from twisted.web.server import NOT_DONE_YET, Request, Site
 from twisted.web.static import File
-from twisted.web.template import Element, XMLString, renderer
+from twisted.web.template import Element, Tag, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 
 from werkzeug.exceptions import NotFound
@@ -124,16 +124,18 @@ class MockRequest(server.Request):
         return self._written.getvalue()
 
 
-def _render(resource, request, notifyFinish=True):
+def _render(
+    resource: KleinResource, request: IRequest, notifyFinish: bool = True
+) -> Deferred:
     result = resource.render(request)
 
-    assert result is server.NOT_DONE_YET or isinstance(result, bytes)
+    assert result is NOT_DONE_YET or isinstance(result, bytes)
 
     if isinstance(result, bytes):
         request.write(result)
         request.finish()
         return succeed(None)
-    elif result is server.NOT_DONE_YET:
+    elif result is NOT_DONE_YET:
         if request.finished or not notifyFinish:
             return succeed(None)
         else:
@@ -146,17 +148,17 @@ class SimpleElement(Element):
         't:render="name" />'
     )
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self._name = name
 
     @renderer
-    def name(self, request, tag):
+    def name(self, request: IRequest, tag: Tag) -> Tag:
         return tag(self._name)
 
 
 class DeferredElement(SimpleElement):
     @renderer
-    def name(self, request, tag):
+    def name(self, request: IRequest, tag: Tag) -> Deferred:
         self.deferred = Deferred()
         self.deferred.addCallback(lambda ignored: tag(self._name))
         return self.deferred
@@ -167,25 +169,25 @@ class LeafResource(Resource):
 
     content = b"I am a leaf in the wind."
 
-    def render(self, request):
+    def render(self, request: IRequest) -> bytes:
         return self.content
 
 
 class ChildResource(Resource):
     isLeaf = True
 
-    def __init__(self, name):
+    def __init__(self, name: bytes) -> None:
         self._name = name
 
-    def render(self, request):
+    def render(self, request: IRequest) -> bytes:
         return b"I'm a child named " + self._name + b"!"
 
 
 class ChildrenResource(Resource):
-    def render(self, request):
+    def render(self, request: IRequest) -> bytes:
         return b"I have children!"
 
-    def getChild(self, path, request):
+    def getChild(self, path: bytes, request: IRequest) -> Resource:
         if path == b"":
             return self
 
@@ -193,18 +195,21 @@ class ChildrenResource(Resource):
 
 
 class ProducingResource(Resource):
-    def __init__(self, path, strings):
+    def __init__(self, path: bytes, strings: List[bytes]) -> None:
         self.path = path
         self.strings = strings
 
-    def render_GET(self, request):
+    def render_GET(self, request: IRequest) -> bytes:
         producer = MockProducer(request, self.strings)
         producer.start()
-        return server.NOT_DONE_YET
+        # type note: return type should have been
+        # Union[bytes, Literal[NOT_DONE_YET]] but NOT_DONE_YET is an Any
+        # right now, so Literal won't accept it.
+        return cast(bytes, NOT_DONE_YET)
 
 
 class MockProducer:
-    def __init__(self, request, strings):
+    def __init__(self, request: IRequest, strings: List[bytes]) -> None:
         self.request = request
         self.strings = strings
 
@@ -242,10 +247,10 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
     _another = _Another()
 
-    def anInstance(self):
+    def anInstance(self) -> Callable[[], KleinResource]:
         return self._one.oneKlein.resource
 
-    def anotherInstance(self):
+    def anotherInstance(self) -> Callable[[], KleinResource]:
         return self._another.anotherKlein.resource
 
 
@@ -254,13 +259,13 @@ class KleinResourceTests(SynchronousTestCase):
         self.app = Klein()
         self.kr = KleinResource(self.app)
 
-    def assertFired(self, deferred, result=None):
+    def assertFired(self, deferred: Deferred, result: object = None) -> None:
         """
         Assert that the given deferred has fired with the given result.
         """
         self.assertEqual(self.successResultOf(deferred), result)
 
-    def assertNotFired(self, deferred):
+    def assertNotFired(self, deferred: Deferred) -> None:
         """
         Assert that the given deferred has not fired with a result.
         """
@@ -282,11 +287,11 @@ class KleinResourceTests(SynchronousTestCase):
         # by the more specific handler.
 
         @app.route("/", methods=["POST"])
-        def handle_post(request):
+        def handle_post(request: IRequest) -> KleinRenderable:
             return b"posted"
 
         @app.route("/")
-        def handle(request):
+        def handle_default(request: IRequest) -> KleinRenderable:
             return b"gotted"
 
         request = MockRequest(b"/", b"POST")
@@ -304,7 +309,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         @app.route("/")
-        def slash(request):
+        def slash(request: IRequest) -> KleinRenderable:
             return b"ok"
 
         request = MockRequest(b"/")
@@ -318,7 +323,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         @app.route("/", branch=True)
-        def slash(request):
+        def slash(request: IRequest) -> KleinRenderable:
             return b"ok"
 
         request = MockRequest(b"/foo")
@@ -332,11 +337,11 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         @app.route("/")
-        def slash(request):
+        def slash(request: IRequest) -> KleinRenderable:
             return b"ok"
 
         @app.route("/zeus")
-        def wooo(request):
+        def wooo(request: IRequest) -> KleinRenderable:
             return b"zeus"
 
         request = MockRequest(b"/zeus")
@@ -356,11 +361,11 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         @app.route("/", branch=True)
-        def slash(request):
+        def slash(request: IRequest) -> KleinRenderable:
             return b"ok"
 
         @app.route("/zeus/", branch=True)
-        def wooo(request):
+        def wooo(request: IRequest) -> KleinRenderable:
             return b"zeus"
 
         request = MockRequest(b"/zeus/foo")
@@ -382,7 +387,7 @@ class KleinResourceTests(SynchronousTestCase):
         deferredResponse = Deferred()
 
         @app.route("/deferred")
-        def deferred(request):
+        def deferred(request: IRequest) -> KleinRenderable:
             return deferredResponse
 
         request = MockRequest(b"/deferred")
@@ -403,7 +408,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/resource/leaf")
 
         @app.route("/resource/leaf")
-        async def leaf(request):
+        async def leaf(request: IRequest) -> KleinRenderable:
             return LeafResource()
 
         self.assertFired(_render(resource, request))
@@ -414,7 +419,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         @app.route("/element/<string:name>")  # type: ignore[arg-type]
-        def element(request, name):
+        def element(request: IRequest, name: str) -> KleinRenderable:
             return SimpleElement(name)
 
         request = MockRequest(b"/element/foo")
@@ -432,7 +437,7 @@ class KleinResourceTests(SynchronousTestCase):
         elements = []
 
         @app.route("/element/<string:name>")  # type: ignore[arg-type]
-        def element(request, name):
+        def element(request: IRequest, name: str) -> KleinRenderable:
             it = DeferredElement(name)
             elements.append(it)
             return it
@@ -455,7 +460,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/resource/leaf")
 
         @app.route("/resource/leaf")
-        def leaf(request):
+        def leaf(request: IRequest) -> KleinRenderable:
             return LeafResource()
 
         d = _render(self.kr, request)
@@ -468,7 +473,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/resource/children/betty")
 
         @app.route("/resource/children/", branch=True)
-        def children(request):
+        def children(request: IRequest) -> KleinRenderable:
             return ChildrenResource()
 
         d = _render(self.kr, request)
@@ -482,7 +487,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/resource/children/")
 
         @app.route("/resource/children/", branch=True)
-        def children(request):
+        def children(request: IRequest) -> KleinRenderable:
             return ChildrenResource()
 
         d = _render(self.kr, request)
@@ -503,8 +508,8 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/resource")
 
         @app.route("/resource", branch=True)
-        def producer(request):
-            return ProducingResource(request, [b"a", b"b", b"c", b"d"])
+        def producer(request: IRequest) -> KleinRenderable:
+            return ProducingResource(request.uri, [b"a", b"b", b"c", b"d"])
 
         d = _render(self.kr, request, notifyFinish=False)
 
@@ -539,7 +544,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/snowman")
 
         @app.route("/snowman")
-        def snowman(request):
+        def snowman(request: IRequest) -> KleinRenderable:
             return "\u2603"
 
         d = _render(self.kr, request)
@@ -553,7 +558,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/None")
 
         @app.route("/None")
-        def none(request):
+        def none(request: IRequest) -> KleinRenderable:
             return None
 
         d = _render(self.kr, request)
@@ -572,7 +577,7 @@ class KleinResourceTests(SynchronousTestCase):
         ).read()
 
         @app.route("/", branch=True)
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return File(os.path.dirname(__file__))
 
         d = _render(self.kr, request)
@@ -590,7 +595,7 @@ class KleinResourceTests(SynchronousTestCase):
         ).read()
 
         @app.route("/static/", branch=True)
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return File(os.path.dirname(__file__))
 
         d = _render(self.kr, request)
@@ -606,7 +611,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/")
 
         @app.route("/", branch=True)
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return File(os.path.dirname(__file__))
 
         d = _render(self.kr, request)
@@ -621,7 +626,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/foo")
 
         @app.route("/foo/")
-        def foo(request):
+        def foo(request: IRequest) -> KleinRenderable:
             return "foo"
 
         d = _render(self.kr, request)
@@ -634,7 +639,7 @@ class KleinResourceTests(SynchronousTestCase):
         request.setHeader.assert_has_calls(  # type: ignore[attr-defined]
             [
                 call(b"Content-Type", b"text/html; charset=utf-8"),
-                call(b"Content-Length", b"259"),
+                call(b"Content-Length", b"258"),
                 call(b"Location", b"http://localhost:8080/foo/"),
             ]
         )
@@ -644,7 +649,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/foo", method=b"DELETE")
 
         @app.route("/foo", methods=["GET"])
-        def foo(request):
+        def foo(request: IRequest) -> KleinRenderable:
             return "foo"
 
         d = _render(self.kr, request)
@@ -657,11 +662,11 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/foo/bar", method=b"DELETE")
 
         @app.route("/foo/bar", methods=["GET"])
-        def foobar(request):
+        def foobar(request: IRequest) -> KleinRenderable:
             return b"foo/bar"
 
         @app.route("/foo/", methods=["DELETE"])
-        def foo(request):
+        def foo(request: IRequest) -> KleinRenderable:
             return b"foo"
 
         d = _render(self.kr, request)
@@ -674,7 +679,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/foo")
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return b"foo"
 
         d = _render(self.kr, request)
@@ -689,7 +694,7 @@ class KleinResourceTests(SynchronousTestCase):
         request_url = [None]
 
         @app.route("/foo/bar/", strict_slashes=False)
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             request_url[0] = request.URLPath()
             return b"foo"
 
@@ -707,7 +712,7 @@ class KleinResourceTests(SynchronousTestCase):
         request_url = [None]
 
         @app.route("/egg/chicken")
-        def wooo(request):
+        def wooo(request: IRequest) -> KleinRenderable:
             request_url[0] = request.URLPath()
             return b"foo"
 
@@ -725,8 +730,9 @@ class KleinResourceTests(SynchronousTestCase):
         request_url = [None]
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             request_url[0] = request.URLPath()
+            return b""
 
         d = _render(self.kr, request)
 
@@ -740,14 +746,15 @@ class KleinResourceTests(SynchronousTestCase):
         request_url = [None]
 
         class URLPathResource(Resource):
-            def render(self, request):
+            def render(self, request: IRequest) -> KleinRenderable:
                 request_url[0] = request.URLPath()
+                return b""
 
-            def getChild(self, request, segment):
+            def getChild(self, request: IRequest, path: bytes) -> Resource:
                 return self
 
         @app.route("/resource/", branch=True)
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return URLPathResource()
 
         d = _render(self.kr, request)
@@ -767,8 +774,8 @@ class KleinResourceTests(SynchronousTestCase):
             pass
 
         @app.route("/")
-        def root(request):
-            def _capture_failure(f):
+        def root(request: IRequest) -> KleinRenderable:
+            def _capture_failure(f: Failure) -> Failure:
                 failures.append(f)
                 return f
 
@@ -794,13 +801,16 @@ class KleinResourceTests(SynchronousTestCase):
             pass
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             raise RouteFailureTest("not implemented")
 
         @app.handle_errors
-        def handle_errors(request, failure):
+        def handle_errors(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             failures.append(failure)
             request.setResponseCode(501)
+            return b""
 
         d = _render(self.kr, request)
 
@@ -820,21 +830,30 @@ class KleinResourceTests(SynchronousTestCase):
             pass
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return fail(TypeFilterTestError("not implemented"))
 
         @app.handle_errors(TypeError)
-        def handle_type_error(request, failure):
+        def handle_type_error(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             type_error_handled[0] = True
+            return b""
 
         @app.handle_errors(TypeFilterTestError)
-        def handle_type_filter_test_error(request, failure):
+        def handle_type_filter_test_error(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             failures.append(failure)
             request.setResponseCode(501)
+            return b""
 
         @app.handle_errors
-        def handle_generic_error(request, failure):
+        def handle_generic_error(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             generic_error_handled[0] = True
+            return b""
 
         d = _render(self.kr, request)
 
@@ -851,7 +870,7 @@ class KleinResourceTests(SynchronousTestCase):
         # Test the above handlers, which otherwise lack test coverage.
 
         @app.route("/type_error")
-        def type_error(request):
+        def type_error(request: IRequest) -> KleinRenderable:
             return fail(TypeError("type error"))
 
         d = _render(self.kr, MockRequest(b"/type_error"))
@@ -859,7 +878,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(type_error_handled[0], True)
 
         @app.route("/generic_error")
-        def generic_error(request):
+        def generic_error(request: IRequest) -> KleinRenderable:
             return fail(Exception("generic error"))
 
         d = _render(self.kr, MockRequest(b"/generic_error"))
@@ -872,13 +891,18 @@ class KleinResourceTests(SynchronousTestCase):
         generic_error_handled = [False]
 
         @app.handle_errors(NotFound)
-        def handle_not_found(request, failure):
+        def handle_not_found(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             request.setResponseCode(404)
             return b"Custom Not Found"
 
         @app.handle_errors
-        def handle_generic_error(request, failure):
+        def handle_generic_error(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             generic_error_handled[0] = True
+            return b""
 
         d = _render(self.kr, request)
 
@@ -895,7 +919,7 @@ class KleinResourceTests(SynchronousTestCase):
         # Test the above handlers, which otherwise lack test coverage.
 
         @app.route("/generic_error")
-        def generic_error(request):
+        def generic_error(request: IRequest) -> KleinRenderable:
             return fail(Exception("generic error"))
 
         d = _render(self.kr, MockRequest(b"/generic_error"))
@@ -910,7 +934,9 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/")
 
         @app.handle_errors(NotFound)
-        def handle_not_found(request, failure):
+        def handle_not_found(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             return SimpleElement("Not Found Element")
 
         d = _render(self.kr, request)
@@ -934,12 +960,14 @@ class KleinResourceTests(SynchronousTestCase):
         class NotFoundResource(Resource):
             isLeaf = True
 
-            def render(self, request):
+            def render(self, request: IRequest) -> KleinRenderable:
                 request.setResponseCode(404)
                 return b"Nothing found"
 
         @app.handle_errors(NotFound)
-        def handle_not_found(request, failure):
+        def handle_not_found(
+            request: IRequest, failure: Failure
+        ) -> KleinRenderable:
             return NotFoundResource()
 
         d = _render(self.kr, request)
@@ -953,7 +981,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/")
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             request.finish()
             return b"foo"
 
@@ -979,13 +1007,13 @@ class KleinResourceTests(SynchronousTestCase):
         finished = Deferred()
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             request.notifyFinish().addBoth(lambda _: finished.callback(b"foo"))
             return finished
 
         d = _render(self.kr, request)
 
-        def _eb(result):
+        def _eb(result: object) -> None:
             [failure] = self.flushLoggedErrors(RuntimeError)
 
             self.assertEqual(
@@ -1012,7 +1040,7 @@ class KleinResourceTests(SynchronousTestCase):
         cancelled: List[Failure] = []
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             _d = Deferred()
             _d.addErrback(cancelled.append)
             request.notifyFinish().addCallback(lambda _: _d.cancel())
@@ -1039,9 +1067,10 @@ class KleinResourceTests(SynchronousTestCase):
         relative_url: List[str] = ["** ROUTE NOT CALLED **"]
 
         @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
-        def foo(request, bar):
+        def foo(request: IRequest, bar: int) -> KleinRenderable:
             krequest = IKleinRequest(request)
             relative_url[0] = krequest.url_for("foo", {"bar": bar + 1})
+            return b""
 
         d = _render(self.kr, request)
 
@@ -1055,7 +1084,7 @@ class KleinResourceTests(SynchronousTestCase):
         inner_d = Deferred()
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return inner_d
 
         d = _render(self.kr, request)
@@ -1072,11 +1101,12 @@ class KleinResourceTests(SynchronousTestCase):
         relative_url: List[Optional[str]] = [None]
 
         @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
-        def foo(request, bar):
+        def foo(request: IRequest, bar: int) -> KleinRenderable:
             krequest = IKleinRequest(request)
             relative_url[0] = krequest.url_for(
                 "foo", {"bar": bar + 1}, force_external=True
             )
+            return b""
 
         d = _render(self.kr, request)
 
@@ -1088,7 +1118,7 @@ class KleinResourceTests(SynchronousTestCase):
         request = MockRequest(b"/")
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             _d = Deferred()
             request.notifyFinish().addErrback(lambda _: _d.cancel())
             return _d
@@ -1117,7 +1147,7 @@ class KleinResourceTests(SynchronousTestCase):
         handler_d = Deferred()
 
         @app.route("/")
-        def root(request):
+        def root(request: IRequest) -> KleinRenderable:
             return handler_d
 
         d = _render(self.kr, request)
@@ -1189,14 +1219,14 @@ class KleinResourceTests(SynchronousTestCase):
         subapp = Klein()
 
         @subapp.route("/foo")
-        def foo(request):
+        def foo(request: IRequest) -> KleinRenderable:
             return b"foo"
 
         app = self.app
         with app.subroute("/sub") as app:
 
             @app.route("/app", branch=True)
-            def subapp_endpoint(request):
+            def subapp_endpoint(request: IRequest) -> KleinRenderable:
                 return subapp.resource()
 
         request = MockRequest(b"/sub/app/foo")
@@ -1210,7 +1240,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/alias", alias=True)
         @app.route("/real")
-        def real(req):
+        def real(request: IRequest) -> KleinRenderable:
             return b"42"
 
         request = MockRequest(b"/real")
@@ -1258,7 +1288,9 @@ class ExtractURLpartsTests(SynchronousTestCase):
         self.assertIsInstance(path_info, str)
         self.assertIsInstance(script_name, str)
 
-    def assertDecodingFailure(self, exception, part):
+    def assertDecodingFailure(
+        self, exception: _URLDecodeError, part: str
+    ) -> None:
         """
         Checks whether C{exception} consists of a single L{UnicodeDecodeError}
         for C{part}.
@@ -1359,11 +1391,11 @@ class GlobalAppTests(SynchronousTestCase):
         )
 
         @route("/")
-        def index(request):
-            1 // 0
+        def index(request: IRequest) -> KleinRenderable:
+            raise RuntimeError("oops")
 
-        @handle_errors(ZeroDivisionError)
-        def on_zero(request, failure):
+        @handle_errors(RuntimeError)
+        def on_zero(request: IRequest, failure: Failure) -> KleinRenderable:
             return b"alive"
 
         request = MockRequest(b"/")

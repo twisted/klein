@@ -7,9 +7,12 @@ All Zope Interface classes should be imported from here so that type checking
 works, since mypy doesn't otherwise get along with Zope Interface.
 """
 
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Union
 
 from zope.interface import Attribute, Interface
+
+
+KleinQueryValue = Union[str, int, float]
 
 
 class IKleinRequest(Interface):
@@ -18,7 +21,7 @@ class IKleinRequest(Interface):
 
     def url_for(
         endpoint: str,
-        values: Optional[Mapping[str, str]] = None,
+        values: Optional[Mapping[str, KleinQueryValue]] = None,
         method: Optional[str] = None,
         force_external: bool = False,
         append_unknown: bool = True,

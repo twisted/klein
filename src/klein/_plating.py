@@ -112,7 +112,7 @@ def resolveDeferredObjects(root: Any) -> Deferred:
                 f"{obj} not JSON serializable",
             )
 
-    returnValue(result[0])
+    return result[0]
 
 
 def _extra_types(input):
@@ -246,7 +246,7 @@ class Plating:
                         b"content-type", b"text/html; charset=utf-8"
                     )
                     result = self._elementify(instance, data)
-                returnValue(result)
+                return result
 
             return method
 

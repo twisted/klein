@@ -84,7 +84,7 @@ def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
             sessions.append((yield sproc.procureSession(request)))
         except NoSuchSession as nss:
             exceptions.append(nss)
-        returnValue(b"ok")
+        return b"ok"
 
     requirer = Requirer()
 
@@ -129,7 +129,7 @@ class ProcurementTests(SynchronousTestCase):
             sessions.append(
                 (yield sproc.procureSession(request, forceInsecure=True))
             )
-            returnValue(b"sessioned")
+            return b"sessioned"
 
         treq = StubTreq(router.resource())
         self.successResultOf(treq.get("http://unittest.example.com/"))
@@ -176,7 +176,7 @@ class ProcurementTests(SynchronousTestCase):
             sproc = SessionProcurer(mss, setCookieOnGET=False)
             with self.assertRaises(NoSuchSession):
                 yield sproc.procureSession(request)
-            returnValue(b"no session")
+            return b"no session"
 
         treq = StubTreq(router.resource())
         result = self.successResultOf(treq.get("http://unittest.example.com/"))

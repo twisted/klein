@@ -145,7 +145,7 @@ class Requirer:
                     result = yield _call(
                         instance, functionWithRequirements, *args, **injected
                     )
-                returnValue(result)
+                return result
 
             fWR, iC = functionWithRequirements, injectionComponents
             fWR.injectionComponents = iC  # type: ignore[attr-defined]

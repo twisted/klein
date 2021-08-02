@@ -89,7 +89,7 @@ class SessionProcurer:
         alreadyProcured = request.getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
-                returnValue(alreadyProcured)
+                return alreadyProcured
 
         if request.isSecure():
             if forceInsecure:
@@ -194,7 +194,7 @@ class SessionProcurer:
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
             request.setComponent(ISession, session)
-        returnValue(session)
+        return session
 
 
 class AuthorizationDenied(Resource):
@@ -296,7 +296,7 @@ class Authorization:
         if self._required and provider is None:
             raise EarlyExit(self._whenDenied(self._interface, instance))
         # TODO: CSRF protection should probably go here
-        returnValue(provider)
+        return provider
 
     def finalize(self) -> None:
         """

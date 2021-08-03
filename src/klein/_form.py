@@ -167,7 +167,7 @@ class Field:
             yield tags.label(self.formLabel, ": ", input_tag, *error_tags)
         else:
             yield input_tag
-            yield error_tags  # type: ignore[misc]
+            yield from error_tags
 
     def extractValue(self, request: IRequest) -> Any:
         """

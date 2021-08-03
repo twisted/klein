@@ -133,7 +133,7 @@ class EqualityTestsMixin(ABC):
 _T = TypeVar("_T")
 
 
-def recover(d: Deferred[_T], exc_type: Type[Exception]) -> Deferred[_T]:
+def recover(d: "Deferred[_T]", exc_type: Type[Exception]) -> "Deferred[_T]":
     return d.addErrback(
         lambda f: f.trap(exc_type)  # type: ignore[no-any-return]
     )

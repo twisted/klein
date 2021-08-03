@@ -268,7 +268,7 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
             maybeWrapInDeferred,
         )
 
-        resolved: Deferred[Any] = resolveDeferredObjects(deferredJSONObject)
+        resolved: "Deferred[Any]" = resolveDeferredObjects(deferredJSONObject)
 
         for value in deferredValues:
             value.resolve()
@@ -303,7 +303,7 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
             injectPlatingElements,
         )
 
-        resolved: Deferred[Any] = resolveDeferredObjects(withPlatingElements)
+        resolved: "Deferred[Any]" = resolveDeferredObjects(withPlatingElements)
 
         self.assertEqual(self.successResultOf(resolved), jsonObject)
 

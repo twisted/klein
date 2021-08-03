@@ -151,7 +151,7 @@ class SessionProcurer:
             session is None or session.identifier != sentCookie
         ):
             if session is None:
-                if request.startedWriting:
+                if request.startedWriting:  # type: ignore[attr-defined]
                     # At this point, if the mechanism is Header, we either have
                     # a valid session or we bailed after NoSuchSession above.
                     raise TooLateForCookies(
@@ -182,7 +182,7 @@ class SessionProcurer:
                 identifierInCookie = identifierInCookie.encode("ascii")
             if not isinstance(cookieName, str):
                 cookieName = cookieName.decode("ascii")
-            request.addCookie(
+            request.addCookie(  # type: ignore[call-arg]
                 cookieName,
                 identifierInCookie,
                 max_age=str(self._maxAge),

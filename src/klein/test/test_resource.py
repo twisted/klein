@@ -1,7 +1,7 @@
 import os
 from io import BytesIO
 from types import MappingProxyType
-from typing import Any, List, Mapping, Optional, Sequence
+from typing import Any, Callable, List, Mapping, Optional, Sequence, cast
 from unittest.mock import Mock, call
 from urllib.parse import parse_qs
 
@@ -21,7 +21,7 @@ from twisted.web.test.test_web import DummyChannel
 
 from werkzeug.exceptions import NotFound
 
-from .util import EqualityTestsMixin
+from .util import EqualityTestsMixin, recover
 from .. import Klein, KleinRenderable
 from .._interfaces import IKleinRequest
 from .._resource import (
@@ -35,7 +35,13 @@ from .._resource import (
 emptyMapping: Mapping[Any, Any] = MappingProxyType({})
 
 
-class MockRequest(server.Request):
+class MockRequest(Request):
+    finished: bool
+    startedWriting: bool
+    processingFailed: Mock
+    setResponseCode: Mock
+    setHeader: Mock
+
     def __init__(
         self,
         path: bytes,
@@ -56,7 +62,7 @@ class MockRequest(server.Request):
 
         path, qpath = (path.split(b"?", 1) + [b""])[:2]
 
-        self.site = Mock(server.Site)
+        self.site = Mock(Site)
         self.gotLength(len(body))
         self.content = BytesIO()
         self.content.write(body)
@@ -64,26 +70,20 @@ class MockRequest(server.Request):
         self.args = parse_qs(qpath)
         self.selfHeaders = Headers(headers)
         self.setHost(host, port, isSecure)
-        # type note: See https://twistedmatrix.com/trac/ticket/10139
-        self.uri = path  # type: ignore[assignment]
-        self.prepath = []
-        # type note: fixed in Twisted trunk
-        self.postpath = path.split(b"/")[1:]  # type: ignore[assignment]
+        self.uri = path
+        self.prepath: List[bytes] = []
+        self.postpath = path.split(b"/")[1:]
         self.method = method
         self.clientproto = b"HTTP/1.1"
 
-        self.setHeader = Mock(wraps=self.setHeader)  # type: ignore[assignment]
-        self.setResponseCode = Mock(  # type: ignore[assignment]
-            wraps=self.setResponseCode
-        )
+        self.setHeader = Mock(wraps=self.setHeader)
+        self.setResponseCode = Mock(wraps=self.setResponseCode)
 
         self._written = BytesIO()
         self.finishCount = 0
         self.writeCount = 0
 
-        self.processingFailed = Mock(  # type: ignore[assignment]
-            wraps=self.processingFailed
-        )
+        self.processingFailed = Mock(wraps=self.processingFailed)
 
     def registerProducer(self, producer: IProducer, streaming: bool) -> None:
         self.producer = producer
@@ -129,17 +129,18 @@ def _render(
 ) -> Deferred:
     result = resource.render(request)
 
-    assert result is NOT_DONE_YET or isinstance(result, bytes)
-
     if isinstance(result, bytes):
         request.write(result)
         request.finish()
         return succeed(None)
-    elif result is NOT_DONE_YET:
-        if request.finished or not notifyFinish:
-            return succeed(None)
-        else:
-            return request.notifyFinish()
+
+    if result is not NOT_DONE_YET:  # type: ignore[comparison-overlap]
+        raise AssertionError("unreachable")
+
+    if request.finished or not notifyFinish:  # type: ignore[attr-defined]
+        return succeed(None)
+
+    return request.notifyFinish()  # type: ignore[no-any-return,attr-defined]
 
 
 class SimpleElement(Element):
@@ -157,9 +158,11 @@ class SimpleElement(Element):
 
 
 class DeferredElement(SimpleElement):
+    deferred: Deferred[None]
+
     @renderer
-    def name(self, request: IRequest, tag: Tag) -> Deferred:
-        self.deferred = Deferred()
+    def name(self, request: IRequest, tag: Tag) -> Deferred[None]:
+        self.deferred: Deferred[None] = Deferred()
         self.deferred.addCallback(lambda ignored: tag(self._name))
         return self.deferred
 
@@ -214,13 +217,13 @@ class MockProducer:
         self.strings = strings
 
     def start(self) -> None:
-        self.request.registerProducer(self, False)
+        self.request.registerProducer(self, False)  # type: ignore[attr-defined]
 
     def resumeProducing(self) -> None:
         if self.strings:
             self.request.write(self.strings.pop(0))
         else:
-            self.request.unregisterProducer()
+            self.request.unregisterProducer()  # type: ignore[attr-defined]
             self.request.finish()
 
 
@@ -384,7 +387,7 @@ class KleinResourceTests(SynchronousTestCase):
     def test_deferredRendering(self) -> None:
         app = self.app
 
-        deferredResponse = Deferred()
+        deferredResponse: Deferred[bytes] = Deferred()
 
         @app.route("/deferred")
         def deferred(request: IRequest) -> KleinRenderable:
@@ -407,7 +410,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         request = MockRequest(b"/resource/leaf")
 
-        @app.route("/resource/leaf")
+        @app.route("/resource/leaf")  # type: ignore[arg-type]
         async def leaf(request: IRequest) -> KleinRenderable:
             return LeafResource()
 
@@ -535,7 +538,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         setResponseCode = request.setResponseCode
-        setResponseCode.assert_called_with(404)  # type: ignore[attr-defined]
+        setResponseCode.assert_called_with(404)
         self.assertIn(b"404 Not Found", request.getWrittenData())
 
     def test_renderUnicode(self) -> None:
@@ -559,7 +562,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/None")
         def none(request: IRequest) -> KleinRenderable:
-            return None
+            return None  # type: ignore[return-value]
 
         d = _render(self.kr, request)
 
@@ -633,10 +636,10 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(
-            request.setHeader.call_count,  # type: ignore[attr-defined]
+            request.setHeader.call_count,
             3,
         )
-        request.setHeader.assert_has_calls(  # type: ignore[attr-defined]
+        request.setHeader.assert_has_calls(
             [
                 call(b"Content-Type", b"text/html; charset=utf-8"),
                 call(b"Content-Length", b"258"),
@@ -750,7 +753,11 @@ class KleinResourceTests(SynchronousTestCase):
                 request_url[0] = request.URLPath()
                 return b""
 
-            def getChild(self, request: IRequest, path: bytes) -> Resource:
+            def getChild(  # type: ignore[override]
+                self,
+                request: IRequest,
+                path: bytes,
+            ) -> Resource:
                 return self
 
         @app.route("/resource/", branch=True)
@@ -786,9 +793,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertFired(d)
         self.assertEqual(request.code, 500)
         processingFailed = request.processingFailed
-        processingFailed.assert_called_once_with(  # type: ignore[attr-defined]
-            failures[0]
-        )
+        processingFailed.assert_called_once_with(failures[0])
         self.flushLoggedErrors(RouteFailureTest)
 
     def test_genericErrorHandler(self) -> None:
@@ -816,7 +821,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(request.code, 501)
-        assert not request.processingFailed.called  # type: ignore[attr-defined]
+        assert not request.processingFailed.called
 
     def test_typeSpecificErrorHandlers(self) -> None:
         app = self.app
@@ -859,7 +864,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(
-            request.processingFailed.called,  # type: ignore[attr-defined]
+            request.processingFailed.called,
             False,
         )
         self.assertEqual(type_error_handled[0], False)
@@ -908,7 +913,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(
-            request.processingFailed.called,  # type: ignore[attr-defined]
+            request.processingFailed.called,
             False,
         )
         self.assertEqual(generic_error_handled[0], False)
@@ -945,7 +950,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(
-            request.processingFailed.called,  # type: ignore[attr-defined]
+            request.processingFailed.called,
             False,
         )
         self.assertEqual(request.getWrittenData(), rendered)
@@ -1004,10 +1009,11 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        finished = Deferred()
+        finished: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
+            assert isinstance(request, Request)
             request.notifyFinish().addBoth(lambda _: finished.callback(b"foo"))
             return finished
 
@@ -1041,7 +1047,8 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
-            _d = Deferred()
+            assert isinstance(request, Request)
+            _d: Deferred[bytes] = Deferred()
             _d.addErrback(cancelled.append)
             request.notifyFinish().addCallback(lambda _: _d.cancel())
             return _d
@@ -1056,7 +1063,7 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.getWrittenData(), b"")
         self.assertEqual(request.writeCount, 1)
         self.assertEqual(
-            request.processingFailed.call_count,  # type: ignore[attr-defined]
+            request.processingFailed.call_count,
             0,
         )
 
@@ -1081,7 +1088,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        inner_d = Deferred()
+        inner_d: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1119,7 +1126,8 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
-            _d = Deferred()
+            _d: Deferred[bytes] = Deferred()
+            assert isinstance(request, Request)
             request.notifyFinish().addErrback(lambda _: _d.cancel())
             return _d
 
@@ -1129,14 +1137,14 @@ class KleinResourceTests(SynchronousTestCase):
 
         request.connectionLost(ConnectionLost())
 
-        def _cb(result):
+        def _cb(result: object) -> None:
             processingFailed = request.processingFailed
             self.assertEqual(
-                processingFailed.call_count,  # type: ignore[attr-defined]
+                processingFailed.call_count,
                 0,
             )
 
-        d.addErrback(lambda f: f.trap(ConnectionLost))
+        d = recover(d, ConnectionLost)
         d.addCallback(_cb)
         self.assertFired(d)
 
@@ -1144,7 +1152,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        handler_d = Deferred()
+        handler_d: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1156,9 +1164,9 @@ class KleinResourceTests(SynchronousTestCase):
 
         request.connectionLost(ConnectionLost())
 
-        handler_d.addErrback(lambda f: f.trap(CancelledError))
+        handler_d = recover(handler_d, CancelledError)
 
-        d.addErrback(lambda f: f.trap(ConnectionLost))
+        d = recover(d, ConnectionLost)
         d.addCallback(lambda _: handler_d)
         self.assertFired(d)
 
@@ -1254,7 +1262,7 @@ class KleinResourceTests(SynchronousTestCase):
         # Werkzeug switched the redirect status code used from 301 to 308.
         # Both are valid here.
         self.assertIn(
-            request.setResponseCode.call_args[0],  # type: ignore[attr-defined]
+            request.setResponseCode.call_args[0],
             [(301,), (308,)],
         )
 
@@ -1289,7 +1297,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         self.assertIsInstance(script_name, str)
 
     def assertDecodingFailure(
-        self, exception: _URLDecodeError, part: str
+        self, exception: URLDecodeError, part: str
     ) -> None:
         """
         Checks whether C{exception} consists of a single L{UnicodeDecodeError}

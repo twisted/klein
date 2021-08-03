@@ -6,6 +6,7 @@ from typing import (
     AnyStr,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     NoReturn,
@@ -151,20 +152,22 @@ class Field:
         if value is None:
             value = ""  # type: ignore[unreachable]
         input_tag = tags.input(
-            type=self.formInputType, name=self.formFieldName, value=value
+            type=self.formInputType,
+            name=self.formFieldName,  # type: ignore[arg-type]
+            value=value,
         )
         error_tags = []
         if self.error:
             error_tags.append(
                 tags.div(class_="klein-form-validation-error")(
-                    self.error.message
+                    self.error.message  # type: ignore[arg-type]
                 )
             )
         if self.formLabel:
             yield tags.label(self.formLabel, ": ", input_tag, *error_tags)
         else:
             yield input_tag
-            yield error_tags
+            yield error_tags  # type: ignore[misc]
 
     def extractValue(self, request: IRequest) -> Any:
         """
@@ -369,7 +372,7 @@ class RenderableForm:
         """
         raise MissingRenderMethod(self, name)
 
-    def render(self, request: IRequest) -> Tag:
+    def render(self, request: object) -> Tag:
         """
         Render this form to the given request.
         """
@@ -384,7 +387,7 @@ class RenderableForm:
             action=self._action, method=self._method, **formAttributes
         )(field.asTags() for field in self._fieldsToRender())
 
-    def glue(self) -> Iterable[Tag]:
+    def glue(self) -> List[Tag]:
         """
         Provide any glue necessary to render this form; this must be dropped
         into the template within the C{<form>} tag.
@@ -397,7 +400,7 @@ class RenderableForm:
             L{twisted.web.template}
         @rtype: L{twisted.web.template.Tag}, or L{list} thereof.
         """
-        return self._fieldForCSRF().asTags()
+        return list(self._fieldForCSRF().asTags())
 
 
 @bindable
@@ -545,7 +548,9 @@ class FieldValues:
     _injectionComponents = attr.ib(type=Componentized)
 
     @inlineCallbacks
-    def validate(self, instance: Any, request: IRequest) -> Deferred:
+    def validate(
+        self, instance: Any, request: IRequest
+    ) -> Generator[Any, object, None]:
         if self.validationErrors:
             result = yield _call(
                 instance,
@@ -711,7 +716,7 @@ class Form:
         injectionComponents: Componentized,
         instance: Any,
         request: IRequest,
-    ) -> Deferred:
+    ) -> Generator[Any, object, None]:
         assert IFieldValues(request, None) is None
 
         validationErrors = {}

@@ -123,7 +123,7 @@ def _call(
         args = (__klein_instance__,) + args
     result = __klein_f__(*args, **kwargs)
     if iscoroutine(result):
-        result = ensureDeferred(result)
+        result = ensureDeferred(result)  # type: ignore[arg-type]
     return result
 
 
@@ -228,7 +228,7 @@ class Klein:
         # taking *args, **kwargs (because they aren't required), but we're
         # going to pass them along here anyway.
         return endpoint_f(
-            self._instance, request, *args, **kwargs
+            self._instance, request, *args, **kwargs  # type: ignore[arg-type]
         )  # type: ignore[call-arg]
 
     def execute_error_handler(
@@ -602,7 +602,7 @@ class Klein:
         site.displayTracebacks = displayTracebacks
 
         endpoint.listen(site)
-        reactor.run()
+        reactor.run()  # type: ignore[attr-defined]
 
 
 _globalKleinApp = Klein()

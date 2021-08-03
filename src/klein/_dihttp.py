@@ -31,8 +31,9 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
             host = sentHeader
             port = None
     else:
-        host = request.client.host
-        port = request.client.port
+        client = request.client  # type: ignore[attr-defined]
+        host = client.host
+        port = client.port
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(

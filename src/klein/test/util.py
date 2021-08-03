@@ -3,8 +3,9 @@ Shared tools for Klein's test suite.
 """
 
 from abc import ABC, abstractmethod
-from typing import cast
+from typing import Type, TypeVar, cast
 
+from twisted.internet.defer import Deferred
 from twisted.trial.unittest import SynchronousTestCase
 
 
@@ -127,3 +128,12 @@ class EqualityTestsMixin(ABC):
         a = self.anInstance()
         b = Delegate()
         cast(SynchronousTestCase, self).assertEqual(a != b, [b])
+
+
+_T = TypeVar("_T")
+
+
+def recover(d: Deferred[_T], exc_type: Type[Exception]) -> Deferred[_T]:
+    return d.addErrback(
+        lambda f: f.trap(exc_type)  # type: ignore[no-any-return]
+    )

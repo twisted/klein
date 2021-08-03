@@ -5,9 +5,18 @@
 Tests for L{klein._irequest}.
 """
 
+import functools
 from string import ascii_uppercase
 from types import MappingProxyType
-from typing import Any, Mapping, Sequence
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Mapping,
+    Sequence,
+    TypeVar,
+)
 
 from hyperlink import DecodedURL, EncodedURL
 from hyperlink.hypothesis import decoded_urls
@@ -30,6 +39,19 @@ __all__ = ()
 
 
 emptyMapping: Mapping[Any, Any] = MappingProxyType({})
+
+_T = TypeVar("_T")
+_R = TypeVar("_R")
+
+
+def ensuringDeferred(
+    fn: Callable[[_T], Coroutine[Any, Any, _R]]
+) -> Callable[[_T], Awaitable[_R]]:
+    @functools.wraps(fn)
+    def wrapper(self: _T) -> Awaitable[_R]:
+        return ensureDeferred(fn(self))
+
+    return wrapper
 
 
 class HTTPRequestWrappingIRequestTests(TestCase):
@@ -151,6 +173,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
 
         self.assertEqual(body, data)
 
+    @ensuringDeferred
     async def test_bodyAsBytesCached(self) -> None:
         """
         L{HTTPRequestWrappingIRequest.bodyAsBytes} called twice returns the

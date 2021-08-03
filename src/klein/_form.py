@@ -552,13 +552,19 @@ class FieldValues:
         self, instance: Any, request: IRequest
     ) -> Generator[Any, object, None]:
         if self.validationErrors:
-            result = yield _call(
-                instance,
-                IValidationFailureHandler(
-                    self._injectionComponents, defaultValidationFailureHandler
+            result = cast(
+                KleinRenderable,
+                (
+                    yield _call(
+                        instance,
+                        IValidationFailureHandler(
+                            self._injectionComponents,
+                            defaultValidationFailureHandler,
+                        ),
+                        request,
+                        self,
+                    )
                 ),
-                request,
-                self,
             )
             raise EarlyExit(result)
 

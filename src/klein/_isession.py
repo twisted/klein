@@ -10,6 +10,8 @@ from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface
 
+from ._app import KleinRenderable
+
 
 class NoSuchSession(Exception):
     """
@@ -370,4 +372,4 @@ class EarlyExit(Exception):
         Klein route.
     """
 
-    alternateReturnValue = attr.ib(type=Any)
+    alternateReturnValue = attr.ib(type=KleinRenderable)

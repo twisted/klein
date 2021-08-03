@@ -370,7 +370,7 @@ class RenderableForm:
         """
         raise MissingRenderMethod(self, name)
 
-    def render(self, request: object) -> Tag:
+    def render(self, request: IRequest) -> Tag:
         """
         Render this form to the given request.
         """

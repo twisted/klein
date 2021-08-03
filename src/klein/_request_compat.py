@@ -94,7 +94,7 @@ class HTTPRequestWrappingIRequest:
 
     async def bodyAsBytes(self) -> bytes:
         if self._state.cachedBody is not None:
-            return self._state.cachedBody
+            return self._state.cachedBody  # pragma: no cover
 
         fount = self.bodyAsFount()
         self._state.cachedBody = await fountToBytes(fount)

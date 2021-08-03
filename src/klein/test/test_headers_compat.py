@@ -18,7 +18,7 @@ from .._headers_compat import HTTPHeadersWrappingHeaders
 
 try:
     from twisted.web.http_headers import _sanitizeLinearWhitespace
-except ImportError:
+except ImportError:  # pragma: no cover
     _sanitizeLinearWhitespace = None  # type: ignore[assignment]
 
 
@@ -27,7 +27,7 @@ def _twistedHeaderNormalize(value: str) -> str:
     Normalize the given header value according to the rules of the installed
     Twisted version.
     """
-    if _sanitizeLinearWhitespace is None:
+    if _sanitizeLinearWhitespace is None:  # pragma: no cover
         return value  # type: ignore[unreachable]
     else:
         return _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")

@@ -135,7 +135,7 @@ def _render(
         return succeed(None)
 
     if result is not NOT_DONE_YET:  # type: ignore[comparison-overlap]
-        raise AssertionError("unreachable")
+        raise AssertionError("unreachable")  # pragma: no cover
 
     if request.finished or not notifyFinish:  # type: ignore[attr-defined]
         return succeed(None)

@@ -123,7 +123,6 @@ class Field:
         values filled in.
 
         @param name: the name.
-        @type name: a native L{str}
         """
 
         def maybe(
@@ -146,7 +145,6 @@ class Field:
         L{twisted.web.template}.
 
         @return: A new set of tags to include in a template.
-        @rtype: iterable of L{twisted.web.template.Tag}
         """
         value = self.value
         if value is None:
@@ -398,7 +396,6 @@ class RenderableForm:
 
         @return: some HTML elements in the form of renderable objects for
             L{twisted.web.template}
-        @rtype: L{twisted.web.template.Tag}, or L{list} thereof.
         """
         return list(self._fieldForCSRF().asTags())
 
@@ -420,11 +417,7 @@ def defaultValidationFailureHandler(
 
     @param instance: The instance associated with the router that the form
         handler was handled on.
-    @type instance: L{object}
-
     @param request: The request including the form submission.
-    @type request: L{twisted.web.iweb.IRequest}
-
     @return: Any object acceptable from a Klein route.
     """
     session = cast(Componentized, request).getComponent(ISession)

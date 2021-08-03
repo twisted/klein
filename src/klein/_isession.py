@@ -100,8 +100,6 @@ class ISession(Interface):
         L{ISessionStore} implementation you're using.
 
         @param interfaces: A list of interfaces.
-        @type interfaces: L{iterable} of
-            L{zope.interface.interfaces.IInterface}
 
         @return: all of the providers that could be retrieved from the session.
         @rtype: L{Deferred} firing with L{dict} mapping
@@ -239,14 +237,11 @@ class ISessionProcurer(Interface):
         retrieve it.  If not, create a new session and retrieve that.
 
         @param request: The request to procure a session from.
-        @type request: L{twisted.web.server.Request}
-
         @param forceInsecure: Even if the request was transmitted securely
             (i.e. over HTTPS), retrieve the session that would be used by the
             same browser if it were sending an insecure (i.e. over HTTP)
             request; by default, this is False, and the session's security will
             match that of the request.
-        @type forceInsecure: L{bool}
 
         @return: a L{Deferred} that:
 
@@ -266,8 +261,6 @@ class ISessionProcurer(Interface):
                 - fails with L{TooLateForCookies} if the request bound to this
                   procurer has already sent the headers and therefore we can no
                   longer set a cookie, and we need to set a cookie.
-
-        @rtype: L{Session}
         """
 
 
@@ -368,8 +361,6 @@ class EarlyExit(Exception):
 
     @ivar alternateReturnValue: The return value which should instead be
         supplied as the route's response.
-    @type alternateReturnValue: Any type that's acceptable to return from a
-        Klein route.
     """
 
     alternateReturnValue = attr.ib(type=KleinRenderable)

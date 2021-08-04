@@ -1,11 +1,13 @@
 # -*- test-case-name: klein.test.test_resource -*-
 
+from typing import Any, Optional, Sequence, TYPE_CHECKING, Tuple, Union, cast
 
 from twisted.internet import defer
-from twisted.python import failure, log
-from twisted.python.compat import intToBytes
+from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.python import log
+from twisted.python.failure import Failure
 from twisted.web import server
-from twisted.web.iweb import IRenderable
+from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
@@ -15,8 +17,11 @@ from werkzeug.exceptions import HTTPException
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
 
+if TYPE_CHECKING:
+    from ._app import ErrorHandlers, Klein, KleinRenderable
 
-def ensure_utf8_bytes(v):
+
+def ensure_utf8_bytes(v: Union[str, bytes]) -> bytes:
     """
     Coerces a value which is either a C{str} or C{bytes} to a C{bytes}.
     If ``v`` is a C{str} object it is encoded as utf-8.
@@ -35,39 +40,39 @@ class _StandInResource:
     """
 
 
-class _URLDecodeError(Exception):
+StandInResource = cast("KleinResource", _StandInResource())
+
+
+class URLDecodeError(Exception):
     """
     Raised if one or more string parts of the URL could not be decoded.
     """
 
     __slots__ = ["errors"]
 
-    def __init__(self, errors):
+    def __init__(self, errors: Sequence[Tuple[str, Failure]]) -> None:
         """
-        @param errors: List of decoding errors.
-        @type errors: L{list} of L{tuple} of L{str},
-            L{twisted.python.failure.Failure}
+        @param errors: Sequence of decoding errors, expressed as tuples
+            of names and an associated failure.
         """
         self.errors = errors
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<URLDecodeError(errors={self.errors!r})>"
 
 
-def _extractURLparts(request):
+def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
     """
     Extracts and decodes URI parts from C{request}.
 
     All strings must be UTF8-decodable.
 
     @param request: A Twisted Web request.
-    @type request: L{twisted.web.iweb.IRequest}
 
     @raise URLDecodeError: If one of the parts could not be decoded as UTF-8.
 
     @return: L{tuple} of the URL scheme, the server name, the server port, the
         path info and the script name.
-    @rtype: L{tuple} of L{str}, L{str}, L{int}, L{str}, L{str}
     """
     server_name = request.getRequestHostname()
     if hasattr(request.getHost(), "port"):
@@ -80,7 +85,7 @@ def _extractURLparts(request):
         (False, 0),
         (True, 0),
     ]:
-        server_name = server_name + b":" + intToBytes(server_port)
+        server_name = b"%s:%d" % (server_name, server_port)
 
     script_name = b""
     if request.prepath:
@@ -102,18 +107,18 @@ def _extractURLparts(request):
     try:
         server_name = server_name.decode("utf-8")
     except UnicodeDecodeError:
-        utf8Failures.append(("SERVER_NAME", failure.Failure()))
+        utf8Failures.append(("SERVER_NAME", Failure()))
     try:
         path_text = path_info.decode("utf-8")
     except UnicodeDecodeError:
-        utf8Failures.append(("PATH_INFO", failure.Failure()))
+        utf8Failures.append(("PATH_INFO", Failure()))
     try:
         script_text = script_name.decode("utf-8")
     except UnicodeDecodeError:
-        utf8Failures.append(("SCRIPT_NAME", failure.Failure()))
+        utf8Failures.append(("SCRIPT_NAME", Failure()))
 
     if utf8Failures:
-        raise _URLDecodeError(utf8Failures)
+        raise URLDecodeError(utf8Failures)
 
     return url_scheme, server_name, server_port, path_text, script_text
 
@@ -125,22 +130,22 @@ class KleinResource(Resource):
 
     isLeaf = True
 
-    def __init__(self, app):
+    def __init__(self, app: "Klein") -> None:
         Resource.__init__(self)
         self._app = app
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, KleinResource):
             return vars(self) == vars(other)
         return NotImplemented
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         result = self.__eq__(other)
         if result is NotImplemented:
             return result
         return not result
 
-    def render(self, request):
+    def render(self, request: IRequest) -> "KleinRenderable":
         # Stuff we need to know for the mapper.
         try:
             (
@@ -149,8 +154,8 @@ class KleinResource(Resource):
                 server_port,
                 path_info,
                 script_name,
-            ) = _extractURLparts(request)
-        except _URLDecodeError as e:
+            ) = extractURLparts(request)
+        except URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, f"Invalid encoding in {what}.")
             request.setResponseCode(400)
@@ -171,10 +176,10 @@ class KleinResource(Resource):
         # Make sure we'll notice when the connection goes away unambiguously.
         request_finished = [False]
 
-        def _finish(result):
+        def _finish(result: object) -> None:
             request_finished[0] = True
 
-        def _execute():
+        def _execute() -> Deferred:
             # Actually doing the match right here. This can cause an exception
             # to percolate up. If that happens it will be handled below in
             # processing_failed, either by a user-registered error handler or
@@ -183,26 +188,33 @@ class KleinResource(Resource):
             endpoint = rule.endpoint
 
             # Try pretty hard to fix up prepath and postpath.
-            segment_count = self._app.endpoints[endpoint].segment_count
+            segment_count = self._app.endpoints[
+                endpoint
+            ].segment_count  # type: ignore[union-attr]
             request.prepath.extend(request.postpath[:segment_count])
             request.postpath = request.postpath[segment_count:]
 
-            request.notifyFinish().addBoth(_finish)
+            request.notifyFinish().addBoth(  # type: ignore[attr-defined]
+                _finish,
+            )
 
             # Standard Twisted Web stuff. Defer the method action, giving us
             # something renderable or printable. Return NOT_DONE_YET and set up
             # the incremental renderer.
-            d = defer.maybeDeferred(
+            d = maybeDeferred(
                 self._app.execute_endpoint, endpoint, request, **kwargs
             )
 
-            request.notifyFinish().addErrback(lambda _: d.cancel())
+            request.notifyFinish().addErrback(  # type: ignore[attr-defined]
+                lambda _: d.cancel(),
+            )
 
             return d
 
-        d = defer.maybeDeferred(_execute)
+        d = maybeDeferred(_execute)
 
-        def process(r):
+        # type note: returns Any because Response._applyToRequest returns Any
+        def process(r: object) -> Any:
             """
             Recursively go through r and any child Resources until something
             returns an IRenderable, then render it and let the result of that
@@ -212,18 +224,22 @@ class KleinResource(Resource):
                 r = r._applyToRequest(request)
 
             if IResource.providedBy(r):
-                request.render(getChildForRequest(r, request))
-                return _StandInResource
+                request.render(  # type: ignore[attr-defined]
+                    getChildForRequest(r, request)
+                )
+                return StandInResource
 
             if IRenderable.providedBy(r):
                 renderElement(request, r)
-                return _StandInResource
+                return StandInResource
 
             return r
 
         d.addCallback(process)
 
-        def processing_failed(failure, error_handlers):
+        def processing_failed(
+            failure: Failure, error_handlers: "ErrorHandlers"
+        ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
             # processing.  We don't return failure here because there
@@ -232,12 +248,13 @@ class KleinResource(Resource):
             if request_finished[0]:
                 if not failure.check(defer.CancelledError):
                     log.err(failure, "Unhandled Error Processing Request.")
-                return
+                return None
 
             # If there are no more registered handlers, apply some defaults
             if len(error_handlers) == 0:
                 if failure.check(HTTPException):
                     he = failure.value
+                    assert isinstance(he, HTTPException)
                     request.setResponseCode(he.code)
                     resp = he.get_response({})
 
@@ -246,17 +263,23 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return ensure_utf8_bytes(b"".join(resp.iter_encoded()))
+                    return ensure_utf8_bytes(
+                        b"".join(
+                            resp.iter_encoded(),  # type: ignore[attr-defined]
+                        ),
+                    )  # type: ignore[attr-defined, return-value]
                 else:
-                    request.processingFailed(failure)
-                    return
+                    request.processingFailed(  # type: ignore[attr-defined]
+                        failure,
+                    )
+                    return None
 
             error_handler = error_handlers[0]
 
             # Each error handler is a tuple of
             # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
-                d = defer.maybeDeferred(
+                d = maybeDeferred(
                     self._app.execute_error_handler,
                     error_handler[1],
                     request,
@@ -271,8 +294,8 @@ class KleinResource(Resource):
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
-        def write_response(r):
-            if r is not _StandInResource:
+        def write_response(r: object) -> None:
+            if r is not StandInResource:
                 if isinstance(r, str):
                     r = r.encode("utf-8")
 
@@ -285,4 +308,4 @@ class KleinResource(Resource):
         d.addCallback(write_response)
         d.addErrback(log.err, _why="Unhandled Error writing response")
 
-        return server.NOT_DONE_YET
+        return server.NOT_DONE_YET  # type: ignore[return-value]

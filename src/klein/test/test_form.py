@@ -137,7 +137,7 @@ class TestObject:
         router.route("/render-cascade", methods=["GET"]),
         form=Form.rendererFor(handler, action="/handle"),
     )
-    def cascadeRenderer(self, form: RenderableForm) -> RenderableForm:
+    def cascadeRenderer(self, form: RenderableForm) -> Element:
         class CustomElement(Element):
             @renderer
             def customize(self, request: IRequest, tag: Any) -> Any:
@@ -624,7 +624,7 @@ class TestForms(SynchronousTestCase):
 
     def test_renderLookupError(self) -> None:
         """
-        RenderableForm raises L{MissingRenderMethod} if anything attempst to
+        RenderableForm raises L{MissingRenderMethod} if anything attempts to
         look up a render method on it.
         """
         mem = MemorySessionStore()

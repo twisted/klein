@@ -1,13 +1,12 @@
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Callable, Dict, Generator, List, Sequence, Type
 
 import attr
 
-from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
-from zope.interface import implementer
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable, modified
@@ -31,22 +30,16 @@ class RequestLifecycle:
     def addPrepareHook(
         self,
         beforeHook: Callable,
-        requires: Sequence[IInterface] = (),
-        provides: Sequence[IInterface] = (),
+        requires: Sequence[Type[Interface]] = (),
+        provides: Sequence[Type[Interface]] = (),
     ) -> None:
-        """
-        Add a hook that promises to prepare the request by supplying the given
-        interfaces as components on the request, and requires the given
-        requirements.
-
-        Prepare hooks are run I{before any} L{IDependencyInjector}s I{inject
-        their values}.
-        """
         # TODO: topological requirements sort
         self._prepareHooks.append(beforeHook)
 
     @inlineCallbacks
-    def runPrepareHooks(self, instance: Any, request: IRequest) -> Deferred:
+    def runPrepareHooks(
+        self, instance: Any, request: IRequest
+    ) -> Generator[Any, object, None]:
         """
         Execute all the hooks added with L{RequestLifecycle.addPrepareHook}.
         This is invoked by the L{requires} route machinery.
@@ -77,8 +70,8 @@ class Requirer:
 
     def prerequisite(
         self,
-        providesComponents: Sequence[IInterface],
-        requiresComponents: Sequence[IInterface] = (),
+        providesComponents: Sequence[Type[Interface]],
+        requiresComponents: Sequence[Type[Interface]] = (),
     ) -> Callable[[Callable], Callable]:
         """
         Specify a component that is a pre-requisite of every request routed
@@ -154,7 +147,7 @@ class Requirer:
                     result = yield _call(
                         instance, functionWithRequirements, *args, **injected
                     )
-                returnValue(result)
+                return result
 
             fWR, iC = functionWithRequirements, injectionComponents
             fWR.injectionComponents = iC  # type: ignore[attr-defined]

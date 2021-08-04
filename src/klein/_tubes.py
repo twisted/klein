@@ -5,7 +5,7 @@ Extensions to Tubes.
 """
 
 from io import BytesIO
-from typing import Any, BinaryIO, Iterable
+from typing import Any, BinaryIO
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional, provides
@@ -14,7 +14,6 @@ from tubes.itube import IDrain, IFount, ISegment
 from tubes.kit import Pauser, beginFlowingTo
 from tubes.undefer import fountToDeferred
 
-from twisted.internet.defer import Deferred
 from twisted.python.failure import Failure
 
 from zope.interface import implementer
@@ -24,13 +23,9 @@ __all__ = ()
 
 
 # See https://github.com/twisted/tubes/issues/60
-def fountToBytes(fount: IFount) -> Deferred:
-    def collect(chunks: Iterable[bytes]) -> bytes:
-        return b"".join(chunks)
-
-    d = fountToDeferred(fount)
-    d.addCallback(collect)
-    return d
+async def fountToBytes(fount: IFount) -> bytes:
+    chunks = await fountToDeferred(fount)
+    return b"".join(chunks)
 
 
 # See https://github.com/twisted/tubes/issues/60

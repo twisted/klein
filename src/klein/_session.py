@@ -1,18 +1,17 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
 from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
 
-from zope.interface import implementer
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer
 
 from .interfaces import (
     EarlyExit,
@@ -35,40 +34,23 @@ class SessionProcurer:
     A L{SessionProcurer} procures a session from a request and a store.
 
     @ivar _store: The session store to procure a session from.
-    @type _store: L{klein.interfaces.ISessionStore}
-
     @ivar _maxAge: The maximum age (in seconds) of the session cookie.
-    @type _maxAge: L{int}
-
     @ivar _secureCookie: The name of the cookie to use for sessions protected
         with TLS (i.e. HTTPS).
-    @type _secureCookie: L{bytes}
-
     @ivar _insecureCookie: The name of the cookie to use for sessions I{not}
         protected with TLS (i.e. HTTP).
-    @type _insecureCookie: L{bytes}
-
     @ivar _cookieDomain: If set, the domain name to restrict the session cookie
         to.
-    @type _cookieDomain: L{None} or L{bytes}
-
     @ivar _cookiePath: If set, the URL path to restrict the session cookie to.
-    @type _cookiePath: L{bytes}
-
     @ivar _secureTokenHeader: The name of the HTTPS header to try to extract a
         session token from; API clients should use this header, rather than a
         cookie.
-    @type _secureTokenHeader: L{bytes}
-
     @ivar _insecureTokenHeader: The name of the HTTP header to try to extract a
         session token from; API clients should use this header, rather than a
         cookie.
-    @type _insecureTokenHeader: L{bytes}
-
     @ivar _setCookieOnGET: Automatically request that the session store create
         a session if one is not already associated with the request and the
         request is a GET.
-    @type _setCookieOnGET: L{bool}
     """
 
     _store = attr.ib(type=ISessionStore)
@@ -87,10 +69,10 @@ class SessionProcurer:
     def procureSession(
         self, request: IRequest, forceInsecure: bool = False
     ) -> Any:
-        alreadyProcured = request.getComponent(ISession)
+        alreadyProcured = cast(Componentized, request).getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
-                returnValue(alreadyProcured)
+                return alreadyProcured
 
         if request.isSecure():
             if forceInsecure:
@@ -123,7 +105,7 @@ class SessionProcurer:
             ]
             # Does it seem like this check is expensive? It sure is! Don't want
             # to do it? Turn on your dang HTTPS!
-            yield self._store.sentInsecurely(allPossibleSentTokens)
+            self._store.sentInsecurely(allPossibleSentTokens)
             tokenHeader = self._insecureTokenHeader
             cookieName = self._insecureCookie
             sentSecurely = False
@@ -152,7 +134,7 @@ class SessionProcurer:
             session is None or session.identifier != sentCookie
         ):
             if session is None:
-                if request.startedWriting:
+                if request.startedWriting:  # type: ignore[attr-defined]
                     # At this point, if the mechanism is Header, we either have
                     # a valid session or we bailed after NoSuchSession above.
                     raise TooLateForCookies(
@@ -183,7 +165,7 @@ class SessionProcurer:
                 identifierInCookie = identifierInCookie.encode("ascii")
             if not isinstance(cookieName, str):
                 cookieName = cookieName.decode("ascii")
-            request.addCookie(
+            request.addCookie(  # type: ignore[call-arg]
                 cookieName,
                 identifierInCookie,
                 max_age=str(self._maxAge),
@@ -194,12 +176,12 @@ class SessionProcurer:
             )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
-            request.setComponent(ISession, session)
-        returnValue(session)
+            cast(Componentized, request).setComponent(ISession, session)
+        return session
 
 
 class AuthorizationDenied(Resource):
-    def __init__(self, interface: IInterface, instance: Any) -> None:
+    def __init__(self, interface: Type[Interface], instance: Any) -> None:
         self._interface = interface
         super().__init__()
 
@@ -215,7 +197,7 @@ class Authorization:
     Declare that a C{require}-decorated function requires a certain interface
     be authorized from the session.
 
-    This is a dependnecy injector used in conjunction with a L{klein.Requirer},
+    This is a dependency injector used in conjunction with a L{klein.Requirer},
     like so::
 
         from klein import Requirer, SesssionProcurer
@@ -263,10 +245,10 @@ class Authorization:
         C{required} is set to C{False}.
     """
 
-    _interface = attr.ib(type=IInterface)
+    _interface = attr.ib(type=Type[Interface])
     _required = attr.ib(type=bool, default=True)
     _whenDenied = attr.ib(
-        type=Callable[[IInterface, Any], Any], default=AuthorizationDenied
+        type=Callable[[Type[Interface], Any], Any], default=AuthorizationDenied
     )
 
     def registerInjector(
@@ -290,14 +272,14 @@ class Authorization:
         # TODO: this could be optimized to do fewer calls to 'authorize' by
         # collecting all the interfaces that are necessary and then using
         # addBeforeHook; the interface would not need to change.
-        session = ISession(request)  # type: ignore[operator]
+        session = ISession(request)
         provider = (yield session.authorize([self._interface])).get(
             self._interface
         )
         if self._required and provider is None:
             raise EarlyExit(self._whenDenied(self._interface, instance))
         # TODO: CSRF protection should probably go here
-        returnValue(provider)
+        return provider
 
     def finalize(self) -> None:
         """

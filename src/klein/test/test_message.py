@@ -11,8 +11,10 @@ from typing import cast
 from hypothesis import given
 from hypothesis.strategies import binary
 
+from twisted.internet.defer import ensureDeferred
+
 from ._trial import TestCase
-from .._interfaces import IHTTPMessage
+from .._imessage import IHTTPMessage
 from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 
 
@@ -55,7 +57,9 @@ class FrozenHTTPMessageTestsMixIn(ABC):
         """
         message = self.messageFromBytes(data)
         fount = message.bodyAsFount()
-        body = cast(TestCase, self).successResultOf(fountToBytes(fount))
+        body = cast(TestCase, self).successResultOf(
+            ensureDeferred(fountToBytes(fount))
+        )
 
         cast(TestCase, self).assertEqual(body, data)
 
@@ -78,8 +82,9 @@ class FrozenHTTPMessageTestsMixIn(ABC):
         """
         message = self.messageFromFountFromBytes(data)
         fount = message.bodyAsFount()
-        body = cast(TestCase, self).successResultOf(fountToBytes(fount))
-
+        body = cast(TestCase, self).successResultOf(
+            ensureDeferred(fountToBytes(fount))
+        )
         cast(TestCase, self).assertEqual(body, data)
 
     @given(binary())
@@ -100,8 +105,9 @@ class FrozenHTTPMessageTestsMixIn(ABC):
         C{bodyAsBytes} returns the same bytes given to C{__init__}.
         """
         message = self.messageFromBytes(data)
-        body = cast(TestCase, self).successResultOf(message.bodyAsBytes())
-
+        body = cast(TestCase, self).successResultOf(
+            ensureDeferred(message.bodyAsBytes())
+        )
         cast(TestCase, self).assertEqual(body, data)
 
     @given(binary())
@@ -111,9 +117,12 @@ class FrozenHTTPMessageTestsMixIn(ABC):
         created from bytes.
         """
         message = self.messageFromBytes(data)
-        body1 = cast(TestCase, self).successResultOf(message.bodyAsBytes())
-        body2 = cast(TestCase, self).successResultOf(message.bodyAsBytes())
-
+        body1 = cast(TestCase, self).successResultOf(
+            ensureDeferred(message.bodyAsBytes())
+        )
+        body2 = cast(TestCase, self).successResultOf(
+            ensureDeferred(message.bodyAsBytes())
+        )
         cast(TestCase, self).assertIdentical(body1, body2)
 
     @given(binary())
@@ -122,7 +131,9 @@ class FrozenHTTPMessageTestsMixIn(ABC):
         C{bodyAsBytes} returns the bytes from the fount given to C{__init__}.
         """
         message = self.messageFromFountFromBytes(data)
-        body = cast(TestCase, self).successResultOf(message.bodyAsBytes())
+        body = cast(TestCase, self).successResultOf(
+            ensureDeferred(message.bodyAsBytes())
+        )
         cast(TestCase, self).assertEqual(body, data)
 
     @given(binary())
@@ -132,7 +143,10 @@ class FrozenHTTPMessageTestsMixIn(ABC):
         created from a fount.
         """
         message = self.messageFromFountFromBytes(data)
-        body1 = cast(TestCase, self).successResultOf(message.bodyAsBytes())
-        body2 = cast(TestCase, self).successResultOf(message.bodyAsBytes())
-
+        body1 = cast(TestCase, self).successResultOf(
+            ensureDeferred(message.bodyAsBytes())
+        )
+        body2 = cast(TestCase, self).successResultOf(
+            ensureDeferred(message.bodyAsBytes())
+        )
         cast(TestCase, self).assertIdentical(body1, body2)

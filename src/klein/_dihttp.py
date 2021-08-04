@@ -2,7 +2,7 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Union, cast
+from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
 
 import attr
 
@@ -11,8 +11,7 @@ from hyperlink import DecodedURL
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
-from zope.interface import implementer, provider
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer, provider
 
 from .interfaces import (
     IDependencyInjector,
@@ -32,8 +31,9 @@ def urlFromRequest(request: IRequest) -> DecodedURL:
             host = sentHeader
             port = None
     else:
-        host = request.client.host
-        port = request.client.port
+        client = request.client  # type: ignore[attr-defined]
+        host = client.host
+        port = client.port
 
     url = DecodedURL.fromText(request.uri.decode("charmap"))
     url = url.replace(
@@ -59,7 +59,8 @@ class RequestURL:
         parameterName: str,
         requestLifecycle: IRequestLifecycle,
     ) -> IDependencyInjector:
-        return cls()
+        # type note: https://github.com/Shoobx/mypy-zope/issues/39
+        return cast(IDependencyInjector, cls())
 
     @classmethod
     def injectValue(
@@ -84,7 +85,7 @@ class RequestComponent:
     @since: Klein NEXT
     """
 
-    interface = attr.ib(type=IInterface)
+    interface = attr.ib(type=Type[Interface])
 
     def registerInjector(
         self,
@@ -97,7 +98,10 @@ class RequestComponent:
     def injectValue(
         self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
     ) -> DecodedURL:
-        return cast(DecodedURL, request.getComponent(self.interface))
+        return cast(
+            DecodedURL,
+            cast(Componentized, request).getComponent(self.interface),
+        )
 
     def finalize(cls) -> None:
         "Nothing to do upon finalization."

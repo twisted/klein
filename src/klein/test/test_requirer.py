@@ -1,9 +1,10 @@
-from typing import Iterable, List, Tuple
+from typing import Iterator, Sequence, Tuple, cast
 
 from hyperlink import DecodedURL
 
 from treq.testing import StubTreq
 
+from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
@@ -11,6 +12,7 @@ from twisted.web.iweb import IRequest
 from zope.interface import Interface
 
 from klein import Klein, RequestComponent, RequestURL, Requirer, Response
+from klein.interfaces import IRequiredParameter
 
 
 class BadlyBehavedHeaders(Headers):
@@ -19,7 +21,7 @@ class BadlyBehavedHeaders(Headers):
     getAllRequestHeaders.
     """
 
-    def getAllRawHeaders(self) -> Iterable[Tuple[bytes, List[bytes]]]:
+    def getAllRawHeaders(self) -> Iterator[Tuple[bytes, Sequence[bytes]]]:
         """
         Don't return a host header.
         """
@@ -33,7 +35,9 @@ requirer = Requirer()
 
 
 @requirer.require(
-    router.route("/hello/world", methods=["GET"]), url=RequestURL()
+    router.route("/hello/world", methods=["GET"]),
+    # type note: https://github.com/Shoobx/mypy-zope/issues/39
+    url=cast(IRequiredParameter, RequestURL()),
 )
 def requiresURL(url: DecodedURL) -> str:
     """
@@ -54,7 +58,7 @@ def provideSample(request: IRequest) -> None:
     """
     This requirer prerequisite installs a string as the provider of ISample.
     """
-    request.setComponent(ISample, "sample component")
+    cast(Componentized, request).setComponent(ISample, "sample component")
 
 
 @requirer.require(

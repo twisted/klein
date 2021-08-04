@@ -14,11 +14,9 @@ from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred
-
 from zope.interface import implementer
 
-from ._interfaces import IHTTPHeaders, IHTTPRequest
+from ._imessage import IHTTPHeaders, IHTTPRequest
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
 
 
@@ -43,5 +41,5 @@ class FrozenHTTPRequest:
     def bodyAsFount(self) -> IFount:
         return bodyAsFount(self._body, self._state)
 
-    def bodyAsBytes(self) -> Deferred:
-        return bodyAsBytes(self._body, self._state)
+    async def bodyAsBytes(self) -> bytes:
+        return await bodyAsBytes(self._body, self._state)

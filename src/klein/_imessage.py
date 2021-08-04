@@ -17,11 +17,7 @@ from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred
-
 from zope.interface import Attribute, Interface
-
-from ._typing import ifmethod
 
 
 __all__ = ()
@@ -78,7 +74,6 @@ class IHTTPHeaders(Interface):
         """
     )
 
-    @ifmethod
     def getValues(name: AnyStr) -> Iterable[AnyStr]:
         """
         Get the values associated with the given header name.
@@ -101,7 +96,6 @@ class IMutableHTTPHeaders(IHTTPHeaders):
     Mutable HTTP entity headers.
     """
 
-    @ifmethod
     def remove(name: AnyStr) -> None:
         """
         Remove all header name/value pairs for the given header name.
@@ -112,7 +106,6 @@ class IMutableHTTPHeaders(IHTTPHeaders):
         @param name: The name of the header to remove.
         """
 
-    @ifmethod
     def addValue(name: AnyStr, value: AnyStr) -> None:
         """
         Add the given header name/value pair.
@@ -131,7 +124,6 @@ class IHTTPMessage(Interface):
 
     headers: IHTTPHeaders = Attribute("Entity headers.")
 
-    @ifmethod
     def bodyAsFount() -> IFount:
         """
         The entity body, as a fount.
@@ -148,8 +140,7 @@ class IHTTPMessage(Interface):
             accessed.
         """
 
-    @ifmethod
-    def bodyAsBytes() -> Deferred:
+    async def bodyAsBytes() -> bytes:
         """
         The entity body, as bytes.
 

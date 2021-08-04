@@ -4,7 +4,7 @@
 Extensions to L{twisted.trial}.
 """
 
-from typing import Any
+from typing import Type
 
 from twisted.trial.unittest import SynchronousTestCase
 
@@ -21,7 +21,7 @@ class TestCase(SynchronousTestCase):
     Extensions to L{SynchronousTestCase}.
     """
 
-    def assertProvides(self, interface: Interface, obj: Any) -> None:
+    def assertProvides(self, interface: Type[Interface], obj: object) -> None:
         """
         Assert that a object provides an interface.
 

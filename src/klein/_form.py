@@ -6,6 +6,7 @@ from typing import (
     AnyStr,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     NoReturn,
@@ -25,9 +26,9 @@ from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import Resource
 from twisted.web.template import Element, Tag, TagLoader, tags
 
-from zope.interface import Interface, implementer
+from zope.interface import Attribute, Interface, implementer
 
-from ._app import _call
+from ._app import KleinRenderable, _call
 from ._decorators import bindable
 from .interfaces import (
     EarlyExit,
@@ -122,7 +123,6 @@ class Field:
         values filled in.
 
         @param name: the name.
-        @type name: a native L{str}
         """
 
         def maybe(
@@ -145,26 +145,27 @@ class Field:
         L{twisted.web.template}.
 
         @return: A new set of tags to include in a template.
-        @rtype: iterable of L{twisted.web.template.Tag}
         """
         value = self.value
         if value is None:
             value = ""  # type: ignore[unreachable]
         input_tag = tags.input(
-            type=self.formInputType, name=self.formFieldName, value=value
+            type=self.formInputType,
+            name=self.formFieldName,  # type: ignore[arg-type]
+            value=value,
         )
         error_tags = []
         if self.error:
             error_tags.append(
                 tags.div(class_="klein-form-validation-error")(
-                    self.error.message
+                    self.error.message  # type: ignore[arg-type]
                 )
             )
         if self.formLabel:
             yield tags.label(self.formLabel, ": ", input_tag, *error_tags)
         else:
             yield input_tag
-            yield error_tags
+            yield from error_tags
 
     def extractValue(self, request: IRequest) -> Any:
         """
@@ -183,13 +184,15 @@ class Field:
             b"application/json"
         ):
             # TODO: parse only once, please.
-            parsed = request.getComponent(IParsedJSONBody)
+            parsed = cast(Componentized, request).getComponent(IParsedJSONBody)
             if parsed is None:
                 request.content.seek(0)
                 octets = request.content.read()
                 characters = octets.decode("utf-8")
                 parsed = json.loads(characters)
-                request.setComponent(IParsedJSONBody, parsed)
+                cast(Componentized, request).setComponent(
+                    IParsedJSONBody, parsed
+                )
             if fieldName not in parsed:
                 return None
             return parsed[fieldName]
@@ -301,7 +304,7 @@ class RenderableForm:
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
 
-    _form = attr.ib(type="Form")
+    _form = attr.ib(type="IForm")
     _session = attr.ib(type=ISession)
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
@@ -328,7 +331,7 @@ class RenderableForm:
 
     def _fieldsToRender(self) -> Iterable[Field]:
         """
-        @return: an interable of L{Field} objects to include in the HTML
+        @return: an iterable of L{Field} objects to include in the HTML
             representation of this form.  This includes:
 
                 - all the user-specified fields in the form
@@ -367,7 +370,7 @@ class RenderableForm:
         """
         raise MissingRenderMethod(self, name)
 
-    def render(self, request: IRequest) -> Tag:
+    def render(self, request: IRequest) -> Tag:  # type: ignore[override]
         """
         Render this form to the given request.
         """
@@ -382,7 +385,7 @@ class RenderableForm:
             action=self._action, method=self._method, **formAttributes
         )(field.asTags() for field in self._fieldsToRender())
 
-    def glue(self) -> Iterable[Tag]:
+    def glue(self) -> List[Tag]:
         """
         Provide any glue necessary to render this form; this must be dropped
         into the template within the C{<form>} tag.
@@ -393,9 +396,8 @@ class RenderableForm:
 
         @return: some HTML elements in the form of renderable objects for
             L{twisted.web.template}
-        @rtype: L{twisted.web.template.Tag}, or L{list} thereof.
         """
-        return self._fieldForCSRF().asTags()
+        return list(self._fieldForCSRF().asTags())
 
 
 @bindable
@@ -415,14 +417,10 @@ def defaultValidationFailureHandler(
 
     @param instance: The instance associated with the router that the form
         handler was handled on.
-    @type instance: L{object}
-
     @param request: The request including the form submission.
-    @type request: L{twisted.web.iweb.IRequest}
-
     @return: Any object acceptable from a Klein route.
     """
-    session = request.getComponent(ISession)
+    session = cast(Componentized, request).getComponent(ISession)
     request.setResponseCode(400)
     enctype = (
         (
@@ -458,11 +456,30 @@ class IProtoForm(Interface):
     Marker interface for L{ProtoForm}.
     """
 
+    fields: Sequence[Field] = Attribute("Form fields")
+
+    def addField(field: Field) -> "FieldInjector":
+        """
+        Add the given field to the form ultimately created here.
+        """
+
 
 class IForm(Interface):
     """
     Marker interface for form attached to dependency injection components.
     """
+
+    fields: Sequence[Field] = Attribute("Form fields")
+
+    def populateRequestValues(
+        injectionComponents: Componentized,
+        instance: Any,
+        request: IRequest,
+    ) -> Deferred:
+        """
+        Extract the values present in this request and populate a
+        L{FieldValues} object.
+        """
 
 
 @implementer(IProtoForm)
@@ -474,22 +491,19 @@ class ProtoForm:
 
     _componentized = attr.ib(type=Componentized)
     _lifecycle = attr.ib(type=IRequestLifecycle)
-    _fields = attr.ib(type=List[Field], default=attr.Factory(list))
+    fields = attr.ib(type=List[Field], default=attr.Factory(list))
 
     @classmethod
     def fromComponentized(cls, componentized: Componentized) -> "ProtoForm":
         """
         Create a ProtoForm from a componentized object.
         """
-        rl = IRequestLifecycle(componentized)  # type: ignore[operator]
+        rl = IRequestLifecycle(componentized)
         assert rl is not None
         return cls(componentized, rl)
 
     def addField(self, field: Field) -> "FieldInjector":
-        """
-        Add the given field to the form ultimately created here.
-        """
-        self._fields.append(field)
+        self.fields.append(field)
         return FieldInjector(self._componentized, field, self._lifecycle)
 
 
@@ -497,6 +511,20 @@ class IFieldValues(Interface):
     """
     Marker interface for parsed fields.
     """
+
+    form: IForm = Attribute("Form")
+    arguments: Dict[str, Any] = Attribute("Arguments")
+    prevalidationValues: Dict[Field, Optional[str]] = Attribute(
+        "Pre-validation values"
+    )
+    validationErrors: Dict[Field, ValidationError] = Attribute(
+        "Validation errors"
+    )
+
+    def validate(instance: Any, request: IRequest) -> Deferred:
+        """
+        If any validation errors have occurred, raise a relevant exception.
+        """
 
 
 @implementer(IFieldValues)
@@ -513,18 +541,23 @@ class FieldValues:
     _injectionComponents = attr.ib(type=Componentized)
 
     @inlineCallbacks
-    def validate(self, instance: Any, request: IRequest) -> Deferred:
-        """
-        If any validation errors have occurred, raise a relevant exception.
-        """
+    def validate(
+        self, instance: Any, request: IRequest
+    ) -> Generator[Any, object, None]:
         if self.validationErrors:
-            result = yield _call(
-                instance,
-                IValidationFailureHandler(
-                    self._injectionComponents, defaultValidationFailureHandler
+            result = cast(
+                KleinRenderable,
+                (
+                    yield _call(
+                        instance,
+                        IValidationFailureHandler(
+                            self._injectionComponents,
+                            defaultValidationFailureHandler,
+                        ),
+                        request,
+                        self,
+                    )
                 ),
-                request,
-                self,
             )
             raise EarlyExit(result)
 
@@ -546,6 +579,7 @@ class FieldInjector:
         """
         Inject the given value into the form.
         """
+        assert self._field.pythonArgumentName is not None
         return IFieldValues(request).arguments.get(
             self._field.pythonArgumentName
         )
@@ -557,7 +591,7 @@ class FieldInjector:
         if IForm(self._componentized, None) is not None:
             return
 
-        finalForm = cast(IForm, Form(IProtoForm(self._componentized)._fields))
+        finalForm = cast(IForm, Form(IProtoForm(self._componentized).fields))
         self._componentized.setComponent(IForm, finalForm)
 
         # XXX set requiresComponents argument here to ISession if CSRF is
@@ -585,6 +619,11 @@ class IValidationFailureHandler(Interface):
     Validation failure handler callable interface.
     """
 
+    def __call__(request: IRequest) -> KleinRenderable:
+        """
+        Called to handle a validation failure.
+        """
+
 
 def checkCSRF(request: IRequest) -> None:
     """
@@ -592,7 +631,7 @@ def checkCSRF(request: IRequest) -> None:
     it is found.
     """
     # TODO: optionalize CSRF protection for GET forms
-    session = ISession(request, None)  # type: ignore[operator]
+    session = ISession(request, None)
     token = None
     if request.method in (b"GET", b"HEAD"):
         # Idempotent requests don't require CRSF validation.  (Don't have
@@ -617,6 +656,7 @@ def checkCSRF(request: IRequest) -> None:
     raise EarlyExit(CrossSiteRequestForgery(f"Invalid CSRF token: {token!r}"))
 
 
+@implementer(IForm)
 @attr.s(hash=False)
 class Form:
     """
@@ -675,11 +715,7 @@ class Form:
         injectionComponents: Componentized,
         instance: Any,
         request: IRequest,
-    ) -> Deferred:
-        """
-        Extract the values present in this request and populate a
-        L{FieldValues} object.
-        """
+    ) -> Generator[Any, object, None]:
         assert IFieldValues(request, None) is None
 
         validationErrors = {}
@@ -708,7 +744,7 @@ class Form:
             injectionComponents,
         )
         yield values.validate(instance, request)
-        request.setComponent(IFieldValues, values)
+        cast(Componentized, request).setComponent(IFieldValues, values)
 
     @classmethod
     def rendererFor(
@@ -746,7 +782,7 @@ class Form:
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        form: Optional[Form] = IForm(
+        form: Optional[IForm] = IForm(
             decoratedFunction.injectionComponents, None
         )
         if form is None:
@@ -762,7 +798,7 @@ class RenderableFormParam:
     L{IDependencyInjector} to provide a L{RenderableForm} to your route.
     """
 
-    _form = attr.ib(type=Form)
+    _form = attr.ib(type=IForm)
     _action = attr.ib(type=str)
     _method = attr.ib(type=str)
     _enctype = attr.ib(type=str)
@@ -784,7 +820,7 @@ class RenderableFormParam:
         """
         return RenderableForm(
             self._form,
-            ISession(request),  # type: ignore[operator]
+            ISession(request),
             self._action,
             self._method,
             self._enctype,

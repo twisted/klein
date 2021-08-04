@@ -176,7 +176,7 @@ class SessionProcurer:
             )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
-            request.setComponent(ISession, session)
+            cast(Componentized, request).setComponent(ISession, session)
         return session
 
 

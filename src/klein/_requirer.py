@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Generator, List, Sequence, Type
 
 import attr
 
-from twisted.internet.defer import Deferred, inlineCallbacks
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 

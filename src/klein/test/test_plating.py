@@ -99,7 +99,7 @@ class InstanceWidget:
         return {"a": succeed(a), "b": succeed(b)}
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class DeferredValue:
     """
     A value within a JSON serializable object that is deferred.
@@ -109,8 +109,8 @@ class DeferredValue:
     @param deferred: The L{Deferred} representing the value.
     """
 
-    value: Any = attr.ib()
-    deferred: Deferred = attr.ib(attr.Factory(Deferred))
+    value: Any
+    deferred: Deferred = attr.ib(factory=Deferred)
 
     def resolve(self):
         """

@@ -268,7 +268,7 @@ class Plating:
             presentationSlots=self._presentationSlots,
         )
 
-    @attr.s
+    @attr.s(auto_attribs=True)
     class _Widget:
         """
         Implementation of L{Plating.widgeted}.  This is a L{callable}
@@ -280,9 +280,9 @@ class Plating:
         L{PlatedElement}.
         """
 
-        _plating = attr.ib(type="Plating")
-        _function = attr.ib(type=Callable[..., Any])
-        _instance = attr.ib(type=object)
+        _plating: "Plating"
+        _function: Callable[..., Any]
+        _instance: object
 
         def __call__(self, *args, **kwargs):
             return self._function(*args, **kwargs)

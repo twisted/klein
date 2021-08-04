@@ -77,7 +77,7 @@ class RequestURL:
 
 
 @implementer(IRequiredParameter, IDependencyInjector)
-@attr.s(auto_attribs=True, frozen=True)
+@attr.frozen
 class RequestComponent:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.

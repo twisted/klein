@@ -3,8 +3,17 @@ from datetime import datetime
 from functools import reduce
 from os import urandom
 from typing import (
-    Any, Callable, Dict, Iterable, List, Optional, TYPE_CHECKING, Text,
-    Type, TypeVar, cast
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    Text,
+    Type,
+    TypeVar,
+    cast,
 )
 from uuid import uuid4
 
@@ -12,18 +21,27 @@ import attr
 from attr import Factory
 from attr.validators import instance_of as an
 
-from six import text_type
 
 from sqlalchemy import (
-    Boolean, Column, DateTime, ForeignKey, MetaData, Table,
-    Unicode, UniqueConstraint, true
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    MetaData,
+    Table,
+    Unicode,
+    UniqueConstraint,
+    true,
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.expression import select
 
 from twisted.internet.defer import (
-    gatherResults, inlineCallbacks, maybeDeferred, returnValue
+    gatherResults,
+    inlineCallbacks,
+    maybeDeferred,
+    returnValue,
 )
 from twisted.python.compat import unicode
 
@@ -35,24 +53,45 @@ from ._sql_generic import Transaction, requestBoundTransaction
 from .interfaces import ISQLAuthorizer
 from .. import SessionProcurer
 from ..interfaces import (
-    ISession, ISessionProcurer, ISessionStore, ISimpleAccount,
-    ISimpleAccountBinding, NoSuchSession, SessionMechanism
+    ISession,
+    ISessionProcurer,
+    ISessionStore,
+    ISimpleAccount,
+    ISimpleAccountBinding,
+    NoSuchSession,
+    SessionMechanism,
 )
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     import sqlalchemy
     from twisted.internet.defer import Deferred
     from twisted.internet.interfaces import IReactorThreads
     from twisted.web.iweb import IRequest
     from ._sql_generic import DataStore
-    (Any, Callable, Deferred, Type, Iterable, IReactorThreads, Text,
-     List, sqlalchemy, Dict, IRequest, IInterface, Optional, DataStore)
-    T = TypeVar('T')
+
+    (
+        Any,
+        Callable,
+        Deferred,
+        Type,
+        Iterable,
+        IReactorThreads,
+        Text,
+        List,
+        sqlalchemy,
+        Dict,
+        IRequest,
+        IInterface,
+        Optional,
+        DataStore,
+    )
+    T = TypeVar("T")
+
 
 @implementer(ISession)
 @attr.s
-class SQLSession(object):
-    _sessionStore = attr.ib(type='SessionStore')
+class SQLSession:
+    _sessionStore = attr.ib(type="SessionStore")
     identifier = attr.ib(type=Text)
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
@@ -60,41 +99,44 @@ class SQLSession(object):
     def authorize(self, interfaces):
         # type: (Iterable[IInterface]) -> Any
         interfaces = set(interfaces)
-        result = {}         # type: Dict[IInterface, Deferred]
-        ds = []             # type: List[Deferred]
+        result = {}  # type: Dict[IInterface, Deferred]
+        ds = []  # type: List[Deferred]
         txn = self._sessionStore._transaction
         for a in self._sessionStore._authorizers:
             # This should probably do something smart with interface
             # priority, checking isOrExtends or something similar.
             if a.authorizationInterface in interfaces:
-                v = maybeDeferred(a.authorizationForSession,
-                                  self._sessionStore, txn, self)
+                v = maybeDeferred(
+                    a.authorizationForSession, self._sessionStore, txn, self
+                )
                 ds.append(v)
                 result[a.authorizationInterface] = v
                 v.addCallback(
                     lambda value, ai: result.__setitem__(ai, value),
-                    ai=a.authorizationInterface
+                    ai=a.authorizationInterface,
                 )
 
         def r(ignored):
             # type: (T) -> Dict[str, Any]
             return result
-        return (gatherResults(ds).addCallback(r))
 
+        return gatherResults(ds).addCallback(r)
 
 
 @attr.s
-class SessionIPInformation(object):
+class SessionIPInformation:
     """
     Information about a session being used from a given IP address.
     """
-    id = attr.ib(validator=an(text_type), type=Text)
-    ip = attr.ib(validator=an(text_type), type=Text)
+
+    id = attr.ib(validator=an(str), type=Text)
+    ip = attr.ib(validator=an(str), type=Text)
     when = attr.ib(validator=an(datetime), type=datetime)
+
 
 @implementer(ISessionStore)
 @attr.s()
-class SessionStore(object):
+class SessionStore:
     """
     An implementation of L{ISessionStore} based on a L{DataStore}, that
     stores sessions in a SQLAlchemy database.
@@ -115,54 +157,69 @@ class SessionStore(object):
             invalidated.
         """
         s = sessionSchema.session
-        return gatherResults([
-            self._transaction.execute(
-                s.delete().where((s.c.session_id == token) &
-                                 (s.c.confidential == true()))
-            ) for token in tokens
-        ])
-
+        return gatherResults(
+            [
+                self._transaction.execute(
+                    s.delete().where(
+                        (s.c.session_id == token) & (s.c.confidential == true())
+                    )
+                )
+                for token in tokens
+            ]
+        )
 
     @inlineCallbacks
     def newSession(self, isConfidential, authenticatedBy):
         # type: (bool, SessionMechanism) -> Deferred
-        identifier = hexlify(urandom(32)).decode('ascii')
+        identifier = hexlify(urandom(32)).decode("ascii")
         s = sessionSchema.session
-        yield self._transaction.execute(s.insert().values(
-            session_id=identifier,
-            confidential=isConfidential,
-        ))
-        returnValue(SQLSession(self,
-                               identifier=identifier,
-                               isConfidential=isConfidential,
-                               authenticatedBy=authenticatedBy))
-
+        yield self._transaction.execute(
+            s.insert().values(
+                session_id=identifier,
+                confidential=isConfidential,
+            )
+        )
+        returnValue(
+            SQLSession(
+                self,
+                identifier=identifier,
+                isConfidential=isConfidential,
+                authenticatedBy=authenticatedBy,
+            )
+        )
 
     @inlineCallbacks
     def loadSession(self, identifier, isConfidential, authenticatedBy):
         # type: (Text, bool, SessionMechanism) -> Deferred
         s = sessionSchema.session
         result = yield self._transaction.execute(
-            s.select((s.c.session_id == identifier) &
-                     (s.c.confidential == isConfidential)))
+            s.select(
+                (s.c.session_id == identifier)
+                & (s.c.confidential == isConfidential)
+            )
+        )
         results = yield result.fetchall()
         if not results:
-            raise NoSuchSession(u"Session not present in SQL store.")
+            raise NoSuchSession("Session not present in SQL store.")
         fetched_identifier = results[0][s.c.session_id]
-        returnValue(SQLSession(self,
-                               identifier=fetched_identifier,
-                               isConfidential=isConfidential,
-                               authenticatedBy=authenticatedBy))
-
+        returnValue(
+            SQLSession(
+                self,
+                identifier=fetched_identifier,
+                isConfidential=isConfidential,
+                authenticatedBy=authenticatedBy,
+            )
+        )
 
 
 @implementer(ISimpleAccountBinding)
 @attr.s
-class AccountSessionBinding(object):
+class AccountSessionBinding:
     """
     (Stateless) binding between an account and a session, so that sessions can
     attach to, detach from, .
     """
+
     _session = attr.ib(type=ISession)
     _transaction = attr.ib(type=Transaction)
 
@@ -171,9 +228,7 @@ class AccountSessionBinding(object):
         """
         Construct an L{SQLAccount} bound to this plugin & dataStore.
         """
-        return SQLAccount(self._transaction, accountID, username,
-                          email)
-
+        return SQLAccount(self._transaction, accountID, username, email)
 
     @inlineCallbacks
     def createAccount(self, username, email, password):
@@ -186,10 +241,12 @@ class AccountSessionBinding(object):
         """
         computedHash = yield computeKeyText(password)
         newAccountID = unicode(uuid4())
-        insert = (sessionSchema.account.insert()
-                  .values(account_id=newAccountID,
-                          username=username, email=email,
-                          password_blob=computedHash))
+        insert = sessionSchema.account.insert().values(
+            account_id=newAccountID,
+            username=username,
+            email=email,
+            password_blob=computedHash,
+        )
         try:
             yield self._transaction.execute(insert)
         except IntegrityError:
@@ -198,7 +255,6 @@ class AccountSessionBinding(object):
             accountID = newAccountID
         account = self._account(accountID, username, email)
         returnValue(account)
-
 
     @inlineCallbacks
     def bindIfCredentialsMatch(self, username, password):
@@ -221,7 +277,7 @@ class AccountSessionBinding(object):
         result = yield self._transaction.execute(
             acc.select(acc.c.username == username)
         )
-        accountsInfo = (yield result.fetchall())
+        accountsInfo = yield result.fetchall()
         if not accountsInfo:
             # no account, bye
             returnValue(None)
@@ -233,18 +289,19 @@ class AccountSessionBinding(object):
             # type: (Text) -> Any
             a = sessionSchema.account
             return self._transaction.execute(
-                a.update(a.c.account_id == accountID)
-                .values(password_blob=newPWText)
+                a.update(a.c.account_id == accountID).values(
+                    password_blob=newPWText
+                )
             )
 
-        if (yield checkAndReset(stored_password_text,
-                                password,
-                                reset_password)):
-            account = self._account(accountID, row[acc.c.username],
-                                    row[acc.c.email])
+        if (
+            yield checkAndReset(stored_password_text, password, reset_password)
+        ):
+            account = self._account(
+                accountID, row[acc.c.username], row[acc.c.email]
+            )
             yield account.bindSession(self._session)
             returnValue(account)
-
 
     @inlineCallbacks
     def boundAccounts(self):
@@ -256,17 +313,22 @@ class AccountSessionBinding(object):
         """
         ast = sessionSchema.sessionAccount
         acc = sessionSchema.account
-        result = (yield (yield self._transaction.execute(
-            ast.join(acc, ast.c.account_id == acc.c.account_id)
-            .select(ast.c.session_id == self._session.identifier,
-                    use_labels=True)
-        )).fetchall())
-        returnValue([
-            self._account(it[ast.c.account_id], it[acc.c.username],
-                          it[acc.c.email])
-            for it in result
-        ])
-
+        result = yield (
+            yield self._transaction.execute(
+                ast.join(acc, ast.c.account_id == acc.c.account_id).select(
+                    ast.c.session_id == self._session.identifier,
+                    use_labels=True,
+                )
+            )
+        ).fetchall()
+        returnValue(
+            [
+                self._account(
+                    it[ast.c.account_id], it[acc.c.username], it[acc.c.email]
+                )
+                for it in result
+            ]
+        )
 
     @inlineCallbacks
     def boundSessionInformation(self):
@@ -282,21 +344,22 @@ class AccountSessionBinding(object):
 
         acs2 = acs.alias()
         result = yield self._transaction.execute(
-            select([sipt], use_labels=True)
-            .where(
-                (acs.c.session_id == self._session.identifier) &
-                (acs.c.account_id == acs2.c.account_id) &
-                (acs2.c.session_id == sipt.c.session_id)
+            select([sipt], use_labels=True).where(
+                (acs.c.session_id == self._session.identifier)
+                & (acs.c.account_id == acs2.c.account_id)
+                & (acs2.c.session_id == sipt.c.session_id)
             )
         )
-        returnValue([
-            SessionIPInformation(
-                id=row[sipt.c.session_id],
-                ip=row[sipt.c.ip_address],
-                when=row[sipt.c.last_used])
-            for row in (yield result.fetchall())
-        ])
-
+        returnValue(
+            [
+                SessionIPInformation(
+                    id=row[sipt.c.session_id],
+                    ip=row[sipt.c.ip_address],
+                    when=row[sipt.c.last_used],
+                )
+                for row in (yield result.fetchall())
+            ]
+        )
 
     def unbindThisSession(self):
         # type: () -> Any
@@ -306,15 +369,14 @@ class AccountSessionBinding(object):
         @return: a L{Deferred} that fires when the account is logged out.
         """
         ast = sessionSchema.sessionAccount
-        return self._transaction.execute(ast.delete(
-            ast.c.session_id == self._session.identifier
-        ))
-
+        return self._transaction.execute(
+            ast.delete(ast.c.session_id == self._session.identifier)
+        )
 
 
 @implementer(ISimpleAccount)
 @attr.s
-class SQLAccount(object):
+class SQLAccount:
     """
     An implementation of L{ISimpleAccount} backed by an Alchimia data store.
     """
@@ -324,18 +386,16 @@ class SQLAccount(object):
     username = attr.ib(type=Text)
     email = attr.ib(type=Text)
 
-
     def bindSession(self, session):
         # type: (ISession) -> Deferred
         """
         Add a session to the database.
         """
         return self._transaction.execute(
-            sessionSchema.sessionAccount
-            .insert().values(account_id=self.accountID,
-                             session_id=session.identifier)
+            sessionSchema.sessionAccount.insert().values(
+                account_id=self.accountID, session_id=session.identifier
+            )
         )
-
 
     @inlineCallbacks
     def changePassword(self, newPassword):
@@ -353,14 +413,12 @@ class SQLAccount(object):
         returnValue(result)
 
 
-
-
 @inlineCallbacks
 def upsert(
-        engine,                 # type: Transaction
-        table,                  # type: sqlalchemy.schema.Table
-        to_query,               # type: Dict[str, Any]
-        to_change               # type: Dict[str, Any]
+    engine,  # type: Transaction
+    table,  # type: sqlalchemy.schema.Table
+    to_query,  # type: Dict[str, Any]
+    to_change,  # type: Dict[str, Any]
 ):
     # type: (...) -> Any
     """
@@ -372,18 +430,26 @@ def upsert(
         )
     except IntegrityError:
         from operator import and_ as And
-        update = table.update().where(
-            reduce(And, (
-                (getattr(table.c, cname) == cvalue)
-                for (cname, cvalue) in to_query.items()
-            ))
-        ).values(**to_change)
+
+        update = (
+            table.update()
+            .where(
+                reduce(
+                    And,
+                    (
+                        (getattr(table.c, cname) == cvalue)
+                        for (cname, cvalue) in to_query.items()
+                    ),
+                )
+            )
+            .values(**to_change)
+        )
         result = yield engine.execute(update)
     returnValue(result)
 
 
 @attr.s
-class SessionSchema(object):
+class SessionSchema:
     """
     Schema for SQL session features.
 
@@ -400,6 +466,7 @@ class SessionSchema(object):
 
         - via a single SQL string, if you manage your SQL migrations manually
     """
+
     session = attr.ib(type=Table)
     account = attr.ib(type=Table)
     sessionAccount = attr.ib(type=Table)
@@ -415,38 +482,48 @@ class SessionSchema(object):
         if metadata is None:
             metadata = MetaData()
         session = Table(
-            "session", metadata,
-            Column("session_id", Unicode(), primary_key=True,
-                   nullable=False),
+            "session",
+            metadata,
+            Column("session_id", Unicode(), primary_key=True, nullable=False),
             Column("confidential", Boolean(), nullable=False),
         )
         account = Table(
-            "account", metadata,
-            Column("account_id", Unicode(), primary_key=True,
-                   nullable=False),
+            "account",
+            metadata,
+            Column("account_id", Unicode(), primary_key=True, nullable=False),
             Column("username", Unicode(), unique=True, nullable=False),
             Column("email", Unicode(), nullable=False),
             Column("password_blob", Unicode(), nullable=False),
         )
         sessionAccount = Table(
-            "session_account", metadata,
-            Column("account_id", Unicode(),
-                   ForeignKey(account.c.account_id, ondelete="CASCADE")),
-            Column("session_id", Unicode(),
-                   ForeignKey(session.c.session_id, ondelete="CASCADE")),
+            "session_account",
+            metadata,
+            Column(
+                "account_id",
+                Unicode(),
+                ForeignKey(account.c.account_id, ondelete="CASCADE"),
+            ),
+            Column(
+                "session_id",
+                Unicode(),
+                ForeignKey(session.c.session_id, ondelete="CASCADE"),
+            ),
             UniqueConstraint("account_id", "session_id"),
         )
         sessionIP = Table(
-            "session_ip", metadata,
-            Column("session_id", Unicode(),
-                   ForeignKey(session.c.session_id, ondelete="CASCADE")),
+            "session_ip",
+            metadata,
+            Column(
+                "session_id",
+                Unicode(),
+                ForeignKey(session.c.session_id, ondelete="CASCADE"),
+            ),
             Column("ip_address", Unicode(), nullable=False),
             Column("address_family", Unicode(), nullable=False),
             Column("last_used", DateTime(), nullable=False),
             UniqueConstraint("session_id", "ip_address", "address_family"),
         )
         return cls(session, account, sessionAccount, sessionIP)
-
 
     def tables(self):
         # type: () -> Iterable[Table]
@@ -458,7 +535,6 @@ class SessionSchema(object):
         yield self.account
         yield self.sessionAccount
         yield self.sessionIP
-
 
     @inlineCallbacks
     def create(self, transaction):
@@ -472,7 +548,6 @@ class SessionSchema(object):
         for table in self.tables():
             yield transaction.execute(CreateTable(table))
 
-
     def migrationSQL(self):
         # type: () -> Text
         """
@@ -484,27 +559,27 @@ class SessionSchema(object):
         This SQL will not attempt to discern whether the tables exist already
         or whether the migrations should be run.
         """
-        return (u"\n-- Klein Session Schema Version 1\n" +
-                (u";".join(str(CreateTable(table))
-                           for table in self.tables())))
-
+        return "\n-- Klein Session Schema Version 1\n" + (
+            ";".join(str(CreateTable(table)) for table in self.tables())
+        )
 
 
 sessionSchema = SessionSchema.withMetadata(MetaData())
 
 procurerFromTransactionT = Callable[[Transaction], ISessionProcurer]
 
+
 @implementer(ISessionProcurer)
-class IPTrackingProcurer(object):
+class IPTrackingProcurer:
     """
     An implementation of L{ISessionProcurer} that keeps track of the source IP
     of the originating session.
     """
 
     def __init__(
-            self,
-            dataStore,          # type: DataStore
-            procurerFromTransaction  # type: procurerFromTransactionT
+        self,
+        dataStore,  # type: DataStore
+        procurerFromTransaction,  # type: procurerFromTransactionT
     ):
         # type: (...) -> None
         """
@@ -513,7 +588,6 @@ class IPTrackingProcurer(object):
         """
         self._dataStore = dataStore
         self._procurerFromTransaction = procurerFromTransaction
-
 
     @inlineCallbacks
     def procureSession(self, request, forceInsecure=False):
@@ -534,27 +608,30 @@ class IPTrackingProcurer(object):
         try:
             ipAddress = (request.client.host or b"").decode("ascii")
         except BaseException:
-            ipAddress = u""
+            ipAddress = ""
         sip = sessionSchema.sessionIP
         yield upsert(
-            transaction, sip,
-            dict(session_id=session.identifier, ip_address=ipAddress,
-                 address_family=(u"AF_INET6" if u":" in ipAddress
-                                 else u"AF_INET")),
-            dict(last_used=datetime.utcnow())
+            transaction,
+            sip,
+            dict(
+                session_id=session.identifier,
+                ip_address=ipAddress,
+                address_family=("AF_INET6" if ":" in ipAddress else "AF_INET"),
+            ),
+            dict(last_used=datetime.utcnow()),
         )
         # XXX This should set a savepoint because we don't want application
         # logic to be able to roll back the IP access log.
         returnValue(session)
 
 
-
 procurerFromStoreT = Callable[[ISessionStore], ISessionProcurer]
 
+
 def procurerFromDataStore(
-        dataStore,                        # type: DataStore
-        authorizers,                      # type: List[ISQLAuthorizer]
-        procurerFromStore=SessionProcurer  # type: procurerFromStoreT
+    dataStore,  # type: DataStore
+    authorizers,  # type: List[ISQLAuthorizer]
+    procurerFromStore=SessionProcurer,  # type: procurerFromStoreT
 ):
     # type: (...) -> ISessionProcurer
     """
@@ -568,40 +645,40 @@ def procurerFromDataStore(
 
     @return: L{Deferred} firing with L{ISessionProcurer}
     """
-    allAuthorizers = [simpleAccountBinding.authorizer,
-                      logMeIn.authorizer] + list(authorizers)
+    allAuthorizers = [
+        simpleAccountBinding.authorizer,
+        logMeIn.authorizer,
+    ] + list(authorizers)
     return IPTrackingProcurer(
         dataStore,
-        lambda transaction: procurerFromStore(SessionStore(
-            transaction, allAuthorizers
-        ))
+        lambda transaction: procurerFromStore(
+            SessionStore(transaction, allAuthorizers)
+        ),
     )
 
 
+class _FunctionWithAuthorizer:
 
-class _FunctionWithAuthorizer(object):
-
-    authorizer = None           # type: Any
+    authorizer = None  # type: Any
 
     def __call__(
-            self,
-            sessionStore,       # type: SessionStore
-            transaction,        # type: Transaction
-            session             # type: ISession
+        self,
+        sessionStore,  # type: SessionStore
+        transaction,  # type: Transaction
+        session,  # type: ISession
     ):
         # type: (...) -> Any
         """
         Signature for a function that can have an authorizer attached to it.
         """
 
-_authorizerFunction = Callable[
-    [SessionStore, Transaction, ISession],
-    Any
-]
+
+_authorizerFunction = Callable[[SessionStore, Transaction, ISession], Any]
+
 
 @implementer(ISQLAuthorizer)
 @attr.s
-class SimpleSQLAuthorizer(object):
+class SimpleSQLAuthorizer:
     authorizationInterface = attr.ib(type=Type)
     _decorated = attr.ib(type=_authorizerFunction)
 
@@ -612,7 +689,7 @@ class SimpleSQLAuthorizer(object):
 
 
 def authorizerFor(
-        authorizationInterface,                        # type: IInterface
+    authorizationInterface,  # type: IInterface
 ):
     # type: (...) -> Callable[[Callable], _FunctionWithAuthorizer]
     """
@@ -627,21 +704,23 @@ def authorizerFor(
     @return: a decorator that can decorate a function with the signature
         C{(metadata, dataStore, sessionStore, transaction, session)}
     """
+
     def decorator(decorated):
         # type: (_authorizerFunction) -> _FunctionWithAuthorizer
         result = cast(_FunctionWithAuthorizer, decorated)
-        result.authorizer = SimpleSQLAuthorizer(authorizationInterface,
-                                                decorated)
+        result.authorizer = SimpleSQLAuthorizer(
+            authorizationInterface, decorated
+        )
         return result
-    return decorator
 
+    return decorator
 
 
 @authorizerFor(ISimpleAccountBinding)
 def simpleAccountBinding(
-        sessionStore,           # type: SessionStore
-        transaction,            # type: Transaction
-        session                 # type: ISession
+    sessionStore,  # type: SessionStore
+    transaction,  # type: Transaction
+    session,  # type: ISession
 ):
     # type: (...) -> AccountSessionBinding
     """
@@ -650,19 +729,18 @@ def simpleAccountBinding(
     return AccountSessionBinding(session, transaction)
 
 
-
 @authorizerFor(ISimpleAccount)
 @inlineCallbacks
 def logMeIn(
-        sessionStore,           # type: SessionStore
-        transaction,            # type: Transaction
-        session                 # type: ISession
+    sessionStore,  # type: SessionStore
+    transaction,  # type: Transaction
+    session,  # type: ISession
 ):
     # type: (...) -> Deferred
     """
     Retrieve an L{ISimpleAccount} authorization.
     """
-    binding = ((yield session.authorize([ISimpleAccountBinding]))
-               [ISimpleAccountBinding])
-    returnValue(next(iter((yield binding.boundAccounts())),
-                     None))
+    binding = (yield session.authorize([ISimpleAccountBinding]))[
+        ISimpleAccountBinding
+    ]
+    returnValue(next(iter((yield binding.boundAccounts())), None))

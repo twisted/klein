@@ -1,10 +1,5 @@
-
-from ._sql import (
-    SessionSchema, authorizerFor, procurerFromDataStore
-)
-from ._sql_generic import (
-    DataStore, Transaction
-)
+from ._sql import SessionSchema, authorizerFor, procurerFromDataStore
+from ._sql_generic import DataStore, Transaction
 
 __all__ = [
     "procurerFromDataStore",
@@ -14,6 +9,7 @@ __all__ = [
     "Transaction",
 ]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import sys
+
     sys.stdout.write(SessionSchema.withMetadata().migrationSQL())

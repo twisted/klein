@@ -1,14 +1,14 @@
-
 from typing import TYPE_CHECKING
 
 from zope.interface import Attribute, Interface
 
 from .._typing import ifmethod
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from twisted.internet.defer import Deferred
     from ..interfaces import ISessionStore, ISession
     from ._sql_generic import Transaction
+
     ISession, ISessionStore, Deferred, Transaction
 
 

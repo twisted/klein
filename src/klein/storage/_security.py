@@ -1,4 +1,3 @@
-
 from functools import partial
 from typing import Any, Callable, Optional, TYPE_CHECKING, Text, Tuple
 from unicodedata import normalize
@@ -8,21 +7,24 @@ from passlib.context import CryptContext
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.internet.threads import deferToThread
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     Text, Callable, Deferred, Optional, Tuple, Any
 
 
-passlibContextWithGoodDefaults = partial(CryptContext, schemes=['bcrypt'])
+passlibContextWithGoodDefaults = partial(CryptContext, schemes=["bcrypt"])
+
 
 def _verifyAndUpdate(secret, hash, ctxFactory=passlibContextWithGoodDefaults):
     # type: (Text, Text, Callable[[], CryptContext]) -> Deferred
     """
     Asynchronous wrapper for L{CryptContext.verify_and_update}.
     """
+
     @deferToThread
     def theWork():
         # type: () -> Tuple[bool, Optional[str]]
         return ctxFactory().verify_and_update(secret, hash)
+
     return theWork
 
 
@@ -31,12 +33,13 @@ def _hashSecret(secret, ctxFactory=passlibContextWithGoodDefaults):
     """
     Asynchronous wrapper for L{CryptContext.hash}.
     """
+
     @deferToThread
     def theWork():
         # type: () -> str
         return ctxFactory().hash(secret)
-    return theWork
 
+    return theWork
 
 
 @inlineCallbacks
@@ -56,9 +59,10 @@ def checkAndReset(storedPasswordText, providedPasswordText, resetter):
     @return: L{Deferred} firing with C{True} if the password matches and
         C{False} if the password does not match.
     """
-    providedPasswordText = normalize('NFD', providedPasswordText)
-    valid, newHash = yield _verifyAndUpdate(providedPasswordText,
-                                            storedPasswordText)
+    providedPasswordText = normalize("NFD", providedPasswordText)
+    valid, newHash = yield _verifyAndUpdate(
+        providedPasswordText, storedPasswordText
+    )
     if valid:
         # Password migration!  Does our passlib context have an awesome *new*
         # hash it wants to give us?  Store it.
@@ -71,7 +75,6 @@ def checkAndReset(storedPasswordText, providedPasswordText, resetter):
         returnValue(False)
 
 
-
 @inlineCallbacks
 def computeKeyText(passwordText):
     # type: (Text) -> Any
@@ -82,7 +85,7 @@ def computeKeyText(passwordText):
 
     @return: a L{Deferred} firing with L{unicode}.
     """
-    normalized = normalize('NFD', passwordText)
+    normalized = normalize("NFD", passwordText)
     hashed = yield _hashSecret(normalized)
     if isinstance(hashed, bytes):
         hashed = hashed.decode("charmap")

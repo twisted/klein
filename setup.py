@@ -46,13 +46,12 @@ if __name__ == "__main__":
             "docs": [
                 "Sphinx==3.5.1",
                 "sphinx-rtd-theme==0.5.1",
-            ]
+            ],
         },
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
-        packages=["klein", "klein.storage",
-                  "klein.test", "klein.storage.test"],
+        packages=["klein", "klein.storage", "klein.test", "klein.storage.test"],
         package_dir={"": "src"},
         package_data=dict(
             klein=["py.typed"],

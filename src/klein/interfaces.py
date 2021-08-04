@@ -19,10 +19,14 @@ from ._isession import (
     TransactionEnded,
 )
 
-if TYPE_CHECKING:               # pragma: no cover
+if TYPE_CHECKING:  # pragma: no cover
     from ._storage.memory import MemorySessionStore, MemorySession
-    from ._storage.sql import (SessionStore, SQLAccount, IPTrackingProcurer,
-                               AccountSessionBinding)
+    from ._storage.sql import (
+        SessionStore,
+        SQLAccount,
+        IPTrackingProcurer,
+        AccountSessionBinding,
+    )
     from ._session import SessionProcurer, Authorization
     from ._form import Field, RenderableFormParam, FieldInjector
     from ._isession import IRequestLifecycleT as _IRequestLifecycleT
@@ -30,20 +34,29 @@ if TYPE_CHECKING:               # pragma: no cover
 
     from typing import Union
 
-    ISessionStore = Union[_ISessionStore, MemorySessionStore,
-                          SessionStore]
-    ISessionProcurer = Union[_ISessionProcurer, SessionProcurer,
-                             IPTrackingProcurer]
+    ISessionStore = Union[_ISessionStore, MemorySessionStore, SessionStore]
+    ISessionProcurer = Union[
+        _ISessionProcurer, SessionProcurer, IPTrackingProcurer
+    ]
     ISession = Union[_ISession, MemorySession]
     ISimpleAccount = Union[_ISimpleAccount, SQLAccount]
-    ISimpleAccountBinding = Union[_ISimpleAccountBinding,
-                                  AccountSessionBinding]
-    IDependencyInjector = Union[_IDependencyInjector, Authorization,
-                                RenderableFormParam, FieldInjector, RequestURL,
-                                RequestComponent]
-    IRequiredParameter = Union[_IRequiredParameter, Authorization, Field,
-                               RenderableFormParam, RequestURL,
-                               RequestComponent]
+    ISimpleAccountBinding = Union[_ISimpleAccountBinding, AccountSessionBinding]
+    IDependencyInjector = Union[
+        _IDependencyInjector,
+        Authorization,
+        RenderableFormParam,
+        FieldInjector,
+        RequestURL,
+        RequestComponent,
+    ]
+    IRequiredParameter = Union[
+        _IRequiredParameter,
+        Authorization,
+        Field,
+        RenderableFormParam,
+        RequestURL,
+        RequestComponent,
+    ]
     IRequestLifecycle = _IRequestLifecycleT
 else:
     ISession = _ISession

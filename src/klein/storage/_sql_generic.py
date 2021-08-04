@@ -13,8 +13,13 @@ from attr import Factory
 
 from sqlalchemy import create_engine
 
-from twisted.internet.defer import (Deferred, gatherResults, inlineCallbacks,
-                                    returnValue, succeed)
+from twisted.internet.defer import (
+    Deferred,
+    gatherResults,
+    inlineCallbacks,
+    returnValue,
+    succeed,
+)
 
 from zope.interface import Interface, implementer
 
@@ -30,28 +35,33 @@ ROLLING_BACK = "rolling back"
 ROLLED_BACK = "rolled back"
 ROLLBACK_FAILED = "rollback failed"
 
-if TYPE_CHECKING:               # pragma: no cover
-    T = TypeVar('T')
+if TYPE_CHECKING:  # pragma: no cover
+    T = TypeVar("T")
     from twisted.internet.interfaces import IReactorThreads
+
     IReactorThreads
     from typing import Iterable
+
     Iterable
     from typing import Callable
+
     Callable
     from twisted.web.iweb import IRequest
+
     IRequest
 
 
 @attr.s
-class Transaction(object):
+class Transaction:
     """
     Wrapper around a SQLAlchemy connection which is invalidated when the
     transaction is committed or rolled back.
     """
+
     _connection = attr.ib(type=_sqlAlchemyConnection)
     _transaction = attr.ib(type=_sqlAlchemyTransaction)
-    _parent = attr.ib(type='Optional[Transaction]', default=None)
-    _stopped = attr.ib(type=Text, default=u"")
+    _parent = attr.ib(type="Optional[Transaction]", default=None)
+    _stopped = attr.ib(type=Text, default="")
     _completeDeferred = attr.ib(type=Deferred, default=Factory(Deferred))
 
     def _checkStopped(self):
@@ -64,7 +74,6 @@ class Transaction(object):
         if self._parent is not None:
             self._parent._checkStopped()
 
-
     def execute(self, statement, *multiparams, **params):
         # type: (Any, *Any, **Any) -> Deferred
         """
@@ -73,7 +82,6 @@ class Transaction(object):
         """
         self._checkStopped()
         return self._connection.execute(statement, *multiparams, **params)
-
 
     def commit(self):
         # type: () -> Deferred
@@ -84,9 +92,8 @@ class Transaction(object):
         self._stopped = COMMITTING
         return self._transaction.commit().addCallbacks(
             (lambda commitResult: self._finishWith(COMMITTED)),
-            (lambda commitFailure: self._finishWith(COMMIT_FAILED))
+            (lambda commitFailure: self._finishWith(COMMIT_FAILED)),
         )
-
 
     def rollback(self):
         # type: () -> Deferred
@@ -97,9 +104,8 @@ class Transaction(object):
         self._stopped = ROLLING_BACK
         return self._transaction.rollback().addCallbacks(
             (lambda commitResult: self._finishWith(ROLLED_BACK)),
-            (lambda commitFailure: self._finishWith(ROLLBACK_FAILED))
+            (lambda commitFailure: self._finishWith(ROLLBACK_FAILED)),
         )
-
 
     def _finishWith(self, stopStatus):
         # type: (Text) -> None
@@ -108,7 +114,6 @@ class Transaction(object):
         """
         self._stopped = stopStatus
         self._completeDeferred.callback(stopStatus)
-
 
     @inlineCallbacks
     def savepoint(self):
@@ -120,11 +125,11 @@ class Transaction(object):
             committed, this transaction's C{execute} method will execute within
             the context of that savepoint.
         """
-        returnValue(Transaction(
-            self._connection, (yield self._connection.begin_nested()),
-            self
-        ))
-
+        returnValue(
+            Transaction(
+                self._connection, (yield self._connection.begin_nested()), self
+            )
+        )
 
     def subtransact(self, logic):
         # type: (Callable[[Transaction], Deferred]) -> Deferred
@@ -132,7 +137,6 @@ class Transaction(object):
         Run the given C{logic} in a subtransaction.
         """
         return Transactor(self.savepoint).transact(logic)
-
 
     def maybeCommit(self):
         # type: () -> Deferred
@@ -143,7 +147,6 @@ class Transaction(object):
         if self._stopped:
             return succeed(None)
         return self.commit()
-
 
     def maybeRollback(self):
         # type: () -> Deferred
@@ -157,13 +160,13 @@ class Transaction(object):
 
 
 @attr.s
-class Transactor(object):
+class Transactor:
     """
     A context manager that represents the lifecycle of a transaction when
     paired with application code.
     """
 
-    _newTransaction = attr.ib(type='Callable[[], Deferred]')
+    _newTransaction = attr.ib(type="Callable[[], Deferred]")
     _transaction = attr.ib(type=Optional[Transaction], default=None)
 
     @inlineCallbacks
@@ -204,9 +207,8 @@ class Transactor(object):
         returnValue(result)
 
 
-
 @attr.s(hash=False)
-class DataStore(object):
+class DataStore:
     """
     L{DataStore} is a generic storage object that connect to an SQL
     database, run transactions, and manage schema metadata.
@@ -222,7 +224,8 @@ class DataStore(object):
         Create a new Klein transaction.
         """
         alchimiaConnection = (
-            self._freeConnections.popleft() if self._freeConnections
+            self._freeConnections.popleft()
+            if self._freeConnections
             else (yield self._engine.connect())
         )
         alchimiaTransaction = yield alchimiaConnection.begin()
@@ -233,8 +236,8 @@ class DataStore(object):
             # type: (T) -> T
             self._freeConnections.append(alchimiaConnection)
             return anything
-        returnValue(kleinTransaction)
 
+        returnValue(kleinTransaction)
 
     def transact(self, callable):
         # type: (Callable[[Transaction], Any]) -> Any
@@ -252,7 +255,6 @@ class DataStore(object):
         """
         return Transactor(self.newTransaction).transact(callable)
 
-
     @classmethod
     def open(cls, reactor, dbURL):
         # type: (IReactorThreads, Text) -> DataStore
@@ -265,8 +267,9 @@ class DataStore(object):
         @param dbURL: the SQLAlchemy database URI to connect to.
         @type dbURL: L{str}
         """
-        return cls(create_engine(dbURL, reactor=reactor,
-                                 strategy=TWISTED_STRATEGY))
+        return cls(
+            create_engine(dbURL, reactor=reactor, strategy=TWISTED_STRATEGY)
+        )
 
 
 class ITransactionRequestAssociator(Interface):
@@ -274,12 +277,14 @@ class ITransactionRequestAssociator(Interface):
     Associates transactions with requests.
     """
 
+
 @implementer(ITransactionRequestAssociator)
 @attr.s
-class TransactionRequestAssociator(object):
+class TransactionRequestAssociator:
     """
     Does the thing the interface says.
     """
+
     _map = attr.ib(type=dict, default=Factory(dict))
     committing = attr.ib(type=bool, default=False)
 
@@ -301,8 +306,10 @@ class TransactionRequestAssociator(object):
         Commit all associated transactions.
         """
         self.committing = True
-        return gatherResults([value.maybeCommit()
-                              for value in self._map.values()])
+        return gatherResults(
+            [value.maybeCommit() for value in self._map.values()]
+        )
+
 
 @inlineCallbacks
 def requestBoundTransaction(request, dataStore):
@@ -343,6 +350,7 @@ def requestBoundTransaction(request, dataStore):
         def finishCommit(result):
             # type: (Any) -> Deferred
             return assoc.commitAll()
+
         request.notifyFinish().addBoth(finishCommit)
 
         # originalWrite = request.write

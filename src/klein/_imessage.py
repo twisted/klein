@@ -17,8 +17,6 @@ from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred
-
 from zope.interface import Attribute, Interface
 
 
@@ -142,7 +140,7 @@ class IHTTPMessage(Interface):
             accessed.
         """
 
-    def bodyAsBytes() -> Deferred:
+    async def bodyAsBytes() -> bytes:
         """
         The entity body, as bytes.
 

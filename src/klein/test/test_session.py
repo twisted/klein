@@ -2,7 +2,7 @@
 Tests for L{klein._session}.
 """
 
-from typing import List, Tuple, Type
+from typing import Any, Generator, List, Tuple, Type
 
 from treq.testing import StubTreq
 
@@ -65,8 +65,8 @@ def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
     """
     Construct a simple router.
     """
-    sessions = []
-    exceptions = []
+    sessions: Sessions = []
+    exceptions: Errors = []
     mss = MemorySessionStore.fromAuthorizers([memoryAuthorizer])
     router = Klein()
     token = "X-Test-Session-Token"
@@ -79,12 +79,14 @@ def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
 
     @router.route("/")
     @inlineCallbacks
-    def route(request: IRequest) -> Deferred:
+    def route(request: IRequest) -> Generator[Any, object, bytes]:
         try:
-            sessions.append((yield sproc.procureSession(request)))
+            sessions.append(
+                (yield sproc.procureSession(request)),  # type: ignore[arg-type]
+            )
         except NoSuchSession as nss:
             exceptions.append(nss)
-        returnValue(b"ok")
+        return b"ok"
 
     requirer = Requirer()
 
@@ -122,14 +124,14 @@ class ProcurementTests(SynchronousTestCase):
 
         @router.route("/")
         @inlineCallbacks
-        def route(request: IRequest) -> Deferred:
+        def route(request: IRequest) -> Generator[Any, object, bytes]:
             sproc = SessionProcurer(mss)
             sessions.append((yield sproc.procureSession(request)))
             sessions.append((yield sproc.procureSession(request)))
             sessions.append(
                 (yield sproc.procureSession(request, forceInsecure=True))
             )
-            returnValue(b"sessioned")
+            return b"sessioned"
 
         treq = StubTreq(router.resource())
         self.successResultOf(treq.get("http://unittest.example.com/"))
@@ -148,9 +150,9 @@ class ProcurementTests(SynchronousTestCase):
         mss = MemorySessionStore()
         router = Klein()
 
-        @router.route("/")
+        @router.route("/")  # type: ignore[arg-type]
         @inlineCallbacks
-        def route(request: IRequest) -> Deferred:
+        def route(request: IRequest) -> Generator[Any, object, None]:
             sproc = SessionProcurer(mss)
             request.write(b"oops...")
             with self.assertRaises(TooLateForCookies):
@@ -172,7 +174,7 @@ class ProcurementTests(SynchronousTestCase):
 
         @router.route("/")
         @inlineCallbacks
-        def route(request: IRequest) -> Deferred:
+        def route(request: IRequest) -> Generator[Any, object, bytes]:
             sproc = SessionProcurer(mss, setCookieOnGET=False)
             with self.assertRaises(NoSuchSession):
                 yield sproc.procureSession(request)

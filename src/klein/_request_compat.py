@@ -15,7 +15,6 @@ from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred, succeed
 from twisted.python.compat import nativeString
 from twisted.web.iweb import IRequest
 
@@ -93,15 +92,10 @@ class HTTPRequestWrappingIRequest:
 
         return fount
 
-    def bodyAsBytes(self) -> Deferred:
+    async def bodyAsBytes(self) -> bytes:
         if self._state.cachedBody is not None:
-            return succeed(self._state.cachedBody)
-
-        def cache(bodyBytes: bytes) -> bytes:
-            self._state.cachedBody = bodyBytes
-            return bodyBytes
+            return self._state.cachedBody  # pragma: no cover
 
         fount = self.bodyAsFount()
-        d = fountToBytes(fount)
-        d.addCallback(cache)
-        return d
+        self._state.cachedBody = await fountToBytes(fount)
+        return self._state.cachedBody

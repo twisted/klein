@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
@@ -72,7 +72,7 @@ class SessionProcurer:
         alreadyProcured = cast(Componentized, request).getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
-                returnValue(alreadyProcured)
+                return alreadyProcured
 
         if request.isSecure():
             if forceInsecure:
@@ -87,13 +87,13 @@ class SessionProcurer:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             allPossibleSentTokens: Sequence[str] = sum(
-                [
+                (
                     request.requestHeaders.getRawHeaders(header, [])
                     for header in [
                         self._secureTokenHeader,
                         self._insecureTokenHeader,
                     ]
-                ],
+                ),
                 [],
             ) + [
                 it
@@ -177,7 +177,7 @@ class SessionProcurer:
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
             cast(Componentized, request).setComponent(ISession, session)
-        returnValue(session)
+        return session
 
 
 class AuthorizationDenied(Resource):
@@ -187,7 +187,7 @@ class AuthorizationDenied(Resource):
 
     def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)
-        return "{} DENIED".format(qual(self._interface)).encode("utf-8")
+        return f"{qual(self._interface)} DENIED".encode()
 
 
 @implementer(IDependencyInjector, IRequiredParameter)
@@ -277,7 +277,7 @@ class Authorization:
         if self._required and provider is None:
             raise EarlyExit(self._whenDenied(self._interface, instance))
         # TODO: CSRF protection should probably go here
-        returnValue(provider)
+        return provider
 
     def finalize(self) -> None:
         """

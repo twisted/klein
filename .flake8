@@ -97,6 +97,3 @@ extend-ignore =
 
 # flake8-import-order: local module name space
 application-import-names = klein
-
-# McCabe complexity checker
-max-complexity = 60

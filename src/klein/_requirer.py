@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Generator, List, Sequence, Type
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
@@ -145,7 +145,7 @@ class Requirer:
                     result = yield _call(
                         instance, functionWithRequirements, *args, **injected
                     )
-                returnValue(result)
+                return result
 
             fWR, iC = functionWithRequirements, injectionComponents
             fWR.injectionComponents = iC  # type: ignore[attr-defined]

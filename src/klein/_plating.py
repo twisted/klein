@@ -7,7 +7,7 @@ Templating wrapper support for Klein.
 from functools import partial
 from json import dumps
 from operator import setitem
-from typing import Any, Callable, List, Tuple, cast
+from typing import Any, Callable, Generator, List, Tuple, cast
 
 import attr
 
@@ -38,7 +38,7 @@ def _should_return_json(request: IRequest) -> bool:
 
 
 @inlineCallbacks
-def resolveDeferredObjects(root: Any) -> Deferred:
+def resolveDeferredObjects(root: Any) -> Generator[Any, object, Any]:
     """
     Wait on possibly nested L{Deferred}s that represent a JSON
     serializable object.
@@ -202,7 +202,7 @@ class Plating:
     CONTENT = "klein:plating:content"
 
     def __init__(self, defaults=None, tags=None, presentation_slots=()):
-        """"""
+        """ """
         self._defaults = {} if defaults is None else defaults
         self._loader = TagLoader(tags)
         self._presentationSlots = {self.CONTENT} | set(presentation_slots)
@@ -220,7 +220,7 @@ class Plating:
         return renderer
 
     def routed(self, routing, tags):
-        """"""
+        """ """
 
         def mydecorator(method):
             loader = TagLoader(tags)
@@ -259,7 +259,7 @@ class Plating:
         slot_data = self._defaults.copy()
         slot_data.update(to_fill_with)
         [loaded] = self._loader.load()
-        loaded = loaded.clone()
+        loaded = loaded.clone()  # type: ignore[union-attr]
         return PlatedElement(
             slot_data=slot_data,
             preloaded=loaded,

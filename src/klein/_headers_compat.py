@@ -60,12 +60,17 @@ class HTTPHeadersWrappingHeaders:
                 Iterable[AnyStr], self._headers.getRawHeaders(name, default=())
             )
         elif isinstance(name, str):
-            values = (
-                headerValueAsText(value)
-                for value in self._headers.getRawHeaders(
+            # type note: getRawHeaders is typed to return an optional even if
+            # default is not None. We could assert not None, but are casting
+            # here so that if the hints for getRawHeaders are fixed later,
+            # mypy will tell us to remove the useless cast.
+            values = cast(
+                Iterable[str],
+                self._headers.getRawHeaders(
                     headerNameAsBytes(name), default=()
-                )
+                ),
             )
+            values = (headerValueAsText(value) for value in values)
         else:
             raise TypeError(f"name {name!r} must be str or bytes")
 

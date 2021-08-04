@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_resource -*-
 
-from typing import Any, List, TYPE_CHECKING, Tuple, Union, cast
+from typing import Any, Optional, Sequence, TYPE_CHECKING, Tuple, Union, cast
 
 from twisted.internet import defer
 from twisted.internet.defer import Deferred, maybeDeferred
@@ -43,16 +43,17 @@ class _StandInResource:
 StandInResource = cast("KleinResource", _StandInResource())
 
 
-class _URLDecodeError(Exception):
+class URLDecodeError(Exception):
     """
     Raised if one or more string parts of the URL could not be decoded.
     """
 
     __slots__ = ["errors"]
 
-    def __init__(self, errors: List[Tuple[str, Failure]]) -> None:
+    def __init__(self, errors: Sequence[Tuple[str, Failure]]) -> None:
         """
-        @param errors: List of decoding errors.
+        @param errors: Sequence of decoding errors, expressed as tuples
+            of names and an associated failure.
         """
         self.errors = errors
 
@@ -60,7 +61,7 @@ class _URLDecodeError(Exception):
         return f"<URLDecodeError(errors={self.errors!r})>"
 
 
-def _extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
+def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
     """
     Extracts and decodes URI parts from C{request}.
 
@@ -117,7 +118,7 @@ def _extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         utf8Failures.append(("SCRIPT_NAME", Failure()))
 
     if utf8Failures:
-        raise _URLDecodeError(utf8Failures)
+        raise URLDecodeError(utf8Failures)
 
     return url_scheme, server_name, server_port, path_text, script_text
 
@@ -153,8 +154,8 @@ class KleinResource(Resource):
                 server_port,
                 path_info,
                 script_name,
-            ) = _extractURLparts(request)
-        except _URLDecodeError as e:
+            ) = extractURLparts(request)
+        except URLDecodeError as e:
             for what, fail in e.errors:
                 log.err(fail, f"Invalid encoding in {what}.")
             request.setResponseCode(400)
@@ -193,7 +194,9 @@ class KleinResource(Resource):
             request.prepath.extend(request.postpath[:segment_count])
             request.postpath = request.postpath[segment_count:]
 
-            request.notifyFinish().addBoth(_finish)
+            request.notifyFinish().addBoth(  # type: ignore[attr-defined]
+                _finish,
+            )
 
             # Standard Twisted Web stuff. Defer the method action, giving us
             # something renderable or printable. Return NOT_DONE_YET and set up
@@ -202,7 +205,9 @@ class KleinResource(Resource):
                 self._app.execute_endpoint, endpoint, request, **kwargs
             )
 
-            request.notifyFinish().addErrback(lambda _: d.cancel())
+            request.notifyFinish().addErrback(  # type: ignore[attr-defined]
+                lambda _: d.cancel(),
+            )
 
             return d
 
@@ -219,7 +224,9 @@ class KleinResource(Resource):
                 r = r._applyToRequest(request)
 
             if IResource.providedBy(r):
-                request.render(getChildForRequest(r, request))
+                request.render(  # type: ignore[attr-defined]
+                    getChildForRequest(r, request)
+                )
                 return StandInResource
 
             if IRenderable.providedBy(r):
@@ -232,7 +239,7 @@ class KleinResource(Resource):
 
         def processing_failed(
             failure: Failure, error_handlers: "ErrorHandlers"
-        ) -> Deferred:
+        ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
             # processing.  We don't return failure here because there
@@ -241,12 +248,13 @@ class KleinResource(Resource):
             if request_finished[0]:
                 if not failure.check(defer.CancelledError):
                     log.err(failure, "Unhandled Error Processing Request.")
-                return
+                return None
 
             # If there are no more registered handlers, apply some defaults
             if len(error_handlers) == 0:
                 if failure.check(HTTPException):
                     he = failure.value
+                    assert isinstance(he, HTTPException)
                     request.setResponseCode(he.code)
                     resp = he.get_response({})
 
@@ -255,10 +263,16 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return ensure_utf8_bytes(b"".join(resp.iter_encoded()))
+                    return ensure_utf8_bytes(
+                        b"".join(
+                            resp.iter_encoded(),  # type: ignore[attr-defined]
+                        ),
+                    )  # type: ignore[attr-defined, return-value]
                 else:
-                    request.processingFailed(failure)
-                    return
+                    request.processingFailed(  # type: ignore[attr-defined]
+                        failure,
+                    )
+                    return None
 
             error_handler = error_handlers[0]
 
@@ -294,4 +308,4 @@ class KleinResource(Resource):
         d.addCallback(write_response)
         d.addErrback(log.err, _why="Unhandled Error writing response")
 
-        return server.NOT_DONE_YET
+        return server.NOT_DONE_YET  # type: ignore[return-value]

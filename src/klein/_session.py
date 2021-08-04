@@ -1,6 +1,6 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
 
 import attr
 
@@ -34,40 +34,23 @@ class SessionProcurer:
     A L{SessionProcurer} procures a session from a request and a store.
 
     @ivar _store: The session store to procure a session from.
-    @type _store: L{klein.interfaces.ISessionStore}
-
     @ivar _maxAge: The maximum age (in seconds) of the session cookie.
-    @type _maxAge: L{int}
-
     @ivar _secureCookie: The name of the cookie to use for sessions protected
         with TLS (i.e. HTTPS).
-    @type _secureCookie: L{bytes}
-
     @ivar _insecureCookie: The name of the cookie to use for sessions I{not}
         protected with TLS (i.e. HTTP).
-    @type _insecureCookie: L{bytes}
-
     @ivar _cookieDomain: If set, the domain name to restrict the session cookie
         to.
-    @type _cookieDomain: L{None} or L{bytes}
-
     @ivar _cookiePath: If set, the URL path to restrict the session cookie to.
-    @type _cookiePath: L{bytes}
-
     @ivar _secureTokenHeader: The name of the HTTPS header to try to extract a
         session token from; API clients should use this header, rather than a
         cookie.
-    @type _secureTokenHeader: L{bytes}
-
     @ivar _insecureTokenHeader: The name of the HTTP header to try to extract a
         session token from; API clients should use this header, rather than a
         cookie.
-    @type _insecureTokenHeader: L{bytes}
-
     @ivar _setCookieOnGET: Automatically request that the session store create
         a session if one is not already associated with the request and the
         request is a GET.
-    @type _setCookieOnGET: L{bool}
     """
 
     _store = attr.ib(type=ISessionStore)
@@ -86,7 +69,7 @@ class SessionProcurer:
     def procureSession(
         self, request: IRequest, forceInsecure: bool = False
     ) -> Any:
-        alreadyProcured = request.getComponent(ISession)
+        alreadyProcured = cast(Componentized, request).getComponent(ISession)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
                 return alreadyProcured
@@ -151,7 +134,7 @@ class SessionProcurer:
             session is None or session.identifier != sentCookie
         ):
             if session is None:
-                if request.startedWriting:
+                if request.startedWriting:  # type: ignore[attr-defined]
                     # At this point, if the mechanism is Header, we either have
                     # a valid session or we bailed after NoSuchSession above.
                     raise TooLateForCookies(
@@ -182,7 +165,7 @@ class SessionProcurer:
                 identifierInCookie = identifierInCookie.encode("ascii")
             if not isinstance(cookieName, str):
                 cookieName = cookieName.decode("ascii")
-            request.addCookie(
+            request.addCookie(  # type: ignore[call-arg]
                 cookieName,
                 identifierInCookie,
                 max_age=str(self._maxAge),

@@ -4,7 +4,6 @@ from os import urandom
 from typing import Any, Callable, Dict, Iterable, Type, cast
 
 import attr
-from attr import Factory
 
 from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python.components import Componentized
@@ -22,17 +21,17 @@ _authCB = Callable[[Type[Interface], ISession, Componentized], Any]
 
 
 @implementer(ISession)
-@attr.s
+@attr.s(auto_attribs=True)
 class MemorySession:
     """
     An in-memory session.
     """
 
-    identifier = attr.ib(type=str)
-    isConfidential = attr.ib(type=bool)
-    authenticatedBy = attr.ib(type=SessionMechanism)
-    _authorizationCallback = attr.ib(type=_authCB)
-    _components = attr.ib(default=Factory(Componentized), type=Componentized)
+    identifier: str
+    isConfidential: bool
+    authenticatedBy: SessionMechanism
+    _authorizationCallback: _authCB
+    _components: Componentized = attr.ib(factory=Componentized)
 
     def authorize(self, interfaces: Iterable[Type[Interface]]) -> Deferred:
         """
@@ -90,15 +89,11 @@ def _noAuthorization(
 
 
 @implementer(ISessionStore)
-@attr.s
+@attr.s(auto_attribs=True)
 class MemorySessionStore:
-    authorizationCallback = attr.ib(type=_authFn, default=_noAuthorization)
-    _secureStorage = attr.ib(
-        type=Dict[str, Any], default=cast(Dict[str, Any], Factory(dict))
-    )
-    _insecureStorage = attr.ib(
-        type=Dict[str, Any], default=cast(Dict[str, Any], Factory(dict))
-    )
+    authorizationCallback: _authFn = _noAuthorization
+    _secureStorage: Dict[str, Any] = attr.ib(factory=dict)
+    _insecureStorage: Dict[str, Any] = attr.ib(factory=dict)
 
     @classmethod
     def fromAuthorizers(

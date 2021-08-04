@@ -19,13 +19,13 @@ from .interfaces import (
 
 
 @implementer(IRequestLifecycle)
-@attr.s
+@attr.s(auto_attribs=True)
 class RequestLifecycle:
     """
     Mechanism to run hooks at the start of a request managed by a L{Requirer}.
     """
 
-    _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
+    _prepareHooks: List = attr.ib(factory=list)
 
     def addPrepareHook(
         self,
@@ -58,15 +58,13 @@ _routeT = Any  # a thing decorated by a decorator like @route
 _prerequisiteCallback = Callable[[IRequestLifecycle], None]
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class Requirer:
     """
     Dependency injection for required parameters.
     """
 
-    _prerequisites = attr.ib(
-        type=List[_prerequisiteCallback], default=attr.Factory(list)
-    )
+    _prerequisites: List[_prerequisiteCallback] = attr.ib(factory=list)
 
     def prerequisite(
         self,

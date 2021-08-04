@@ -35,10 +35,10 @@ class DanglingField(Field):
         return self
 
 
-@attr.s(hash=False)
+@attr.s(auto_attribs=True, hash=False)
 class TestObject:
-    sessionStore = attr.ib(type=ISessionStore)
-    calls = attr.ib(attr.Factory(list), type=List)
+    sessionStore: ISessionStore
+    calls: List = attr.ib(factory=list)
 
     router = Klein()
     requirer = Requirer()

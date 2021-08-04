@@ -6,7 +6,7 @@ from typing import Any, Generator, List, Tuple, Type
 
 from treq.testing import StubTreq
 
-from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.iweb import IRequest
@@ -178,7 +178,7 @@ class ProcurementTests(SynchronousTestCase):
             sproc = SessionProcurer(mss, setCookieOnGET=False)
             with self.assertRaises(NoSuchSession):
                 yield sproc.procureSession(request)
-            returnValue(b"no session")
+            return b"no session"
 
         treq = StubTreq(router.resource())
         result = self.successResultOf(treq.get("http://unittest.example.com/"))

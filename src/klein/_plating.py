@@ -11,7 +11,7 @@ from typing import Any, Callable, Generator, List, Tuple, cast
 
 import attr
 
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRequest
 from twisted.web.template import Element, Tag, TagLoader
@@ -246,7 +246,7 @@ class Plating:
                         b"content-type", b"text/html; charset=utf-8"
                     )
                     result = self._elementify(instance, data)
-                returnValue(result)
+                return result
 
             return method
 

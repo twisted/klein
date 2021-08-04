@@ -1,3 +1,7 @@
+ci:
+  skip:
+    - check-manifest
+
 repos:
 
   - repo: https://gitlab.com/pycqa/flake8

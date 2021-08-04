@@ -6,6 +6,7 @@ from typing import (
     AnyStr,
     Callable,
     Dict,
+    Generator,
     Iterable,
     List,
     NoReturn,
@@ -122,7 +123,6 @@ class Field:
         values filled in.
 
         @param name: the name.
-        @type name: a native L{str}
         """
 
         def maybe(
@@ -145,26 +145,27 @@ class Field:
         L{twisted.web.template}.
 
         @return: A new set of tags to include in a template.
-        @rtype: iterable of L{twisted.web.template.Tag}
         """
         value = self.value
         if value is None:
             value = ""  # type: ignore[unreachable]
         input_tag = tags.input(
-            type=self.formInputType, name=self.formFieldName, value=value
+            type=self.formInputType,
+            name=self.formFieldName,  # type: ignore[arg-type]
+            value=value,
         )
         error_tags = []
         if self.error:
             error_tags.append(
                 tags.div(class_="klein-form-validation-error")(
-                    self.error.message
+                    self.error.message  # type: ignore[arg-type]
                 )
             )
         if self.formLabel:
             yield tags.label(self.formLabel, ": ", input_tag, *error_tags)
         else:
             yield input_tag
-            yield error_tags
+            yield from error_tags
 
     def extractValue(self, request: IRequest) -> Any:
         """
@@ -183,13 +184,15 @@ class Field:
             b"application/json"
         ):
             # TODO: parse only once, please.
-            parsed = request.getComponent(IParsedJSONBody)
+            parsed = cast(Componentized, request).getComponent(IParsedJSONBody)
             if parsed is None:
                 request.content.seek(0)
                 octets = request.content.read()
                 characters = octets.decode("utf-8")
                 parsed = json.loads(characters)
-                request.setComponent(IParsedJSONBody, parsed)
+                cast(Componentized, request).setComponent(
+                    IParsedJSONBody, parsed
+                )
             if fieldName not in parsed:
                 return None
             return parsed[fieldName]
@@ -367,7 +370,7 @@ class RenderableForm:
         """
         raise MissingRenderMethod(self, name)
 
-    def render(self, request: IRequest) -> Tag:
+    def render(self, request: IRequest) -> Tag:  # type: ignore[override]
         """
         Render this form to the given request.
         """
@@ -382,7 +385,7 @@ class RenderableForm:
             action=self._action, method=self._method, **formAttributes
         )(field.asTags() for field in self._fieldsToRender())
 
-    def glue(self) -> Iterable[Tag]:
+    def glue(self) -> List[Tag]:
         """
         Provide any glue necessary to render this form; this must be dropped
         into the template within the C{<form>} tag.
@@ -393,9 +396,8 @@ class RenderableForm:
 
         @return: some HTML elements in the form of renderable objects for
             L{twisted.web.template}
-        @rtype: L{twisted.web.template.Tag}, or L{list} thereof.
         """
-        return self._fieldForCSRF().asTags()
+        return list(self._fieldForCSRF().asTags())
 
 
 @bindable
@@ -415,14 +417,10 @@ def defaultValidationFailureHandler(
 
     @param instance: The instance associated with the router that the form
         handler was handled on.
-    @type instance: L{object}
-
     @param request: The request including the form submission.
-    @type request: L{twisted.web.iweb.IRequest}
-
     @return: Any object acceptable from a Klein route.
     """
-    session = request.getComponent(ISession)
+    session = cast(Componentized, request).getComponent(ISession)
     request.setResponseCode(400)
     enctype = (
         (
@@ -543,15 +541,23 @@ class FieldValues:
     _injectionComponents = attr.ib(type=Componentized)
 
     @inlineCallbacks
-    def validate(self, instance: Any, request: IRequest) -> Deferred:
+    def validate(
+        self, instance: Any, request: IRequest
+    ) -> Generator[Any, object, None]:
         if self.validationErrors:
-            result = yield _call(
-                instance,
-                IValidationFailureHandler(
-                    self._injectionComponents, defaultValidationFailureHandler
+            result = cast(
+                KleinRenderable,
+                (
+                    yield _call(
+                        instance,
+                        IValidationFailureHandler(
+                            self._injectionComponents,
+                            defaultValidationFailureHandler,
+                        ),
+                        request,
+                        self,
+                    )
                 ),
-                request,
-                self,
             )
             raise EarlyExit(result)
 
@@ -709,7 +715,7 @@ class Form:
         injectionComponents: Componentized,
         instance: Any,
         request: IRequest,
-    ) -> Deferred:
+    ) -> Generator[Any, object, None]:
         assert IFieldValues(request, None) is None
 
         validationErrors = {}
@@ -738,7 +744,7 @@ class Form:
             injectionComponents,
         )
         yield values.validate(instance, request)
-        request.setComponent(IFieldValues, values)
+        cast(Componentized, request).setComponent(IFieldValues, values)
 
     @classmethod
     def rendererFor(

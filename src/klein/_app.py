@@ -123,7 +123,7 @@ def _call(
         args = (__klein_instance__,) + args
     result = __klein_f__(*args, **kwargs)
     if iscoroutine(result):
-        result = ensureDeferred(result)
+        result = ensureDeferred(result)  # type: ignore[arg-type]
     return result
 
 
@@ -228,7 +228,7 @@ class Klein:
         # taking *args, **kwargs (because they aren't required), but we're
         # going to pass them along here anyway.
         return endpoint_f(
-            self._instance, request, *args, **kwargs
+            self._instance, request, *args, **kwargs  # type: ignore[arg-type]
         )  # type: ignore[call-arg]
 
     def execute_error_handler(
@@ -311,13 +311,9 @@ class Klein:
                 return "Hello"
 
         @param url: A werkzeug URL pattern given to C{werkzeug.routing.Rule}.
-        @type url: str
-
         @param branch: A bool indiciated if a branch endpoint should
             be added that allows all child path segments that don't
             match some other route to be consumed.  Default C{False}.
-        @type branch: bool
-
 
         @returns: decorated handler function.
         """
@@ -400,10 +396,8 @@ class Klein:
                 def foo_handler(request):
                     return 'I respond to /prefix/foo'
 
-        @type prefix: string
         @param prefix: The string that will be prepended to the paths of all
                        routes established during the with-block.
-        @return: Returns None.
         """
 
         _map_before_submount = self._url_map
@@ -492,11 +486,8 @@ class Klein:
 
         @param f_or_exception: An error handler function, or an C{Exception}
             subclass to scope the decorated handler to.
-        @type f_or_exception: C{function} or C{Exception}
-
         @param additional_exceptions: Additional C{Exception} subclasses to
             scope the decorated function to.
-        @type additional_exceptions: C{list} of C{Exception}s
 
         @returns: decorated error handler function.
         """
@@ -602,7 +593,7 @@ class Klein:
         site.displayTracebacks = displayTracebacks
 
         endpoint.listen(site)
-        reactor.run()
+        reactor.run()  # type: ignore[attr-defined]
 
 
 _globalKleinApp = Klein()

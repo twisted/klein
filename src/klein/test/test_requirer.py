@@ -1,9 +1,10 @@
-from typing import Iterable, List, Tuple, cast
+from typing import Iterator, Sequence, Tuple, cast
 
 from hyperlink import DecodedURL
 
 from treq.testing import StubTreq
 
+from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
@@ -20,7 +21,7 @@ class BadlyBehavedHeaders(Headers):
     getAllRequestHeaders.
     """
 
-    def getAllRawHeaders(self) -> Iterable[Tuple[bytes, List[bytes]]]:
+    def getAllRawHeaders(self) -> Iterator[Tuple[bytes, Sequence[bytes]]]:
         """
         Don't return a host header.
         """
@@ -57,7 +58,7 @@ def provideSample(request: IRequest) -> None:
     """
     This requirer prerequisite installs a string as the provider of ISample.
     """
-    request.setComponent(ISample, "sample component")
+    cast(Componentized, request).setComponent(ISample, "sample component")
 
 
 @requirer.require(

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Iterable, Sequence, Type
+from typing import Any, Callable, Dict, Iterable, Sequence, TYPE_CHECKING, Type
 
 import attr
 
@@ -10,7 +10,8 @@ from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface
 
-from ._app import KleinRenderable
+if TYPE_CHECKING:
+    from ._app import KleinRenderable
 
 
 class NoSuchSession(Exception):

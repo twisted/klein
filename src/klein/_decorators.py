@@ -1,6 +1,10 @@
 from functools import wraps
+from typing import Callable, Optional, TypeVar
 
-def bindable(bindable):
+C = TypeVar("C", bound=Callable)
+
+
+def bindable(bindable: C) -> C:
     """
     Mark a method as a "bindable" method.
 
@@ -16,14 +20,18 @@ def bindable(bindable):
     C{instance, request} as its first two arguments, even if C{instance} is
     C{None} when the L{Klein} object is not bound to an instance.
 
-    @return: its argument, modified to mark it as unconditinally requiring an
+    @return: its argument, modified to mark it as unconditionally requiring an
         instance argument.
     """
-    bindable.__klein_bound__ = True
+    bindable.__klein_bound__ = True  # type: ignore[attr-defined]
     return bindable
 
 
-def modified(modification, original, modifier=None):
+def modified(
+    modification: str,
+    original: Callable,
+    modifier: Optional[Callable] = None,
+) -> Callable:
     """
     Annotate a callable as a modified wrapper of an original callable.
 
@@ -42,10 +50,12 @@ def modified(modification, original, modifier=None):
         return value, and is only related to C{original} in the sense that it
         likely calls it.
     """
-    def decorator(wrapper):
-        result = (named(modification + ' for ' + original.__name__)
-                  (wraps(original)(wrapper)))
-        result.__original__ = original
+
+    def decorator(wrapper: Callable[..., C]) -> Callable[..., C]:
+        result = named(modification + " for " + original.__name__)(
+            wraps(original)(wrapper)
+        )
+        result.__original__ = original  # type: ignore[attr-defined]
         if modifier is not None:
             before = set(wrapper.__dict__.keys())
             result = modifier(result)
@@ -53,26 +63,30 @@ def modified(modification, original, modifier=None):
             for key in after - before:
                 setattr(original, key, wrapper.__dict__[key])
         return result
+
     return decorator
 
 
-def named(name):
+def named(name: str) -> Callable[[C], C]:
     """
     Change the name of a function to the given name.
     """
+
     def decorator(original):
+        # type: (C) -> C
         original.__name__ = str(name)
         original.__qualname__ = str(name)
         return original
+
     return decorator
 
 
-def originalName(function):
+def originalName(function: Callable) -> str:
     """
     Get the original, user-specified name of C{function}, chasing back any
     wrappers applied with C{modified}.
     """
-    fnext = function
+    fnext: Optional[Callable] = function
     while fnext is not None:
         function = fnext
         fnext = getattr(function, "__original__", None)

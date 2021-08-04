@@ -1,32 +1,26 @@
-
 """
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Mapping, Sequence, TYPE_CHECKING, Text, Union
+from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
 
 import attr
 
-from hyperlink import parse
+from hyperlink import DecodedURL
 
-from six import text_type
+from twisted.python.components import Componentized
+from twisted.web.iweb import IRequest
 
-from zope.interface import implementer, provider
-from zope.interface.interfaces import IInterface
+from zope.interface import Interface, implementer, provider
 
-from .interfaces import IDependencyInjector, IRequiredParameter
-
-if TYPE_CHECKING:               # pragma: no cover
-    from hyperlink import DecodedURL
-    from typing import Dict
-    from klein.interfaces import IRequestLifecycle
-    from twisted.web.iweb import IRequest
-    from twisted.python.components import Componentized
-    Componentized, DecodedURL, IRequest, IRequestLifecycle, Dict
+from .interfaces import (
+    IDependencyInjector,
+    IRequestLifecycle,
+    IRequiredParameter,
+)
 
 
-def urlFromRequest(request):
-    # type: (IRequest) -> DecodedURL
+def urlFromRequest(request: IRequest) -> DecodedURL:
     sentHeader = request.getHeader(b"host")
     if sentHeader is not None:
         sentHeader = sentHeader.decode("charmap")
@@ -37,20 +31,21 @@ def urlFromRequest(request):
             host = sentHeader
             port = None
     else:
-        host = request.client.host
-        port = request.client.port
-        if not isinstance(host, text_type):
-            host = host.decode("ascii")
+        client = request.client  # type: ignore[attr-defined]
+        host = client.host
+        port = client.port
 
-    return parse(request.uri.decode("charmap")).replace(
-        scheme=u"https" if request.isSecure() else u"http",
+    url = DecodedURL.fromText(request.uri.decode("charmap"))
+    url = url.replace(
+        scheme="https" if request.isSecure() else "http",
         host=host,
         port=port,
     )
+    return url
 
 
 @provider(IRequiredParameter, IDependencyInjector)
-class RequestURL(object):
+class RequestURL:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
@@ -58,52 +53,62 @@ class RequestURL(object):
     """
 
     @classmethod
-    def registerInjector(cls, injectionComponents, parameterName,
-                         requestLifecycle):
-        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
-        return cls()
+    def registerInjector(
+        cls,
+        injectionComponents: Componentized,
+        parameterName: str,
+        requestLifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
+        # type note: https://github.com/Shoobx/mypy-zope/issues/39
+        return cast(IDependencyInjector, cls())
 
     @classmethod
-    def injectValue(cls, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> DecodedURL
+    def injectValue(
+        cls,
+        instance: Any,
+        request: IRequest,
+        routeParams: Dict[str, Any],
+    ) -> DecodedURL:
         return urlFromRequest(request)
 
     @classmethod
-    def finalize(cls):
-        # type: () -> None
+    def finalize(cls) -> None:
         "Nothing to do upon finalization."
-
 
 
 @implementer(IRequiredParameter, IDependencyInjector)
 @attr.s(frozen=True)
-class RequestComponent(object):
+class RequestComponent:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
     @since: Klein NEXT
     """
 
-    interface = attr.ib(type=IInterface)
+    interface = attr.ib(type=Type[Interface])
 
-    def registerInjector(self, injectionComponents, parameterName,
-                         requestLifecycle):
-        # type: (Componentized, str, IRequestLifecycle) -> IDependencyInjector
+    def registerInjector(
+        self,
+        injectionComponents: Componentized,
+        parameterName: str,
+        requestLifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         return self
 
-    def injectValue(self, instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> DecodedURL
-        return request.getComponent(self.interface)
+    def injectValue(
+        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> DecodedURL:
+        return cast(
+            DecodedURL,
+            cast(Componentized, request).getComponent(self.interface),
+        )
 
-    def finalize(cls):
-        # type: () -> None
+    def finalize(cls) -> None:
         "Nothing to do upon finalization."
 
 
-
-
 @attr.s(frozen=True)
-class Response(object):
+class Response:
     """
     Metadata about an HTTP response, with an object that Klein knows how to
     understand.
@@ -115,20 +120,21 @@ class Response(object):
         - some HTTP headers
 
         - a body object, which can be anything else Klein understands; for
-          example, an IResource, an IRenderable, text, bytes, etc.
+          example, an IResource, an IRenderable, str, bytes, etc.
 
     @since: Klein NEXT
     """
+
     code = attr.ib(type=int, default=200)
     headers = attr.ib(
-        type=Mapping[Union[Text, bytes], Union[Text, bytes,
-                                               Sequence[Union[Text, bytes]]]],
+        type=Mapping[
+            Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
+        ],
         default=attr.Factory(dict),
     )
-    body = attr.ib(type=Any, default=u'')
+    body = attr.ib(type=Any, default="")
 
-    def _applyToRequest(self, request):
-        # type: (IRequest) -> Any
+    def _applyToRequest(self, request: IRequest) -> Any:
         """
         Apply this L{Response} to the given L{IRequest}, setting its response
         code and headers.
@@ -142,7 +148,7 @@ class Response(object):
         """
         request.setResponseCode(self.code)
         for headerName, headerValueOrValues in self.headers.items():
-            if not isinstance(headerValueOrValues, (text_type, bytes)):
+            if not isinstance(headerValueOrValues, (str, bytes)):
                 headerValues = headerValueOrValues
             else:
                 headerValues = [headerValueOrValues]

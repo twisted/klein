@@ -1,29 +1,23 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Interfaces related to HTTP messages.
 
 Do not import directly from here, except:
- * From _interfaces.py.
- * From implementations of these interfaces, but even then, import the
+ - From _interfaces.py.
+ - From implementations of these interfaces, but even then, import the
    zope.interface.Interface classes via _interfaces.py.
 
 This will ensure that type checking works.
 """
 
-from typing import AnyStr, Iterable, MutableSequence, Sequence, Text, Tuple
+from typing import AnyStr, Iterable, MutableSequence, Sequence, Tuple
 
 from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred
-
 from zope.interface import Attribute, Interface
-
-from ._typing import ifmethod
-
-AnyStr, DecodedURL, Deferred, Iterable, IFount, Text  # Silence linter
 
 
 __all__ = ()
@@ -34,13 +28,11 @@ RawHeaders = Sequence[RawHeader]
 MutableRawHeaders = MutableSequence[RawHeader]
 
 
-
 class FountAlreadyAccessedError(Exception):
     """
     The HTTP message's fount has already been accessed and is no longer
     available.
     """
-
 
 
 class IHTTPHeaders(Interface):
@@ -72,7 +64,7 @@ class IHTTPHeaders(Interface):
     well-behaved implementations.
     """
 
-    rawHeaders = Attribute(
+    rawHeaders: RawHeaders = Attribute(
         """
         Raw header data as a tuple in the from: C{((name, value), ...)}.
         C{name} and C{value} are bytes.
@@ -80,19 +72,16 @@ class IHTTPHeaders(Interface):
         Headers with multiple values are provided as separate name and value
         pairs.
         """
-    )  # type: RawHeaders
+    )
 
-
-    @ifmethod
-    def getValues(name):
-        # type: (AnyStr) -> Iterable[AnyStr]
+    def getValues(name: AnyStr) -> Iterable[AnyStr]:
         """
         Get the values associated with the given header name.
 
         If the given name is L{bytes}, the value will be returned as the raw
         header L{bytes}.
 
-        If the given name is L{Text}, the name will be encoded as ISO-8859-1
+        If the given name is L{str}, the name will be encoded as ISO-8859-1
         and the value will be returned as text, by decoding the raw header
         value bytes with ISO-8859-1.
 
@@ -102,37 +91,30 @@ class IHTTPHeaders(Interface):
         """
 
 
-
 class IMutableHTTPHeaders(IHTTPHeaders):
     """
     Mutable HTTP entity headers.
     """
 
-    @ifmethod
-    def remove(name):
-        # type: (AnyStr) -> None
+    def remove(name: AnyStr) -> None:
         """
         Remove all header name/value pairs for the given header name.
 
-        If the given name is L{Text}, it will be encoded as ISO-8859-1 before
+        If the given name is L{str}, it will be encoded as ISO-8859-1 before
         comparing to the (L{bytes}) header names.
 
         @param name: The name of the header to remove.
         """
 
-
-    @ifmethod
-    def addValue(name, value):
-        # type: (AnyStr, AnyStr) -> None
+    def addValue(name: AnyStr, value: AnyStr) -> None:
         """
         Add the given header name/value pair.
 
         If the given name is L{bytes}, the value must also be L{bytes}.
 
-        If the given name is L{Text}, it will be encoded as ISO-8859-1, and the
-        value, which must also be L{Text}, will be encoded as ISO-8859-1.
+        If the given name is L{str}, it will be encoded as ISO-8859-1, and the
+        value, which must also be L{str}, will be encoded as ISO-8859-1.
         """
-
 
 
 class IHTTPMessage(Interface):
@@ -140,12 +122,9 @@ class IHTTPMessage(Interface):
     HTTP entity.
     """
 
-    headers = Attribute("Entity headers.")  # type: IHTTPHeaders
+    headers: IHTTPHeaders = Attribute("Entity headers.")
 
-
-    @ifmethod
-    def bodyAsFount():
-        # type: () -> IFount
+    def bodyAsFount() -> IFount:
         """
         The entity body, as a fount.
 
@@ -161,10 +140,7 @@ class IHTTPMessage(Interface):
             accessed.
         """
 
-
-    @ifmethod
-    def bodyAsBytes():
-        # type: () -> Deferred[bytes]
+    async def bodyAsBytes() -> bytes:
         """
         The entity body, as bytes.
 
@@ -185,15 +161,13 @@ class IHTTPMessage(Interface):
         """
 
 
-
 class IHTTPRequest(IHTTPMessage):
     """
     HTTP request.
     """
 
-    method = Attribute("Request method.")  # type: Text
-    uri    = Attribute("Request URI.")     # type: DecodedURL
-
+    method: str = Attribute("Request method.")
+    uri: DecodedURL = Attribute("Request URI.")
 
 
 class IHTTPResponse(IHTTPMessage):
@@ -201,4 +175,4 @@ class IHTTPResponse(IHTTPMessage):
     HTTP response.
     """
 
-    status = Attribute("Response status code.")  # type: int
+    status: int = Attribute("Response status code.")

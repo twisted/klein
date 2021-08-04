@@ -1,37 +1,38 @@
 # -*- test-case-name: klein.test.test_request -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 HTTP headers API.
 """
 
-from typing import AnyStr, Iterable, Text, Tuple, Union
+from typing import AnyStr, Iterable, Tuple, Union
 
 from attr import Factory, attrib, attrs
 
 from zope.interface import implementer
 
-from ._imessage import MutableRawHeaders, RawHeader, RawHeaders
-from ._interfaces import IHTTPHeaders, IMutableHTTPHeaders
-
-# Silence linter
-AnyStr, Iterable, Tuple, MutableRawHeaders, RawHeader, RawHeaders
+from ._imessage import (
+    IHTTPHeaders,
+    IMutableHTTPHeaders,
+    MutableRawHeaders,
+    RawHeader,
+    RawHeaders,
+)
 
 
 __all__ = ()
 
 
-String = Union[bytes, Text]
+String = Union[bytes, str]
 
 
 # Encoding/decoding header data
 
-HEADER_NAME_ENCODING  = "iso-8859-1"
+HEADER_NAME_ENCODING = "iso-8859-1"
 HEADER_VALUE_ENCODING = "iso-8859-1"
 
 
-def headerNameAsBytes(name):
-    # type: (String) -> bytes
+def headerNameAsBytes(name: String) -> bytes:
     """
     Convert a header name to bytes if necessary.
     """
@@ -41,19 +42,17 @@ def headerNameAsBytes(name):
         return name.encode(HEADER_NAME_ENCODING)
 
 
-def headerNameAsText(name):
-    # type: (String) -> Text
+def headerNameAsText(name: String) -> str:
     """
-    Convert a header name to text if necessary.
+    Convert a header name to str if necessary.
     """
-    if isinstance(name, Text):
+    if isinstance(name, str):
         return name
     else:
         return name.decode(HEADER_NAME_ENCODING)
 
 
-def headerValueAsBytes(value):
-    # type: (String) -> bytes
+def headerValueAsBytes(value: String) -> bytes:
     """
     Convert a header value to bytes if necessary.
     """
@@ -63,19 +62,17 @@ def headerValueAsBytes(value):
         return value.encode(HEADER_VALUE_ENCODING)
 
 
-def headerValueAsText(value):
-    # type: (String) -> Text
+def headerValueAsText(value: String) -> str:
     """
-    Convert a header value to text if necessary.
+    Convert a header value to str if necessary.
     """
-    if isinstance(value, Text):
+    if isinstance(value, str):
         return value
     else:
         return value.decode(HEADER_VALUE_ENCODING)
 
 
-def normalizeHeaderName(name):
-    # type: (AnyStr) -> AnyStr
+def normalizeHeaderName(name: AnyStr) -> AnyStr:
     """
     Normalize a header name.
     """
@@ -84,8 +81,10 @@ def normalizeHeaderName(name):
 
 # Internal data representation
 
-def normalizeRawHeaders(headerPairs):
-    # type: (Iterable[Iterable[String]]) -> Iterable[RawHeader]
+
+def normalizeRawHeaders(
+    headerPairs: Iterable[Iterable[String]],
+) -> Iterable[RawHeader]:
     for pair in headerPairs:
         try:
             name, value = pair
@@ -98,18 +97,19 @@ def normalizeRawHeaders(headerPairs):
         yield (normalizeHeaderName(name), value)
 
 
-def normalizeRawHeadersFrozen(headerPairs):
-    # type: (Iterable[Iterable[bytes]]) -> RawHeaders
+def normalizeRawHeadersFrozen(
+    headerPairs: Iterable[Iterable[bytes]],
+) -> RawHeaders:
     return tuple(normalizeRawHeaders(headerPairs))
 
 
-def normalizeRawHeadersMutable(headerPairs):
-    # type: (Iterable[Iterable[bytes]]) -> MutableRawHeaders
+def normalizeRawHeadersMutable(
+    headerPairs: Iterable[Iterable[bytes]],
+) -> MutableRawHeaders:
     return list(normalizeRawHeaders(headerPairs))
 
 
-def getFromRawHeaders(rawHeaders, name):
-    # type: (RawHeaders, AnyStr) -> Iterable[AnyStr]
+def getFromRawHeaders(rawHeaders: RawHeaders, name: AnyStr) -> Iterable[AnyStr]:
     """
     Get a value from raw headers.
     """
@@ -117,101 +117,85 @@ def getFromRawHeaders(rawHeaders, name):
         name = normalizeHeaderName(name)
         return (v for n, v in rawHeaders if name == n)
 
-    if isinstance(name, Text):
+    if isinstance(name, str):
         rawName = headerNameAsBytes(normalizeHeaderName(name))
-        return(
-            headerValueAsText(v)
-            for n, v in rawHeaders if rawName == n
-        )
+        return (headerValueAsText(v) for n, v in rawHeaders if rawName == n)
 
-    raise TypeError("name {!r} must be text or bytes".format(name))
+    raise TypeError(f"name {name!r} must be str or bytes")
 
 
-def rawHeaderName(name):
-    # type: (String) -> bytes
+def rawHeaderName(name: String) -> bytes:
     if isinstance(name, bytes):
         return name
-    elif isinstance(name, Text):
+    elif isinstance(name, str):
         return headerNameAsBytes(name)
     else:
-        raise TypeError("name {!r} must be text or bytes".format(name))
+        raise TypeError(f"name {name!r} must be str or bytes")
 
 
-def rawHeaderNameAndValue(name, value):
-    # type: (String, String) -> Tuple[bytes, bytes]
+def rawHeaderNameAndValue(name: String, value: String) -> Tuple[bytes, bytes]:
     if isinstance(name, bytes):
         if not isinstance(value, bytes):
             raise TypeError(
-                "value {!r} must be bytes to match name {!r}"
-                .format(value, name)
+                "value {!r} must be bytes to match name {!r}".format(
+                    value, name
+                )
             )
         return (name, value)
 
-    elif isinstance(name, Text):
-        if not isinstance(value, Text):
+    elif isinstance(name, str):
+        if not isinstance(value, str):
             raise TypeError(
-                "value {!r} must be text to match name {!r}"
-                .format(value, name)
+                f"value {value!r} must be str to match name {name!r}"
             )
         return (headerNameAsBytes(name), headerValueAsBytes(value))
 
     else:
-        raise TypeError("name {!r} must be text or bytes".format(name))
-
+        raise TypeError(f"name {name!r} must be str or bytes")
 
 
 # Implementation
 
+
 @implementer(IHTTPHeaders)
 @attrs(frozen=True)
-class FrozenHTTPHeaders(object):
+class FrozenHTTPHeaders:
     """
     Immutable HTTP entity headers.
     """
 
-    rawHeaders = attrib(
+    rawHeaders: RawHeaders = attrib(
         converter=normalizeRawHeadersFrozen,
         default=(),
-    )  # type: RawHeaders
+    )
 
-
-    def getValues(self, name):
-        # type: (AnyStr) -> Iterable[AnyStr]
+    def getValues(self, name: AnyStr) -> Iterable[AnyStr]:
         return getFromRawHeaders(self.rawHeaders, name)
-
 
 
 @implementer(IMutableHTTPHeaders)
 @attrs(frozen=True)
-class MutableHTTPHeaders(object):
+class MutableHTTPHeaders:
     """
     Mutable HTTP entity headers.
     """
 
-    _rawHeaders = attrib(
+    _rawHeaders: MutableRawHeaders = attrib(
         converter=normalizeRawHeadersMutable,
         default=Factory(list),
-    )  # type: MutableRawHeaders
-
+    )
 
     @property
-    def rawHeaders(self):
-        # type: () -> RawHeaders
+    def rawHeaders(self) -> RawHeaders:
         return tuple(self._rawHeaders)
 
-
-    def getValues(self, name):
-        # type: (AnyStr) -> Iterable[AnyStr]
+    def getValues(self, name: AnyStr) -> Iterable[AnyStr]:
         return getFromRawHeaders(self._rawHeaders, name)
 
-
-    def remove(self, name):
-        # type: (String) -> None
+    def remove(self, name: String) -> None:
         rawName = rawHeaderName(name)
 
         self._rawHeaders[:] = [p for p in self._rawHeaders if p[0] != rawName]
 
-
-    def addValue(self, name, value):
-        # type: (AnyStr, AnyStr) -> None
+    def addValue(self, name: AnyStr, value: AnyStr) -> None:
         self._rawHeaders.append(rawHeaderNameAndValue(name, value))

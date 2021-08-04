@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_response -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 HTTP response API.
@@ -12,43 +12,32 @@ from attr.validators import instance_of, provides
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred
-
 from zope.interface import implementer
 
-from ._interfaces import IHTTPHeaders, IHTTPResponse
+from ._imessage import IHTTPHeaders, IHTTPResponse
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
-
-Deferred, IFount, Union  # Silence linter
 
 
 __all__ = ()
 
 
-
 @implementer(IHTTPResponse)
 @attrs(frozen=True)
-class FrozenHTTPResponse(object):
+class FrozenHTTPResponse:
     """
     Immutable HTTP response.
     """
 
-    status = attrib(validator=instance_of(int))  # type: int
+    status: int = attrib(validator=instance_of(int))
 
-    headers = attrib(validator=provides(IHTTPHeaders))  # type: IHTTPHeaders
+    headers: IHTTPHeaders = attrib(validator=provides(IHTTPHeaders))
 
-    _body = attrib(validator=validateBody)  # type: Union[bytes, IFount]
+    _body: Union[bytes, IFount] = attrib(validator=validateBody)
 
-    _state = attrib(
-        default=Factory(MessageState), init=False
-    )  # type: MessageState
+    _state: MessageState = attrib(default=Factory(MessageState), init=False)
 
-
-    def bodyAsFount(self):
-        # type: () -> IFount
+    def bodyAsFount(self) -> IFount:
         return bodyAsFount(self._body, self._state)
 
-
-    def bodyAsBytes(self):
-        # type: () -> Deferred[bytes]
-        return bodyAsBytes(self._body, self._state)
+    async def bodyAsBytes(self) -> bytes:
+        return await bodyAsBytes(self._body, self._state)

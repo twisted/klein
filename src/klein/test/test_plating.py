@@ -2,12 +2,10 @@
 Tests for L{klein.plating}.
 """
 
-from __future__ import (
-    absolute_import, division, print_function, unicode_literals
-)
 
 import json
 from string import printable
+from typing import Any
 
 import attr
 
@@ -15,12 +13,13 @@ from hypothesis import given, settings, strategies as st
 
 from twisted.internet.defer import Deferred, succeed
 from twisted.trial.unittest import (
-    SynchronousTestCase, TestCase as AsynchronousTestCase
+    SynchronousTestCase,
+    TestCase as AsynchronousTestCase,
 )
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
 
-from .test_resource import _render, requestMock
+from .test_resource import MockRequest, _render
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
 
@@ -35,7 +34,7 @@ page = Plating(
         tags.body(
             tags.h1(slot("title")),
             tags.div(slot(Plating.CONTENT), Class="content"),
-            tags.div(id="rendermethod", render="registeredRenderMethod")
+            tags.div(id="rendermethod", render="registeredRenderMethod"),
         ),
     ),
 )
@@ -50,6 +49,7 @@ element = Plating(
         tags.span("b: ", slot("b")),
     ),
 )
+
 
 @element.widgeted
 def enwidget(a, b):
@@ -79,7 +79,7 @@ def registeredRenderMethod(*args):
     return tag("(self)" if len(args) == 3 else "", "some text!")
 
 
-class InstanceWidget(object):
+class InstanceWidget:
     """
     A class with a method that's a L{Plating.widget}.
     """
@@ -100,7 +100,7 @@ class InstanceWidget(object):
 
 
 @attr.s
-class DeferredValue(object):
+class DeferredValue:
     """
     A value within a JSON serializable object that is deferred.
 
@@ -108,8 +108,9 @@ class DeferredValue(object):
 
     @param deferred: The L{Deferred} representing the value.
     """
-    value = attr.ib()  # type: object
-    deferred = attr.ib(attr.Factory(Deferred))  # type: Deferred
+
+    value: Any = attr.ib()
+    deferred: Deferred = attr.ib(attr.Factory(Deferred))
 
     def resolve(self):
         """
@@ -119,11 +120,13 @@ class DeferredValue(object):
         self.deferred.callback(self.value)
 
 
-jsonAtoms = (st.none() |
-             st.booleans() |
-             st.integers() |
-             st.floats(allow_nan=False) |
-             st.text(printable))
+jsonAtoms = (
+    st.none()
+    | st.booleans()
+    | st.integers()
+    | st.floats(allow_nan=False)
+    | st.text(printable)
+)
 
 
 def jsonComposites(children):
@@ -136,9 +139,11 @@ def jsonComposites(children):
 
     @return: The composite objects strategy.
     """
-    return (st.lists(children) |
-            st.dictionaries(st.text(printable), children) |
-            st.tuples(children))
+    return (
+        st.lists(children)
+        | st.dictionaries(st.text(printable), children)
+        | st.tuples(children)
+    )
 
 
 jsonObjects = st.recursive(jsonAtoms, jsonComposites, max_leaves=200)
@@ -171,7 +176,7 @@ def transformJSONObject(jsonObject, transformer):
         elif isinstance(obj, dict):
             return {transformer(k): transformer(v) for k, v in obj.items()}
         else:
-            raise AssertionError("Object of unknown type {!r}".format(obj))
+            raise AssertionError(f"Object of unknown type {obj!r}")
 
     return visit(jsonObject)
 
@@ -186,6 +191,7 @@ class TransformJSONObjectTests(SynchronousTestCase):
         L{transform_json_object} transforms a representative atomic
         JSON data types.
         """
+
         def inc(value):
             return value + 1
 
@@ -195,6 +201,7 @@ class TransformJSONObjectTests(SynchronousTestCase):
         """
         L{transformJSONObject} transforms L{tuple}s.
         """
+
         def inc(value):
             return value + 1
 
@@ -204,6 +211,7 @@ class TransformJSONObjectTests(SynchronousTestCase):
         """
         L{transformJSONObject} transforms L{list}s.
         """
+
         def inc(value):
             return value + 1
 
@@ -213,6 +221,7 @@ class TransformJSONObjectTests(SynchronousTestCase):
         """
         L{transformJSONObject} transforms L{dict}s.
         """
+
         def inc(value):
             return value + 1
 
@@ -223,9 +232,9 @@ class TransformJSONObjectTests(SynchronousTestCase):
         L{transformJSONObject} will not transform objects that are
         not JSON serializable.
         """
-        self.assertRaises(AssertionError,
-                          transformJSONObject,
-                          set(), list.append)
+        self.assertRaises(
+            AssertionError, transformJSONObject, set(), list.append
+        )
 
 
 class ResolveDeferredObjectsTests(SynchronousTestCase):
@@ -259,13 +268,12 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
             maybeWrapInDeferred,
         )
 
-        resolved = resolveDeferredObjects(deferredJSONObject)
+        resolved: "Deferred[Any]" = resolveDeferredObjects(deferredJSONObject)
 
         for value in deferredValues:
             value.resolve()
 
         self.assertEqual(self.successResultOf(resolved), jsonObject)
-
 
     @given(
         jsonObject=jsonObjects,
@@ -280,11 +288,13 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
 
         def injectPlatingElements(value):
             if data.draw(choose) and isinstance(value, dict):
-                return PlatedElement(slot_data=value,
-                                     preloaded=tags.html(),
-                                     boundInstance=None,
-                                     presentationSlots={},
-                                     renderers={})
+                return PlatedElement(
+                    slot_data=value,
+                    preloaded=tags.html(),
+                    boundInstance=None,
+                    presentationSlots={},
+                    renderers={},
+                )
             else:
                 return value
 
@@ -293,10 +303,9 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
             injectPlatingElements,
         )
 
-        resolved = resolveDeferredObjects(withPlatingElements)
+        resolved: "Deferred[Any]" = resolveDeferredObjects(withPlatingElements)
 
         self.assertEqual(self.successResultOf(resolved), jsonObject)
-
 
     def test_unserializableObject(self):
         """
@@ -306,7 +315,7 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         """
 
         @attr.s
-        class ConsistentRepr(object):
+        class ConsistentRepr:
             """
             Objects with a predictable repr
             """
@@ -315,9 +324,7 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
             resolveDeferredObjects(ConsistentRepr())
         ).value
         self.assertIsInstance(exception, TypeError)
-        self.assertIn("ConsistentRepr() not JSON serializable",
-                      str(exception))
-
+        self.assertIn("ConsistentRepr() not JSON serializable", str(exception))
 
 
 class PlatingTests(AsynchronousTestCase):
@@ -338,7 +345,7 @@ class PlatingTests(AsynchronousTestCase):
         succeed synchronously, and return the generated request object and
         written bytes.
         """
-        request = requestMock(uri)
+        request = MockRequest(uri)
         d = _render(self.kr, request)
         self.successResultOf(d)
         return request, request.getWrittenData()
@@ -348,27 +355,29 @@ class PlatingTests(AsynchronousTestCase):
         Rendering a L{Plating.routed} decorated route results in templated
         HTML.
         """
+
         @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "test-data-present"}
 
         request, written = self.get(b"/")
 
-        self.assertIn(b'<span>test-data-present</span>', written)
-        self.assertIn(b'<title>default title unchanged</title>', written)
+        self.assertIn(b"<span>test-data-present</span>", written)
+        self.assertIn(b"<title>default title unchanged</title>", written)
 
     def test_selfhood(self):
         """
         Rendering a L{Plating.routed} decorated route on a method still results
         in the decorated method receiving the appropriate C{self}.
         """
-        class AppObj(object):
+
+        class AppObj:
             app = Klein()
 
             def __init__(self, x):
                 self.x = x
 
-            @page.routed(app.route("/"), tags.span(slot('yeah')))
+            @page.routed(app.route("/"), tags.span(slot("yeah")))
             def plateInstance(self, request):
                 return {"yeah": "test-instance-data-" + self.x}
 
@@ -376,30 +385,29 @@ class PlatingTests(AsynchronousTestCase):
         self.kr = obj.app.resource()
         request, written = self.get(b"/")
 
-        self.assertIn(b'<span>test-instance-data-confirmed</span>', written)
-        self.assertIn(b'<title>default title unchanged</title>', written)
-        self.assertIn(b'<div id="rendermethod">(self)some text!</div>',
-                      written)
-
+        self.assertIn(b"<span>test-instance-data-confirmed</span>", written)
+        self.assertIn(b"<title>default title unchanged</title>", written)
+        self.assertIn(b'<div id="rendermethod">(self)some text!</div>', written)
 
     def test_template_json(self):
         """
         Rendering a L{Plating.routed} decorated route with a query parameter
         asking for JSON will yield JSON instead.
         """
+
         @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": "an-plating-test"}
 
         request, written = self.get(b"/?json=true")
         self.assertEqual(
-            request.responseHeaders.getRawHeaders(b'content-type')[0],
-            b'text/json; charset=utf-8'
+            request.responseHeaders.getRawHeaders(b"content-type")[0],
+            b"application/json",
         )
-        self.assertEquals({"ok": "an-plating-test",
-                           "title": "default title unchanged"},
-                          json.loads(written.decode('utf-8')))
-
+        self.assertEquals(
+            {"ok": "an-plating-test", "title": "default title unchanged"},
+            json.loads(written.decode("utf-8")),
+        )
 
     def test_template_json_contains_deferred(self):
         """
@@ -407,19 +415,20 @@ class PlatingTests(AsynchronousTestCase):
         parameter asking for JSON waits until the L{Deferred}s
         returned by the route have fired.
         """
+
         @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request):
             return {"ok": succeed("an-plating-test")}
 
         request, written = self.get(b"/?json=true")
         self.assertEqual(
-            request.responseHeaders.getRawHeaders(b'content-type')[0],
-            b'text/json; charset=utf-8'
+            request.responseHeaders.getRawHeaders(b"content-type")[0],
+            b"application/json",
         )
-        self.assertEquals({"ok": "an-plating-test",
-                           "title": "default title unchanged"},
-                          json.loads(written.decode('utf-8')))
-
+        self.assertEquals(
+            {"ok": "an-plating-test", "title": "default title unchanged"},
+            json.loads(written.decode("utf-8")),
+        )
 
     def test_template_numbers(self):
         """
@@ -428,6 +437,7 @@ class PlatingTests(AsynchronousTestCase):
         serializable by twisted.web.template, will be converted by plating into
         their decimal representation.
         """
+
         @page.routed(
             self.app.route("/"),
             tags.div(
@@ -437,9 +447,11 @@ class PlatingTests(AsynchronousTestCase):
             ),
         )
         def plateMe(result):
-            return {"anInteger": 7,
-                    "anFloat": 3.2,
-                    "anLong": 0x10000000000000001}
+            return {
+                "anInteger": 7,
+                "anFloat": 3.2,
+                "anLong": 0x10000000000000001,
+            }
 
         request, written = self.get(b"/")
 
@@ -452,17 +464,18 @@ class PlatingTests(AsynchronousTestCase):
         The C{:list} renderer suffix will render the slot named by the renderer
         as a list, filling each slot.
         """
+
         @page.routed(
             self.app.route("/"),
-            tags.ul(tags.li(slot("item"), render="subplating:list"))
+            tags.ul(tags.li(slot("item"), render="subplating:list")),
         )
         def rsrc(request):
             return {"subplating": [1, 2, 3]}
 
         request, written = self.get(b"/")
 
-        self.assertIn(b'<ul><li>1</li><li>2</li><li>3</li></ul>', written)
-        self.assertIn(b'<title>default title unchanged</title>', written)
+        self.assertIn(b"<ul><li>1</li><li>2</li><li>3</li></ul>", written)
+        self.assertIn(b"<title>default title unchanged</title>", written)
 
     def test_widget_function(self):
         """
@@ -472,19 +485,18 @@ class PlatingTests(AsynchronousTestCase):
         self.assertEqual(enwidget(5, 6), {"a": 5, "b": 6})
         self.assertEqual(InstanceWidget().enwidget(7, 8), {"a": 7, "b": 8})
 
-
     def test_renderMethod(self):
         """
         L{Plating.renderMethod} registers a renderer that may be used by the
         L{Plating}'s template.
         """
+
         @page.routed(self.app.route("/"), [])
         def rsrc(request):
             return {}
 
         request, written = self.get(b"/")
         self.assertIn(b'<div id="rendermethod">some text!</div>', written)
-
 
     def test_widget_html(self):
         """
@@ -493,12 +505,18 @@ class PlatingTests(AsynchronousTestCase):
         function with a modified return type that turns it into a renderable
         HTML sub-element that may fill a slot.
         """
-        @page.routed(self.app.route("/"),
-                     tags.div(tags.div(slot("widget")),
-                              tags.div(slot("instance-widget"))))
+
+        @page.routed(
+            self.app.route("/"),
+            tags.div(
+                tags.div(slot("widget")), tags.div(slot("instance-widget"))
+            ),
+        )
         def rsrc(request):
-            return {"widget": enwidget.widget(a=3, b=4),
-                    "instance-widget": InstanceWidget().enwidget.widget(5, 6)}
+            return {
+                "widget": enwidget.widget(a=3, b=4),
+                "instance-widget": InstanceWidget().enwidget.widget(5, 6),
+            }
 
         request, written = self.get(b"/")
 
@@ -513,18 +531,28 @@ class PlatingTests(AsynchronousTestCase):
         serialized to JSON, it appears the same as the returned value despite
         the HTML-friendly wrapping described above.
         """
-        @page.routed(self.app.route("/"),
-                     tags.div(tags.div(slot("widget")),
-                              tags.div(slot("instance-widget"))))
+
+        @page.routed(
+            self.app.route("/"),
+            tags.div(
+                tags.div(slot("widget")), tags.div(slot("instance-widget"))
+            ),
+        )
         def rsrc(request):
-            return {"widget": enwidget.widget(a=3, b=4),
-                    "instance-widget": InstanceWidget().enwidget.widget(5, 6)}
+            return {
+                "widget": enwidget.widget(a=3, b=4),
+                "instance-widget": InstanceWidget().enwidget.widget(5, 6),
+            }
 
         request, written = self.get(b"/?json=1")
-        self.assertEqual(json.loads(written.decode('utf-8')),
-                         {"widget": {"a": 3, "b": 4},
-                          "instance-widget": {"a": 5, "b": 6},
-                          "title": "default title unchanged"})
+        self.assertEqual(
+            json.loads(written.decode("utf-8")),
+            {
+                "widget": {"a": 3, "b": 4},
+                "instance-widget": {"a": 5, "b": 6},
+                "title": "default title unchanged",
+            },
+        )
 
     def test_widget_json_deferred(self):
         """
@@ -533,19 +561,28 @@ class PlatingTests(AsynchronousTestCase):
         the HTML-friendly wrapping described above.
         """
 
-        @page.routed(self.app.route("/"),
-                     tags.div(tags.div(slot("widget")),
-                              tags.div(slot("instance-widget"))))
+        @page.routed(
+            self.app.route("/"),
+            tags.div(
+                tags.div(slot("widget")), tags.div(slot("instance-widget"))
+            ),
+        )
         def rsrc(request):
             instance = InstanceWidget()
-            return {"widget": deferredEnwidget.widget(a=3, b=4),
-                    "instance-widget": instance.deferredEnwidget.widget(5, 6)}
+            return {
+                "widget": deferredEnwidget.widget(a=3, b=4),
+                "instance-widget": instance.deferredEnwidget.widget(5, 6),
+            }
 
         request, written = self.get(b"/?json=1")
-        self.assertEqual(json.loads(written.decode('utf-8')),
-                         {"widget": {"a": 3, "b": 4},
-                          "instance-widget": {"a": 5, "b": 6},
-                          "title": "default title unchanged"})
+        self.assertEqual(
+            json.loads(written.decode("utf-8")),
+            {
+                "widget": {"a": 3, "b": 4},
+                "instance-widget": {"a": 5, "b": 6},
+                "title": "default title unchanged",
+            },
+        )
 
     def test_prime_directive_return(self):
         """
@@ -566,6 +603,7 @@ class PlatingTests(AsynchronousTestCase):
         ... or shall require the function to modify its signature under these
         Articles Of Federation.
         """
+
         @page.routed(self.app.route("/"), tags.span(slot("ok")))
         def plateMe(request, one, two, three):
             return (one, two, three)
@@ -587,8 +625,7 @@ class PlatingTests(AsynchronousTestCase):
         output.
         """
         plating = Plating(
-            tags=tags.span(slot("title")),
-            presentation_slots={"title"}
+            tags=tags.span(slot("title")), presentation_slots={"title"}
         )
 
         @plating.routed(self.app.route("/"), tags.span(slot("data")))
@@ -597,19 +634,20 @@ class PlatingTests(AsynchronousTestCase):
 
         request, written = self.get(b"/?json=1")
 
-        self.assertEqual(json.loads(written.decode("utf-8")),
-                         {"data": "interesting"})
+        self.assertEqual(
+            json.loads(written.decode("utf-8")), {"data": "interesting"}
+        )
 
     def test_missing_renderer(self):
         """
         Missing renderers will result in an exception during rendering.
         """
+
         def test(missing):
             plating = Plating(tags=tags.span(slot(Plating.CONTENT)))
 
             @plating.routed(
-                self.app.route("/"),
-                tags.span(tags.span(render=missing))
+                self.app.route("/"), tags.span(tags.span(render=missing))
             )
             def no(request):
                 return {}

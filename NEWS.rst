@@ -1,6 +1,47 @@
 NEWS
 ====
 
+NEXT
+-------------------
+ * Python 2 is no longer supported by Klein.
+ * Python 3.5 is no longer supported by Klein.
+ * Python 3.9 is now supported by Klein. [`#412 <https://github.com/twisted/klein/pull/412>`_]
+ * Klein now exports (incomplete, but growing) type hints. [`#379 <https://github.com/twisted/klein/pull/379>`_]
+ * ``Plating`` now sets the ``Content-Type`` header to ``application/json`` instead of ``text/json; charset=utf8``.
+
+20.6.0 - 2020-06-07
+-------------------
+ * This is the last release of Klein expected to support Python 2.
+ * This is the last release of Klein expected to support Python 3.5.
+ * Python 3.4 is no longer supported by Klein. [`#284 <https://github.com/twisted/klein/pull/284>`_]
+ * Python 3.8 is now supported by Klein. [`#303 <https://github.com/twisted/klein/pull/303>`_]
+ * ``klein.app.subroute`` is now also available as ``klein.subroute``. [`#293 <https://github.com/twisted/klein/pull/293>`_]
+ * Support for forms and sessions. [`#276 <https://github.com/twisted/klein/pull/276>`_]
+ * The ``Klein`` class now supports deep copy by implementing ``__copy__``. [`#74 <https://github.com/twisted/klein/pull/74>`_]
+
+19.6.0 - 2019-06-07
+-------------------
+
+New "forms" and "sessions" subsystems provide official support for POST requests, including CSRF protection, form generation to include CSRF tokens, dependency injection to populate parameters from both the request and session, as well as lightweight JSON API support.
+
+17.10.0 - 2017-10-22
+--------------------
+
+17.2.0 - 2017-03-03
+-------------------
+
+16.12.0 - 2016-12-13
+--------------------
+
+15.3.1 - 2015-12-17
+-------------------
+
+15.2.0 - 2015-11-30
+-------------------
+
+15.1.0 - 2015-07-08
+-------------------
+
 15.0.0 - 2015-01-11
 -------------------
  * [BUG] Klein now includes its test package as part of the distribution. [`#65 <https://github.com/twisted/klein/pull/65>`_]

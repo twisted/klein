@@ -1,16 +1,14 @@
-from __future__ import absolute_import, division
-
-import sys
-
-try:
-    from unittest.mock import Mock, patch
-except Exception:
-    from mock import Mock, patch  # type:ignore
+from sys import stdout
+from typing import cast
+from unittest.mock import Mock, patch
 
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
+from twisted.web.iweb import IRequest
 
-from .test_resource import requestMock
+from zope.interface import implementer
+
+from .test_resource import MockRequest
 from .util import EqualityTestsMixin
 from .. import Klein
 from .._app import KleinRequest
@@ -18,16 +16,13 @@ from .._decorators import bindable, modified, originalName
 from .._interfaces import IKleinRequest
 
 
-
-class DummyRequest(object):
+@implementer(IRequest)
+class DummyRequest:  # type: ignore[misc]  # incomplete interface
     def __init__(self, n):
         self.n = n
 
     def __eq__(self, other):
         return other.n == self.n
-
-    def __repr__(self):
-        return '<DummyRequest({n})>'.format(n=self.n)
 
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
@@ -37,7 +32,8 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
     """
     Tests for L{Klein}'s implementation of C{==} and C{!=}.
     """
-    class _One(object):
+
+    class _One:
         app = Klein()
 
         def __eq__(self, other):
@@ -59,19 +55,17 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
         # equal to everything.
         return self._One().app
 
-
     def anotherInstance(self):
         return self._another
 
 
-
-class DuplicateHasher(object):
+class DuplicateHasher:
     """
     Every L{DuplicateHasher} has the same hash value and compares equal to
     every other L{DuplicateHasher}.
     """
 
-    __slots__ = ('_identifier',)
+    __slots__ = ("_identifier",)
 
     def __init__(self, identifier):
         self._identifier = identifier
@@ -87,7 +81,6 @@ class DuplicateHasher(object):
 
     def __eq__(self, other):
         return True
-
 
 
 class KleinTestCase(unittest.TestCase):
@@ -107,7 +100,6 @@ class KleinTestCase(unittest.TestCase):
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
 
-
     def test_mapByIdentity(self):
         """
         Routes are routed to the proper object regardless of its C{__hash__}
@@ -121,11 +113,12 @@ class KleinTestCase(unittest.TestCase):
         d[a] = "test"
         self.assertEqual(d.get(b), "test")
 
-        self.assertEqual(a.myRouter.execute_endpoint("root", DummyRequest(1)),
-                         "a")
-        self.assertEqual(b.myRouter.execute_endpoint("root", DummyRequest(1)),
-                         "b")
-
+        self.assertEqual(
+            a.myRouter.execute_endpoint("root", DummyRequest(1)), "a"
+        )
+        self.assertEqual(
+            b.myRouter.execute_endpoint("root", DummyRequest(1)), "b"
+        )
 
     def test_preserveIdentityWhenPossible(self):
         """
@@ -137,7 +130,8 @@ class KleinTestCase(unittest.TestCase):
         """
         # This is the desirable property.
         class DuplicateHasherWithWritableAttribute(DuplicateHasher):
-            __slots__ = ('__klein_bound_myRouter__',)
+            __slots__ = ("__klein_bound_myRouter__",)
+
         a = DuplicateHasherWithWritableAttribute("a")
         self.assertIs(a.myRouter, a.myRouter)
 
@@ -151,14 +145,13 @@ class KleinTestCase(unittest.TestCase):
         # just not identical.
         self.assertIsNot(b.myRouter, b.myRouter)
 
-
     def test_kleinNotFoundOnClass(self):
         """
         When the Klein object can't find itself on the class it still preserves
         identity.
         """
 
-        class Wrap(object):
+        class Wrap:
             def __init__(self, wrapped):
                 self._wrapped = wrapped
 
@@ -167,7 +160,7 @@ class KleinTestCase(unittest.TestCase):
                     return self
                 return self._wrapped.__get__(instance, owner)
 
-        class TwoRouters(object):
+        class TwoRouters:
 
             app1 = Wrap(Klein())
             app2 = Wrap(Klein())
@@ -177,25 +170,23 @@ class KleinTestCase(unittest.TestCase):
         self.assertIs(tr.app1, tr.app1)
         self.assertIs(tr.app2, tr.app2)
 
-
     def test_bindInstanceIgnoresBlankProperties(self):
         """
         L{Klein.__get__} doesn't propagate L{AttributeError} when
         searching for the bound L{Klein} instance.
         """
 
-        class ClassProperty(object):
+        class ClassProperty:
             def __get__(self, oself, owner):
                 raise AttributeError(
                     "you just don't have that special something"
                 )
 
-        class Oddment(object):
+        class Oddment:
             __something__ = ClassProperty()
             app = Klein()
 
         self.assertIsInstance(Oddment().app, Klein)
-
 
     def test_submountedRoute(self):
         """
@@ -204,18 +195,17 @@ class KleinTestCase(unittest.TestCase):
         app = Klein()
 
         with app.subroute("/sub") as app:
+
             @app.route("/prefixed_uri")
             def foo_endpoint(request):
                 return b"foo"
 
         c = app.url_map.bind("sub/prefixed_uri")
+        self.assertEqual(c.match("/sub/prefixed_uri"), ("foo_endpoint", {}))
+        self.assertEqual(len(app.endpoints), 1)
         self.assertEqual(
-            c.match("/sub/prefixed_uri"), ("foo_endpoint", {}))
-        self.assertEqual(
-            len(app.endpoints), 1)
-        self.assertEqual(
-            app.execute_endpoint("foo_endpoint", DummyRequest(1)), b"foo")
-
+            app.execute_endpoint("foo_endpoint", DummyRequest(1)), b"foo"
+        )
 
     def test_stackedRoute(self):
         """
@@ -238,10 +228,7 @@ class KleinTestCase(unittest.TestCase):
         )
 
         self.assertEqual(c.match("/bar"), ("bar", {}))
-        self.assertEqual(
-            app.execute_endpoint("bar", DummyRequest(2)), "foobar"
-        )
-
+        self.assertEqual(app.execute_endpoint("bar", DummyRequest(2)), "foobar")
 
     def test_branchRoute(self):
         """
@@ -257,21 +244,25 @@ class KleinTestCase(unittest.TestCase):
         c = app.url_map.bind("foo")
         self.assertEqual(c.match("/foo/"), ("branchfunc", {}))
         self.assertEqual(
-            c.match("/foo/bar"),
-            ("branchfunc_branch", {'__rest__': 'bar'}))
-
-        self.assertEquals(app.endpoints["branchfunc"].__name__,
-                          "route '/foo/' executor for branchfunc")
-        self.assertEquals(
-            app.endpoints["branchfunc_branch"].__name__,
-            "branch route '/foo/' executor for branchfunc"
-        )
-        self.assertEquals(
-            app.execute_endpoint("branchfunc_branch",
-                                 DummyRequest("looking for foo")),
-            "foo"
+            c.match("/foo/bar"), ("branchfunc_branch", {"__rest__": "bar"})
         )
 
+        self.assertEquals(
+            app.endpoints["branchfunc"].__name__,  # type: ignore[union-attr]
+            "route '/foo/' executor for branchfunc",
+        )
+        self.assertEquals(
+            app.endpoints[
+                "branchfunc_branch"
+            ].__name__,  # type: ignore[union-attr]
+            "branch route '/foo/' executor for branchfunc",
+        )
+        self.assertEquals(
+            app.execute_endpoint(
+                "branchfunc_branch", DummyRequest("looking for foo")
+            ),
+            "foo",
+        )
 
     def test_bindable(self):
         """
@@ -288,10 +279,10 @@ class KleinTestCase(unittest.TestCase):
             calls.append(args)
             return 7
 
-        req = object()
+        req = cast(IRequest, object())
         k.execute_endpoint("method", req)
 
-        class BoundTo(object):
+        class BoundTo:
             app = k
 
         b = BoundTo()
@@ -300,12 +291,12 @@ class KleinTestCase(unittest.TestCase):
         self.assertEquals(calls, [(None, req), (b, req)])
         self.assertEqual(originalName(method), "method")
 
-
     def test_modified(self):
         """
         L{modified} is a decorator which alters the thing that it decorates,
         and describes itself as such.
         """
+
         def annotate(decoratee):
             decoratee.supersized = True
             return decoratee
@@ -318,10 +309,9 @@ class KleinTestCase(unittest.TestCase):
             return add(a * 1000, b * 10000)
 
         self.assertEqual(megaAdd.supersized, True)
-        self.assertEqual(add.supersized, True)
+        self.assertEqual(add.supersized, True)  # type: ignore[attr-defined]
         self.assertIn("supersizer for add", str(megaAdd))
         self.assertEqual(megaAdd(3, 4), 43000)
-
 
     def test_classicalRoute(self):
         """
@@ -330,7 +320,7 @@ class KleinTestCase(unittest.TestCase):
         """
         bar_calls = []
 
-        class Foo(object):
+        class Foo:
             app = Klein()
 
             @app.route("/bar")
@@ -347,14 +337,14 @@ class KleinTestCase(unittest.TestCase):
         )
         self.assertEqual(bar_calls, [(foo, DummyRequest(1))])
 
-
     def test_classicalRouteWithTwoInstances(self):
         """
         Multiple instances of a class with a L{Klein} attribute and
         L{Klein.route}'d methods can be created and their L{Klein}s used
         independently.
         """
-        class Foo(object):
+
+        class Foo:
             app = Klein()
 
             def __init__(self):
@@ -373,12 +363,11 @@ class KleinTestCase(unittest.TestCase):
         dr1 = DummyRequest(1)
         dr2 = DummyRequest(2)
 
-        foo_1_app.execute_endpoint('bar', dr1)
-        foo_2_app.execute_endpoint('bar', dr2)
+        foo_1_app.execute_endpoint("bar", dr1)
+        foo_2_app.execute_endpoint("bar", dr2)
 
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
-
 
     def test_classicalRouteWithBranch(self):
         """
@@ -386,7 +375,8 @@ class KleinTestCase(unittest.TestCase):
         L{Klein.route}'d methods can be created and their L{Klein}s used
         independently.
         """
-        class Foo(object):
+
+        class Foo:
             app = Klein()
 
             def __init__(self):
@@ -405,12 +395,11 @@ class KleinTestCase(unittest.TestCase):
         dr1 = DummyRequest(1)
         dr2 = DummyRequest(2)
 
-        foo_1_app.execute_endpoint('bar_branch', dr1)
-        foo_2_app.execute_endpoint('bar_branch', dr2)
+        foo_1_app.execute_endpoint("bar_branch", dr1)
+        foo_2_app.execute_endpoint("bar_branch", dr2)
 
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
-
 
     def test_branchDoesntRequireTrailingSlash(self):
         """
@@ -425,14 +414,14 @@ class KleinTestCase(unittest.TestCase):
             return "foo"
 
         c = app.url_map.bind("foo")
-        self.assertEqual(c.match("/foo/bar"),
-                         ("foo_branch", {"__rest__": "bar"}))
+        self.assertEqual(
+            c.match("/foo/bar"), ("foo_branch", {"__rest__": "bar"})
+        )
 
-
-    @patch('klein._app.KleinResource')
-    @patch('klein._app.Site')
-    @patch('klein._app.log')
-    @patch('klein._app.reactor')
+    @patch("klein._app.KleinResource")
+    @patch("klein._app.Site")
+    @patch("klein._app.log")
+    @patch("klein._app.reactor")
     def test_run(self, reactor, mock_log, mock_site, mock_kr):
         """
         L{Klein.run} configures a L{KleinResource} and a L{Site}
@@ -444,19 +433,19 @@ class KleinTestCase(unittest.TestCase):
         app.run("localhost", 8080)
 
         reactor.listenTCP.assert_called_with(
-            8080, mock_site.return_value, backlog=50, interface="localhost")
+            8080, mock_site.return_value, backlog=50, interface="localhost"
+        )
 
         reactor.run.assert_called_with()
 
         mock_site.assert_called_with(mock_kr.return_value)
         mock_kr.assert_called_with(app)
-        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_log.startLogging.assert_called_with(stdout)
 
-
-    @patch('klein._app.KleinResource')
-    @patch('klein._app.Site')
-    @patch('klein._app.log')
-    @patch('klein._app.reactor')
+    @patch("klein._app.KleinResource")
+    @patch("klein._app.Site")
+    @patch("klein._app.log")
+    @patch("klein._app.reactor")
     def test_runWithLogFile(self, reactor, mock_log, mock_site, mock_kr):
         """
         L{Klein.run} logs to the specified C{logFile}.
@@ -467,7 +456,8 @@ class KleinTestCase(unittest.TestCase):
         app.run("localhost", 8080, logFile=logFile)
 
         reactor.listenTCP.assert_called_with(
-            8080, mock_site.return_value, backlog=50, interface="localhost")
+            8080, mock_site.return_value, backlog=50, interface="localhost"
+        )
 
         reactor.run.assert_called_with()
 
@@ -475,29 +465,27 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
         mock_log.startLogging.assert_called_with(logFile)
 
-
-    @patch('klein._app.KleinResource')
-    @patch('klein._app.log')
-    @patch('klein._app.endpoints.serverFromString')
-    @patch('klein._app.reactor')
+    @patch("klein._app.KleinResource")
+    @patch("klein._app.log")
+    @patch("klein._app.serverFromString")
+    @patch("klein._app.reactor")
     def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
         """
         L{Klein.run} called with tcp6 endpoint description.
         """
         app = Klein()
         interface = "2001\\:0DB8\\:f00e\\:eb00\\:\\:1"
-        spec = "tcp6:8080:interface={0}".format(interface)
+        spec = f"tcp6:8080:interface={interface}"
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()
         mock_sfs.assert_called_with(reactor, spec)
-        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_log.startLogging.assert_called_with(stdout)
         mock_kr.assert_called_with(app)
 
-
-    @patch('klein._app.KleinResource')
-    @patch('klein._app.log')
-    @patch('klein._app.endpoints.serverFromString')
-    @patch('klein._app.reactor')
+    @patch("klein._app.KleinResource")
+    @patch("klein._app.log")
+    @patch("klein._app.serverFromString")
+    @patch("klein._app.reactor")
     def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
         """
         L{Klein.run} called with SSL endpoint specification.
@@ -511,11 +499,10 @@ class KleinTestCase(unittest.TestCase):
         app.run(endpoint_description=spec)
         reactor.run.assert_called_with()
         mock_sfs.assert_called_with(reactor, spec)
-        mock_log.startLogging.assert_called_with(sys.stdout)
+        mock_log.startLogging.assert_called_with(stdout)
         mock_kr.assert_called_with(app)
 
-
-    @patch('klein._app.KleinResource')
+    @patch("klein._app.KleinResource")
     def test_resource(self, mock_kr):
         """
         L{Klien.resource} returns a L{KleinResource}.
@@ -526,59 +513,69 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
 
-
     def test_urlFor(self):
         """L{Klein.urlFor} builds an URL for an endpoint with parameters"""
 
         app = Klein()
 
-        @app.route('/user/<name>')
+        @app.route("/user/<name>")
         def userpage(req, name):
             return name
 
-        @app.route('/post/<int:postid>', endpoint='bar')
+        @app.route("/post/<int:postid>", endpoint="bar")
         def foo(req, postid):
             return str(postid)
 
-        request = requestMock(b'/user/john')
+        request = MockRequest(b"/user/john")
         self.assertEqual(
-            app.execute_endpoint('userpage', request, 'john'),
-            'john'
+            app.execute_endpoint("userpage", request, "john"), "john"
         )
         self.assertEqual(
-            app.execute_endpoint('bar', requestMock(b'/post/123'), 123),
-            '123'
+            app.execute_endpoint("bar", MockRequest(b"/post/123"), 123), "123"
         )
 
-        request = requestMock(b'/addr')
-        self.assertEqual(app.urlFor(request, 'userpage', {'name': 'john'}),
-                         '/user/john')
+        request = MockRequest(b"/addr")
+        self.assertEqual(
+            app.urlFor(request, "userpage", {"name": "john"}), "/user/john"
+        )
 
-        request = requestMock(b'/addr')
-        self.assertEqual(app.urlFor(request, 'userpage', {'name': 'john'},
-                                    force_external=True),
-                         'http://localhost:8080/user/john')
+        request = MockRequest(b"/addr")
+        self.assertEqual(
+            app.urlFor(
+                request, "userpage", {"name": "john"}, force_external=True
+            ),
+            "http://localhost:8080/user/john",
+        )
 
-        request = requestMock(b'/addr', host=b'example.com', port=4321)
-        self.assertEqual(app.urlFor(request, 'userpage', {'name': 'john'},
-                                    force_external=True),
-                         'http://example.com:4321/user/john')
+        request = MockRequest(b"/addr", host=b"example.com", port=4321)
+        self.assertEqual(
+            app.urlFor(
+                request, "userpage", {"name": "john"}, force_external=True
+            ),
+            "http://example.com:4321/user/john",
+        )
 
-        request = requestMock(b'/addr')
-        url = app.urlFor(request, 'userpage', {'name': 'john', 'age': 29},
-                         append_unknown=True)
-        self.assertEqual(url, '/user/john?age=29')
+        request = MockRequest(b"/addr")
+        url = app.urlFor(
+            request,
+            "userpage",
+            {"name": "john", "age": 29},
+            append_unknown=True,
+        )
+        self.assertEqual(url, "/user/john?age=29")
 
-        request = requestMock(b'/addr')
-        self.assertEqual(app.urlFor(request, 'bar', {'postid': 123}),
-                         '/post/123')
+        request = MockRequest(b"/addr")
+        self.assertEqual(
+            app.urlFor(request, "bar", {"postid": 123}), "/post/123"
+        )
 
-        request = requestMock(b'/addr')
-        request.requestHeaders.removeHeader(b'host')
-        self.assertEqual(app.urlFor(request, 'bar', {'postid': 123}),
-                         '/post/123')
+        request = MockRequest(b"/addr")
+        request.requestHeaders.removeHeader(b"host")
+        self.assertEqual(
+            app.urlFor(request, "bar", {"postid": 123}), "/post/123"
+        )
 
-        request = requestMock(b'/addr')
-        request.requestHeaders.removeHeader(b'host')
+        request = MockRequest(b"/addr")
+        request.requestHeaders.removeHeader(b"host")
         with self.assertRaises(ValueError):
-            app.urlFor(request, 'bar', {'postid': 123}, force_external=True)
+            app.urlFor(request, "bar", {"postid": 123}, force_external=True)

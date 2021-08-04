@@ -1,5 +1,5 @@
 # -*- test-case-name: klein.test.test_message -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 HTTP message API.
@@ -12,13 +12,8 @@ from attr.validators import instance_of, optional
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred, succeed
-
 from ._imessage import FountAlreadyAccessedError
-from ._interfaces import IHTTPMessage
 from ._tubes import bytesToFount, fountToBytes
-
-Any, Deferred, IHTTPMessage, Optional  # Silence linter
 
 
 __all__ = ()
@@ -27,39 +22,31 @@ __all__ = ()
 InternalBody = Union[bytes, IFount]
 
 
-
 @attrs(frozen=False)
-class MessageState(object):
+class MessageState:
     """
     Internal mutable state for HTTP message implementations in L{klein}.
     """
 
-    cachedBody = attrib(
-        type=Optional[bytes],
+    cachedBody: Optional[bytes] = attrib(
         validator=optional(instance_of(bytes)), default=None, init=False
     )
 
-    fountExhausted = attrib(
-        type=bool,
+    fountExhausted: bool = attrib(
         validator=instance_of(bool), default=False, init=False
     )
 
 
-def validateBody(instance, attribute, body):
-    # type: (Any, Any, InternalBody) -> None
+def validateBody(instance: Any, attribute: Any, body: InternalBody) -> None:
     """
     Validator for L{InternalBody}.
     """
 
-    if (
-        not isinstance(body, bytes) and
-        not IFount.providedBy(body)
-    ):
+    if not isinstance(body, bytes) and not IFount.providedBy(body):
         raise TypeError("body must be bytes or IFount")
 
 
-def bodyAsFount(body, state):
-    # type: (InternalBody, MessageState) -> IFount
+def bodyAsFount(body: InternalBody, state: MessageState) -> IFount:
     """
     Return a fount for a given L{InternalBody}.
     """
@@ -76,25 +63,19 @@ def bodyAsFount(body, state):
     return body
 
 
-def bodyAsBytes(body, state):
-    # type: (InternalBody, MessageState) -> Deferred[bytes]
+async def bodyAsBytes(body: InternalBody, state: MessageState) -> bytes:
     """
     Return bytes for a given L{InternalBody}.
     """
 
     if isinstance(body, bytes):
-        return succeed(body)
+        return body
 
     # assuming: IFount.providedBy(body)
 
     if state.cachedBody is not None:
-        return succeed(state.cachedBody)
+        return state.cachedBody
 
-    def cache(bodyBytes):
-        # type: (bytes) -> bytes
-        state.cachedBody = bodyBytes
-        return bodyBytes
+    state.cachedBody = await fountToBytes(body)
 
-    d = fountToBytes(body)
-    d.addCallback(cache)
-    return d
+    return state.cachedBody

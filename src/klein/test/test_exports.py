@@ -5,14 +5,12 @@ Tests for exported API.
 from twisted.trial import unittest
 
 
-
 class PublicSymbolsTestCase(unittest.TestCase):
     """
     Tests for public API modules.
     """
 
-    def test_klein(self):
-        # type: () -> None
+    def test_klein(self) -> None:
         """
         Test exports from L{klein}.
         """
@@ -27,9 +25,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
         self.assertIdentical(k.Plating, p.Plating)
 
-
-    def test_klein_resource(self):
-        # type: () -> None
+    def test_klein_resource(self) -> None:
         """
         Test export of C{resource} from L{klein}.
         """
@@ -38,9 +34,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
         self.assertIdentical(k.resource()._app, a.resource()._app)
 
-
-    def test_app(self):
-        # type: () -> None
+    def test_app(self) -> None:
         """
         Test exports from L{klein.app}.
         """
@@ -53,9 +47,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
         self.assertIdentical(a.route, _a.route)
         self.assertIdentical(a.run, _a.run)
 
-
-    def test_interfaces(self):
-        # type: () -> None
+    def test_interfaces(self) -> None:
         """
         Test exports from L{klein.interfaces}.
         """
@@ -64,9 +56,7 @@ class PublicSymbolsTestCase(unittest.TestCase):
 
         self.assertIdentical(i.IKleinRequest, _i.IKleinRequest)
 
-
-    def test_resource(self):
-        # type: () -> None
+    def test_resource(self) -> None:
         """
         Test exports from L{klein.resource}.
         """

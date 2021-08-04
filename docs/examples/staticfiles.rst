@@ -20,3 +20,28 @@ So ``http://localhost:8080/static/img.gif`` should return an image and ``http://
         return '<img src="/static/img.gif">'
 
     run("localhost", 8080)
+
+In production environments, you might want to disable directory listings so
+that you do not accidentally expose more information than you intend. To
+disable directory listings, override the ``directoryListing`` method for the
+:api:`twisted.web.static.File <t.w.static.File>` class.
+
+.. code-block:: python
+
+    from twisted.web.static import File
+    from klein import run, route
+    from werkzeug.exceptions import NotFound
+
+    @route('/static/', branch=True)
+    def static(request):
+        return FileNoDir("./static")
+
+    @route('/')
+    def home(request):
+        return '<img src="/static/img.gif">'
+
+    class FileNoDir(File):
+        def directoryListing(self):
+            raise NotFound()
+
+    run("localhost", 8080)

@@ -1,12 +1,12 @@
 # -*- test-case-name: klein.test.test_irequest -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Support for interoperability with L{twisted.web.iweb.IRequest}.
 """
 
 from io import BytesIO
-from typing import Text
+from typing import cast
 
 from attr import Factory, attrib, attrs
 from attr.validators import provides
@@ -15,7 +15,6 @@ from hyperlink import DecodedURL
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred, succeed
 from twisted.python.compat import nativeString
 from twisted.web.iweb import IRequest
 
@@ -27,9 +26,6 @@ from ._message import FountAlreadyAccessedError, MessageState
 from ._request import IHTTPRequest
 from ._tubes import IOFount, fountToBytes
 
-# Silence linter
-Deferred, IFount, IHTTPHeaders, Text
-
 
 __all__ = ()
 
@@ -37,40 +33,33 @@ __all__ = ()
 noneIO = BytesIO()
 
 
-
 @implementer(IHTTPRequest)
 @attrs(frozen=True)
-class HTTPRequestWrappingIRequest(object):
+class HTTPRequestWrappingIRequest:
     """
     HTTP request.
 
     This is an L{IHTTPRequest} implementation that wraps an L{IRequest} object.
     """
 
-    _request = attrib(validator=provides(IRequest))  # type: IRequest
+    _request: IRequest = attrib(validator=provides(IRequest))
 
-    _state = attrib(
-        default=Factory(MessageState), init=False
-    )  # type: MessageState
-
+    _state: MessageState = attrib(default=Factory(MessageState), init=False)
 
     @property
-    def method(self):
-        # type: () -> Text
-        return self._request.method.decode("ascii")
-
+    def method(self) -> str:
+        return cast(str, self._request.method.decode("ascii"))
 
     @property
-    def uri(self):
-        # type: () -> DecodedURL
+    def uri(self) -> DecodedURL:
         request = self._request
 
         # This code borrows from t.w.server.Request._prePathURL.
 
         if request.isSecure():
-            scheme = u"https"
+            scheme = "https"
         else:
-            scheme = u"http"
+            scheme = "http"
 
         netloc = nativeString(request.getRequestHostname())
 
@@ -80,23 +69,19 @@ class HTTPRequestWrappingIRequest(object):
         else:
             default = 80
         if port != default:
-            netloc += u":{}".format(port)
+            netloc += f":{port}"
 
         path = nativeString(request.uri)
-        if path and path[0] == u"/":
+        if path and path[0] == "/":
             path = path[1:]
 
-        return DecodedURL.fromText(u"{}://{}/{}".format(scheme, netloc, path))
-
+        return DecodedURL.fromText(f"{scheme}://{netloc}/{path}")
 
     @property
-    def headers(self):
-        # type: () -> IHTTPHeaders
+    def headers(self) -> IHTTPHeaders:
         return HTTPHeadersWrappingHeaders(headers=self._request.requestHeaders)
 
-
-    def bodyAsFount(self):
-        # type: () -> IFount
+    def bodyAsFount(self) -> IFount:
         source = self._request.content
         if source is noneIO:
             raise FountAlreadyAccessedError()
@@ -107,18 +92,10 @@ class HTTPRequestWrappingIRequest(object):
 
         return fount
 
-
-    def bodyAsBytes(self):
-        # type: () -> Deferred[bytes]
+    async def bodyAsBytes(self) -> bytes:
         if self._state.cachedBody is not None:
-            return succeed(self._state.cachedBody)
-
-        def cache(bodyBytes):
-            # type: (bytes) -> bytes
-            self._state.cachedBody = bodyBytes
-            return bodyBytes
+            return self._state.cachedBody  # pragma: no cover
 
         fount = self.bodyAsFount()
-        d = fountToBytes(fount)
-        d.addCallback(cache)
-        return d
+        self._state.cachedBody = await fountToBytes(fount)
+        return self._state.cachedBody

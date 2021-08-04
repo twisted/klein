@@ -10,12 +10,12 @@ Below we have created a class that will translate ``NotFound`` exceptions into a
 .. code-block:: python
 
     from klein import Klein
-    
+
     class NotFound(Exception):
         pass
 
 
-    class ItemStore(object):
+    class ItemStore:
         app = Klein()
 
         @app.handle_errors(NotFound)
@@ -62,7 +62,7 @@ A simple way to create a catch-all function, which serves every URL that doesn't
 
     from klein import Klein
 
-    class OnlyOneRoute(object):
+    class OnlyOneRoute:
         app = Klein()
 
         @app.route('/api/<path:catchall>')
@@ -96,4 +96,3 @@ Use cURL to verify that only ``/api`` and ``/api/v1`` return content, all other 
 
 
 This method can also be used on the root route, in which case it will catch every request which doesn't match a route.
-

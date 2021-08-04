@@ -1,38 +1,34 @@
 # -*- test-case-name: klein.test.test_headers_compat -*-
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Tests for L{klein._headers}.
 """
-
-from typing import Text
 
 from twisted.web.http_headers import Headers
 
 from ._trial import TestCase
 from .test_headers import MutableHTTPHeadersTestsMixIn
 from .._headers import (
-    IMutableHTTPHeaders, RawHeaders, normalizeRawHeadersFrozen
+    IMutableHTTPHeaders,
+    RawHeaders,
+    normalizeRawHeadersFrozen,
 )
 from .._headers_compat import HTTPHeadersWrappingHeaders
 
-# Silence linter
-IMutableHTTPHeaders, RawHeaders, Text
-
-
 try:
     from twisted.web.http_headers import _sanitizeLinearWhitespace
-except ImportError:
-    _sanitizeLinearWhitespace = None
+except ImportError:  # pragma: no cover
+    _sanitizeLinearWhitespace = None  # type: ignore[assignment]
 
-def _twistedHeaderNormalize(value):
-    # type: (Text) -> Text
+
+def _twistedHeaderNormalize(value: str) -> str:
     """
     Normalize the given header value according to the rules of the installed
     Twisted version.
     """
-    if _sanitizeLinearWhitespace is None:
-        return value
+    if _sanitizeLinearWhitespace is None:  # pragma: no cover
+        return value  # type: ignore[unreachable]
     else:
         return _sanitizeLinearWhitespace(value.encode("utf-8")).decode("utf-8")
 
@@ -40,35 +36,27 @@ def _twistedHeaderNormalize(value):
 __all__ = ()
 
 
-
 class HTTPHeadersWrappingHeadersTests(MutableHTTPHeadersTestsMixIn, TestCase):
     """
     Tests for L{HTTPHeadersWrappingHeaders}.
     """
 
-    def assertRawHeadersEqual(self, rawHeaders1, rawHeaders2):
-        # type: (RawHeaders, RawHeaders) -> None
-        super(HTTPHeadersWrappingHeadersTests, self).assertRawHeadersEqual(
-            sorted(rawHeaders1), sorted(rawHeaders2)
-        )
+    def assertRawHeadersEqual(
+        self, rawHeaders1: RawHeaders, rawHeaders2: RawHeaders
+    ) -> None:
+        super().assertRawHeadersEqual(sorted(rawHeaders1), sorted(rawHeaders2))
 
-
-    def headerNormalize(self, value):
-        # type: (Text) -> Text
+    def headerNormalize(self, value: str) -> str:
         return _twistedHeaderNormalize(value)
 
-
-    def headers(self, rawHeaders):
-        # type: (RawHeaders) -> IMutableHTTPHeaders
+    def headers(self, rawHeaders: RawHeaders) -> IMutableHTTPHeaders:
         headers = Headers()
         for rawName, rawValue in rawHeaders:
             headers.addRawHeader(rawName, rawValue)
 
         return HTTPHeadersWrappingHeaders(headers=headers)
 
-
-    def test_rawHeaders(self):
-        # type: () -> None
+    def test_rawHeaders(self) -> None:
         """
         L{MutableHTTPHeaders.rawHeaders} equals raw headers matching the
         L{Headers} given at init time.

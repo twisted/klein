@@ -1,26 +1,18 @@
-
-from typing import Any, TYPE_CHECKING
+from typing import Any, Callable, Dict, Iterable, Sequence, TYPE_CHECKING, Type
 
 import attr
 
-try:
-    from constantly import NamedConstant, Names
-except ImportError:             # pragma: no cover
-    from twisted.python.constants import NamedConstant, Names
+from constantly import NamedConstant, Names
+
+from twisted.internet.defer import Deferred
+from twisted.python.components import Componentized
+from twisted.web.iweb import IRequest
 
 from zope.interface import Attribute, Interface
 
-from ._typing import ifmethod
+if TYPE_CHECKING:
+    from ._app import KleinRenderable
 
-if TYPE_CHECKING:               # pragma: no cover
-    from twisted.internet.defer import Deferred
-    from twisted.python.components import Componentized
-    from typing import Dict, Iterable, List, Text, Type, Sequence
-    from twisted.web.iweb import IRequest
-    from zope.interface.interfaces import IInterface
-
-    Deferred, Text, Componentized, Sequence, IRequest, List, Type
-    Iterable, IInterface, Dict
 
 class NoSuchSession(Exception):
     """
@@ -38,181 +30,6 @@ class TransactionEnded(Exception):
     """
     Exception raised when.
     """
-
-
-
-class ISessionStore(Interface):
-    """
-    Backing storage for sessions.
-    """
-
-    @ifmethod
-    def newSession(isConfidential, authenticatedBy):
-        # type: (bool, SessionMechanism) -> Deferred
-        """
-        Create a new L{ISession}.
-
-        @return: a new session with a new identifier.
-        @rtype: L{Deferred} firing with L{ISession}.
-        """
-
-
-    @ifmethod
-    def loadSession(identifier, isConfidential, authenticatedBy):
-        # type: (Text, bool, SessionMechanism) -> Deferred
-        """
-        Load a session given the given identifier and security properties.
-
-        As an optimization for session stores where the back-end can generate
-        session identifiers when the presented one is not found in the same
-        round-trip to a data store, this method may return a L{Session} object
-        with an C{identifier} attribute that does not match C{identifier}.
-        However, please keep in mind when implementing L{ISessionStore} that
-        this behavior is only necessary for requests where C{authenticatedBy}
-        is L{SessionMechanism.Cookie}; an unauthenticated
-        L{SessionMechanism.Header} session is from an API client and its
-        session should be valid already.
-
-        @return: an existing session with the given identifier.
-        @rtype: L{Deferred} firing with L{ISession} or failing with
-            L{NoSuchSession}.
-        """
-
-
-    @ifmethod
-    def sentInsecurely(identifiers):
-        # type: (Sequence[Text]) -> None
-        """
-        The transport layer has detected that the given identifiers have been
-        sent over an unauthenticated transport.
-        """
-
-
-
-class ISimpleAccountBinding(Interface):
-    """
-    Data-store agnostic account / session binding manipulation API for "simple"
-    accounts - i.e. those using username, password, and email address as a
-    method to authenticate a user.
-
-    This goes into a user-authentication-capable L{ISession} object's C{data}
-    attribute as a component.
-    """
-
-    @ifmethod
-    def bindIfCredentialsMatch(username, password):
-        # type: (Text, Text) -> None
-        """
-        Attach the session this is a component of to an account with the given
-        username and password, if the given username and password correctly
-        authenticate a principal.
-        """
-
-    @ifmethod
-    def boundAccounts():
-        # type: () -> Deferred
-        """
-        Retrieve the accounts currently associated with the session this is a
-        component of.
-
-        @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
-        """
-
-    @ifmethod
-    def unbindThisSession():
-        # type: () -> None
-        """
-        Disassociate the session this is a component of from any accounts it's
-        logged in to.
-        """
-
-    @ifmethod
-    def createAccount(username, email, password):
-        # type: (Text, Text, Text) -> None
-        """
-        Create a new account with the given username, email and password.
-        """
-
-
-
-class ISimpleAccount(Interface):
-    """
-    Data-store agnostic account interface.
-    """
-
-    username = Attribute(
-        """
-        Unicode username.
-        """
-    )
-
-    accountID = Attribute(
-        """
-        Unicode account-ID.
-        """
-    )
-
-    def bindSession(self, session):
-        # type: (ISession) -> None
-        """
-        Bind the given session to this account; i.e. authorize the given
-        session to act on behalf of this account.
-        """
-
-
-    def changePassword(self, newPassword):
-        # type: (Text) -> None
-        """
-        Change the password of this account.
-        """
-
-
-
-class ISessionProcurer(Interface):
-    """
-    An L{ISessionProcurer} wraps an L{ISessionStore} and can procure sessions
-    that store, given HTTP request objects.
-    """
-
-    def procureSession(self, request, forceInsecure=False):
-        # type: (IRequest, bool, bool) -> Deferred
-        """
-        Retrieve a session using whatever technique is necessary.
-
-        If the request already identifies an existing session in the store,
-        retrieve it.  If not, create a new session and retrieve that.
-
-        @param request: The request to procure a session from.
-        @type request: L{twisted.web.server.Request}
-
-        @param forceInsecure: Even if the request was transmitted securely
-            (i.e. over HTTPS), retrieve the session that would be used by the
-            same browser if it were sending an insecure (i.e. over HTTP)
-            request; by default, this is False, and the session's security will
-            match that of the request.
-        @type forceInsecure: L{bool}
-
-        @return: a L{Deferred} that:
-
-                - fires with an L{ISession} provider if the request describes
-                  an existing, valid session, or, if the intersection of the
-                  data in the request and the configuration of this
-                  L{ISessionProcurer} allow for a cookie to be set immediately,
-                  or
-
-                - fails with L{NoSuchSession} if the request is unable to
-                  negotiate a session based on the current request: this is
-                  generally if the client is trying to use header-based
-                  authentication (and therefore does not want a new cookie set)
-                  or if this procurer is configured not to automatically create
-                  new sessions on the fly, or
-
-                - fails with L{TooLateForCookies} if the request bound to this
-                  procurer has already sent the headers and therefore we can no
-                  longer set a cookie, and we need to set a cookie.
-
-        @rtype: L{Session}
-        """
 
 
 class SessionMechanism(Names):
@@ -236,7 +53,6 @@ class SessionMechanism(Names):
     Header = NamedConstant()
 
 
-
 class ISession(Interface):
     """
     An L{ISession} provider contains an identifier for the session, information
@@ -245,7 +61,7 @@ class ISession(Interface):
 
     identifier = Attribute(
         """
-        L{unicode} identifying a session.
+        L{str} identifying a session.
 
         This value should be:
 
@@ -275,10 +91,7 @@ class ISession(Interface):
         """
     )
 
-
-    @ifmethod
-    def authorize(interfaces):
-        # type: (Iterable[IInterface]) -> Deferred
+    def authorize(interfaces: Iterable[Type[Interface]]) -> Deferred:
         """
         Retrieve other objects from this session.
 
@@ -288,8 +101,6 @@ class ISession(Interface):
         L{ISessionStore} implementation you're using.
 
         @param interfaces: A list of interfaces.
-        @type interfaces: L{iterable} of
-            L{zope.interface.interfaces.IInterface}
 
         @return: all of the providers that could be retrieved from the session.
         @rtype: L{Deferred} firing with L{dict} mapping
@@ -299,14 +110,169 @@ class ISession(Interface):
         """
 
 
+class ISessionStore(Interface):
+    """
+    Backing storage for sessions.
+    """
+
+    def newSession(
+        isConfidential: bool,
+        authenticatedBy: SessionMechanism,
+    ) -> Deferred:
+        """
+        Create a new L{ISession}.
+
+        @return: a new session with a new identifier.
+        @rtype: L{Deferred} firing with L{ISession}.
+        """
+
+    def loadSession(
+        identifier: str,
+        isConfidential: bool,
+        authenticatedBy: SessionMechanism,
+    ) -> Deferred:
+        """
+        Load a session given the given identifier and security properties.
+
+        As an optimization for session stores where the back-end can generate
+        session identifiers when the presented one is not found in the same
+        round-trip to a data store, this method may return a L{Session} object
+        with an C{identifier} attribute that does not match C{identifier}.
+        However, please keep in mind when implementing L{ISessionStore} that
+        this behavior is only necessary for requests where C{authenticatedBy}
+        is L{SessionMechanism.Cookie}; an unauthenticated
+        L{SessionMechanism.Header} session is from an API client and its
+        session should be valid already.
+
+        @return: an existing session with the given identifier.
+        @rtype: L{Deferred} firing with L{ISession} or failing with
+            L{NoSuchSession}.
+        """
+
+    def sentInsecurely(identifiers: Sequence[str]) -> None:
+        """
+        The transport layer has detected that the given identifiers have been
+        sent over an unauthenticated transport.
+        """
+
+
+class ISimpleAccountBinding(Interface):
+    """
+    Data-store agnostic account / session binding manipulation API for "simple"
+    accounts - i.e. those using username, password, and email address as a
+    method to authenticate a user.
+
+    This goes into a user-authentication-capable L{ISession} object's C{data}
+    attribute as a component.
+    """
+
+    def bindIfCredentialsMatch(username: str, password: str) -> None:
+        """
+        Attach the session this is a component of to an account with the given
+        username and password, if the given username and password correctly
+        authenticate a principal.
+        """
+
+    def boundAccounts() -> Deferred:
+        """
+        Retrieve the accounts currently associated with the session this is a
+        component of.
+
+        @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
+        """
+
+    def unbindThisSession() -> None:
+        """
+        Disassociate the session this is a component of from any accounts it's
+        logged in to.
+        """
+
+    def createAccount(username: str, email: str, password: str) -> None:
+        """
+        Create a new account with the given username, email and password.
+        """
+
+
+class ISimpleAccount(Interface):
+    """
+    Data-store agnostic account interface.
+    """
+
+    username = Attribute(
+        """
+        Unicode username.
+        """
+    )
+
+    accountID = Attribute(
+        """
+        Unicode account-ID.
+        """
+    )
+
+    def bindSession(session: ISession) -> None:
+        """
+        Bind the given session to this account; i.e. authorize the given
+        session to act on behalf of this account.
+        """
+
+    def changePassword(newPassword: str) -> None:
+        """
+        Change the password of this account.
+        """
+
+
+class ISessionProcurer(Interface):
+    """
+    An L{ISessionProcurer} wraps an L{ISessionStore} and can procure sessions
+    that store, given HTTP request objects.
+    """
+
+    def procureSession(
+        request: IRequest, forceInsecure: bool = False
+    ) -> Deferred:
+        """
+        Retrieve a session using whatever technique is necessary.
+
+        If the request already identifies an existing session in the store,
+        retrieve it.  If not, create a new session and retrieve that.
+
+        @param request: The request to procure a session from.
+        @param forceInsecure: Even if the request was transmitted securely
+            (i.e. over HTTPS), retrieve the session that would be used by the
+            same browser if it were sending an insecure (i.e. over HTTP)
+            request; by default, this is False, and the session's security will
+            match that of the request.
+
+        @return: a L{Deferred} that:
+
+                - fires with an L{ISession} provider if the request describes
+                  an existing, valid session, or, if the intersection of the
+                  data in the request and the configuration of this
+                  L{ISessionProcurer} allow for a cookie to be set immediately,
+                  or
+
+                - fails with L{NoSuchSession} if the request is unable to
+                  negotiate a session based on the current request: this is
+                  generally if the client is trying to use header-based
+                  authentication (and therefore does not want a new cookie set)
+                  or if this procurer is configured not to automatically create
+                  new sessions on the fly, or
+
+                - fails with L{TooLateForCookies} if the request bound to this
+                  procurer has already sent the headers and therefore we can no
+                  longer set a cookie, and we need to set a cookie.
+        """
+
+
 class IDependencyInjector(Interface):
     """
     An injector for a given dependency.
     """
 
-    @ifmethod
-    def injectValue(instance, request, routeParams):
-        # type: (Any, IRequest, Dict[str, Any]) -> Any
+    def injectValue(
+        instance: Any, request: IRequest, routeParams: Dict[str, Any]
+    ) -> Any:
         """
         Return a value to be injected into the parameter name specified by the
         IRequiredParameter.  This may return a Deferred, or an object, or an
@@ -322,9 +288,7 @@ class IDependencyInjector(Interface):
             parameters).
         """
 
-    @ifmethod
-    def finalize():
-        # type: () -> None
+    def finalize() -> None:
         """
         Finalize this injector before allowing the route to be created.
 
@@ -336,7 +300,26 @@ class IDependencyInjector(Interface):
             - attaching any finalized component objects to the
               injectionComponents originally passed along to the
               IRequiredParameter that created this IDependencyInjector.
+        """
 
+
+class IRequestLifecycle(Interface):
+    """
+    Interface for adding hooks to the phases of a request's lifecycle.
+    """
+
+    def addPrepareHook(
+        beforeHook: Callable,
+        requires: Sequence[Type[Interface]] = (),
+        provides: Sequence[Type[Interface]] = (),
+    ) -> None:
+        """
+        Add a hook that promises to prepare the request by supplying the given
+        interfaces as components on the request, and requires the given
+        requirements.
+
+        Prepare hooks are run I{before any} L{IDependencyInjector}s I{inject
+        their values}.
         """
 
 
@@ -346,9 +329,11 @@ class IRequiredParameter(Interface):
     dependency at request-handling time.
     """
 
-    @ifmethod
-    def registerInjector(injectionComponents, parameterName, lifecycle):
-        # type: (Componentized, str, IRequestLifecycleT) -> IDependencyInjector
+    def registerInjector(
+        injectionComponents: Componentized,
+        parameterName: str,
+        lifecycle: IRequestLifecycle,
+    ) -> IDependencyInjector:
         """
         Register the given injector at method-decoration time, informing it of
         its Python parameter name.
@@ -368,20 +353,7 @@ class IRequiredParameter(Interface):
         """
 
 
-
-class IRequestLifecycle(Interface):
-    """
-    Interface for adding hooks to the phases of a request's lifecycle.
-    """
-
-
-if TYPE_CHECKING:               # pragma: no cover
-    from typing import Union
-    from ._requirer import RequestLifecycle
-    IRequestLifecycleT = Union[RequestLifecycle, IRequestLifecycle]
-
-
-@attr.s
+@attr.s(auto_attribs=True)
 class EarlyExit(Exception):
     """
     An L{EarlyExit} may be raised by any of the code that runs in the
@@ -390,7 +362,6 @@ class EarlyExit(Exception):
 
     @ivar alternateReturnValue: The return value which should instead be
         supplied as the route's response.
-    @type alternateReturnValue: Any type that's acceptable to return from a
-        Klein route.
     """
-    alternateReturnValue = attr.ib(type=Any)
+
+    alternateReturnValue: "KleinRenderable"

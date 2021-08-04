@@ -1,4 +1,4 @@
-# Copyright (c) 2017-2018. See LICENSE for details.
+# Copyright (c) 2011-2021. See LICENSE for details.
 
 """
 Tests for L{klein.test._trial}.
@@ -12,7 +12,6 @@ from ._trial import TestCase
 __all__ = ()
 
 
-
 class TestCaseTests(TestCase):
     """
     Tests for L{TestCase}.
@@ -22,32 +21,28 @@ class TestCaseTests(TestCase):
         """
         Frobbable object.
         """
-        def frob():
-            # type: () -> None
+
+        def frob() -> None:
             """
             Frob the object.
             """
 
-
     @implementer(IFrobbable)
-    class Frobbable(object):
+    class Frobbable:
         """
         Implements L{IFrobbable}.
         """
-        def frob(self):
-            # type: () -> None
+
+        def frob(self) -> None:
             pass
 
-
     @implementer(IFrobbable)
-    class NotFrobbable(object):
+    class NotFrobbable:  # type: ignore [misc] # …intentional for test
         """
         Does not implement L{IFrobbable}, despite declaring.
         """
 
-
-    def test_assertProvidesPass(self):
-        # type: () -> None
+    def test_assertProvidesPass(self) -> None:
         """
         L{TestCase.assertProvides} does not raise when C{interface} is provided
         by C{obj}.
@@ -56,14 +51,14 @@ class TestCaseTests(TestCase):
         self.assertProvides(self.IFrobbable, frobbable)
         frobbable.frob()  # Coverage
 
-
-    def test_assertProvidesFail(self):
-        # type: () -> None
+    def test_assertProvidesFail(self) -> None:
         """
         L{TestCase.assertProvides} does not raise when C{interface} is not
         provided by C{obj}.
         """
         self.assertRaises(
             self.failureException,
-            self.assertProvides, self.IFrobbable, self.NotFrobbable(),
+            self.assertProvides,
+            self.IFrobbable,
+            self.NotFrobbable(),
         )

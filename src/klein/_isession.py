@@ -353,7 +353,7 @@ class IRequiredParameter(Interface):
         """
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class EarlyExit(Exception):
     """
     An L{EarlyExit} may be raised by any of the code that runs in the
@@ -364,4 +364,4 @@ class EarlyExit(Exception):
         supplied as the route's response.
     """
 
-    alternateReturnValue = attr.ib(type=KleinRenderable)
+    alternateReturnValue: "KleinRenderable"

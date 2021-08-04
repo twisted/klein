@@ -87,13 +87,13 @@ class SessionProcurer:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             allPossibleSentTokens: Sequence[str] = sum(
-                [
+                (
                     request.requestHeaders.getRawHeaders(header, [])
                     for header in [
                         self._secureTokenHeader,
                         self._insecureTokenHeader,
                     ]
-                ],
+                ),
                 [],
             ) + [
                 it
@@ -187,7 +187,7 @@ class AuthorizationDenied(Resource):
 
     def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)
-        return "{} DENIED".format(qual(self._interface)).encode("utf-8")
+        return f"{qual(self._interface)} DENIED".encode()
 
 
 @implementer(IDependencyInjector, IRequiredParameter)

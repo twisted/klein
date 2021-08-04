@@ -187,7 +187,7 @@ class AuthorizationDenied(Resource):
 
     def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)
-        return f"{qual(self._interface)} DENIED".encode("utf-8")
+        return f"{qual(self._interface)} DENIED".encode()
 
 
 @implementer(IDependencyInjector, IRequiredParameter)

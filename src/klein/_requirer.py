@@ -1,8 +1,8 @@
-from typing import Any, Callable, Dict, List, Sequence, Type
+from typing import Any, Callable, Dict, Generator, List, Sequence, Type
 
 import attr
 
-from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
@@ -37,7 +37,9 @@ class RequestLifecycle:
         self._prepareHooks.append(beforeHook)
 
     @inlineCallbacks
-    def runPrepareHooks(self, instance: Any, request: IRequest) -> Deferred:
+    def runPrepareHooks(
+        self, instance: Any, request: IRequest
+    ) -> Generator[Any, object, None]:
         """
         Execute all the hooks added with L{RequestLifecycle.addPrepareHook}.
         This is invoked by the L{requires} route machinery.

@@ -5,8 +5,18 @@
 Tests for L{klein._irequest}.
 """
 
+import functools
 from string import ascii_uppercase
-from typing import Optional
+from types import MappingProxyType
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    Mapping,
+    Sequence,
+    TypeVar,
+)
 
 from hyperlink import DecodedURL, EncodedURL
 from hyperlink.hypothesis import decoded_urls
@@ -14,11 +24,11 @@ from hyperlink.hypothesis import decoded_urls
 from hypothesis import given
 from hypothesis.strategies import binary, text
 
-from twisted.web.http_headers import Headers
+from twisted.internet.defer import ensureDeferred
 from twisted.web.iweb import IRequest
 
 from ._trial import TestCase
-from .test_resource import requestMock
+from .test_resource import MockRequest
 from .._headers import IHTTPHeaders
 from .._message import FountAlreadyAccessedError
 from .._request import IHTTPRequest
@@ -26,6 +36,22 @@ from .._request_compat import HTTPRequestWrappingIRequest
 
 
 __all__ = ()
+
+
+emptyMapping: Mapping[Any, Any] = MappingProxyType({})
+
+_T = TypeVar("_T")
+_R = TypeVar("_R")
+
+
+def ensuringDeferred(
+    fn: Callable[[_T], Coroutine[Any, Any, _R]]
+) -> Callable[[_T], Awaitable[_R]]:
+    @functools.wraps(fn)
+    def wrapper(self: _T) -> Awaitable[_R]:
+        return ensureDeferred(fn(self))
+
+    return wrapper
 
 
 class HTTPRequestWrappingIRequestTests(TestCase):
@@ -41,9 +67,9 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         port: int = 8080,
         isSecure: bool = False,
         body: bytes = b"",
-        headers: Optional[Headers] = None,
+        headers: Mapping[bytes, Sequence[bytes]] = emptyMapping,
     ) -> IRequest:
-        return requestMock(
+        return MockRequest(
             path=path,
             method=method,
             host=host,
@@ -143,11 +169,12 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         """
         legacyRequest = self.legacyRequest(body=data)
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
-        body = self.successResultOf(request.bodyAsBytes())
+        body = self.successResultOf(ensureDeferred(request.bodyAsBytes()))
 
         self.assertEqual(body, data)
 
-    def test_bodyAsBytesCached(self) -> None:
+    @ensuringDeferred
+    async def test_bodyAsBytesCached(self) -> None:
         """
         L{HTTPRequestWrappingIRequest.bodyAsBytes} called twice returns the
         same object both times.
@@ -155,7 +182,7 @@ class HTTPRequestWrappingIRequestTests(TestCase):
         data = b"some data"
         legacyRequest = self.legacyRequest(body=data)
         request = HTTPRequestWrappingIRequest(request=legacyRequest)
-        body1 = self.successResultOf(request.bodyAsBytes())
-        body2 = self.successResultOf(request.bodyAsBytes())
+        body1 = await request.bodyAsBytes()
+        body2 = await request.bodyAsBytes()
 
         self.assertIdentical(body1, body2)

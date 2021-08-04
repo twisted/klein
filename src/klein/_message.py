@@ -12,8 +12,6 @@ from attr.validators import instance_of, optional
 
 from tubes.itube import IFount
 
-from twisted.internet.defer import Deferred, succeed
-
 from ._imessage import FountAlreadyAccessedError
 from ._tubes import bytesToFount, fountToBytes
 
@@ -65,23 +63,19 @@ def bodyAsFount(body: InternalBody, state: MessageState) -> IFount:
     return body
 
 
-def bodyAsBytes(body: InternalBody, state: MessageState) -> Deferred:
+async def bodyAsBytes(body: InternalBody, state: MessageState) -> bytes:
     """
     Return bytes for a given L{InternalBody}.
     """
 
     if isinstance(body, bytes):
-        return succeed(body)
+        return body
 
     # assuming: IFount.providedBy(body)
 
     if state.cachedBody is not None:
-        return succeed(state.cachedBody)
+        return state.cachedBody
 
-    def cache(bodyBytes: bytes) -> bytes:
-        state.cachedBody = bodyBytes
-        return bodyBytes
+    state.cachedBody = await fountToBytes(body)
 
-    d = fountToBytes(body)
-    d.addCallback(cache)
-    return d
+    return state.cachedBody

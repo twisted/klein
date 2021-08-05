@@ -1,8 +1,15 @@
+# Don't add a comment to GitHub conversation if there is no coverage change.
+comment:
+  require_changes: true
+
+# Require 100% diff coverage, only complain about project coverage.
 coverage:
   status:
     project:
       default:
         informational: true
+        target: 100%
     patch:
       default:
         informational: false
+        target: 100%

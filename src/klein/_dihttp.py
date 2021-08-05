@@ -5,13 +5,11 @@ Dependency-Injected HTTP metadata.
 from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
 
 import attr
-
 from hyperlink import DecodedURL
+from zope.interface import Interface, implementer, provider
 
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from zope.interface import Interface, implementer, provider
 
 from .interfaces import (
     IDependencyInjector,

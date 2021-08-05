@@ -13,7 +13,9 @@ from sys import modules
 from typing import Any, Callable, Union
 
 from ._app import resource as _globalResourceMethod
-from ._resource import KleinResource as _KleinResource, ensure_utf8_bytes
+from ._resource import KleinResource as _KleinResource
+from ._resource import ensure_utf8_bytes
+
 
 KleinResource = _KleinResource
 

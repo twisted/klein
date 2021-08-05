@@ -8,11 +8,11 @@ import sys
 from contextlib import contextmanager
 from inspect import iscoroutine
 from typing import (
+    IO,
     Any,
     Awaitable,
     Callable,
     Dict,
-    IO,
     Iterator,
     List,
     Mapping,
@@ -25,10 +25,14 @@ from typing import (
 )
 from weakref import ref
 
+
 try:
     from typing import Protocol
 except ImportError:
     from typing_extensions import Protocol  # type: ignore[misc]
+
+from werkzeug.routing import Map, MapAdapter, Rule, Submount
+from zope.interface import implementer
 
 from twisted.internet import reactor
 from twisted.internet.defer import ensureDeferred
@@ -39,10 +43,6 @@ from twisted.python.failure import Failure
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource
 from twisted.web.server import Request, Site
-
-from werkzeug.routing import Map, MapAdapter, Rule, Submount
-
-from zope.interface import implementer
 
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue

@@ -9,10 +9,9 @@ from typing import AnyStr, Iterable, Tuple, cast
 
 from attr import attrib, attrs
 from attr.validators import instance_of
+from zope.interface import implementer
 
 from twisted.web.http_headers import Headers
-
-from zope.interface import implementer
 
 from ._headers import (
     IMutableHTTPHeaders,

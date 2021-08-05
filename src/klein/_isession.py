@@ -1,14 +1,13 @@
-from typing import Any, Callable, Dict, Iterable, Sequence, TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Sequence, Type
 
 import attr
-
 from constantly import NamedConstant, Names
+from zope.interface import Attribute, Interface
 
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
-from zope.interface import Attribute, Interface
 
 if TYPE_CHECKING:
     from ._app import KleinRenderable

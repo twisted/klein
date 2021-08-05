@@ -31,11 +31,10 @@ from hypothesis.strategies import (
     tuples,
 )
 
-from ._trial import TestCase
 from .._headers import (
-    FrozenHTTPHeaders,
     HEADER_NAME_ENCODING,
     HEADER_VALUE_ENCODING,
+    FrozenHTTPHeaders,
     IHTTPHeaders,
     IMutableHTTPHeaders,
     MutableHTTPHeaders,
@@ -49,6 +48,7 @@ from .._headers import (
     normalizeRawHeaders,
     normalizeRawHeadersFrozen,
 )
+from ._trial import TestCase
 
 
 __all__ = ()

@@ -2,7 +2,6 @@ from typing import Any, List, Tuple, cast
 from xml.etree import ElementTree
 
 import attr
-
 from treq import content
 from treq.testing import StubTreq
 

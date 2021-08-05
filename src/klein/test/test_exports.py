@@ -38,8 +38,8 @@ class PublicSymbolsTestCase(unittest.TestCase):
         """
         Test exports from L{klein.app}.
         """
-        import klein.app as a
         import klein._app as _a
+        import klein.app as a
 
         self.assertIdentical(a.Klein, _a.Klein)
         self.assertIdentical(a.KleinRequest, _a.KleinRequest)
@@ -51,8 +51,8 @@ class PublicSymbolsTestCase(unittest.TestCase):
         """
         Test exports from L{klein.interfaces}.
         """
-        import klein.interfaces as i
         import klein._interfaces as _i
+        import klein.interfaces as i
 
         self.assertIdentical(i.IKleinRequest, _i.IKleinRequest)
 
@@ -60,8 +60,8 @@ class PublicSymbolsTestCase(unittest.TestCase):
         """
         Test exports from L{klein.resource}.
         """
-        import klein.resource as r
         import klein._resource as _r
+        import klein.resource as r
 
         self.assertIdentical(r.KleinResource, _r.KleinResource)
         self.assertIdentical(r.ensure_utf8_bytes, _r.ensure_utf8_bytes)

@@ -7,11 +7,11 @@ Tests for L{klein._request}.
 
 from hyperlink import DecodedURL
 
-from ._trial import TestCase
-from .test_message import FrozenHTTPMessageTestsMixIn
 from .._headers import FrozenHTTPHeaders
 from .._imessage import IHTTPMessage
 from .._request import FrozenHTTPRequest, IHTTPRequest
+from ._trial import TestCase
+from .test_message import FrozenHTTPMessageTestsMixIn
 
 
 __all__ = ()

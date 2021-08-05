@@ -36,7 +36,7 @@ requirer = Requirer()
 
 @requirer.require(
     router.route("/hello/world", methods=["GET"]),
-    # type note: https://github.com/Shoobx/mypy-zope/issues/39
+    # typing note: https://github.com/Shoobx/mypy-zope/issues/39
     url=cast(IRequiredParameter, RequestURL()),
 )
 def requiresURL(url: DecodedURL) -> str:

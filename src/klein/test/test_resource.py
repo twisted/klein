@@ -89,8 +89,8 @@ class MockRequest(Request):
         self.producer = producer
         for _ in range(2):
             if self.producer:
-                # type note: server.Request.registerProducer takes an IProducer,
-                # which does not have resumeProducing.
+                # typing note: server.Request.registerProducer takes an
+                # IProducer, which does not have resumeProducing.
                 # This seems to expect either an IPullProducer or an
                 # IPushProducer.
                 self.producer.resumeProducing()  # type: ignore[attr-defined]
@@ -205,7 +205,7 @@ class ProducingResource(Resource):
     def render_GET(self, request: IRequest) -> bytes:
         producer = MockProducer(request, self.strings)
         producer.start()
-        # type note: return type should have been
+        # typing note: return type should have been
         # Union[bytes, Literal[NOT_DONE_YET]] but NOT_DONE_YET is an Any
         # right now, so Literal won't accept it.
         return cast(bytes, NOT_DONE_YET)

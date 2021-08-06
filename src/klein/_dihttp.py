@@ -57,7 +57,7 @@ class RequestURL:
         parameterName: str,
         requestLifecycle: IRequestLifecycle,
     ) -> IDependencyInjector:
-        # type note: https://github.com/Shoobx/mypy-zope/issues/39
+        # typing note: https://github.com/Shoobx/mypy-zope/issues/39
         return cast(IDependencyInjector, cls())
 
     @classmethod

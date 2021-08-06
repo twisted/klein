@@ -214,7 +214,7 @@ class KleinResource(Resource):
 
         d = maybeDeferred(_execute)
 
-        # type note: returns Any because Response._applyToRequest returns Any
+        # typing note: returns Any because Response._applyToRequest returns Any
         def process(r: object) -> Any:
             """
             Recursively go through r and any child Resources until something

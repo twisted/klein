@@ -17,6 +17,7 @@ from typing import (
 )
 
 import attr
+from zope.interface import Attribute, Interface, implementer
 
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized, registerAdapter
@@ -25,8 +26,6 @@ from twisted.web.http import FORBIDDEN
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import Resource
 from twisted.web.template import Element, Tag, TagLoader, tags
-
-from zope.interface import Attribute, Interface, implementer
 
 from ._app import KleinRenderable, _call
 from ._decorators import bindable

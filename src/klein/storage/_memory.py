@@ -4,11 +4,10 @@ from os import urandom
 from typing import Any, Callable, Dict, Iterable, Type, cast
 
 import attr
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import Deferred, fail, succeed
 from twisted.python.components import Componentized
-
-from zope.interface import Interface, implementer
 
 from klein.interfaces import (
     ISession,
@@ -16,6 +15,7 @@ from klein.interfaces import (
     NoSuchSession,
     SessionMechanism,
 )
+
 
 _authCB = Callable[[Type[Interface], ISession, Componentized], Any]
 

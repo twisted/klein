@@ -6,11 +6,11 @@ Extensions to L{twisted.trial}.
 
 from typing import Type
 
-from twisted.trial.unittest import SynchronousTestCase
-
 from zope.interface import Interface
 from zope.interface.exceptions import Invalid
 from zope.interface.verify import verifyObject
+
+from twisted.trial.unittest import SynchronousTestCase
 
 
 __all__ = ()

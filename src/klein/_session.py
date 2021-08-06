@@ -3,6 +3,7 @@
 from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
 
 import attr
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
@@ -10,8 +11,6 @@ from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
 from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
-
-from zope.interface import Interface, implementer
 
 from .interfaces import (
     EarlyExit,

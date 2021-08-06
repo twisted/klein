@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Callable, Optional, TypeVar
 
+
 C = TypeVar("C", bound=Callable)
 
 

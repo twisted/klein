@@ -1,12 +1,11 @@
 from typing import Any, Callable, Dict, Generator, List, Sequence, Type
 
 import attr
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable, modified

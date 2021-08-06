@@ -5,17 +5,17 @@ Tests for L{klein._session}.
 from typing import Any, Generator, List, Tuple, Type
 
 from treq.testing import StubTreq
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.iweb import IRequest
 
-from zope.interface import Interface, implementer
-
 from klein import Authorization, Klein, Requirer, SessionProcurer
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
+
 
 Sessions = List[ISession]
 Errors = List[NoSuchSession]

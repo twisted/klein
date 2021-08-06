@@ -5,6 +5,8 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, cast
 from unittest.mock import Mock, call
 from urllib.parse import parse_qs
 
+from werkzeug.exceptions import NotFound
+
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.interfaces import IProducer
@@ -19,9 +21,6 @@ from twisted.web.static import File
 from twisted.web.template import Element, Tag, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 
-from werkzeug.exceptions import NotFound
-
-from .util import EqualityTestsMixin, recover
 from .. import Klein, KleinRenderable
 from .._interfaces import IKleinRequest
 from .._resource import (
@@ -30,6 +29,7 @@ from .._resource import (
     ensure_utf8_bytes,
     extractURLparts,
 )
+from .util import EqualityTestsMixin, recover
 
 
 emptyMapping: Mapping[Any, Any] = MappingProxyType({})
@@ -1381,7 +1381,7 @@ class GlobalAppTests(SynchronousTestCase):
     """
 
     def test_global_app(self) -> None:
-        from klein.app import run, route, resource, handle_errors
+        from klein.app import handle_errors, resource, route, run
 
         globalApp = run.__self__  # type: ignore[attr-defined]
 

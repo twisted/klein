@@ -1,7 +1,4 @@
-from ._iform import (
-    ValidationError,
-    ValueAbsent,
-)
+from ._iform import ValidationError, ValueAbsent
 from ._interfaces import IKleinRequest
 from ._isession import (
     EarlyExit,

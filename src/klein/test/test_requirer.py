@@ -1,15 +1,13 @@
 from typing import Iterator, Sequence, Tuple, cast
 
 from hyperlink import DecodedURL
-
 from treq.testing import StubTreq
+from zope.interface import Interface
 
 from twisted.python.components import Componentized
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IRequest
-
-from zope.interface import Interface
 
 from klein import Klein, RequestComponent, RequestURL, Requirer, Response
 from klein.interfaces import IRequiredParameter

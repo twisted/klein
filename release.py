@@ -10,11 +10,11 @@ from sys import exit, stderr
 from tempfile import mkdtemp
 from typing import Any, Dict, NoReturn, Optional, Sequence, cast
 
-from click import group as commandGroup, option as commandOption
-
-from git import Repo as Repository, TagReference
+from click import group as commandGroup
+from click import option as commandOption
+from git import Repo as Repository
+from git import TagReference
 from git.refs.head import Head
-
 from incremental import Version
 
 

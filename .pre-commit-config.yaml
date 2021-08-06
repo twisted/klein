@@ -55,7 +55,7 @@ repos:
       - id: forbid-new-submodules
       - id: mixed-line-ending
       - id: no-commit-to-branch
-        args: ["--branch", "trunk"]
+        args: ["--branch", "master"]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.9.0"

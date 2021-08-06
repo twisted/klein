@@ -224,8 +224,8 @@ class Klein:
         instance.
         """
         endpoint_f = self._endpoints[endpoint]
-        # type note: endpoint_f is a KleinRouteHandler, which is not defined as
-        # taking *args, **kwargs (because they aren't required), but we're
+        # typing note: endpoint_f is a KleinRouteHandler, which is not defined
+        # as taking *args, **kwargs (because they aren't required), but we're
         # going to pass them along here anyway.
         return endpoint_f(
             self._instance, request, *args, **kwargs  # type: ignore[arg-type]

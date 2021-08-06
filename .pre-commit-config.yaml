@@ -55,15 +55,19 @@ repos:
       - id: forbid-new-submodules
       - id: mixed-line-ending
       - id: no-commit-to-branch
-        args: ["--branch", "staging"]
+        args: ["--branch", "master"]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.9.0"
     hooks:
       - id: python-check-blanket-noqa
+      - id: python-check-blanket-type-ignore
+      - id: python-no-eval
+      - id: python-use-type-annotations
       - id: rst-backticks
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
+      - id: text-unicode-replacement-char
 
   - repo: https://github.com/psf/black
     rev: "21.7b0"

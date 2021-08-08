@@ -1,10 +1,10 @@
 from sys import stdout
-from typing import Any, List, Tuple
-from typing import cast
+from typing import Any, List, Tuple, cast
 from unittest.mock import Mock, patch
 
-from twisted.internet.interfaces import IReactorCore, IReactorTCP
 from zope.interface import implementer
+
+from twisted.internet.interfaces import IReactorCore, IReactorTCP
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
 from twisted.web.iweb import IRequest

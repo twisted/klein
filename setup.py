@@ -50,7 +50,7 @@ if __name__ == "__main__":
         packages=["klein", "klein.storage", "klein.test"],
         package_dir={"": "src"},
         package_data=dict(
-            klein=[],
+            klein=["py.typed"],
         ),
         url="https://github.com/twisted/klein",
         maintainer="Twisted Matrix Laboratories",

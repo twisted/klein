@@ -17,6 +17,7 @@ from typing import (
 )
 
 import attr
+from zope.interface import Attribute, Interface, implementer
 
 from twisted.internet.defer import Deferred, inlineCallbacks
 from twisted.python.components import Componentized, registerAdapter
@@ -25,8 +26,6 @@ from twisted.web.http import FORBIDDEN
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import Resource
 from twisted.web.template import Element, Tag, TagLoader, tags
-
-from zope.interface import Attribute, Interface, implementer
 
 from ._app import KleinRenderable, _call
 from ._decorators import bindable
@@ -82,7 +81,7 @@ class IParsedJSONBody(Interface):
 
 
 @implementer(IRequiredParameter)
-@attr.s(frozen=True)
+@attr.s(auto_attribs=True, frozen=True)
 class Field:
     """
     A L{Field} is a static part of a L{Form}.
@@ -90,16 +89,16 @@ class Field:
     @ivar converter: The converter.
     """
 
-    converter = attr.ib(type=Callable[[AnyStr], Any])
-    formInputType = attr.ib(type=str)
-    pythonArgumentName = attr.ib(type=Optional[str], default=None)
-    formFieldName = attr.ib(type=Optional[str], default=None)
-    formLabel = attr.ib(type=Optional[str], default=None)
-    default = attr.ib(type=Optional[Any], default=None, cmp=False)
-    required = attr.ib(type=bool, default=True)
-    noLabel = attr.ib(type=bool, default=False)
-    value = attr.ib(type=str, default="")
-    error = attr.ib(type=ValidationError, default=None)
+    converter: Callable[[AnyStr], Any]
+    formInputType: str
+    pythonArgumentName: Optional[str] = None
+    formFieldName: Optional[str] = None
+    formLabel: Optional[str] = None
+    default: Optional[Any] = attr.ib(default=None, cmp=False)
+    required: bool = True
+    noLabel: bool = False
+    value: str = ""
+    error: Optional[ValidationError] = None
 
     # IRequiredParameter
     def registerInjector(
@@ -292,7 +291,7 @@ class Field:
 
 
 @implementer(IRenderable)
-@attr.s
+@attr.s(auto_attribs=True)
 class RenderableForm:
     """
     An L{IRenderable} representing a renderable form.
@@ -304,20 +303,14 @@ class RenderableForm:
     @ivar validationErrors: a L{dict} mapping {L{Field}: L{ValidationError}}
     """
 
-    _form = attr.ib(type="IForm")
-    _session = attr.ib(type=ISession)
-    _action = attr.ib(type=str)
-    _method = attr.ib(type=str)
-    _enctype = attr.ib(type=str)
-    _encoding = attr.ib(type=str)
-    prevalidationValues = attr.ib(
-        type=Dict[Field, Optional[str]],
-        default=cast(Dict[Field, Optional[str]], attr.Factory(dict)),
-    )
-    validationErrors = attr.ib(
-        type=Dict[Field, ValidationError],
-        default=cast(Dict[Field, ValidationError], attr.Factory(dict)),
-    )
+    _form: "IForm"
+    _session: ISession
+    _action: str
+    _method: str
+    _enctype: str
+    _encoding: str
+    prevalidationValues: Dict[Field, Optional[str]] = attr.ib(factory=dict)
+    validationErrors: Dict[Field, ValidationError] = attr.ib(factory=dict)
 
     ENCTYPE_FORM_DATA = "multipart/form-data"
     ENCTYPE_URL_ENCODED = "application/x-www-form-urlencoded"
@@ -483,15 +476,15 @@ class IForm(Interface):
 
 
 @implementer(IProtoForm)
-@attr.s
+@attr.s(auto_attribs=True)
 class ProtoForm:
     """
     Form-builder.
     """
 
-    _componentized = attr.ib(type=Componentized)
-    _lifecycle = attr.ib(type=IRequestLifecycle)
-    fields = attr.ib(type=List[Field], default=attr.Factory(list))
+    _componentized: Componentized
+    _lifecycle: IRequestLifecycle
+    fields: List[Field] = attr.ib(factory=list)
 
     @classmethod
     def fromComponentized(cls, componentized: Componentized) -> "ProtoForm":
@@ -528,17 +521,17 @@ class IFieldValues(Interface):
 
 
 @implementer(IFieldValues)
-@attr.s
+@attr.s(auto_attribs=True)
 class FieldValues:
     """
     Reified post-parsing values for HTTP form submission.
     """
 
-    form = attr.ib(type="Form")
-    arguments = attr.ib(type=Dict[str, Any])
-    prevalidationValues = attr.ib(type=Dict[Field, Optional[str]])
-    validationErrors = attr.ib(type=Dict[Field, ValidationError])
-    _injectionComponents = attr.ib(type=Componentized)
+    form: "Form"
+    arguments: Dict[str, Any]
+    prevalidationValues: Dict[Field, Optional[str]]
+    validationErrors: Dict[Field, ValidationError]
+    _injectionComponents: Componentized
 
     @inlineCallbacks
     def validate(
@@ -563,15 +556,15 @@ class FieldValues:
 
 
 @implementer(IDependencyInjector)
-@attr.s
+@attr.s(auto_attribs=True)
 class FieldInjector:
     """
     Field injector.
     """
 
-    _componentized = attr.ib(type=Componentized)
-    _field = attr.ib(type=Field)
-    _lifecycle = attr.ib(type=IRequestLifecycle)
+    _componentized: Componentized
+    _field: Field
+    _lifecycle: IRequestLifecycle
 
     def injectValue(
         self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
@@ -657,13 +650,13 @@ def checkCSRF(request: IRequest) -> None:
 
 
 @implementer(IForm)
-@attr.s(hash=False)
+@attr.s(auto_attribs=True, hash=False)
 class Form:
     """
     A L{Form} is a collection of fields attached to a function.
     """
 
-    fields = attr.ib(type=Sequence[Field])
+    fields: Sequence[Field]
 
     @staticmethod
     def onValidationFailureFor(
@@ -791,18 +784,18 @@ class Form:
 
 
 @implementer(IRequiredParameter, IDependencyInjector)
-@attr.s
+@attr.s(auto_attribs=True)
 class RenderableFormParam:
     """
     A L{RenderableFormParam} implements L{IRequiredParameter} and
     L{IDependencyInjector} to provide a L{RenderableForm} to your route.
     """
 
-    _form = attr.ib(type=IForm)
-    _action = attr.ib(type=str)
-    _method = attr.ib(type=str)
-    _enctype = attr.ib(type=str)
-    _encoding = attr.ib(type=str)
+    _form: IForm
+    _action: str
+    _method: str
+    _enctype: str
+    _encoding: str
 
     def registerInjector(
         self,

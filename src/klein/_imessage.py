@@ -14,9 +14,7 @@ This will ensure that type checking works.
 from typing import AnyStr, Iterable, MutableSequence, Sequence, Tuple
 
 from hyperlink import DecodedURL
-
 from tubes.itube import IFount
-
 from zope.interface import Attribute, Interface
 
 

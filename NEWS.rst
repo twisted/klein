@@ -6,7 +6,9 @@ NEXT
  * Python 2 is no longer supported by Klein.
  * Python 3.5 is no longer supported by Klein.
  * Python 3.9 is now supported by Klein. [`#412 <https://github.com/twisted/klein/pull/412>`_]
- * Klein now exports (incomplete, but growing) type hints. [`#379 <https://github.com/twisted/klein/pull/379>`_]
+ * Fixed a compatibility issue with Twisted versions greater than 20.3.0 in Klein's test suite. [`#383 <https://github.com/twisted/klein/pull/383>`]
+ * Fixed a compatibility issue with Werkzeug versions greater than 2.0 in Klein's test suite. [`#499 <https://github.com/twisted/klein/pull/499>`]
+ * Klein has incomplete, but growing type hints, but ``py.typed`` is not installed, as they might not work well for most clients yet.
  * ``Plating`` now sets the ``Content-Type`` header to ``application/json`` instead of ``text/json; charset=utf8``.
 
 20.6.0 - 2020-06-07

@@ -8,20 +8,18 @@ from string import printable
 from typing import Any
 
 import attr
-
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from twisted.internet.defer import Deferred, succeed
-from twisted.trial.unittest import (
-    SynchronousTestCase,
-    TestCase as AsynchronousTestCase,
-)
+from twisted.trial.unittest import SynchronousTestCase
+from twisted.trial.unittest import TestCase as AsynchronousTestCase
 from twisted.web.error import FlattenerError, MissingRenderMethod
 from twisted.web.template import slot, tags
 
-from .test_resource import MockRequest, _render
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
+from .test_resource import MockRequest, _render
 
 
 page = Plating(
@@ -99,7 +97,7 @@ class InstanceWidget:
         return {"a": succeed(a), "b": succeed(b)}
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class DeferredValue:
     """
     A value within a JSON serializable object that is deferred.
@@ -109,8 +107,8 @@ class DeferredValue:
     @param deferred: The L{Deferred} representing the value.
     """
 
-    value: Any = attr.ib()
-    deferred: Deferred = attr.ib(attr.Factory(Deferred))
+    value: Any
+    deferred: Deferred = attr.ib(factory=Deferred)
 
     def resolve(self):
         """

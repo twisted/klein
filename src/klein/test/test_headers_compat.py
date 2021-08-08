@@ -7,14 +7,15 @@ Tests for L{klein._headers}.
 
 from twisted.web.http_headers import Headers
 
-from ._trial import TestCase
-from .test_headers import MutableHTTPHeadersTestsMixIn
 from .._headers import (
     IMutableHTTPHeaders,
     RawHeaders,
     normalizeRawHeadersFrozen,
 )
 from .._headers_compat import HTTPHeadersWrappingHeaders
+from ._trial import TestCase
+from .test_headers import MutableHTTPHeadersTestsMixIn
+
 
 try:
     from twisted.web.http_headers import _sanitizeLinearWhitespace

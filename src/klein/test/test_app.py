@@ -4,18 +4,17 @@ from typing import cast
 from unittest.mock import Mock, patch
 
 from twisted.internet.interfaces import IReactorCore, IReactorTCP
+from zope.interface import implementer
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
 from twisted.web.iweb import IRequest
 
-from zope.interface import implementer
-
-from .test_resource import MockRequest
-from .util import EqualityTestsMixin
 from .. import Klein
 from .._app import KleinRenderable, KleinRequest
 from .._decorators import bindable, modified, originalName
 from .._interfaces import IKleinRequest
+from .test_resource import MockRequest
+from .util import EqualityTestsMixin
 
 
 @implementer(IRequest)

@@ -1,12 +1,11 @@
 from typing import Any, Callable, Dict, Generator, List, Sequence, Type
 
 import attr
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from zope.interface import Interface, implementer
 
 from ._app import _call
 from ._decorators import bindable, modified
@@ -19,13 +18,13 @@ from .interfaces import (
 
 
 @implementer(IRequestLifecycle)
-@attr.s
+@attr.s(auto_attribs=True)
 class RequestLifecycle:
     """
     Mechanism to run hooks at the start of a request managed by a L{Requirer}.
     """
 
-    _prepareHooks = attr.ib(type=List, default=attr.Factory(list))
+    _prepareHooks: List = attr.ib(factory=list)
 
     def addPrepareHook(
         self,
@@ -58,15 +57,13 @@ _routeT = Any  # a thing decorated by a decorator like @route
 _prerequisiteCallback = Callable[[IRequestLifecycle], None]
 
 
-@attr.s
+@attr.s(auto_attribs=True)
 class Requirer:
     """
     Dependency injection for required parameters.
     """
 
-    _prerequisites = attr.ib(
-        type=List[_prerequisiteCallback], default=attr.Factory(list)
-    )
+    _prerequisites: List[_prerequisiteCallback] = attr.ib(factory=list)
 
     def prerequisite(
         self,

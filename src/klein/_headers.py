@@ -8,7 +8,6 @@ HTTP headers API.
 from typing import AnyStr, Iterable, Tuple, Union
 
 from attr import Factory, attrib, attrs
-
 from zope.interface import implementer
 
 from ._imessage import (

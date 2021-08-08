@@ -5,6 +5,8 @@ from typing import Any, Callable, List, Mapping, Optional, Sequence, cast
 from unittest.mock import Mock, call
 from urllib.parse import parse_qs
 
+from werkzeug.exceptions import NotFound
+
 from twisted.internet.defer import CancelledError, Deferred, fail, succeed
 from twisted.internet.error import ConnectionLost
 from twisted.internet.interfaces import IProducer
@@ -19,9 +21,6 @@ from twisted.web.static import File
 from twisted.web.template import Element, Tag, XMLString, renderer
 from twisted.web.test.test_web import DummyChannel
 
-from werkzeug.exceptions import NotFound
-
-from .util import EqualityTestsMixin, recover
 from .. import Klein, KleinRenderable
 from .._interfaces import IKleinRequest
 from .._resource import (
@@ -30,6 +29,7 @@ from .._resource import (
     ensure_utf8_bytes,
     extractURLparts,
 )
+from .util import EqualityTestsMixin, recover
 
 
 emptyMapping: Mapping[Any, Any] = MappingProxyType({})
@@ -89,8 +89,8 @@ class MockRequest(Request):
         self.producer = producer
         for _ in range(2):
             if self.producer:
-                # type note: server.Request.registerProducer takes an IProducer,
-                # which does not have resumeProducing.
+                # typing note: server.Request.registerProducer takes an
+                # IProducer, which does not have resumeProducing.
                 # This seems to expect either an IPullProducer or an
                 # IPushProducer.
                 self.producer.resumeProducing()  # type: ignore[attr-defined]
@@ -205,7 +205,7 @@ class ProducingResource(Resource):
     def render_GET(self, request: IRequest) -> bytes:
         producer = MockProducer(request, self.strings)
         producer.start()
-        # type note: return type should have been
+        # typing note: return type should have been
         # Union[bytes, Literal[NOT_DONE_YET]] but NOT_DONE_YET is an Any
         # right now, so Literal won't accept it.
         return cast(bytes, NOT_DONE_YET)
@@ -1381,7 +1381,7 @@ class GlobalAppTests(SynchronousTestCase):
     """
 
     def test_global_app(self) -> None:
-        from klein.app import run, route, resource, handle_errors
+        from klein.app import handle_errors, resource, route, run
 
         globalApp = run.__self__  # type: ignore[attr-defined]
 

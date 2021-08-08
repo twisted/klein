@@ -1,6 +1,7 @@
 from functools import wraps
 from typing import Callable, Optional, TypeVar
 
+
 C = TypeVar("C", bound=Callable)
 
 
@@ -72,8 +73,7 @@ def named(name: str) -> Callable[[C], C]:
     Change the name of a function to the given name.
     """
 
-    def decorator(original):
-        # type: (C) -> C
+    def decorator(original: C) -> C:
         original.__name__ = str(name)
         original.__qualname__ = str(name)
         return original

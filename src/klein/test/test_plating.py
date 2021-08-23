@@ -402,7 +402,7 @@ class PlatingTests(AsynchronousTestCase):
             request.responseHeaders.getRawHeaders(b"content-type")[0],
             b"application/json",
         )
-        self.assertEquals(
+        self.assertEqual(
             {"ok": "an-plating-test", "title": "default title unchanged"},
             json.loads(written.decode("utf-8")),
         )
@@ -423,7 +423,7 @@ class PlatingTests(AsynchronousTestCase):
             request.responseHeaders.getRawHeaders(b"content-type")[0],
             b"application/json",
         )
-        self.assertEquals(
+        self.assertEqual(
             {"ok": "an-plating-test", "title": "default title unchanged"},
             json.loads(written.decode("utf-8")),
         )

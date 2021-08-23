@@ -247,17 +247,17 @@ class KleinTestCase(unittest.TestCase):
             c.match("/foo/bar"), ("branchfunc_branch", {"__rest__": "bar"})
         )
 
-        self.assertEquals(
+        self.assertEqual(
             app.endpoints["branchfunc"].__name__,  # type: ignore[union-attr]
             "route '/foo/' executor for branchfunc",
         )
-        self.assertEquals(
+        self.assertEqual(
             app.endpoints[
                 "branchfunc_branch"
             ].__name__,  # type: ignore[union-attr]
             "branch route '/foo/' executor for branchfunc",
         )
-        self.assertEquals(
+        self.assertEqual(
             app.execute_endpoint(
                 "branchfunc_branch", DummyRequest("looking for foo")
             ),
@@ -288,7 +288,7 @@ class KleinTestCase(unittest.TestCase):
         b = BoundTo()
         b.app.execute_endpoint("method", req)
 
-        self.assertEquals(calls, [(None, req), (b, req)])
+        self.assertEqual(calls, [(None, req), (b, req)])
         self.assertEqual(originalName(method), "method")
 
     def test_modified(self):

@@ -280,7 +280,7 @@ class KleinTestCase(unittest.TestCase):
         @bindable
         def method(self: Any, request: IRequest) -> KleinRenderable:
             calls.append((self, request))
-            return 7
+            return "7"
 
         req = cast(IRequest, object())
         k.execute_endpoint("method", req)

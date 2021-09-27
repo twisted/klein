@@ -4,7 +4,6 @@ from unittest.mock import Mock, patch
 
 from zope.interface import implementer
 
-from twisted.internet.interfaces import IReactorCore, IReactorTCP
 from twisted.python.components import registerAdapter
 from twisted.trial import unittest
 from twisted.web.iweb import IRequest
@@ -426,7 +425,7 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.log")
     @patch("klein._app.reactor")
     def test_run(
-        self, reactor: IReactorTCP, mock_log: Any, mock_site: Any, mock_kr: Any
+        self, reactor: Any, mock_log: Any, mock_site: Any, mock_kr: Any
     ) -> None:
         """
         L{Klein.run} configures a L{KleinResource} and a L{Site}
@@ -440,7 +439,6 @@ class KleinTestCase(unittest.TestCase):
         reactor.listenTCP.assert_called_with(
             8080, mock_site.return_value, backlog=50, interface="localhost"
         )
-
         reactor.run.assert_called_with()
 
         mock_site.assert_called_with(mock_kr.return_value)
@@ -452,7 +450,7 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.log")
     @patch("klein._app.reactor")
     def test_runWithLogFile(
-        self, reactor: IReactorTCP, mock_log: Any, mock_site: Any, mock_kr: Any
+        self, reactor: Any, mock_log: Any, mock_site: Any, mock_kr: Any
     ) -> None:
         """
         L{Klein.run} logs to the specified C{logFile}.
@@ -477,7 +475,7 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
     def test_runTCP6(
-        self, reactor: IReactorCore, mock_sfs: Any, mock_log: Any, mock_kr: Any
+        self, reactor: Any, mock_sfs: Any, mock_log: Any, mock_kr: Any
     ) -> None:
         """
         L{Klein.run} called with tcp6 endpoint description.
@@ -496,7 +494,7 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
     def test_runSSL(
-        self, reactor: IReactorCore, mock_sfs: Any, mock_log: Any, mock_kr: Any
+        self, reactor: Any, mock_sfs: Any, mock_log: Any, mock_kr: Any
     ) -> None:
         """
         L{Klein.run} called with SSL endpoint specification.

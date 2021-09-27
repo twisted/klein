@@ -403,7 +403,7 @@ class TestForms(SynchronousTestCase):
             ".//*[@class='klein-form-validation-error']"
         )
         self.assertEqual(len(errors), 1)
-        self.assertEquals(errors[0].text, "not a valid number")
+        self.assertEqual(errors[0].text, "not a valid number")
 
     def test_customParameterValidation(self) -> None:
         """

@@ -351,7 +351,7 @@ class KleinTestCase(unittest.TestCase):
             app = Klein()
 
             def __init__(self) -> None:
-                self.bar_calls: List[Tuple["Foo", DummyRequest]] = []
+                self.bar_calls: List[Tuple["Foo", IRequest]] = []
 
             @app.route("/bar")
             def bar(self, request: IRequest) -> KleinRenderable:
@@ -383,7 +383,7 @@ class KleinTestCase(unittest.TestCase):
             app = Klein()
 
             def __init__(self) -> None:
-                self.bar_calls: List[Tuple["Foo", DummyRequest]] = []
+                self.bar_calls: List[Tuple["Foo", IRequest]] = []
 
             @app.route("/bar/", branch=True)
             def bar(self, request: IRequest) -> KleinRenderable:

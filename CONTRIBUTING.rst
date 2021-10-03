@@ -85,4 +85,4 @@ Reviewing
 All code changes added to Klein must be reviewed by at least one other person who is not an author of the code being added.
 This helps prevent bugs from slipping through the net, gives another source for improvements, and makes sure that the code productively follows guidelines.
 
-Reviewers should read `Glyph's mailing list post <https://twistedmatrix.com/pipermail/twisted-python/2014-January/027894.html>`_ on reviewing -- code and docs don't have to be *perfect*, only *better*.
+Reviewers should read `Glyph's mailing list post <https://mail.python.org/archives/list/twisted@python.org/thread/53LZTRNRYLZJ4QLEF3YPAE53CWSL6LXD/>`_ on reviewing -- code and docs don't have to be *perfect*, only *better*.

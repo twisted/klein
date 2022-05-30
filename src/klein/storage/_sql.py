@@ -3,13 +3,13 @@ from datetime import datetime
 from functools import reduce
 from os import urandom
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
     Iterable,
     List,
     Optional,
-    TYPE_CHECKING,
     Text,
     Type,
     TypeVar,
@@ -20,8 +20,6 @@ from uuid import uuid4
 import attr
 from attr import Factory
 from attr.validators import instance_of as an
-
-
 from sqlalchemy import (
     Boolean,
     Column,
@@ -36,6 +34,8 @@ from sqlalchemy import (
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.sql.expression import select
+from zope.interface import implementer
+from zope.interface.interfaces import IInterface
 
 from twisted.internet.defer import (
     gatherResults,
@@ -45,12 +45,6 @@ from twisted.internet.defer import (
 )
 from twisted.python.compat import unicode
 
-from zope.interface import implementer
-from zope.interface.interfaces import IInterface
-
-from ._security import checkAndReset, computeKeyText
-from ._sql_generic import Transaction, requestBoundTransaction
-from .interfaces import ISQLAuthorizer
 from .. import SessionProcurer
 from ..interfaces import (
     ISession,
@@ -61,12 +55,18 @@ from ..interfaces import (
     NoSuchSession,
     SessionMechanism,
 )
+from ._security import checkAndReset, computeKeyText
+from ._sql_generic import Transaction, requestBoundTransaction
+from .interfaces import ISQLAuthorizer
+
 
 if TYPE_CHECKING:  # pragma: no cover
     import sqlalchemy
+
     from twisted.internet.defer import Deferred
     from twisted.internet.interfaces import IReactorThreads
     from twisted.web.iweb import IRequest
+
     from ._sql_generic import DataStore
 
     (
@@ -76,7 +76,7 @@ if TYPE_CHECKING:  # pragma: no cover
         Type,
         Iterable,
         IReactorThreads,
-        Text,
+        str,
         List,
         sqlalchemy,
         Dict,
@@ -92,7 +92,7 @@ if TYPE_CHECKING:  # pragma: no cover
 @attr.s
 class SQLSession:
     _sessionStore = attr.ib(type="SessionStore")
-    identifier = attr.ib(type=Text)
+    identifier = attr.ib(type=str)
     isConfidential = attr.ib(type=bool)
     authenticatedBy = attr.ib(type=SessionMechanism)
 
@@ -129,8 +129,8 @@ class SessionIPInformation:
     Information about a session being used from a given IP address.
     """
 
-    id = attr.ib(validator=an(str), type=Text)
-    ip = attr.ib(validator=an(str), type=Text)
+    id = attr.ib(validator=an(str), type=str)
+    ip = attr.ib(validator=an(str), type=str)
     when = attr.ib(validator=an(datetime), type=datetime)
 
 
@@ -382,9 +382,9 @@ class SQLAccount:
     """
 
     _transaction = attr.ib(type=Transaction)
-    accountID = attr.ib(type=Text)
-    username = attr.ib(type=Text)
-    email = attr.ib(type=Text)
+    accountID = attr.ib(type=str)
+    username = attr.ib(type=str)
+    email = attr.ib(type=str)
 
     def bindSession(self, session):
         # type: (ISession) -> Deferred

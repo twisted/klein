@@ -4,14 +4,13 @@ Generic SQL data storage stuff; the substrate for session-storage stuff.
 
 from collections import deque
 from sys import exc_info
-from typing import Any, Optional, TYPE_CHECKING, Text, TypeVar
-
-from alchimia import TWISTED_STRATEGY
+from typing import TYPE_CHECKING, Any, Optional, Text, TypeVar
 
 import attr
+from alchimia import TWISTED_STRATEGY
 from attr import Factory
-
 from sqlalchemy import create_engine
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import (
     Deferred,
@@ -21,9 +20,8 @@ from twisted.internet.defer import (
     succeed,
 )
 
-from zope.interface import Interface, implementer
-
 from ..interfaces import TransactionEnded
+
 
 _sqlAlchemyConnection = Any
 _sqlAlchemyTransaction = Any
@@ -61,7 +59,7 @@ class Transaction:
     _connection = attr.ib(type=_sqlAlchemyConnection)
     _transaction = attr.ib(type=_sqlAlchemyTransaction)
     _parent = attr.ib(type="Optional[Transaction]", default=None)
-    _stopped = attr.ib(type=Text, default="")
+    _stopped = attr.ib(type=str, default="")
     _completeDeferred = attr.ib(type=Deferred, default=Factory(Deferred))
 
     def _checkStopped(self):

@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, Optional, TYPE_CHECKING, Text, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Text, Tuple
 from unicodedata import normalize
 
 from passlib.context import CryptContext
@@ -7,8 +7,9 @@ from passlib.context import CryptContext
 from twisted.internet.defer import Deferred, inlineCallbacks, returnValue
 from twisted.internet.threads import deferToThread
 
+
 if TYPE_CHECKING:  # pragma: no cover
-    Text, Callable, Deferred, Optional, Tuple, Any
+    str, Callable, Deferred, Optional, Tuple, Any
 
 
 passlibContextWithGoodDefaults = partial(CryptContext, schemes=["bcrypt"])

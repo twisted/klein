@@ -132,7 +132,7 @@ class KleinResource(Resource):
     isLeaf = True
 
     def __init__(self, app: "Klein") -> None:
-        Resource.__init__(self)
+        super().__init__()
         self._app = app
 
     def __eq__(self, other: object) -> bool:

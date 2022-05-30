@@ -5,13 +5,11 @@ Dependency-Injected HTTP metadata.
 from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
 
 import attr
-
 from hyperlink import DecodedURL
+from zope.interface import Interface, implementer, provider
 
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from zope.interface import Interface, implementer, provider
 
 from .interfaces import (
     IDependencyInjector,
@@ -59,7 +57,7 @@ class RequestURL:
         parameterName: str,
         requestLifecycle: IRequestLifecycle,
     ) -> IDependencyInjector:
-        # type note: https://github.com/Shoobx/mypy-zope/issues/39
+        # typing note: https://github.com/Shoobx/mypy-zope/issues/39
         return cast(IDependencyInjector, cls())
 
     @classmethod
@@ -77,7 +75,7 @@ class RequestURL:
 
 
 @implementer(IRequiredParameter, IDependencyInjector)
-@attr.s(frozen=True)
+@attr.frozen
 class RequestComponent:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
@@ -85,7 +83,7 @@ class RequestComponent:
     @since: Klein NEXT
     """
 
-    interface = attr.ib(type=Type[Interface])
+    interface: Type[Interface]
 
     def registerInjector(
         self,
@@ -107,7 +105,7 @@ class RequestComponent:
         "Nothing to do upon finalization."
 
 
-@attr.s(frozen=True)
+@attr.s(auto_attribs=True, frozen=True)
 class Response:
     """
     Metadata about an HTTP response, with an object that Klein knows how to
@@ -125,14 +123,11 @@ class Response:
     @since: Klein NEXT
     """
 
-    code = attr.ib(type=int, default=200)
-    headers = attr.ib(
-        type=Mapping[
-            Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
-        ],
-        default=attr.Factory(dict),
-    )
-    body = attr.ib(type=Any, default="")
+    code: int = 200
+    headers: Mapping[
+        Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
+    ] = attr.ib(factory=dict)
+    body: Any = ""
 
     def _applyToRequest(self, request: IRequest) -> Any:
         """

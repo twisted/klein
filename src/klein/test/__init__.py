@@ -7,6 +7,7 @@ Tests for L{klein}.
 
 from hypothesis import HealthCheck, settings
 
+
 settings.register_profile(
     "patience",
     settings(

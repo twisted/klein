@@ -13,9 +13,9 @@ from hypothesis.strategies import binary
 
 from twisted.internet.defer import ensureDeferred
 
-from ._trial import TestCase
 from .._imessage import IHTTPMessage
 from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
+from ._trial import TestCase
 
 
 __all__ = ()

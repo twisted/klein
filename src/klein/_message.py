@@ -9,7 +9,6 @@ from typing import Any, Optional, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
-
 from tubes.itube import IFount
 
 from ._imessage import FountAlreadyAccessedError

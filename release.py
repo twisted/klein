@@ -10,11 +10,11 @@ from sys import exit, stderr
 from tempfile import mkdtemp
 from typing import Any, Dict, NoReturn, Optional, Sequence, cast
 
-from click import group as commandGroup, option as commandOption
-
-from git import Repo as Repository, TagReference
+from click import group as commandGroup
+from click import option as commandOption
+from git import Repo as Repository
+from git import TagReference
 from git.refs.head import Head
-
 from incremental import Version
 
 
@@ -307,8 +307,12 @@ def bump() -> None:
 
 
 @main.command()
-@commandOption("--test/--production")
-@commandOption("--final/--candidate")
+@commandOption(
+    "--test/--production", help="Use test (or production) PyPI server"
+)
+@commandOption(
+    "--final/--candidate", help="Publish a final (or candidate) release"
+)
 def publish(final: bool, test: bool) -> None:
     publishRelease(final=final, test=test)
 

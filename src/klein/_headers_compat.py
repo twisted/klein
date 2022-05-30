@@ -9,10 +9,9 @@ from typing import AnyStr, Iterable, Tuple, cast
 
 from attr import attrib, attrs
 from attr.validators import instance_of
+from zope.interface import implementer
 
 from twisted.web.http_headers import Headers
-
-from zope.interface import implementer
 
 from ._headers import (
     IMutableHTTPHeaders,
@@ -60,7 +59,7 @@ class HTTPHeadersWrappingHeaders:
                 Iterable[AnyStr], self._headers.getRawHeaders(name, default=())
             )
         elif isinstance(name, str):
-            # type note: getRawHeaders is typed to return an optional even if
+            # typing note: getRawHeaders is typed to return an optional even if
             # default is not None. We could assert not None, but are casting
             # here so that if the hints for getRawHeaders are fixed later,
             # mypy will tell us to remove the useless cast.

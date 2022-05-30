@@ -12,6 +12,7 @@ for example::
 
 from types import MappingProxyType
 
+
 emptyMapping = MappingProxyType({})
 
 

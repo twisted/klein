@@ -9,14 +9,12 @@ from typing import Any, BinaryIO
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional, provides
-
 from tubes.itube import IDrain, IFount, ISegment
 from tubes.kit import Pauser, beginFlowingTo
 from tubes.undefer import fountToDeferred
+from zope.interface import implementer
 
 from twisted.python.failure import Failure
-
-from zope.interface import implementer
 
 
 __all__ = ()

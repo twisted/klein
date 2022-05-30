@@ -3,6 +3,7 @@
 from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
 
 import attr
+from zope.interface import Interface, implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
@@ -10,8 +11,6 @@ from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
 from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
-
-from zope.interface import Interface, implementer
 
 from .interfaces import (
     EarlyExit,
@@ -28,7 +27,7 @@ from .interfaces import (
 
 
 @implementer(ISessionProcurer)
-@attr.s
+@attr.s(auto_attribs=True)
 class SessionProcurer:
     """
     A L{SessionProcurer} procures a session from a request and a store.
@@ -53,17 +52,17 @@ class SessionProcurer:
         request is a GET.
     """
 
-    _store = attr.ib(type=ISessionStore)
+    _store: ISessionStore
 
-    _maxAge = attr.ib(type=int, default=3600)
-    _secureCookie = attr.ib(type=bytes, default=b"Klein-Secure-Session")
-    _insecureCookie = attr.ib(type=bytes, default=b"Klein-INSECURE-Session")
-    _cookieDomain = attr.ib(type=Optional[bytes], default=None)
-    _cookiePath = attr.ib(type=bytes, default=b"/")
+    _maxAge: int = 3600
+    _secureCookie: bytes = b"Klein-Secure-Session"
+    _insecureCookie: bytes = b"Klein-INSECURE-Session"
+    _cookieDomain: Optional[bytes] = None
+    _cookiePath: bytes = b"/"
 
-    _secureTokenHeader = attr.ib(type=bytes, default=b"X-Auth-Token")
-    _insecureTokenHeader = attr.ib(type=bytes, default=b"X-INSECURE-Auth-Token")
-    _setCookieOnGET = attr.ib(type=bool, default=True)
+    _secureTokenHeader: bytes = b"X-Auth-Token"
+    _insecureTokenHeader: bytes = b"X-INSECURE-Auth-Token"
+    _setCookieOnGET: bool = True
 
     @inlineCallbacks
     def procureSession(
@@ -87,13 +86,13 @@ class SessionProcurer:
             # Have we inadvertently disclosed a secure token over an insecure
             # transport, for example, due to a buggy client?
             allPossibleSentTokens: Sequence[str] = sum(
-                [
+                (
                     request.requestHeaders.getRawHeaders(header, [])
                     for header in [
                         self._secureTokenHeader,
                         self._insecureTokenHeader,
                     ]
-                ],
+                ),
                 [],
             ) + [
                 it
@@ -187,11 +186,11 @@ class AuthorizationDenied(Resource):
 
     def render(self, request: IRequest) -> bytes:
         request.setResponseCode(UNAUTHORIZED)
-        return "{} DENIED".format(qual(self._interface)).encode("utf-8")
+        return f"{qual(self._interface)} DENIED".encode()
 
 
 @implementer(IDependencyInjector, IRequiredParameter)
-@attr.s
+@attr.s(auto_attribs=True)
 class Authorization:
     """
     Declare that a C{require}-decorated function requires a certain interface
@@ -245,11 +244,9 @@ class Authorization:
         C{required} is set to C{False}.
     """
 
-    _interface = attr.ib(type=Type[Interface])
-    _required = attr.ib(type=bool, default=True)
-    _whenDenied = attr.ib(
-        type=Callable[[Type[Interface], Any], Any], default=AuthorizationDenied
-    )
+    _interface: Type[Interface]
+    _required: bool = True
+    _whenDenied: Callable[[Type[Interface], Any], Any] = AuthorizationDenied
 
     def registerInjector(
         self,

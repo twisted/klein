@@ -1,6 +1,8 @@
 # -*- test-case-name: klein.test.test_resource -*-
 
-from typing import Any, Optional, Sequence, TYPE_CHECKING, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
+
+from werkzeug.exceptions import HTTPException
 
 from twisted.internet import defer
 from twisted.internet.defer import Deferred, maybeDeferred
@@ -12,10 +14,9 @@ from twisted.web.resource import IResource, Resource, getChildForRequest
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
 
-from werkzeug.exceptions import HTTPException
-
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
+
 
 if TYPE_CHECKING:
     from ._app import ErrorHandlers, Klein, KleinRenderable
@@ -131,7 +132,7 @@ class KleinResource(Resource):
     isLeaf = True
 
     def __init__(self, app: "Klein") -> None:
-        Resource.__init__(self)
+        super().__init__()
         self._app = app
 
     def __eq__(self, other: object) -> bool:
@@ -213,7 +214,7 @@ class KleinResource(Resource):
 
         d = maybeDeferred(_execute)
 
-        # type note: returns Any because Response._applyToRequest returns Any
+        # typing note: returns Any because Response._applyToRequest returns Any
         def process(r: object) -> Any:
             """
             Recursively go through r and any child Resources until something

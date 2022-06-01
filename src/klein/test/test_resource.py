@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from types import MappingProxyType
 from typing import Any, Callable, List, Mapping, Optional, Sequence, cast
-from unittest.mock import Mock, call
+from unittest.mock import ANY, Mock, call
 from urllib.parse import parse_qs
 
 from werkzeug.exceptions import NotFound
@@ -642,7 +642,7 @@ class KleinResourceTests(SynchronousTestCase):
         request.setHeader.assert_has_calls(
             [
                 call(b"Content-Type", b"text/html; charset=utf-8"),
-                call(b"Content-Length", b"258"),
+                call(b"Content-Length", ANY),
                 call(b"Location", b"http://localhost:8080/foo/"),
             ]
         )

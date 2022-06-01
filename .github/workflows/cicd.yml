@@ -229,7 +229,7 @@ jobs:
           if 'py' in py:
               # Coverage is disabled on PYPY as the run is slow and we
               # don't have PYPY specific code.
-              with_coverage = ''
+              with_coverage = 'test-'
           print(f"::set-output name=value::{with_coverage}py{py}-tw{tw}")
           print(f"::set-output name=has_coverage::{with_coverage}")
 

@@ -227,9 +227,7 @@ class Klein:
         # typing note: endpoint_f is a KleinRouteHandler, which is not defined
         # as taking *args, **kwargs (because they aren't required), but we're
         # going to pass them along here anyway.
-        return endpoint_f(
-            self._instance, request, *args, **kwargs
-        )
+        return endpoint_f(self._instance, request, *args, **kwargs)
 
     def execute_error_handler(
         self,

@@ -264,13 +264,8 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return succeed(
-                        ensure_utf8_bytes(
-                            b"".join(
-                                resp.iter_encoded(),  # type: ignore[attr-defined]
-                            ),
-                        )
-                    )
+                    encoded = resp.iter_encoded()  # type: ignore[attr-defined]
+                    return succeed(ensure_utf8_bytes(b"".join(encoded)))
                 else:
                     request.processingFailed(  # type: ignore[attr-defined]
                         failure,

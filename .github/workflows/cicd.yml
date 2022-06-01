@@ -223,7 +223,7 @@ jobs:
         id: tox_env
         shell: python
         run: |
-          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
+          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py").replace("-", "")
           tw = "${{ matrix.twisted }}".replace(".", "")
           with_coverage = 'coverage-'
           if 'py' in py:

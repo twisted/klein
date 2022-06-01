@@ -1,11 +1,9 @@
 # -*- test-case-name: klein.test.test_resource -*-
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
-
-from werkzeug.exceptions import HTTPException
+from typing import Any, Optional, Sequence, TYPE_CHECKING, Tuple, Union, cast
 
 from twisted.internet import defer
-from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.defer import Deferred, maybeDeferred, succeed
 from twisted.python import log
 from twisted.python.failure import Failure
 from twisted.web import server
@@ -13,6 +11,7 @@ from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
+from werkzeug.exceptions import HTTPException
 
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
@@ -264,10 +263,12 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return ensure_utf8_bytes(
-                        b"".join(
-                            resp.iter_encoded(),  # type: ignore[attr-defined]
-                        ),
+                    return succeed(
+                        ensure_utf8_bytes(
+                            b"".join(
+                                resp.iter_encoded(),  # type: ignore[attr-defined]
+                            ),
+                        )
                     )
                 else:
                     request.processingFailed(  # type: ignore[attr-defined]

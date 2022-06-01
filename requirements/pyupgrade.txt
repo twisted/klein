@@ -1,1 +1,1 @@
-pyupgrade==2.23.3
+pyupgrade==2.32.1

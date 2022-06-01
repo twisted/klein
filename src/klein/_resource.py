@@ -268,7 +268,7 @@ class KleinResource(Resource):
                         b"".join(
                             resp.iter_encoded(),  # type: ignore[attr-defined]
                         ),
-                    )  # type: ignore[attr-defined, return-value]
+                    )
                 else:
                     request.processingFailed(  # type: ignore[attr-defined]
                         failure,

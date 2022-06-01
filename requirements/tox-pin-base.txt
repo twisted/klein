@@ -1,11 +1,11 @@
-attrs==21.2.0
+attrs==21.4.0
 Automat==20.2.0
 characteristic==14.3.0
 constantly==15.1.0
 hyperlink==21.0.0
 incremental==21.3.0
-PyHamcrest==2.0.2
+PyHamcrest==2.0.3
 six==1.16.0
 Tubes==0.2.0
-Werkzeug==2.0.1
+Werkzeug==2.1.2
 zope.interface==5.4.0

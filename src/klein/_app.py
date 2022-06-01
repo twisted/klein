@@ -123,7 +123,7 @@ def _call(
         args = (__klein_instance__,) + args
     result = __klein_f__(*args, **kwargs)
     if iscoroutine(result):
-        result = ensureDeferred(result)  # type: ignore[arg-type]
+        result = ensureDeferred(result)
     return result
 
 

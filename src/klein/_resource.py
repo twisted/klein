@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
 from werkzeug.exceptions import HTTPException
 
 from twisted.internet import defer
-from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.defer import Deferred, maybeDeferred, succeed
 from twisted.python import log
 from twisted.python.failure import Failure
 from twisted.web import server
@@ -264,11 +264,8 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    return ensure_utf8_bytes(
-                        b"".join(
-                            resp.iter_encoded(),  # type: ignore[attr-defined]
-                        ),
-                    )  # type: ignore[attr-defined, return-value]
+                    encoded = resp.iter_encoded()  # type: ignore[attr-defined]
+                    return succeed(ensure_utf8_bytes(b"".join(encoded)))
                 else:
                     request.processingFailed(  # type: ignore[attr-defined]
                         failure,

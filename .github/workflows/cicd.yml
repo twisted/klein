@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
@@ -96,7 +96,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
@@ -130,7 +130,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
@@ -163,7 +163,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: "3.9"
 
@@ -195,14 +195,21 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.6", "3.7", "3.8", "3.9", "pypy3"]
+        python-version: ["3.7", "3.9", "pypy-3.8"]
         twisted: ["19.2", "20.3", "current"]
         optional: [false]
-        include:
-          - os: "ubuntu-latest"
-            python-version: "3.9"
-            twisted: "trunk"
-            optional: true
+
+        #
+        # Including the following matrix addition results in the "Run unit
+        # tests" step hanging in a queued state for 30+ minutes.  We should put
+        # it back at some point.
+        #
+
+        # include:
+        #   - os: "ubuntu-latest"
+        #     python-version: "3.10"
+        #     twisted: "trunk"
+        #     optional: true
 
     steps:
 
@@ -212,7 +219,7 @@ jobs:
           fetch-depth: 2
 
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -223,15 +230,17 @@ jobs:
         id: tox_env
         shell: python
         run: |
-          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py")
+          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py").replace("-", "")
           tw = "${{ matrix.twisted }}".replace(".", "")
           with_coverage = 'coverage-'
+          report_coverage = 'yes'
           if 'py' in py:
               # Coverage is disabled on PYPY as the run is slow and we
               # don't have PYPY specific code.
-              with_coverage = ''
+              with_coverage = 'test-'
+              report_coverage = ''
           print(f"::set-output name=value::{with_coverage}py{py}-tw{tw}")
-          print(f"::set-output name=has_coverage::{with_coverage}")
+          print(f"::set-output name=has_coverage::{report_coverage}")
 
       - name: Set up Tox environment
         run: |
@@ -255,7 +264,7 @@ jobs:
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.
-      - uses: "actions/setup-python@v2"
+      - uses: "actions/setup-python@v3"
         with:
           python-version: "3.9"
 

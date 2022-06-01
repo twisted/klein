@@ -226,12 +226,14 @@ jobs:
           py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py").replace("-", "")
           tw = "${{ matrix.twisted }}".replace(".", "")
           with_coverage = 'coverage-'
+          report_coverage = 'yes'
           if 'py' in py:
               # Coverage is disabled on PYPY as the run is slow and we
               # don't have PYPY specific code.
               with_coverage = 'test-'
+              report_coverage = ''
           print(f"::set-output name=value::{with_coverage}py{py}-tw{tw}")
-          print(f"::set-output name=has_coverage::{with_coverage}")
+          print(f"::set-output name=has_coverage::{report_coverage}")
 
       - name: Set up Tox environment
         run: |

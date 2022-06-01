@@ -1,8 +1,8 @@
 import os
 from io import BytesIO
 from types import MappingProxyType
-from typing import Any, Callable, List, Mapping, Optional, Sequence, cast
-from unittest.mock import Mock, call
+from typing import Any, List, Mapping, Optional, Sequence, cast
+from unittest.mock import ANY, Mock, call
 from urllib.parse import parse_qs
 
 from werkzeug.exceptions import NotFound
@@ -250,11 +250,11 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
     _another = _Another()
 
-    def anInstance(self) -> Callable[[], KleinResource]:
-        return self._one.oneKlein.resource
+    def anInstance(self) -> KleinResource:
+        return self._one.oneKlein.resource()
 
-    def anotherInstance(self) -> Callable[[], KleinResource]:
-        return self._another.anotherKlein.resource
+    def anotherInstance(self) -> KleinResource:
+        return self._another.anotherKlein.resource()
 
 
 class KleinResourceTests(SynchronousTestCase):
@@ -642,7 +642,7 @@ class KleinResourceTests(SynchronousTestCase):
         request.setHeader.assert_has_calls(
             [
                 call(b"Content-Type", b"text/html; charset=utf-8"),
-                call(b"Content-Length", b"258"),
+                call(b"Content-Length", ANY),
                 call(b"Location", b"http://localhost:8080/foo/"),
             ]
         )

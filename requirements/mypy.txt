@@ -1,0 +1,3 @@
+mypy==0.950
+mypy-zope==0.3.7
+types-click==7.1.8

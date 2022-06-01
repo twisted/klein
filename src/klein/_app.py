@@ -123,7 +123,7 @@ def _call(
         args = (__klein_instance__,) + args
     result = __klein_f__(*args, **kwargs)
     if iscoroutine(result):
-        result = ensureDeferred(result)  # type: ignore[arg-type]
+        result = ensureDeferred(result)
     return result
 
 
@@ -223,13 +223,11 @@ class Klein:
         Execute the named endpoint with all arguments and possibly a bound
         instance.
         """
-        endpoint_f = self._endpoints[endpoint]
+        endpoint_f: Callable[..., KleinRenderable] = self._endpoints[endpoint]
         # typing note: endpoint_f is a KleinRouteHandler, which is not defined
         # as taking *args, **kwargs (because they aren't required), but we're
         # going to pass them along here anyway.
-        return endpoint_f(
-            self._instance, request, *args, **kwargs  # type: ignore[arg-type]
-        )  # type: ignore[call-arg]
+        return endpoint_f(self._instance, request, *args, **kwargs)
 
     def execute_error_handler(
         self,

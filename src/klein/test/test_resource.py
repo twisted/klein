@@ -1,7 +1,7 @@
 import os
 from io import BytesIO
 from types import MappingProxyType
-from typing import Any, Callable, List, Mapping, Optional, Sequence, cast
+from typing import Any, List, Mapping, Optional, Sequence, cast
 from unittest.mock import ANY, Mock, call
 from urllib.parse import parse_qs
 
@@ -250,11 +250,11 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
 
     _another = _Another()
 
-    def anInstance(self) -> Callable[[], KleinResource]:
-        return self._one.oneKlein.resource
+    def anInstance(self) -> KleinResource:
+        return self._one.oneKlein.resource()
 
-    def anotherInstance(self) -> Callable[[], KleinResource]:
-        return self._another.anotherKlein.resource
+    def anotherInstance(self) -> KleinResource:
+        return self._another.anotherKlein.resource()
 
 
 class KleinResourceTests(SynchronousTestCase):

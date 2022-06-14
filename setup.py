@@ -29,7 +29,7 @@ if __name__ == "__main__":
         setup_requires=["incremental"],
         use_incremental=True,
         install_requires=[
-            "attrs>=17.3.0",
+            "attrs>=20.1.0",
             "hyperlink",
             "incremental",
             "Tubes",

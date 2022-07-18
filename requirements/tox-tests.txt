@@ -1,3 +1,3 @@
 treq==22.2.0
-hypothesis==6.51.0
+hypothesis==6.52.0
 idna==3.3

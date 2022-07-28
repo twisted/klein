@@ -1,4 +1,4 @@
-attrs==21.4.0
+attrs==22.1.0
 Automat==20.2.0
 characteristic==14.3.0
 constantly==15.1.0

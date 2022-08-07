@@ -4,7 +4,7 @@ characteristic==14.3.0
 constantly==15.1.0
 hyperlink==21.0.0
 incremental==21.3.0
-PyHamcrest==2.0.3
+PyHamcrest==2.0.4
 six==1.16.0
 Tubes==0.2.1
 Werkzeug==2.2.1; python_version > '3.6'

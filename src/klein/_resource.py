@@ -205,11 +205,6 @@ class KleinResource(Resource):
             d = maybeDeferred(
                 self._app.execute_endpoint, endpoint, request, **kwargs
             )
-
-            request.notifyFinish().addErrback(  # type: ignore[attr-defined]
-                lambda _: d.cancel(),
-            )
-
             return d
 
         d = maybeDeferred(_execute)

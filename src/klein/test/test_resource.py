@@ -578,7 +578,7 @@ class KleinResourceTests(SynchronousTestCase):
         with open(
             os.path.join(os.path.dirname(__file__), "__init__.py"), "rb"
         ) as f:
-            expected = .read()
+            expected = f.read()
 
         @app.route("/", branch=True)
         def root(request: IRequest) -> KleinRenderable:

@@ -575,9 +575,10 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         request = MockRequest(b"/__init__.py")
-        expected = open(
+        with open(
             os.path.join(os.path.dirname(__file__), "__init__.py"), "rb"
-        ).read()
+        ) as f:
+            expected = .read()
 
         @app.route("/", branch=True)
         def root(request: IRequest) -> KleinRenderable:
@@ -593,9 +594,10 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
 
         request = MockRequest(b"/static/__init__.py")
-        expected = open(
+        with open(
             os.path.join(os.path.dirname(__file__), "__init__.py"), "rb"
-        ).read()
+        ) as f:
+            expected = f.read()
 
         @app.route("/static/", branch=True)
         def root(request: IRequest) -> KleinRenderable:

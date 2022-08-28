@@ -13,7 +13,7 @@ templates_path = ["_templates"]
 source_suffix = ".rst"
 master_doc = "index"
 project = "Klein"
-copyright = "2011-2021, Twisted Matrix Labs"
+copyright = "2011-2022, Twisted Matrix Labs"
 version = _version.__version__.base()
 release = version
 exclude_patterns = ["_build"]
@@ -55,4 +55,4 @@ texinfo_documents = [
 
 # API links extension, stolen from Twisted's Sphinx setup
 extensions.append("apilinks")
-apilinks_base_url = "https://twistedmatrix.com/documents/current/api/"
+apilinks_base_url = "https://docs.twisted.org/en/stable/api/"

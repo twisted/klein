@@ -54,7 +54,7 @@ Under the hood, Klein uses ``twisted.web.server.Site``, which has an
 instance variable ``displayTracebacks`` that defaults to ``True``.
 
 For the rationale behind that, check
-https://twistedmatrix.com/trac/ticket/135
+`trac#135 <https://twistedmatrix.com/trac/ticket/135>`_.
 
 .. code-block:: python
 

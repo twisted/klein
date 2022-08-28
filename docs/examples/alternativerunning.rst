@@ -15,8 +15,8 @@ possible to call it with the parameter ``endpoint_description``.
 The ``endpoint_description`` parameter uses Twisted Endpoints, which enable
 very neat things, like out-of-the-box TLS and IPv6 support.
 
-For more information check (specially the Servers section)
-https://twistedmatrix.com/documents/current/core/howto/endpoints.html
+For more information check `the endpoint docs <https://docs.twisted.org/en/stable/core/howto/endpoints.html>`_ (specially the Servers section).
+
 
 .. code-block:: python
 
@@ -59,8 +59,8 @@ and manually start the reactor when it is convenient.
 
 Notice that, since ``Klein.run`` sets up logging to stdout for you,
 you will need to set that up manually as well.
-Read more about logging with Twisted here:
-https://twistedmatrix.com/documents/current/core/howto/logger.html
+Read more about logging with Twisted in the `official docs <https://docs.twisted.org/en/stable/core/howto/logger.html>`_.
+
 
 .. code-block:: python
 

@@ -13,6 +13,8 @@ for example::
 from types import MappingProxyType
 
 
+apilinks_base_url = "https://docs.twisted.org/en/stable/api/"
+
 emptyMapping = MappingProxyType({})
 
 
@@ -35,13 +37,9 @@ def make_api_link(
     else:
         full_name = text
 
-    # get the base url for api links from the config file
-    env = inliner.document.settings.env
-    base_url = env.config.apilinks_base_url
-
     # not really sufficient, but just testing...
     # ...hmmm, maybe this is good enough after all
-    ref = "".join((base_url, full_name, ".html"))
+    ref = "".join((apilinks_base_url, full_name, ".html"))
 
     node = nodes.reference(
         rawtext, utils.unescape(label), refuri=ref, **options
@@ -58,7 +56,7 @@ def make_api_link(
 def setup(app):
     app.add_config_value(
         "apilinks_base_url",
-        "http://twistedmatrix.com/documents/current/api/",
+        "https://docs.twisted.org/en/stable/api/",
         "env",
     )
     app.add_role("api", make_api_link)

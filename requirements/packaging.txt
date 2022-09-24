@@ -1,2 +1,2 @@
-readme-renderer==37.1
+readme-renderer==37.2
 twine==4.0.1

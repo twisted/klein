@@ -1,2 +1,2 @@
-Sphinx==5.2.0.post0
+Sphinx==5.2.1
 sphinx-rtd-theme==1.0.0

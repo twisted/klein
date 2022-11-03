@@ -9,4 +9,4 @@ six==1.16.0
 Tubes==0.2.1
 Werkzeug==2.2.2; python_version > '3.6'
 Werkzeug==2.1.2; python_version <= '3.6'
-zope.interface==5.5.0
+zope.interface==5.5.1

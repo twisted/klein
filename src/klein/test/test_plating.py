@@ -3,6 +3,7 @@ Tests for L{klein.plating}.
 """
 
 
+import atexit
 import json
 from string import printable
 from typing import Any
@@ -145,6 +146,17 @@ def jsonComposites(children):
 
 
 jsonObjects = st.recursive(jsonAtoms, jsonComposites, max_leaves=200)
+
+
+@atexit.register
+def invalidateJsonStrategy() -> None:
+    """
+    hypothesis RecursiveStrategy hangs on to a threadlocal object which causes
+    disttrial to hang for some reason.
+
+    Possibly related to U{this <https://github.com/python/cpython/pull/28525>}.
+    """
+    jsonObjects.limited_base._threadlocal = None
 
 
 def transformJSONObject(jsonObject, transformer):

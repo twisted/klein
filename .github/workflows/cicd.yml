@@ -37,8 +37,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
-          tox -e lint --notest;
+          pip install 'tox<4'
+          tox -e lint --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -46,7 +46,7 @@ jobs:
           python-path: .tox/lint/*/python
 
       - name: Run Linters
-        run: tox -e lint;
+        run: tox -e lint
 
 
   mypy:
@@ -71,8 +71,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
-          tox -e mypy --notest;
+          pip install 'tox<4'
+          tox -e mypy --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -80,7 +80,7 @@ jobs:
           python-path: .tox/mypy/*/python
 
       - name: Run Mypy
-        run: tox -e mypy;
+        run: tox -e mypy
 
 
   docs:
@@ -105,8 +105,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
-          tox -e docs --notest;
+          pip install 'tox<4'
+          tox -e docs --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -114,7 +114,7 @@ jobs:
           python-path: .tox/docs/*/python
 
       - name: Build documentation
-        run: tox -e docs;
+        run: tox -e docs
 
 
   docs-linkcheck:
@@ -139,8 +139,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
-          tox -e docs-linkcheck --notest;
+          pip install 'tox<4'
+          tox -e docs-linkcheck --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -172,8 +172,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
-          tox -e packaging --notest;
+          pip install 'tox<4'
+          tox -e packaging --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -244,7 +244,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
+          pip install 'tox<4'
           tox -e ${{ steps.tox_env.outputs.value }} --notest;
 
       - name: Tox Python Information

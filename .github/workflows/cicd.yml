@@ -277,3 +277,31 @@ jobs:
           GITHUB_COMMIT: ${{ github.sha }}
           GITHUB_USER: ${{ github.actor }}
           GITHUB_WORKFLOW: ${{ github.workflow }}
+
+  # Helper so that on GitHub repo settings we can configure to single job.
+  # Then required jobs can be updated directly form the code,
+  # without having to go the GitHub repo setting -> Protected branch
+  # and all the clicking.
+  klein-required:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+    # Add here the jobs that should block the merge of a PR.
+    needs:
+      - lint
+      - mypy
+      - docs
+      - docs-linkcheck
+      - packaging
+      - unit
+    steps:
+      - name: Require all successes
+        shell: python3 {0}
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          import json
+          import os
+          import sys
+          results = json.loads(os.environ["RESULTS"])
+          sys.exit(0 if all(result == "success" for result in results) else 1)

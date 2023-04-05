@@ -187,8 +187,6 @@ jobs:
   unit:
     name: "Py:${{ matrix.python-version }} - Tw:${{ matrix.twisted }} - ${{ matrix.os }}"
 
-    needs: [lint, mypy, docs, packaging]
-
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     continue-on-error: ${{ matrix.optional }}

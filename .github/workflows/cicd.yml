@@ -37,7 +37,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install tox;
+          pip install tox<4;
           tox -e lint --notest;
 
       - name: Tox Python Information

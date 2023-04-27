@@ -279,7 +279,7 @@ class KleinResource(Resource):
             if failure.check(*error_handler[0]):
                 d = maybeDeferred(
                     self._app.execute_error_handler,
-                    error_handler[1],
+                    error_handler[1],  # type: ignore[arg-type]
                     request,
                     failure,
                 )

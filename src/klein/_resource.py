@@ -167,7 +167,7 @@ class KleinResource(Resource):
             server_name,
             script_name,
             path_info=path_info,
-            default_method=request.method,
+            default_method=request.method.decode("utf-8"),
             url_scheme=url_scheme,
         )
         # Make the mapper available to the view.

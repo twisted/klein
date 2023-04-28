@@ -526,14 +526,14 @@ class Klein:
         force_external: bool = False,
         append_unknown: bool = True,
     ) -> str:
-        host = request.getHeader(b"host")
+        host = request.getHeader("host")
         if host is None:
             if force_external:
                 raise ValueError(
                     "Cannot build external URL if request"
                     " doesn't contain Host header"
                 )
-            host = b""
+            host = ""
         return buildURL(
             self.url_map.bind(host),
             endpoint,

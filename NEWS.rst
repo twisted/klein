@@ -2,6 +2,11 @@ NEWS
 ====
 
 NEXT
+----
+
+ * Fixed a compatibility issue with Werkzeug versions greater than 2.2. [`#575 <https://github.com/twisted/klein/pull/575>`]
+
+21.8.0 - 2021-08-08
 -------------------
  * Python 2 is no longer supported by Klein.
  * Python 3.5 is no longer supported by Klein.

@@ -264,7 +264,7 @@ jobs:
           python-version: "3.9"
 
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v1"
+        uses: "codecov/codecov-action@v3"
         if: steps.tox_env.outputs.has_coverage
         with:
           env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW

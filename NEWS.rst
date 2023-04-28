@@ -5,6 +5,9 @@ NEXT
 ----
 
  * Fixed a compatibility issue with Werkzeug versions greater than 2.2. [`#575 <https://github.com/twisted/klein/pull/575>`]
+ * Added explicit support for Python 3.10 and 3.11, although in practice they did work previously in 21.8. [`#578 <https://github.com/twisted/klein/pull/578>`]
+ * Python 3.6 is no longer supported by Klein.
+
 
 21.8.0 - 2021-08-08
 -------------------

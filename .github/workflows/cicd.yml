@@ -196,18 +196,15 @@ jobs:
         python-version: ["3.7", "3.9", "pypy-3.8"]
         twisted: ["19.2", "20.3", "current"]
         optional: [false]
-
-        #
-        # Including the following matrix addition results in the "Run unit
-        # tests" step hanging in a queued state for 30+ minutes.  We should put
-        # it back at some point.
-        #
-
-        # include:
-        #   - os: "ubuntu-latest"
-        #     python-version: "3.10"
-        #     twisted: "trunk"
-        #     optional: true
+        include:
+          - os: "ubuntu-latest"
+            python-version: "3.10"
+            twisted: "current"
+            optional: false
+          - os: "ubuntu-latest"
+            python-version: "3.11"
+            twisted: "current"
+            optional: false
 
     steps:
 

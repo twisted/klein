@@ -4,7 +4,7 @@ Generic SQL data storage stuff; the substrate for session-storage stuff.
 
 from collections import deque
 from sys import exc_info
-from typing import TYPE_CHECKING, Any, Optional, Text, TypeVar
+from typing import Any, Optional, TYPE_CHECKING, TypeVar
 
 import attr
 from alchimia import TWISTED_STRATEGY

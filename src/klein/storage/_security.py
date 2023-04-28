@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Optional, Text, Tuple
+from typing import Any, Callable, Optional, TYPE_CHECKING, Tuple
 from unicodedata import normalize
 
 from passlib.context import CryptContext

@@ -10,7 +10,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Text,
     Type,
     TypeVar,
     cast,

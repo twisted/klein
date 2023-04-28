@@ -167,7 +167,7 @@ class KleinResource(Resource):
             server_name,
             script_name,
             path_info=path_info,
-            default_method=request.method,
+            default_method=request.method.decode("utf-8"),
             url_scheme=url_scheme,
         )
         # Make the mapper available to the view.
@@ -279,7 +279,7 @@ class KleinResource(Resource):
             if failure.check(*error_handler[0]):
                 d = maybeDeferred(
                     self._app.execute_error_handler,
-                    error_handler[1],
+                    error_handler[1],  # type: ignore[arg-type]
                     request,
                     failure,
                 )

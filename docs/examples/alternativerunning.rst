@@ -17,7 +17,6 @@ very neat things, like out-of-the-box TLS and IPv6 support.
 
 For more information check `the endpoint docs <https://docs.twisted.org/en/stable/core/howto/endpoints.html>`_ (specially the Servers section).
 
-
 .. code-block:: python
 
     #

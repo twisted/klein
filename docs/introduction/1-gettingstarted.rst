@@ -215,7 +215,7 @@ Since it's all just Twisted underneath, you can return :api:`twisted.internet.de
 
 .. literalinclude:: codeexamples/googleProxy.py
 
-This example here uses `treq <https://github.com/dreid/treq>`_ (think Requests, but using Twisted) to implement a Google proxy.
+This example here uses `treq <https://github.com/twisted/treq>`_ (think Requests, but using Twisted) to implement a Google proxy.
 
 
 Return Anything

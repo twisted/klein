@@ -18,7 +18,7 @@ Klein, a Web Micro-Framework
 Klein is a micro-framework for developing production-ready web services with Python.
 It is 'micro' in that it has an incredibly small API similar to `Bottle <https://bottlepy.org/docs/dev/index.html>`_ and `Flask <https://flask.palletsprojects.com/>`_.
 It is not 'micro' in that it depends on things outside the standard library.
-This is primarily because it is built on widely used and well tested components like `Werkzeug <https://werkzeug.palletsprojects.com/>`_ and `Twisted <https://twistedmatrix.com>`_.
+This is primarily because it is built on widely used and well tested components like `Werkzeug <https://werkzeug.palletsprojects.com/>`_ and `Twisted <https://twisted.org>`_.
 
 A `Klein bottle <https://en.wikipedia.org/wiki/Klein_bottle>`_ is an example of a non-orientable surface, and a glass Klein bottle looks like a twisted bottle or twisted flask.
 This, of course, made it too good of a pun to pass up.

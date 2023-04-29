@@ -6,7 +6,7 @@ Klein is a micro-framework for developing production-ready web services with Pyt
 It's built on widely used and well tested components like Werkzeug and Twisted, and has near-complete test coverage.
 
 Klein is developed by a team of contributors `on GitHub <https://github.com/twisted/klein>`_.
-We're also commonly in ``#twisted.web`` on `Freenode <https://freenode.net>`_.
+We're also commonly in ``#twisted`` on `Libera.Chat <https://libera.chat/>`_.
 
 
 Introduction to Klein

@@ -1,6 +1,16 @@
+"""
+We have had a history of U{bad
+experiences<https://github.com/twisted/klein/issues/561>} with Hypothesis in
+Klein, and maybe it's not actually a good application of this tool at all.  As
+such we have removed it, at least for now.  This module presents a vaguely
+Hypothesis-like stub, to keep the structure of our tests in a
+Hypothesis-friendly shape, in case we want to put it back.
+"""
+
 from functools import wraps
 from itertools import product
-from typing import Callable, Iterable, Tuple, TypeVar
+from string import ascii_uppercase
+from typing import Callable, Iterable, Optional, Tuple, TypeVar
 
 from hyperlink import DecodedURL, parse as parseURL
 
@@ -58,9 +68,8 @@ def ascii_text(min_size: int = 0) -> Callable[[], Iterable[str]]:
 
     def params() -> Iterable[str]:
         yield from [
-            "latin1-text",
-            "some more latin1 text",
-            "hére is latin1 text",
+            "ascii-text",
+            "some more ascii text",
         ]
         if not min_size:
             yield ""
@@ -86,13 +95,16 @@ def latin1_text(min_size: int = 0) -> Callable[[], Iterable[str]]:
 
 
 def text(
-    min_size: int = 0, alphabet: str = "ignored"
+    min_size: int = 0, alphabet: Optional[str] = None
 ) -> Callable[[], Iterable[str]]:
     """
     Generate some text.
     """
 
     def params() -> Iterable[str]:
+        if alphabet == ascii_uppercase:
+            yield from ascii_text()()
+            return
         yield from latin1_text(min_size)()
         yield "\N{SNOWMAN}"
 
@@ -100,11 +112,25 @@ def text(
 
 
 def textHeaderPairs() -> Callable[[], Iterable[Iterable[Tuple[str, str]]]]:
-    """ """
+    """
+    Generate some pairs of headers with text values.
+    """
+
+    def params() -> Iterable[Iterable[Tuple[str, str]]]:
+        return [[], [("text", "header")]]
+
+    return params
 
 
 def bytesHeaderPairs() -> Callable[[], Iterable[Iterable[Tuple[str, bytes]]]]:
-    """ """
+    """
+    Generate some pairs of headers with bytes values.
+    """
+
+    def params() -> Iterable[Iterable[Tuple[str, bytes]]]:
+        return [[], [("bytes", b"header")]]
+
+    return params
 
 
 def booleans() -> Callable[[], Iterable[bool]]:
@@ -133,13 +159,15 @@ def jsonObjects() -> Callable[[], Iterable[object]]:
 
 
 def decoded_urls() -> Callable[[], Iterable[DecodedURL]]:
+    """
+    Generate a few URLs U{with only path and domain names
+    <https://github.com/python-hyper/hyperlink/issues/181>} kind of like
+    Hyperlink's own hypothesis strategy.
+    """
+
     def parameters() -> Iterable[DecodedURL]:
         yield DecodedURL.from_text("https://example.com/")
-        yield DecodedURL.from_text("https://sub.example.com/?query=params")
-        yield DecodedURL.from_text(
-            "https://user:pass@example.com/?query=params"
-        )
-        yield DecodedURL.from_text(
-            "https://user:pass@example.com/?query=params#fragment-too"
-        )
+        yield DecodedURL.from_text("https://example.com/é")
+        yield DecodedURL.from_text("https://súbdomain.example.com/ascii/path/")
+
     return parameters

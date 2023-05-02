@@ -12,7 +12,7 @@ from itertools import product
 from string import ascii_uppercase
 from typing import Callable, Iterable, Optional, Tuple, TypeVar
 
-from hyperlink import DecodedURL, parse as parseURL
+from hyperlink import DecodedURL
 
 
 T = TypeVar("T")

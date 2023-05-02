@@ -16,7 +16,7 @@ from twisted.web.template import slot, tags
 
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
-from .not_hypothesis import given, jsonObjects, booleans
+from .not_hypothesis import booleans, given, jsonObjects
 from .test_resource import MockRequest, _render
 
 
@@ -213,7 +213,9 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         jsonObject=jsonObjects(),
         shouldWrapDeferred=booleans(),
     )
-    def test_resolveObjects(self, jsonObject: object, shouldWrapDeferred: bool) -> None:
+    def test_resolveObjects(
+        self, jsonObject: object, shouldWrapDeferred: bool
+    ) -> None:
         """
         A JSON serializable object that may contain L{Deferred}s or a
         L{Deferred} that resolves to a JSON serializable object
@@ -244,7 +246,9 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         jsonObject=jsonObjects(),
         shouldInjectElements=booleans(),
     )
-    def test_elementSerialized(self, jsonObject: object, shouldInjectElements: bool) -> None:
+    def test_elementSerialized(
+        self, jsonObject: object, shouldInjectElements: bool
+    ) -> None:
         """
         A L{PlatedElement} within a JSON serializable object replaced
         by its JSON representation.

@@ -28,7 +28,7 @@ from .._message import FountAlreadyAccessedError
 from .._request import IHTTPRequest
 from .._request_compat import HTTPRequestWrappingIRequest
 from ._trial import TestCase
-from .not_hypothesis import binary, given, text, decoded_urls
+from .not_hypothesis import binary, decoded_urls, given, text
 from .test_resource import MockRequest
 
 

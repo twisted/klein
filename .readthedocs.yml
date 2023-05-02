@@ -27,5 +27,5 @@ sphinx:
 python:
    install:
    - path: "."
-   - extra_requirements:
+     extra_requirements:
        - "docs"

@@ -41,7 +41,7 @@ def given(
             # not quite the _full_ cartesian product but the whole point is
             # that we're making a feeble attempt at this rather than bringing
             # in hypothesis.
-            for (computedArgs, computedPairs) in everyPossibleSignature:
+            for computedArgs, computedPairs in everyPossibleSignature:
                 computedKwargs = dict(computedPairs)
                 testMethod(self, *computedArgs, **computedKwargs)
 

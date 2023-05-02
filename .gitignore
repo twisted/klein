@@ -2,7 +2,6 @@
 *~
 .DS_Store
 /.eggs
-/.hypothesis/
 /.tox/
 /apidocs/
 /build/

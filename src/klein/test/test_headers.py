@@ -20,17 +20,6 @@ from typing import (
     cast,
 )
 
-from hypothesis import given
-from hypothesis.strategies import (
-    binary,
-    characters,
-    composite,
-    iterables,
-    lists,
-    text,
-    tuples,
-)
-
 from .._headers import (
     HEADER_NAME_ENCODING,
     HEADER_VALUE_ENCODING,

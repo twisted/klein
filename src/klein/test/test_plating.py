@@ -9,8 +9,6 @@ from string import printable
 from typing import Any
 
 import attr
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from twisted.internet.defer import Deferred, succeed
 from twisted.trial.unittest import SynchronousTestCase
@@ -126,37 +124,6 @@ jsonAtoms = (
     | st.floats(allow_nan=False)
     | st.text(printable)
 )
-
-
-def jsonComposites(children):
-    """
-    Creates a Hypothesis strategy that constructs composite
-    JSON-serializable objects (e.g., lists).
-
-    @param children: A strategy from which each composite object's
-        children will be drawn.
-
-    @return: The composite objects strategy.
-    """
-    return (
-        st.lists(children)
-        | st.dictionaries(st.text(printable), children)
-        | st.tuples(children)
-    )
-
-
-jsonObjects = st.recursive(jsonAtoms, jsonComposites, max_leaves=200)
-
-
-@atexit.register
-def invalidateJsonStrategy() -> None:
-    """
-    hypothesis RecursiveStrategy hangs on to a threadlocal object which causes
-    disttrial to hang for some reason.
-
-    Possibly related to U{this <https://github.com/python/cpython/pull/28525>}.
-    """
-    jsonObjects.limited_base._threadlocal = None
 
 
 def transformJSONObject(jsonObject, transformer):

@@ -19,9 +19,6 @@ from typing import (
 )
 
 from hyperlink import DecodedURL, EncodedURL
-from hyperlink.hypothesis import decoded_urls
-from hypothesis import given
-from hypothesis.strategies import binary, text
 
 from twisted.internet.defer import ensureDeferred
 from twisted.web.iweb import IRequest

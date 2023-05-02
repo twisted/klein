@@ -8,9 +8,6 @@ Tests for L{klein._message}.
 from abc import ABC, abstractmethod
 from typing import cast
 
-from hypothesis import given
-from hypothesis.strategies import binary
-
 from twisted.internet.defer import ensureDeferred
 
 from .._imessage import IHTTPMessage

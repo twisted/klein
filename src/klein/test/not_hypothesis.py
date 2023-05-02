@@ -2,6 +2,8 @@ from functools import wraps
 from itertools import product
 from typing import Callable, Iterable, Tuple, TypeVar
 
+from hyperlink import DecodedURL, parse as parseURL
+
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -126,4 +128,18 @@ def jsonObjects() -> Callable[[], Iterable[object]]:
                 "numbers": ["with", "lists", "too"],
             },
         }
+
+    return parameters
+
+
+def decoded_urls() -> Callable[[], Iterable[DecodedURL]]:
+    def parameters() -> Iterable[DecodedURL]:
+        yield DecodedURL.from_text("https://example.com/")
+        yield DecodedURL.from_text("https://sub.example.com/?query=params")
+        yield DecodedURL.from_text(
+            "https://user:pass@example.com/?query=params"
+        )
+        yield DecodedURL.from_text(
+            "https://user:pass@example.com/?query=params#fragment-too"
+        )
     return parameters

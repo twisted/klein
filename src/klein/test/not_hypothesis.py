@@ -61,7 +61,7 @@ def binary() -> Callable[[], Iterable[bytes]]:
     return params
 
 
-def ascii_text(min_size: int = 0) -> Callable[[], Iterable[str]]:
+def ascii_text(min_size: int) -> Callable[[], Iterable[str]]:
     """
     Generate some ASCII strs.
     """

@@ -7,6 +7,7 @@ Tests for L{klein._headers}.
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from string import ascii_letters
 from typing import (
     AnyStr,
     Callable,
@@ -17,6 +18,17 @@ from typing import (
     Tuple,
     TypeVar,
     cast,
+)
+
+from hypothesis import given
+from hypothesis.strategies import (
+    binary,
+    characters,
+    composite,
+    iterables,
+    lists,
+    text,
+    tuples,
 )
 
 from .._headers import (
@@ -37,14 +49,6 @@ from .._headers import (
     normalizeRawHeadersFrozen,
 )
 from ._trial import TestCase
-from .not_hypothesis import (
-    binary,
-    bytesHeaderPairs,
-    given,
-    latin1_text,
-    text,
-    textHeaderPairs,
-)
 
 
 __all__ = ()
@@ -52,6 +56,55 @@ __all__ = ()
 
 T = TypeVar("T")
 DrawCallable = Callable[[Callable[..., T]], T]
+
+
+@composite
+def ascii_text(
+    draw: DrawCallable,
+    min_size: Optional[int] = 0,
+    max_size: Optional[int] = None,
+) -> str:  # pragma: no cover
+    """
+    A strategy which generates ASCII-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return cast(
+        str,
+        draw(
+            text(min_size=min_size, max_size=max_size, alphabet=ascii_letters)
+        ),
+    )
+
+
+@composite  # pragma: no cover
+def latin1_text(
+    draw: DrawCallable,
+    min_size: Optional[int] = 0,
+    max_size: Optional[int] = None,
+) -> str:
+    """
+    A strategy which generates ISO-8859-1-encodable text.
+
+    @param min_size: The minimum number of characters in the text.
+        C{None} is treated as C{0}.
+
+    @param max_size: The maximum number of characters in the text.
+        Use C{None} for an unbounded size.
+    """
+    return "".join(
+        draw(
+            lists(
+                characters(max_codepoint=255),
+                min_size=min_size,
+                max_size=max_size,
+            )
+        )
+    )
 
 
 def encodeName(name: str) -> Optional[bytes]:
@@ -251,7 +304,7 @@ class GetValuesTestsMixIn(ABC):
         """
         return value
 
-    @given(textHeaderPairs())
+    @given(iterables(tuples(ascii_text(min_size=1), latin1_text())))
     def test_getTextName(self, textPairs: Iterable[Tuple[str, str]]) -> None:
         """
         C{getValues} returns an iterable of L{str} values for
@@ -280,7 +333,7 @@ class GetValuesTestsMixIn(ABC):
                 f"header name: {name!r}",
             )
 
-    @given(bytesHeaderPairs())
+    @given(iterables(tuples(ascii_text(min_size=1), binary())))
     def test_getTextNameBinaryValues(
         self, pairs: Iterable[Tuple[str, bytes]]
     ) -> None:

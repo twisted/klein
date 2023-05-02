@@ -3,9 +3,7 @@ Tests for L{klein.plating}.
 """
 
 
-import atexit
 import json
-from string import printable
 from typing import Any
 
 import attr
@@ -18,6 +16,7 @@ from twisted.web.template import slot, tags
 
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
+from .not_hypothesis import given, jsonObjects
 from .test_resource import MockRequest, _render
 
 
@@ -117,15 +116,6 @@ class DeferredValue:
         self.deferred.callback(self.value)
 
 
-jsonAtoms = (
-    st.none()
-    | st.booleans()
-    | st.integers()
-    | st.floats(allow_nan=False)
-    | st.text(printable)
-)
-
-
 def transformJSONObject(jsonObject, transformer):
     """
     Recursively apply a transforming function to a JSON serializable
@@ -219,7 +209,6 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
     Tests for L{resolve_deferred_objects}.
     """
 
-    @settings(max_examples=500)
     @given(
         jsonObject=jsonObjects,
         data=st.data(),
@@ -261,7 +250,6 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         A L{PlatedElement} within a JSON serializable object replaced
         by its JSON representation.
         """
-        choose = st.booleans()
 
         def injectPlatingElements(value):
             if data.draw(choose) and isinstance(value, dict):

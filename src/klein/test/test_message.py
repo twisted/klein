@@ -13,6 +13,7 @@ from twisted.internet.defer import ensureDeferred
 from .._imessage import IHTTPMessage
 from .._message import FountAlreadyAccessedError, bytesToFount, fountToBytes
 from ._trial import TestCase
+from .not_hypothesis import binary, given
 
 
 __all__ = ()

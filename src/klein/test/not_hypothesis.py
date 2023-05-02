@@ -56,7 +56,7 @@ def binary() -> Callable[[], Iterable[bytes]]:
     """
 
     def params() -> Iterable[bytes]:
-        return [b"data", b"data data data", b"\x00" * 50]
+        return [b"data", b"data data data", b"\x00" * 50, b""]
 
     return params
 
@@ -151,6 +151,7 @@ def jsonObjects() -> Callable[[], Iterable[object]]:
                 "with": "nesting",
                 "and": 1234,
                 "numbers": ["with", "lists", "too"],
+                "also": ("tuples", "can", "serialize"),
             },
         }
 
@@ -166,6 +167,8 @@ def decoded_urls() -> Callable[[], Iterable[DecodedURL]]:
 
     def parameters() -> Iterable[DecodedURL]:
         yield DecodedURL.from_text("https://example.com/")
+        yield DecodedURL.from_text("https://example.com")
+        yield DecodedURL.from_text("http://example.com/")
         yield DecodedURL.from_text("https://example.com/é")
         yield DecodedURL.from_text("https://súbdomain.example.com/ascii/path/")
 

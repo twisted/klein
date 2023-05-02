@@ -1,4 +1,5 @@
 from functools import wraps
+from itertools import product
 from typing import Callable, Iterable, Tuple, TypeVar
 
 
@@ -7,13 +8,30 @@ S = TypeVar("S")
 
 
 def given(
-    parameters: Callable[[], Iterable[T]]
-) -> Callable[[Callable[[S, T], None]], Callable[[S], None]]:
-    def decorator(testMethod: Callable[[S, T], None]) -> Callable[[S], None]:
+    *args: Callable[[], Iterable[T]],
+    **kwargs: Callable[[], Iterable[T]],
+) -> Callable[[Callable[..., None]], Callable[..., None]]:
+    def decorator(testMethod: Callable[..., None]) -> Callable[..., None]:
         @wraps(testMethod)
         def realTestMethod(self: S) -> None:
-            for parameter in parameters():
-                testMethod(self, parameter)
+            everyPossibleArgs = product(
+                *[eachFactory() for eachFactory in args]
+            )
+            everyPossibleKwargs = product(
+                *[
+                    [(name, eachValue) for eachValue in eachFactory()]
+                    for (name, eachFactory) in kwargs.items()
+                ]
+            )
+            everyPossibleSignature = product(
+                everyPossibleArgs, everyPossibleKwargs
+            )
+            # not quite the _full_ cartesian product but the whole point is
+            # that we're making a feeble attempt at this rather than bringing
+            # in hypothesis.
+            for (computedArgs, computedPairs) in everyPossibleSignature:
+                computedKwargs = dict(computedPairs)
+                testMethod(self, *computedArgs, **computedKwargs)
 
         return realTestMethod
 
@@ -65,7 +83,9 @@ def latin1_text(min_size: int = 0) -> Callable[[], Iterable[str]]:
     return params
 
 
-def text(min_size: int = 0) -> Callable[[], Iterable[str]]:
+def text(
+    min_size: int = 0, alphabet: str = "ignored"
+) -> Callable[[], Iterable[str]]:
     """
     Generate some text.
     """
@@ -83,3 +103,27 @@ def textHeaderPairs() -> Callable[[], Iterable[Iterable[Tuple[str, str]]]]:
 
 def bytesHeaderPairs() -> Callable[[], Iterable[Iterable[Tuple[str, bytes]]]]:
     """ """
+
+
+def booleans() -> Callable[[], Iterable[bool]]:
+    def parameters() -> Iterable[bool]:
+        yield True
+        yield False
+
+    return parameters
+
+
+def jsonObjects() -> Callable[[], Iterable[object]]:
+    def parameters() -> Iterable[object]:
+        yield {}
+        yield {"hello": "world"}
+        yield {"here is": {"some": "nesting"}}
+        yield {
+            "and": "multiple",
+            "keys": {
+                "with": "nesting",
+                "and": 1234,
+                "numbers": ["with", "lists", "too"],
+            },
+        }
+    return parameters

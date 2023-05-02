@@ -16,7 +16,7 @@ from twisted.web.template import slot, tags
 
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
-from .not_hypothesis import given, jsonObjects
+from .not_hypothesis import given, jsonObjects, booleans
 from .test_resource import MockRequest, _render
 
 
@@ -210,20 +210,19 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
     """
 
     @given(
-        jsonObject=jsonObjects,
-        data=st.data(),
+        jsonObject=jsonObjects(),
+        shouldWrapDeferred=booleans(),
     )
-    def test_resolveObjects(self, jsonObject, data):
+    def test_resolveObjects(self, jsonObject: object, shouldWrapDeferred: bool) -> None:
         """
         A JSON serializable object that may contain L{Deferred}s or a
         L{Deferred} that resolves to a JSON serializable object
         resolves to an object that contains no L{Deferred}s.
         """
         deferredValues = []
-        choose = st.booleans()
 
         def maybeWrapInDeferred(value):
-            if data.draw(choose):
+            if shouldWrapDeferred:
                 deferredValues.append(DeferredValue(value))
                 return deferredValues[-1].deferred
             else:
@@ -242,17 +241,17 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         self.assertEqual(self.successResultOf(resolved), jsonObject)
 
     @given(
-        jsonObject=jsonObjects,
-        data=st.data(),
+        jsonObject=jsonObjects(),
+        shouldInjectElements=booleans(),
     )
-    def test_elementSerialized(self, jsonObject, data):
+    def test_elementSerialized(self, jsonObject: object, shouldInjectElements: bool) -> None:
         """
         A L{PlatedElement} within a JSON serializable object replaced
         by its JSON representation.
         """
 
         def injectPlatingElements(value):
-            if data.draw(choose) and isinstance(value, dict):
+            if shouldInjectElements and isinstance(value, dict):
                 return PlatedElement(
                     slot_data=value,
                     preloaded=tags.html(),

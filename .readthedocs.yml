@@ -10,10 +10,10 @@ sphinx:
   fail_on_warning: false
 
 python:
-  os: ubuntu-22.04
-  version: 3.11
+  os: "ubuntu-22.04"
+  version: "3.11"
   install:
-    - method: pip
-      path: .
+    - method: "pip"
+      path: "."
       extra_requirements:
-        - docs
+        - "docs"

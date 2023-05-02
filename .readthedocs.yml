@@ -9,13 +9,9 @@ sphinx:
   # https://github.com/readthedocs/readthedocs.org/issues/7116
   fail_on_warning: false
 
-formats:
-  - pdf
-
-
 python:
-  version: 3.9
-  system_packages: False
+  os: ubuntu-22.04
+  version: 3.11
   install:
     - method: pip
       path: .

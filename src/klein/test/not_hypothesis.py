@@ -71,8 +71,7 @@ def ascii_text(min_size: int) -> Callable[[], Iterable[str]]:
             "ascii-text",
             "some more ascii text",
         ]
-        if not min_size:
-            yield ""
+        assert min_size, "nothing needs 0-length strings right now"
 
     return params
 
@@ -103,7 +102,7 @@ def text(
 
     def params() -> Iterable[str]:
         if alphabet == ascii_uppercase:
-            yield from ascii_text()()
+            yield from ascii_text(min_size)()
             return
         yield from latin1_text(min_size)()
         yield "\N{SNOWMAN}"

@@ -4,12 +4,9 @@ Tests for L{klein.plating}.
 
 
 import json
-from string import printable
 from typing import Any
 
 import attr
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from twisted.internet.defer import Deferred, succeed
 from twisted.trial.unittest import SynchronousTestCase
@@ -19,6 +16,7 @@ from twisted.web.template import slot, tags
 
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
+from .not_hypothesis import booleans, given, jsonObjects
 from .test_resource import MockRequest, _render
 
 
@@ -118,35 +116,6 @@ class DeferredValue:
         self.deferred.callback(self.value)
 
 
-jsonAtoms = (
-    st.none()
-    | st.booleans()
-    | st.integers()
-    | st.floats(allow_nan=False)
-    | st.text(printable)
-)
-
-
-def jsonComposites(children):
-    """
-    Creates a Hypothesis strategy that constructs composite
-    JSON-serializable objects (e.g., lists).
-
-    @param children: A strategy from which each composite object's
-        children will be drawn.
-
-    @return: The composite objects strategy.
-    """
-    return (
-        st.lists(children)
-        | st.dictionaries(st.text(printable), children)
-        | st.tuples(children)
-    )
-
-
-jsonObjects = st.recursive(jsonAtoms, jsonComposites, max_leaves=200)
-
-
 def transformJSONObject(jsonObject, transformer):
     """
     Recursively apply a transforming function to a JSON serializable
@@ -240,22 +209,22 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
     Tests for L{resolve_deferred_objects}.
     """
 
-    @settings(max_examples=500)
     @given(
-        jsonObject=jsonObjects,
-        data=st.data(),
+        jsonObject=jsonObjects(),
+        shouldWrapDeferred=booleans(),
     )
-    def test_resolveObjects(self, jsonObject, data):
+    def test_resolveObjects(
+        self, jsonObject: object, shouldWrapDeferred: bool
+    ) -> None:
         """
         A JSON serializable object that may contain L{Deferred}s or a
         L{Deferred} that resolves to a JSON serializable object
         resolves to an object that contains no L{Deferred}s.
         """
         deferredValues = []
-        choose = st.booleans()
 
         def maybeWrapInDeferred(value):
-            if data.draw(choose):
+            if shouldWrapDeferred:
                 deferredValues.append(DeferredValue(value))
                 return deferredValues[-1].deferred
             else:
@@ -274,18 +243,19 @@ class ResolveDeferredObjectsTests(SynchronousTestCase):
         self.assertEqual(self.successResultOf(resolved), jsonObject)
 
     @given(
-        jsonObject=jsonObjects,
-        data=st.data(),
+        jsonObject=jsonObjects(),
+        shouldInjectElements=booleans(),
     )
-    def test_elementSerialized(self, jsonObject, data):
+    def test_elementSerialized(
+        self, jsonObject: object, shouldInjectElements: bool
+    ) -> None:
         """
         A L{PlatedElement} within a JSON serializable object replaced
         by its JSON representation.
         """
-        choose = st.booleans()
 
         def injectPlatingElements(value):
-            if data.draw(choose) and isinstance(value, dict):
+            if shouldInjectElements and isinstance(value, dict):
                 return PlatedElement(
                     slot_data=value,
                     preloaded=tags.html(),

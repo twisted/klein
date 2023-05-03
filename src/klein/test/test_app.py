@@ -130,6 +130,7 @@ class KleinTestCase(unittest.TestCase):
         C{__klein_bound_<the name of the Klein attribute on the class>__}, and
         something is maintaining a strong reference to the L{Klein} instance.
         """
+
         # This is the desirable property.
         class DuplicateHasherWithWritableAttribute(DuplicateHasher):
             __slots__ = ("__klein_bound_myRouter__",)
@@ -163,7 +164,6 @@ class KleinTestCase(unittest.TestCase):
                 return self._wrapped.__get__(instance, owner)
 
         class TwoRouters:
-
             app1 = Wrap(Klein())
             app2 = Wrap(Klein())
 

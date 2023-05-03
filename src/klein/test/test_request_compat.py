@@ -19,9 +19,6 @@ from typing import (
 )
 
 from hyperlink import DecodedURL, EncodedURL
-from hyperlink.hypothesis import decoded_urls
-from hypothesis import given
-from hypothesis.strategies import binary, text
 
 from twisted.internet.defer import ensureDeferred
 from twisted.web.iweb import IRequest
@@ -31,6 +28,7 @@ from .._message import FountAlreadyAccessedError
 from .._request import IHTTPRequest
 from .._request_compat import HTTPRequestWrappingIRequest
 from ._trial import TestCase
+from .not_hypothesis import binary, decoded_urls, given, text
 from .test_resource import MockRequest
 
 

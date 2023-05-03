@@ -2,12 +2,11 @@
 *~
 .DS_Store
 /.eggs
-/.hypothesis/
 /.tox/
 /apidocs/
 /build/
 /dist/
-/docs/
+/docs/_build/
 /htmlcov/
 /htmldocs/
 /src/*.egg-info

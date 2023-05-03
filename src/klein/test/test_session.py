@@ -150,7 +150,7 @@ class ProcurementTests(SynchronousTestCase):
         mss = MemorySessionStore()
         router = Klein()
 
-        @router.route("/")  # type: ignore[arg-type]
+        @router.route("/")
         @inlineCallbacks
         def route(request: IRequest) -> Generator[Any, object, None]:
             sproc = SessionProcurer(mss)

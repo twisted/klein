@@ -657,7 +657,6 @@ def procurerFromDataStore(
 
 
 class _FunctionWithAuthorizer:
-
     authorizer = None  # type: Any
 
     def __call__(

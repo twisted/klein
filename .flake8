@@ -94,3 +94,9 @@ extend-ignore =
 
     # line break before binary operator
     W503,
+
+    B901,
+    B904,
+    B907,
+    D419,
+    N818,

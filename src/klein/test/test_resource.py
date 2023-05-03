@@ -562,7 +562,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/None")
         def none(request: IRequest) -> KleinRenderable:
-            return None  # type: ignore[return-value]
+            return None
 
         d = _render(self.kr, request)
 

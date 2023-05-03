@@ -25,12 +25,6 @@ from typing import (
 )
 from weakref import ref
 
-
-try:
-    from typing import Protocol
-except ImportError:
-    from typing_extensions import Protocol  # type: ignore[misc]
-
 from werkzeug.routing import Map, MapAdapter, Rule, Submount
 from zope.interface import implementer
 
@@ -47,9 +41,10 @@ from twisted.web.server import Request, Site
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue
 from ._resource import KleinResource
+from ._typing_compat import Protocol
 
 
-KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable]
+KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable, None]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]

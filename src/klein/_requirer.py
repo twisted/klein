@@ -134,7 +134,7 @@ class Requirer:
                 injected = routeParams.copy()
                 try:
                     yield lifecycle.runPrepareHooks(instance, request)
-                    for (k, injector) in injectors.items():
+                    for k, injector in injectors.items():
                         injected[k] = yield injector.injectValue(
                             instance, request, routeParams
                         )

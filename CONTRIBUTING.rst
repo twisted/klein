@@ -38,7 +38,7 @@ Code
   Some parts of Klein (eg. ``klein.resource.ensure_utf8_bytes``) do not adhere to the Twisted style guide, but changing that would break public APIs, which is worse than breaking the style guidelines.
   Similarly, if you change existing code, following the Twisted style guide is good, but is less important than not breaking public APIs.
 - Compatibility across versions is important: here are `Twisted's compatibility guidelines <https://docs.twisted.org/en/stable/development/compatibility-policy.html>`_, which Klein shares.
-- If you're adding a new feature, please add a file with an example and some explanation to the `examples directory <https://github.com/twisted/klein/tree/master/docs/examples>`_, then add your example to ``/docs/index.rst``.
+- If you're adding a new feature, please add a file with an example and some explanation to the `examples directory <https://github.com/twisted/klein/tree/trunk/docs/examples>`_, then add your example to ``/docs/index.rst``.
 - Please run ``tox -e flake8`` to check for style issues in changed code.
   Flake8 and similar tools expose many small-but-common errors early enough that it's easy to remedy the problem.
 - Code changes should have tests: untested code is buggy code.

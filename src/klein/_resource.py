@@ -1,4 +1,5 @@
 # -*- test-case-name: klein.test.test_resource -*-
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
 
@@ -142,7 +143,7 @@ class KleinResource(Resource):
 
     isLeaf = True
 
-    def __init__(self, app: "Klein") -> None:
+    def __init__(self, app: Klein) -> None:
         super().__init__()
         self._app = app
 
@@ -157,7 +158,7 @@ class KleinResource(Resource):
             return result
         return not result
 
-    def render(self, request: IRequest) -> "KleinRenderable":
+    def render(self, request: IRequest) -> KleinRenderable:
         # Stuff we need to know for the mapper.
         try:
             (
@@ -250,7 +251,7 @@ class KleinResource(Resource):
         d.addCallback(process)
 
         def processing_failed(
-            failure: Failure, error_handlers: "ErrorHandlers"
+            failure: Failure, error_handlers: ErrorHandlers
         ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure

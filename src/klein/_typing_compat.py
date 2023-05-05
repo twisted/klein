@@ -3,17 +3,19 @@ Since we support a range of Python and Mypy versions where certain features are
 available across L{typing} and L{typing_extensions}, we put those aliases here
 to avoid repeating conditional import logic.
 """
+import sys
 
-from typing import TYPE_CHECKING
 
-
-try:
+if sys.version_info > (3, 8):
     from typing import Protocol
-except ImportError:
-    if not TYPE_CHECKING:
-        from typing_extensions import Protocol
+else:
+    from typing_extensions import Protocol
 
-from typing_extensions import Concatenate, ParamSpec
+
+if sys.version_info > (3, 10):
+    from typing import Concatenate, ParamSpec
+else:
+    from typing_extensions import Concatenate, ParamSpec
 
 
 __all__ = [

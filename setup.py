@@ -38,7 +38,7 @@ if __name__ == "__main__":
             "Werkzeug",
             "zope.interface",
         ],
-        extra_requires={
+        extras_require={
             "docs": [
                 "Sphinx==3.5.1",
                 "sphinx-rtd-theme==0.5.1",

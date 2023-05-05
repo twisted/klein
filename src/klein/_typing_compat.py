@@ -12,13 +12,12 @@ try:
 except ImportError:
     if not TYPE_CHECKING:
         from typing_extensions import Protocol
-try:
-    from typing import ParamSpec
-except ImportError:
-    if not TYPE_CHECKING:
-        from typing_extensions import ParamSpec
+
+from typing_extensions import Concatenate, ParamSpec
+
 
 __all__ = [
     "Protocol",
     "ParamSpec",
+    "Concatenate",
 ]

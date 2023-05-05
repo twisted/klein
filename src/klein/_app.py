@@ -182,7 +182,7 @@ ErrorHandlers = List[Tuple[List[Type[Exception]], KleinErrorHandler]]
 
 
 # begin argument-processing hack to copy all args from current installed
-# version of werkzeug.rule.Rule to @route's *args and **kwargs
+# version of Rule to @route's *args and **kwargs
 
 R = TypeVar("R", covariant=True)
 P = ParamSpec("P")
@@ -197,7 +197,9 @@ class _PartialRouteSignature(Protocol[R]):
         branch: bool = False,
         **kwargs: Any,
     ) -> R:
-        ...
+        """
+        This is the portion of the signature of C{route} which Klein owns.
+        """
 
 
 class _FullRouteSignature(Protocol[P, R]):
@@ -209,7 +211,9 @@ class _FullRouteSignature(Protocol[P, R]):
         branch: bool = False,
         **kwargs: P.kwargs,
     ) -> R:
-        ...
+        """
+        This integrates L{_PartialRouteSignature} with L{Rule}.
+        """
 
 
 def _removeStringArg(rule: Callable[Concatenate[str, P], R]) -> Callable[P, R]:

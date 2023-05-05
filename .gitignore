@@ -10,3 +10,4 @@
 /htmlcov/
 /htmldocs/
 /src/*.egg-info
+coverage.xml

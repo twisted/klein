@@ -19,7 +19,18 @@ from ._interfaces import IKleinRequest
 
 
 if TYPE_CHECKING:
-    from ._app import ErrorHandlers, Klein, KleinRenderable
+    # NB: circular import, must not be imported at runtime.
+    from ._app import (
+        ErrorHandlers,
+        Klein,
+        KleinRenderable,
+        KleinRouteHandler,
+        RouteMetadata,
+    )
+
+
+def route_metadata(handler: KleinRouteHandler) -> RouteMetadata:
+    return handler  # type:ignore[return-value]
 
 
 def ensure_utf8_bytes(v: Union[str, bytes]) -> bytes:
@@ -189,9 +200,9 @@ class KleinResource(Resource):
             endpoint = rule.endpoint
 
             # Try pretty hard to fix up prepath and postpath.
-            segment_count = self._app.endpoints[
-                endpoint
-            ].segment_count  # type: ignore[union-attr]
+            segment_count = route_metadata(
+                self._app.endpoints[endpoint]
+            ).segment_count
             request.prepath.extend(request.postpath[:segment_count])
             request.postpath = request.postpath[segment_count:]
 

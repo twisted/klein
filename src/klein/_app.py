@@ -67,7 +67,7 @@ class KleinErrorFunction(Protocol):
 class KleinErrorMethod(Protocol):
     def __call__(
         _self,
-        self: Optional[Klein],
+        self: Any,
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:

@@ -3,6 +3,7 @@
 Applications are great.  Lets have more of them.
 """
 
+from __future__ import annotations
 
 import sys
 from contextlib import contextmanager
@@ -19,6 +20,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -40,30 +42,14 @@ from twisted.web.server import Request, Site
 
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue
-from ._resource import KleinResource
-from ._typing_compat import Protocol
+from ._resource import KleinResource, route_metadata
+from ._typing_compat import Concatenate, ParamSpec, Protocol
 
 
 KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable, None]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]
-
-
-class KleinRouteFunction(Protocol):
-    def __call__(_self, request: IRequest) -> KleinRenderable:
-        """
-        Function that, when decorated by L{Klein.route}, handles a Klein
-        request.
-        """
-
-
-class KleinRouteMethod(Protocol):
-    def __call__(_self, self: Any, request: IRequest) -> KleinRenderable:
-        """
-        Method that, when decorated by L{Klein.route}, handles a Klein
-        request.
-        """
 
 
 class KleinErrorFunction(Protocol):
@@ -81,7 +67,7 @@ class KleinErrorFunction(Protocol):
 class KleinErrorMethod(Protocol):
     def __call__(
         _self,
-        self: Optional["Klein"],
+        self: Any,
         request: IRequest,
         failure: Failure,
     ) -> KleinRenderable:
@@ -91,12 +77,41 @@ class KleinErrorMethod(Protocol):
         """
 
 
-KleinRouteHandler = Union[KleinRouteFunction, KleinRouteMethod]
+KleinRouteHandler = Callable[..., KleinRenderable]
+"""
+A handler for a Klein route.  Sadly it is not possible to tell the type checker
+that the first argument is IRequest or the first/second arguments are (Self,
+IRequest); this is not a useful actual bound on the type in terms of what you
+can do with it, so Mypy can't conceptualize it; the rest of the signature is a
+Werkzeug/@require-derived soup.  So "you didn't pass a request" is just an
+informative message for the user, not a type assertion; checking the parameter
+list will have to be handled at runtime.
+"""
+
+KleinRouteHandlerT = TypeVar("KleinRouteHandlerT", bound=KleinRouteHandler)
+"""
+Let's make sure that we don't modify klein handlers' arg lists as we pass them
+through though.
+"""
+
 KleinErrorHandler = Union[KleinErrorFunction, KleinErrorMethod]
+"""
+An error handler for Klein, expressed either as a function or a method.
+"""
+
+
+class RouteMetadata(Protocol):
+    """
+    Placeholder protocol just enumerating the attributes that are set on route
+    functions.
+    """
+
+    __name__: str
+    segment_count: int
 
 
 def _call(
-    __klein_instance__: Optional["Klein"],
+    __klein_instance__: Optional[Klein],
     __klein_f__: Callable[..., KleinRenderable],
     *args: Any,
     **kwargs: Any,
@@ -137,11 +152,10 @@ def buildURL(
 
 @implementer(IKleinRequest)
 class KleinRequest:
+    mapper: MapAdapter
+
     def __init__(self, request: Request) -> None:
         self.branch_segments = [""]
-
-        # Don't annotate as optional, since you should never set this to None
-        self.mapper: MapAdapter = None  # type: ignore[assignment]
 
     def url_for(
         self,
@@ -165,6 +179,74 @@ registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
 ErrorHandlers = List[Tuple[List[Type[Exception]], KleinErrorHandler]]
+
+
+# begin argument-processing hack to copy all args from current installed
+# version of Rule to @route's *args and **kwargs
+
+R = TypeVar("R", covariant=True)
+P = ParamSpec("P")
+
+
+class _PartialRouteSignature(Protocol[R]):
+    def __call__(
+        _self,
+        self: Klein,
+        url: str,
+        *args: Any,
+        branch: bool = False,
+        **kwargs: Any,
+    ) -> R:
+        """
+        This is the portion of the signature of C{route} which Klein owns.
+        """
+
+
+class _FullRouteSignature(Protocol[P, R]):
+    def __call__(
+        _self,
+        self: Klein,
+        url: str,
+        *args: P.args,
+        branch: bool = False,
+        **kwargs: P.kwargs,
+    ) -> R:
+        """
+        This integrates L{_PartialRouteSignature} with L{Rule}.
+        """
+
+
+def _removeStringArg(rule: Callable[Concatenate[str, P], R]) -> Callable[P, R]:
+    """
+    We call the 'string' argument to Rule 'url', so we need to remove it.
+    """
+    return None  # type:ignore[return-value]
+
+
+def _routeArgsFrom(
+    argProvider: Callable[P, object]
+) -> Callable[[_PartialRouteSignature[R]], _FullRouteSignature[P, R]]:
+    def decorator(
+        decoratee: _PartialRouteSignature[R],
+    ) -> _FullRouteSignature[P, R]:
+        return decoratee
+
+    return decorator
+
+
+def _normalFunction(arg: Callable[P, R]) -> Callable[P, R]:
+    """
+    Indicate to Mypy that the decorated callable is in fact a normal
+    user-defined function, so that it will be treated as a descriptor with a
+    C{self} that binds as a method.
+
+    @see: U{<mypy's confusing treatment of callables>
+        https://github.com/python/mypy/issues/15189}
+    """
+    return arg
+
+
+# end argument-processing hack
 
 
 class Klein:
@@ -244,7 +326,7 @@ class Klein:
 
         return KleinResource(self)
 
-    def __get__(self, instance: Any, owner: object) -> "Klein":
+    def __get__(self, instance: Any, owner: object) -> Klein:
         """
         Get an instance of L{Klein} bound to C{instance}.
         """
@@ -289,9 +371,15 @@ class Klein:
             segment_count -= 1
         return segment_count
 
+    @_normalFunction
+    @_routeArgsFrom(_removeStringArg(Rule))
     def route(
-        self, url: str, *args: Any, **kwargs: Any
-    ) -> Callable[[KleinRouteHandler], KleinRouteHandler]:
+        self,
+        url: str,
+        *args: Any,
+        branch: bool = False,
+        **kwargs: Any,
+    ) -> Callable[[KleinRouteHandlerT], KleinRouteHandlerT]:
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
         C{werkzeug.routing.Rule}.  The handler function will be passed at least
@@ -313,12 +401,13 @@ class Klein:
         segment_count = self._segments_in_url(url) + self._subroute_segments
 
         @named("router for '" + url + "'")
-        def deco(f: KleinRouteHandler) -> KleinRouteHandler:
+        def deco(f: KleinRouteHandlerT) -> KleinRouteHandlerT:
+            metadata = route_metadata(f)
             kwargs.setdefault(
                 "endpoint",
-                f.__name__,  # type: ignore[union-attr]
+                metadata.__name__,
             )
-            if kwargs.pop("branch", False):
+            if branch:
                 branchKwargs = kwargs.copy()
                 branchKwargs["endpoint"] = branchKwargs["endpoint"] + "_branch"
 
@@ -334,11 +423,8 @@ class Klein:
                     ).split("/")
                     return _call(instance, f, request, *a, **kw)
 
-                branch_f = cast(KleinRouteHandler, branch_f)
-
-                branch_f.segment_count = (  # type: ignore[union-attr]
-                    segment_count
-                )
+                branch_metadata = route_metadata(branch_f)
+                branch_metadata.segment_count = segment_count
 
                 self._endpoints[branchKwargs["endpoint"]] = branch_f
                 self._url_map.add(
@@ -358,9 +444,8 @@ class Klein:
             ) -> KleinRenderable:
                 return _call(instance, f, request, *a, **kw)
 
-            _f = cast(KleinRouteHandler, _f)
-
-            _f.segment_count = segment_count  # type: ignore[union-attr]
+            exec_metadata = route_metadata(_f)
+            exec_metadata.segment_count = segment_count
 
             self._endpoints[kwargs["endpoint"]] = _f
             self._url_map.add(Rule(url, *args, **kwargs))
@@ -369,7 +454,7 @@ class Klein:
         return deco
 
     @contextmanager
-    def subroute(self, prefix: str) -> Iterator["Klein"]:
+    def subroute(self, prefix: str) -> Iterator[Klein]:
         """
         Within this block, C{@route} adds rules to a
         C{werkzeug.routing.Submount}.
@@ -399,7 +484,7 @@ class Klein:
 
         class SubmountMap:
             def __init__(self) -> None:
-                self.rules: List[Rule] = []
+                self.rules: list[Rule] = []
 
             def add(self, rule: Rule) -> None:
                 self.rules.append(rule)
@@ -500,7 +585,7 @@ class Klein:
         def deco(f: KleinErrorHandler) -> Callable:
             @modified("error handling wrapper", f)
             def _f(
-                instance: Optional["Klein"],
+                instance: Optional[Klein],
                 request: IRequest,
                 failure: Failure,
             ) -> KleinRenderable:

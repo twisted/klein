@@ -88,7 +88,7 @@ informative message for the user, not a type assertion; checking the parameter
 list will have to be handled at runtime.
 """
 
-SomeKleinHandler = TypeVar("SomeKleinHandler", bound=KleinRouteHandler)
+KleinRouteHandlerT = TypeVar("KleinRouteHandlerT", bound=KleinRouteHandler)
 """
 Let's make sure that we don't modify klein handlers' arg lists as we pass them
 through though.
@@ -379,7 +379,7 @@ class Klein:
         *args: Any,
         branch: bool = False,
         **kwargs: Any,
-    ) -> Callable[[SomeKleinHandler], SomeKleinHandler]:
+    ) -> Callable[[KleinRouteHandlerT], KleinRouteHandlerT]:
         """
         Add a new handler for C{url} passing C{args} and C{kwargs} directly to
         C{werkzeug.routing.Rule}.  The handler function will be passed at least
@@ -401,7 +401,7 @@ class Klein:
         segment_count = self._segments_in_url(url) + self._subroute_segments
 
         @named("router for '" + url + "'")
-        def deco(f: SomeKleinHandler) -> SomeKleinHandler:
+        def deco(f: KleinRouteHandlerT) -> KleinRouteHandlerT:
             metadata = route_metadata(f)
             kwargs.setdefault(
                 "endpoint",

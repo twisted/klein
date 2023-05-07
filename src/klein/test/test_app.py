@@ -21,13 +21,28 @@ class DummyRequest:  # type: ignore[misc]  # incomplete interface
     def __init__(self, n: object) -> None:
         self.n = n
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, DummyRequest):
             return other.n == self.n
         return NotImplemented
 
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
+
+
+class DummyRequestSelfTest(unittest.TestCase):
+    """
+    Tests for L{DummyRequest} to make sure test failures are meaningful.
+    """
+
+    def test_equality(self) -> None:
+        """
+        Dummy requests are equal to each other if their value matches; they do
+        not equal other types.
+        """
+        self.assertEqual(DummyRequest(3), DummyRequest(3))
+        self.assertNotEqual(DummyRequest(3), DummyRequest(4))
+        self.assertNotEqual(DummyRequest(3), 3)
 
 
 class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):

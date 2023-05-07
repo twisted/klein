@@ -1,5 +1,5 @@
 from sys import stdout
-from typing import cast
+from typing import Any, List, Tuple, cast
 from unittest.mock import Mock, patch
 
 from zope.interface import implementer
@@ -9,7 +9,7 @@ from twisted.trial import unittest
 from twisted.web.iweb import IRequest
 
 from .. import Klein
-from .._app import KleinRequest
+from .._app import KleinRenderable, KleinRequest
 from .._decorators import bindable, modified, originalName
 from .._interfaces import IKleinRequest
 from .test_resource import MockRequest
@@ -18,14 +18,31 @@ from .util import EqualityTestsMixin
 
 @implementer(IRequest)
 class DummyRequest:  # type: ignore[misc]  # incomplete interface
-    def __init__(self, n):
+    def __init__(self, n: object) -> None:
         self.n = n
 
-    def __eq__(self, other):
-        return other.n == self.n
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, DummyRequest):
+            return other.n == self.n
+        return NotImplemented
 
 
 registerAdapter(KleinRequest, DummyRequest, IKleinRequest)
+
+
+class DummyRequestSelfTest(unittest.TestCase):
+    """
+    Tests for L{DummyRequest} to make sure test failures are meaningful.
+    """
+
+    def test_equality(self) -> None:
+        """
+        Dummy requests are equal to each other if their value matches; they do
+        not equal other types.
+        """
+        self.assertEqual(DummyRequest(3), DummyRequest(3))
+        self.assertNotEqual(DummyRequest(3), DummyRequest(4))
+        self.assertNotEqual(DummyRequest(3), 3)
 
 
 class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
@@ -36,18 +53,18 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
     class _One:
         app = Klein()
 
-        def __eq__(self, other):
+        def __eq__(self, other: Any) -> bool:
             return True
 
-        def __ne__(self, other):
+        def __ne__(self, other: Any) -> bool:
             return False
 
-        def __hash__(self):
+        def __hash__(self) -> int:
             return id(self)
 
     _another = Klein()
 
-    def anInstance(self):
+    def anInstance(self) -> Klein:
         # This is actually a new Klein instance every time since Klein.__get__
         # creates a new Klein instance for every instance it is retrieved from.
         # The different _One instance, at least, will not cause the Klein
@@ -55,7 +72,7 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
         # equal to everything.
         return self._One().app
 
-    def anotherInstance(self):
+    def anotherInstance(self) -> Klein:
         return self._another
 
 
@@ -67,31 +84,31 @@ class DuplicateHasher:
 
     __slots__ = ("_identifier",)
 
-    def __init__(self, identifier):
+    def __init__(self, identifier: str) -> None:
         self._identifier = identifier
 
     myRouter = Klein()
 
     @myRouter.route("/")
-    def root(self, request):
+    def root(self, request: IRequest) -> KleinRenderable:
         return self._identifier
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return 1
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return True
 
 
 class KleinTestCase(unittest.TestCase):
-    def test_route(self):
+    def test_route(self) -> None:
         """
         L{Klein.route} adds functions as routable endpoints.
         """
         app = Klein()
 
         @app.route("/foo")
-        def foo(request):
+        def foo(request: IRequest) -> KleinRenderable:
             return "foo"
 
         c = app.url_map.bind("foo")
@@ -100,7 +117,7 @@ class KleinTestCase(unittest.TestCase):
 
         self.assertEqual(app.execute_endpoint("foo", DummyRequest(1)), "foo")
 
-    def test_mapByIdentity(self):
+    def test_mapByIdentity(self) -> None:
         """
         Routes are routed to the proper object regardless of its C{__hash__}
         implementation.
@@ -120,7 +137,7 @@ class KleinTestCase(unittest.TestCase):
             b.myRouter.execute_endpoint("root", DummyRequest(1)), "b"
         )
 
-    def test_preserveIdentityWhenPossible(self):
+    def test_preserveIdentityWhenPossible(self) -> None:
         """
         Repeated accesses of the same L{Klein} attribute on the same instance
         should result in an identically bound instance, when possible.
@@ -146,17 +163,17 @@ class KleinTestCase(unittest.TestCase):
         # just not identical.
         self.assertIsNot(b.myRouter, b.myRouter)
 
-    def test_kleinNotFoundOnClass(self):
+    def test_kleinNotFoundOnClass(self) -> None:
         """
         When the Klein object can't find itself on the class it still preserves
         identity.
         """
 
         class Wrap:
-            def __init__(self, wrapped):
+            def __init__(self, wrapped: Klein) -> None:
                 self._wrapped = wrapped
 
-            def __get__(self, instance, owner):
+            def __get__(self, instance: Any, owner: object) -> Any:
                 if instance is None:
                     return self
                 return self._wrapped.__get__(instance, owner)
@@ -170,14 +187,14 @@ class KleinTestCase(unittest.TestCase):
         self.assertIs(tr.app1, tr.app1)
         self.assertIs(tr.app2, tr.app2)
 
-    def test_bindInstanceIgnoresBlankProperties(self):
+    def test_bindInstanceIgnoresBlankProperties(self) -> None:
         """
         L{Klein.__get__} doesn't propagate L{AttributeError} when
         searching for the bound L{Klein} instance.
         """
 
         class ClassProperty:
-            def __get__(self, oself, owner):
+            def __get__(self, instance: Any, owner: object) -> Any:
                 raise AttributeError(
                     "you just don't have that special something"
                 )
@@ -188,7 +205,7 @@ class KleinTestCase(unittest.TestCase):
 
         self.assertIsInstance(Oddment().app, Klein)
 
-    def test_submountedRoute(self):
+    def test_submountedRoute(self) -> None:
         """
         L{Klein.subroute} adds functions as routable endpoints.
         """
@@ -197,7 +214,7 @@ class KleinTestCase(unittest.TestCase):
         with app.subroute("/sub") as app:
 
             @app.route("/prefixed_uri")
-            def foo_endpoint(request):
+            def foo_endpoint(request: IRequest) -> KleinRenderable:
                 return b"foo"
 
         c = app.url_map.bind("sub/prefixed_uri")
@@ -207,7 +224,7 @@ class KleinTestCase(unittest.TestCase):
             app.execute_endpoint("foo_endpoint", DummyRequest(1)), b"foo"
         )
 
-    def test_stackedRoute(self):
+    def test_stackedRoute(self) -> None:
         """
         L{Klein.route} can be stacked to create multiple endpoints of a single
         function.
@@ -216,7 +233,7 @@ class KleinTestCase(unittest.TestCase):
 
         @app.route("/foo")
         @app.route("/bar", endpoint="bar")
-        def foobar(request):
+        def foobar(request: IRequest) -> KleinRenderable:
             return "foobar"
 
         self.assertEqual(len(app.endpoints), 2)
@@ -230,7 +247,7 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(c.match("/bar"), ("bar", {}))
         self.assertEqual(app.execute_endpoint("bar", DummyRequest(2)), "foobar")
 
-    def test_branchRoute(self):
+    def test_branchRoute(self) -> None:
         """
         L{Klein.route} should create a branch path which consumes all children
         when the branch keyword argument is True.
@@ -238,7 +255,7 @@ class KleinTestCase(unittest.TestCase):
         app = Klein()
 
         @app.route("/foo/", branch=True)
-        def branchfunc(request):
+        def branchfunc(request: IRequest) -> KleinRenderable:
             return "foo"
 
         c = app.url_map.bind("foo")
@@ -262,7 +279,7 @@ class KleinTestCase(unittest.TestCase):
             "foo",
         )
 
-    def test_bindable(self):
+    def test_bindable(self) -> None:
         """
         L{bindable} is a decorator which allows a function decorated by @route
         to have a uniform signature regardless of whether it is receiving a
@@ -273,9 +290,9 @@ class KleinTestCase(unittest.TestCase):
 
         @k.route("/test")
         @bindable
-        def method(*args):
-            calls.append(args)
-            return 7
+        def method(self: Any, request: IRequest) -> KleinRenderable:
+            calls.append((self, request))
+            return "7"
 
         req = cast(IRequest, object())
         k.execute_endpoint("method", req)
@@ -289,21 +306,21 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(calls, [(None, req), (b, req)])
         self.assertEqual(originalName(method), "method")
 
-    def test_modified(self):
+    def test_modified(self) -> None:
         """
         L{modified} is a decorator which alters the thing that it decorates,
         and describes itself as such.
         """
 
-        def annotate(decoratee):
-            decoratee.supersized = True
+        def annotate(decoratee: object) -> object:
+            decoratee.supersized = True  # type: ignore[attr-defined]
             return decoratee
 
-        def add(a, b):
+        def add(a: int, b: int) -> int:
             return a + b
 
         @modified("supersizer", add, modifier=annotate)
-        def megaAdd(a, b):
+        def megaAdd(a: int, b: int) -> int:
             return add(a * 1000, b * 10000)
 
         self.assertEqual(megaAdd.supersized, True)
@@ -311,7 +328,7 @@ class KleinTestCase(unittest.TestCase):
         self.assertIn("supersizer for add", str(megaAdd))
         self.assertEqual(megaAdd(3, 4), 43000)
 
-    def test_classicalRoute(self):
+    def test_classicalRoute(self) -> None:
         """
         L{Klein.route} may be used a method decorator when a L{Klein} instance
         is defined as a class variable.
@@ -322,7 +339,7 @@ class KleinTestCase(unittest.TestCase):
             app = Klein()
 
             @app.route("/bar")
-            def bar(self, request):
+            def bar(self, request: IRequest) -> KleinRenderable:
                 bar_calls.append((self, request))
                 return "bar"
 
@@ -335,7 +352,7 @@ class KleinTestCase(unittest.TestCase):
         )
         self.assertEqual(bar_calls, [(foo, DummyRequest(1))])
 
-    def test_classicalRouteWithTwoInstances(self):
+    def test_classicalRouteWithTwoInstances(self) -> None:
         """
         Multiple instances of a class with a L{Klein} attribute and
         L{Klein.route}'d methods can be created and their L{Klein}s used
@@ -345,11 +362,11 @@ class KleinTestCase(unittest.TestCase):
         class Foo:
             app = Klein()
 
-            def __init__(self):
-                self.bar_calls = []
+            def __init__(self) -> None:
+                self.bar_calls: List[Tuple["Foo", IRequest]] = []
 
             @app.route("/bar")
-            def bar(self, request):
+            def bar(self, request: IRequest) -> KleinRenderable:
                 self.bar_calls.append((self, request))
                 return "bar"
 
@@ -367,7 +384,7 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
-    def test_classicalRouteWithBranch(self):
+    def test_classicalRouteWithBranch(self) -> None:
         """
         Multiple instances of a class with a L{Klein} attribute and
         L{Klein.route}'d methods can be created and their L{Klein}s used
@@ -377,11 +394,11 @@ class KleinTestCase(unittest.TestCase):
         class Foo:
             app = Klein()
 
-            def __init__(self):
-                self.bar_calls = []
+            def __init__(self) -> None:
+                self.bar_calls: List[Tuple["Foo", IRequest]] = []
 
             @app.route("/bar/", branch=True)
-            def bar(self, request):
+            def bar(self, request: IRequest) -> KleinRenderable:
                 self.bar_calls.append((self, request))
                 return "bar"
 
@@ -399,7 +416,7 @@ class KleinTestCase(unittest.TestCase):
         self.assertEqual(foo_1.bar_calls, [(foo_1, dr1)])
         self.assertEqual(foo_2.bar_calls, [(foo_2, dr2)])
 
-    def test_branchDoesntRequireTrailingSlash(self):
+    def test_branchDoesntRequireTrailingSlash(self) -> None:
         """
         L{Klein.route} should create a branch path which consumes all children,
         when the branch keyword argument is True and there is no trailing /
@@ -408,7 +425,7 @@ class KleinTestCase(unittest.TestCase):
         app = Klein()
 
         @app.route("/foo", branch=True)
-        def foo(request):
+        def foo(request: IRequest) -> KleinRenderable:
             return "foo"
 
         c = app.url_map.bind("foo")
@@ -420,7 +437,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.Site")
     @patch("klein._app.log")
     @patch("klein._app.reactor")
-    def test_run(self, reactor, mock_log, mock_site, mock_kr):
+    def test_run(
+        self, reactor: Any, mock_log: Any, mock_site: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} configures a L{KleinResource} and a L{Site}
         listening on the specified interface and port, and logs
@@ -433,7 +452,6 @@ class KleinTestCase(unittest.TestCase):
         reactor.listenTCP.assert_called_with(
             8080, mock_site.return_value, backlog=50, interface="localhost"
         )
-
         reactor.run.assert_called_with()
 
         mock_site.assert_called_with(mock_kr.return_value)
@@ -444,7 +462,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.Site")
     @patch("klein._app.log")
     @patch("klein._app.reactor")
-    def test_runWithLogFile(self, reactor, mock_log, mock_site, mock_kr):
+    def test_runWithLogFile(
+        self, reactor: Any, mock_log: Any, mock_site: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} logs to the specified C{logFile}.
         """
@@ -467,7 +487,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.log")
     @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
-    def test_runTCP6(self, reactor, mock_sfs, mock_log, mock_kr):
+    def test_runTCP6(
+        self, reactor: Any, mock_sfs: Any, mock_log: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} called with tcp6 endpoint description.
         """
@@ -484,7 +506,9 @@ class KleinTestCase(unittest.TestCase):
     @patch("klein._app.log")
     @patch("klein._app.serverFromString")
     @patch("klein._app.reactor")
-    def test_runSSL(self, reactor, mock_sfs, mock_log, mock_kr):
+    def test_runSSL(
+        self, reactor: Any, mock_sfs: Any, mock_log: Any, mock_kr: Any
+    ) -> None:
         """
         L{Klein.run} called with SSL endpoint specification.
         """
@@ -501,7 +525,7 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
 
     @patch("klein._app.KleinResource")
-    def test_resource(self, mock_kr):
+    def test_resource(self, mock_kr: Any) -> None:
         """
         L{Klien.resource} returns a L{KleinResource}.
         """
@@ -511,17 +535,17 @@ class KleinTestCase(unittest.TestCase):
         mock_kr.assert_called_with(app)
         self.assertEqual(mock_kr.return_value, resource)
 
-    def test_urlFor(self):
+    def test_urlFor(self) -> None:
         """L{Klein.urlFor} builds an URL for an endpoint with parameters"""
 
         app = Klein()
 
         @app.route("/user/<name>")
-        def userpage(req, name):
+        def userpage(request: IRequest, name: str) -> KleinRenderable:
             return name
 
         @app.route("/post/<int:postid>", endpoint="bar")
-        def foo(req, postid):
+        def foo(request: IRequest, postid: int) -> KleinRenderable:
             return str(postid)
 
         request = MockRequest(b"/user/john")

@@ -410,8 +410,8 @@ class KleinResourceTests(SynchronousTestCase):
 
         request = MockRequest(b"/resource/leaf")
 
-        @app.route("/resource/leaf")  # type: ignore[arg-type]
-        async def leaf(request: IRequest) -> KleinRenderable:
+        @app.route("/resource/leaf")
+        async def leaf(request: IRequest) -> LeafResource:
             return LeafResource()
 
         self.assertFired(_render(resource, request))
@@ -421,7 +421,7 @@ class KleinResourceTests(SynchronousTestCase):
     def test_elementRendering(self) -> None:
         app = self.app
 
-        @app.route("/element/<string:name>")  # type: ignore[arg-type]
+        @app.route("/element/<string:name>")
         def element(request: IRequest, name: str) -> KleinRenderable:
             return SimpleElement(name)
 
@@ -439,7 +439,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         elements = []
 
-        @app.route("/element/<string:name>")  # type: ignore[arg-type]
+        @app.route("/element/<string:name>")
         def element(request: IRequest, name: str) -> KleinRenderable:
             it = DeferredElement(name)
             elements.append(it)
@@ -562,7 +562,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/None")
         def none(request: IRequest) -> KleinRenderable:
-            return None  # type: ignore[return-value]
+            return None
 
         d = _render(self.kr, request)
 
@@ -1075,7 +1075,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         relative_url: List[str] = ["** ROUTE NOT CALLED **"]
 
-        @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
+        @app.route("/foo/<int:bar>")
         def foo(request: IRequest, bar: int) -> KleinRenderable:
             krequest = IKleinRequest(request)
             relative_url[0] = krequest.url_for("foo", {"bar": bar + 1})
@@ -1109,7 +1109,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         relative_url: List[Optional[str]] = [None]
 
-        @app.route("/foo/<int:bar>")  # type: ignore[arg-type]
+        @app.route("/foo/<int:bar>")
         def foo(request: IRequest, bar: int) -> KleinRenderable:
             krequest = IKleinRequest(request)
             relative_url[0] = krequest.url_for(

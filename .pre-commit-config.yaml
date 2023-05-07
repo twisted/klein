@@ -28,7 +28,7 @@ repos:
     rev: "v3.3.2"
     hooks:
       - id: pyupgrade
-        args: ["--py36-plus"]
+        args: ["--py36-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/asottile/yesqa
     rev: "v1.4.0"
@@ -41,7 +41,6 @@ repos:
       - id: check-ast
       - id: check-builtin-literals
       - id: check-case-conflict
-      - id: check-docstring-first
       - id: check-executables-have-shebangs
       - id: check-json
       - id: check-merge-conflict

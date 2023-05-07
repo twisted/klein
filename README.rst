@@ -2,14 +2,14 @@
 Klein, a Web Micro-Framework
 ============================
 
-.. image:: https://github.com/twisted/klein/workflows/CI/badge.svg?branch=master
+.. image:: https://github.com/twisted/klein/workflows/CI/badge.svg?branch=trunk
     :target: https://github.com/twisted/klein/actions
     :alt: Build Status
-.. image:: https://codecov.io/github/twisted/klein/coverage.svg?branch=master
-    :target: https://codecov.io/github/twisted/klein?branch=master
+.. image:: https://codecov.io/github/twisted/klein/coverage.svg?branch=trunk
+    :target: https://codecov.io/github/twisted/klein?branch=trunk
     :alt: Code Coverage
-.. image:: https://requires.io/github/twisted/klein/requirements.svg?branch=master
-    :target: https://requires.io/github/twisted/klein/requirements/?branch=master
+.. image:: https://requires.io/github/twisted/klein/requirements.svg?branch=trunk
+    :target: https://requires.io/github/twisted/klein/requirements/?branch=trunk
     :alt: Requirements Status
 .. image:: https://img.shields.io/pypi/pyversions/klein.svg
     :target: https://pypi.org/project/klein
@@ -52,4 +52,4 @@ Contribute
 - `bug reports <https://github.com/twisted/klein/issues>`_,
 - reviews for `contributed patches <https://github.com/twisted/klein/pulls>`_.
 
-For more information about contributing, see `the contributor guidelines <https://github.com/twisted/klein/tree/master/CONTRIBUTING.rst>`_.
+For more information about contributing, see `the contributor guidelines <https://github.com/twisted/klein/tree/trunk/CONTRIBUTING.rst>`_.

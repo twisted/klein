@@ -3,6 +3,7 @@
 """
 Templating wrapper support for Klein.
 """
+from __future__ import annotations
 
 from functools import partial
 from json import dumps
@@ -280,7 +281,7 @@ class Plating:
         L{PlatedElement}.
         """
 
-        _plating: "Plating"
+        _plating: Plating
         _function: Callable[..., Any]
         _instance: object
 

@@ -11,7 +11,15 @@ from twisted.trial.unittest import SynchronousTestCase
 from twisted.web.iweb import IRequest
 from twisted.web.template import Element, TagLoader, renderer, tags
 
-from klein import Field, Form, Klein, RenderableForm, Requirer, SessionProcurer
+from klein import (
+    Field,
+    Form,
+    Klein,
+    KleinRenderable,
+    RenderableForm,
+    Requirer,
+    SessionProcurer,
+)
 from klein.interfaces import (
     ISession,
     ISessionStore,
@@ -168,7 +176,7 @@ class TestObject:
     @requirer.require(
         router.route("/handle-empty", methods=["POST"]),
     )
-    def emptyHandler(self) -> bytes:
+    def emptyHandler(self) -> KleinRenderable:
         """
         Empty form handler; just for testing rendering.
         """

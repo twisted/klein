@@ -11,12 +11,12 @@ That is, the first release of 2016 would be 16.0, and the second would be 16.1.
 Releasing Klein
 ---------------
 
-#. Start with a clean (no changes) source tree on the master branch.
+#. Start with a clean (no changes) source tree on the trunk branch.
 #. Create a new release candidate: :code:`tox -e release -- start`
 #. Commit and push the branch
 #. Open a PR from the branch (follow the usual process for opening a PR).
-#. As appropriate, pull the latest code from :code:`master`: :code:`git checkout master && git pull --rebase` (or use the GitHub UI)
+#. As appropriate, pull the latest code from :code:`trunk`: :code:`git checkout trunk && git pull --rebase` (or use the GitHub UI)
 #. To publish a release candidate to PyPI: :code:`tox -e release -- publish`
 #. Obtain an approving review for the PR using the usual process.
 #. To publish a production release: :code:`tox -e release -- publish --final`
-#. Merge the PR to the master branch.
+#. Merge the PR to the trunk branch.

@@ -184,9 +184,9 @@ def startRelease() -> None:
     """
     repository = Repository()
 
-    if repository.head.ref != repository.heads.master:
+    if repository.head.ref != repository.heads.trunk:
         error(
-            f"working copy is from non-master branch: {repository.head.ref}", 1
+            f"working copy is from non-trunk branch: {repository.head.ref}", 1
         )
 
     if repository.is_dirty():

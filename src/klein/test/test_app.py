@@ -250,13 +250,11 @@ class KleinTestCase(unittest.TestCase):
         )
 
         self.assertEqual(
-            app.endpoints["branchfunc"].__name__,  # type: ignore[union-attr]
+            app.endpoints["branchfunc"].__name__,
             "route '/foo/' executor for branchfunc",
         )
         self.assertEqual(
-            app.endpoints[
-                "branchfunc_branch"
-            ].__name__,  # type: ignore[union-attr]
+            app.endpoints["branchfunc_branch"].__name__,
             "branch route '/foo/' executor for branchfunc",
         )
         self.assertEqual(

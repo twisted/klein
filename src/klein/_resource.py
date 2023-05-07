@@ -1,4 +1,5 @@
 # -*- test-case-name: klein.test.test_resource -*-
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
 
@@ -19,7 +20,18 @@ from ._interfaces import IKleinRequest
 
 
 if TYPE_CHECKING:
-    from ._app import ErrorHandlers, Klein, KleinRenderable
+    # NB: circular import, must not be imported at runtime.
+    from ._app import (
+        ErrorHandlers,
+        Klein,
+        KleinRenderable,
+        KleinRouteHandler,
+        RouteMetadata,
+    )
+
+
+def route_metadata(handler: KleinRouteHandler) -> RouteMetadata:
+    return handler  # type:ignore[return-value]
 
 
 def ensure_utf8_bytes(v: Union[str, bytes]) -> bytes:
@@ -131,7 +143,7 @@ class KleinResource(Resource):
 
     isLeaf = True
 
-    def __init__(self, app: "Klein") -> None:
+    def __init__(self, app: Klein) -> None:
         super().__init__()
         self._app = app
 
@@ -146,7 +158,7 @@ class KleinResource(Resource):
             return result
         return not result
 
-    def render(self, request: IRequest) -> "KleinRenderable":
+    def render(self, request: IRequest) -> KleinRenderable:
         # Stuff we need to know for the mapper.
         try:
             (
@@ -189,9 +201,9 @@ class KleinResource(Resource):
             endpoint = rule.endpoint
 
             # Try pretty hard to fix up prepath and postpath.
-            segment_count = self._app.endpoints[
-                endpoint
-            ].segment_count  # type: ignore[union-attr]
+            segment_count = route_metadata(
+                self._app.endpoints[endpoint]
+            ).segment_count
             request.prepath.extend(request.postpath[:segment_count])
             request.postpath = request.postpath[segment_count:]
 
@@ -239,7 +251,7 @@ class KleinResource(Resource):
         d.addCallback(process)
 
         def processing_failed(
-            failure: Failure, error_handlers: "ErrorHandlers"
+            failure: Failure, error_handlers: ErrorHandlers
         ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure

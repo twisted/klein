@@ -34,7 +34,7 @@ if __name__ == "__main__":
             "incremental",
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
-            "typing_extensions ; python_version<'3.8'",
+            "typing_extensions ; python_version<'3.10'",
             "Werkzeug",
             "zope.interface",
         ],
@@ -43,10 +43,6 @@ if __name__ == "__main__":
                 "alchimia",
                 "passlib",
                 "bcrypt",
-            ],
-            "docs": [
-                "Sphinx==3.5.1",
-                "sphinx-rtd-theme==0.5.1",
             ],
         },
         keywords="twisted flask werkzeug web",

@@ -27,5 +27,4 @@ sphinx:
 python:
    install:
    - path: "."
-     extra_requirements:
-       - "docs"
+   - requirements: "requirements/sphinx.txt"

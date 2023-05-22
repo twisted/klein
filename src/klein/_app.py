@@ -77,21 +77,27 @@ class KleinErrorMethod(Protocol):
         """
 
 
-# A handler for a Klein route.  Sadly it is not possible to tell the type
-# checker that the first argument is IRequest or the first/second arguments are
-# (Self, IRequest); this is not a useful actual bound on the type in terms of
-# what you can do with it, so Mypy can't conceptualize it; the rest of the
-# signature is a Werkzeug/@require-derived soup.  So "you didn't pass a request"
-# is just an informative message for the user, not a type assertion; checking
-# the parameter list will have to be handled at runtime.
 KleinRouteHandler = Callable[..., KleinRenderable]
+"""
+A handler for a Klein route.  Sadly it is not possible to tell the type checker
+that the first argument is IRequest or the first/second arguments are (Self,
+IRequest); this is not a useful actual bound on the type in terms of what you
+can do with it, so Mypy can't conceptualize it; the rest of the signature is a
+Werkzeug/@require-derived soup.  So "you didn't pass a request" is just an
+informative message for the user, not a type assertion; checking the parameter
+list will have to be handled at runtime.
+"""
 
-# Let's make sure that we don't modify klein handlers' arg lists as we pass them
-# through though.
 KleinRouteHandlerT = TypeVar("KleinRouteHandlerT", bound=KleinRouteHandler)
+"""
+Let's make sure that we don't modify klein handlers' arg lists as we pass them
+through though.
+"""
 
-# An error handler for Klein, expressed either as a function or a method.
 KleinErrorHandler = Union[KleinErrorFunction, KleinErrorMethod]
+"""
+An error handler for Klein, expressed either as a function or a method.
+"""
 
 
 class RouteMetadata(Protocol):

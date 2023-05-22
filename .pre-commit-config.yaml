@@ -76,6 +76,11 @@ repos:
       - id: mixed-line-ending
 #     - id: no-commit-to-branch
 #       args: ["--branch", "master"]
+      - id: name-tests-test
+        args:
+          - --pytest-test-first
+      - id: requirements-txt-fixer
+      - id: trailing-whitespace
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"

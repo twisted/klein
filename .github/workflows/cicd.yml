@@ -185,7 +185,7 @@ jobs:
 
 
   unit:
-    name: "Py:${{ matrix.python-version }} - Tw:${{ matrix.twisted }} - ${{ matrix.os }}"
+    name: "Py:${{ matrix.python-version }} - Tw:${{ matrix.twisted-version }} - ${{ matrix.os }}"
 
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -194,8 +194,16 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.7", "3.9", "3.10", "3.11", "pypy-3.8", "pypy-3.9"]
-        twisted: ["21.2", "22.1", "current"]
+        twisted-version: ["21.2", "22.1", "current"]
+        tox-prefix: ["coverage"]
         optional: [false]
+        include:
+          # Test Python 3.12 but allow it to fail
+          - os: "ubuntu-latest"
+            python-version: "3.12.0-alpha.7"
+            twisted-version: "current"
+            tox-prefix: "test"
+            optional: true
 
     steps:
 
@@ -213,40 +221,45 @@ jobs:
         uses: twisted/python-info-action@v1
 
       - name: Translate Python version to Tox environment
-        id: tox_env
         shell: python
         run: |
-          py = "${{ matrix.python-version }}".replace(".", "").replace("pypy", "py").replace("-", "")
-          tw = "${{ matrix.twisted }}".replace(".", "")
-          with_coverage = 'coverage-'
-          report_coverage = 'yes'
-          if 'py' in py:
-              # Coverage is disabled on PYPY as the run is slow and we
-              # don't have PYPY specific code.
-              with_coverage = 'test-'
-              report_coverage = ''
-          print(f"::set-output name=value::{with_coverage}py{py}-tw{tw}")
-          print(f"::set-output name=has_coverage::{report_coverage}")
+          from os import environ
+          from pathlib import Path
+
+          py = "${{ matrix.python-version }}"
+          py = "".join(py.split(".")[:2])   # Combine major/minor, toss rest
+          py = py.replace("pypy-", "py")    # For Pypy: have a litte less py
+
+          tw = "${{ matrix.twisted-version }}"
+          tw = tw.replace(".", "")
+
+          env = f"${{ matrix.tox-prefix }}-py{py}-tw{tw}"
+
+          print(f"TOX_ENV={env}")
+
+          p = Path(environ["GITHUB_ENV"])
+          f = p.open(mode="a")
+          f.write(f"TOX_ENV={env}\n")
 
       - name: Set up Tox environment
         run: |
           pip install 'tox<4'
-          tox -e ${{ steps.tox_env.outputs.value }} --notest;
+          tox -e ${TOX_ENV} --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
         with:
-          python-path: .tox/${{ steps.tox_env.outputs.value }}/*/python
+          python-path: .tox/${TOX_ENV}/*/python
 
       - name: Run unit tests
-        run: tox -e ${{ steps.tox_env.outputs.value }};
+        run: tox -e ${TOX_ENV}
 
       - name: Upload Trial log artifact
-        if: failure()
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v1
         with:
           name: trial
-          path: .tox/${{ steps.tox_env.outputs.value }}/log/trial.log
+          path: .tox/${TOX_ENV}/log/trial.log
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.
@@ -256,7 +269,7 @@ jobs:
 
       - name: "Upload coverage to Codecov"
         uses: "codecov/codecov-action@v3"
-        if: steps.tox_env.outputs.has_coverage
+        if: ${{ matrix.tox-prefix == 'coverage' }}
         with:
           env_vars: GITHUB_REF,GITHUB_COMMIT,GITHUB_USER,GITHUB_WORKFLOW
           fail_ci_if_error: true

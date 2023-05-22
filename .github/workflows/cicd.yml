@@ -202,12 +202,12 @@ jobs:
             python-version: "pypy-3.8"
             twisted-version: "current"
             tox-prefix: "test"
-            optional: true
+            optional: false
           - os: "ubuntu-latest"
             python-version: "pypy-3.9"
             twisted-version: "current"
             tox-prefix: "test"
-            optional: true
+            optional: false
           # Test Python 3.12 but allow it to fail
           - os: "ubuntu-latest"
             python-version: "3.12.0-alpha.7"

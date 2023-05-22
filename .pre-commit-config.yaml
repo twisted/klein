@@ -14,7 +14,7 @@ repos:
     rev: "23.3.0"
     hooks:
       - id: black
-        args: ["--target-version", "py36"]
+        args: ["--target-version", "py37"]
 
   - repo: https://github.com/PyCQA/autoflake
     rev: "v2.1.1"

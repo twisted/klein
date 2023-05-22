@@ -16,6 +16,17 @@ repos:
       - id: black
         args: ["--target-version", "py36"]
 
+  - repo: https://github.com/PyCQA/autoflake
+    rev: "v2.1.1"
+    hooks:
+      - id: autoflake
+        args:
+          - --in-place
+          - --remove-all-unused-imports
+          - --expand-star-imports
+          - --remove-duplicate-keys
+          - --remove-unused-variables
+
   - repo: https://github.com/PyCQA/flake8
     rev: "6.0.0"
     hooks:
@@ -83,14 +94,3 @@ repos:
     rev: "0.49"
     hooks:
       - id: check-manifest
-
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.1.1
-    hooks:
-      - id: autoflake
-        args:
-          - --in-place
-          - --remove-all-unused-imports
-          - --expand-star-imports
-          - --remove-duplicate-keys
-          - --remove-unused-variables

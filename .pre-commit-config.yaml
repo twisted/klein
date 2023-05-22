@@ -10,6 +10,12 @@ repos:
       - id: pyupgrade
         args: ["--py36-plus", "--keep-runtime-typing"]
 
+  - repo: https://github.com/psf/black
+    rev: "23.3.0"
+    hooks:
+      - id: black
+        args: ["--target-version", "py36"]
+
   - repo: https://github.com/PyCQA/flake8
     rev: "6.0.0"
     hooks:
@@ -72,12 +78,6 @@ repos:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
-
-  - repo: https://github.com/psf/black
-    rev: "23.3.0"
-    hooks:
-      - id: black
-        args: ["--target-version", "py36"]
 
   - repo: https://github.com/mgedmin/check-manifest
     rev: "0.49"

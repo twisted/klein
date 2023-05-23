@@ -2,7 +2,7 @@
 Example -- Using Async/Await
 ============================
 
-The previous example which used the Twisted 
+The previous example which used the Twisted
 :api:`twisted.internet.defer.Deferred <Deferred>` class
 can be written to use the new ``async`` and ``await``
 keywords that are available in Python 3.5+.

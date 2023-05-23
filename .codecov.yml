@@ -15,4 +15,4 @@ coverage:
         target: 100%
 
 ignore:
-  - "test/typing_*.py"
+  - "src/klein/test/typing_*.py"

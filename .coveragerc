@@ -2,7 +2,7 @@
 branch = True
 parallel = True
 source = klein
-omit = test/typing_*.py
+omit = src/klein/test/typing_*.py
 
 [paths]
 source=

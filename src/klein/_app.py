@@ -39,6 +39,7 @@ from twisted.python.failure import Failure
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource
 from twisted.web.server import Request, Site
+from twisted.web.template import Tag
 
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue
@@ -46,7 +47,9 @@ from ._resource import KleinResource, route_metadata
 from ._typing_compat import Concatenate, ParamSpec, Protocol
 
 
-KleinSynchronousRenderable = Union[str, bytes, IResource, IRenderable, None]
+KleinSynchronousRenderable = Union[
+    str, bytes, IResource, IRenderable, Tag, None
+]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]
 ]

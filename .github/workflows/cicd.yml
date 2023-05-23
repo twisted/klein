@@ -37,8 +37,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
-          tox -e lint --notest
+          pip install tox
+          tox run -e lint --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -46,7 +46,7 @@ jobs:
           python-path: .tox/lint/*/python
 
       - name: Run Linters
-        run: tox -e lint
+        run: tox run -e lint
 
 
   mypy:
@@ -71,8 +71,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
-          tox -e mypy --notest
+          pip install tox
+          tox run -e mypy --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -80,7 +80,7 @@ jobs:
           python-path: .tox/mypy/*/python
 
       - name: Run Mypy
-        run: tox -e mypy
+        run: tox run -e mypy
 
 
   docs:
@@ -105,8 +105,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
-          tox -e docs --notest
+          pip install tox
+          tox run -e docs --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -114,7 +114,7 @@ jobs:
           python-path: .tox/docs/*/python
 
       - name: Build documentation
-        run: tox -e docs
+        run: tox run -e docs
 
 
   docs-linkcheck:
@@ -139,8 +139,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
-          tox -e docs-linkcheck --notest
+          pip install tox
+          tox run -e docs-linkcheck --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -148,7 +148,7 @@ jobs:
           python-path: .tox/docs-linkcheck/*/python
 
       - name: Check for broken links in documentation
-        run: tox -e docs-linkcheck;
+        run: tox run -e docs-linkcheck
 
 
   packaging:
@@ -172,8 +172,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
-          tox -e packaging --notest
+          pip install tox
+          tox run -e packaging --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -181,7 +181,7 @@ jobs:
           python-path: .tox/packaging/*/python
 
       - name: Check packaging
-        run: tox -e packaging;
+        run: tox run -e packaging
 
 
   unit:
@@ -239,8 +239,8 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
-          tox -e ${{ steps.tox_env.outputs.value }} --notest;
+          pip install tox
+          tox run -e ${{ steps.tox_env.outputs.value }} --notest
 
       - name: Tox Python Information
         uses: twisted/python-info-action@v1
@@ -248,7 +248,7 @@ jobs:
           python-path: .tox/${{ steps.tox_env.outputs.value }}/*/python
 
       - name: Run unit tests
-        run: tox -e ${{ steps.tox_env.outputs.value }};
+        run: tox run -e ${{ steps.tox_env.outputs.value }}
 
       - name: Upload Trial log artifact
         if: failure()

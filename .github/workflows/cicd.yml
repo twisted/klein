@@ -37,7 +37,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
+          pip install tox
           tox -e lint --notest
 
       - name: Tox Python Information
@@ -71,7 +71,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
+          pip install tox
           tox -e mypy --notest
 
       - name: Tox Python Information
@@ -105,7 +105,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
+          pip install tox
           tox -e docs --notest
 
       - name: Tox Python Information
@@ -139,7 +139,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
+          pip install tox
           tox -e docs-linkcheck --notest
 
       - name: Tox Python Information
@@ -172,7 +172,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
+          pip install tox
           tox -e packaging --notest
 
       - name: Tox Python Information
@@ -253,7 +253,7 @@ jobs:
 
       - name: Set up Tox environment
         run: |
-          pip install 'tox<4'
+          pip install tox
           tox -e ${TOX_ENV} --notest
 
       - name: Tox Python Information

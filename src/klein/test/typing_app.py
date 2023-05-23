@@ -5,7 +5,7 @@ are correct.
 
 from twisted.internet.defer import succeed
 from twisted.web.iweb import IRequest
-from twisted.web.resource import IResource, Resource
+from twisted.web.resource import Resource
 from twisted.web.template import Element, Tag
 
 from klein import Klein, KleinRenderable

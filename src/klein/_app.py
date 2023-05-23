@@ -14,6 +14,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -47,8 +48,11 @@ from ._resource import KleinResource, route_metadata
 from ._typing_compat import Concatenate, ParamSpec, Protocol
 
 
-KleinSynchronousRenderable = Union[
+_KleinSynchronousRenderable = Union[
     str, bytes, IResource, IRenderable, Tag, None
+]
+KleinSynchronousRenderable = Union[
+    _KleinSynchronousRenderable, Iterable[_KleinSynchronousRenderable]
 ]
 KleinRenderable = Union[
     KleinSynchronousRenderable, Awaitable[KleinSynchronousRenderable]

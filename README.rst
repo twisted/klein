@@ -8,9 +8,6 @@ Klein, a Web Micro-Framework
 .. image:: https://codecov.io/github/twisted/klein/coverage.svg?branch=trunk
     :target: https://codecov.io/github/twisted/klein?branch=trunk
     :alt: Code Coverage
-.. image:: https://requires.io/github/twisted/klein/requirements.svg?branch=trunk
-    :target: https://requires.io/github/twisted/klein/requirements/?branch=trunk
-    :alt: Requirements Status
 .. image:: https://img.shields.io/pypi/pyversions/klein.svg
     :target: https://pypi.org/project/klein
     :alt: Python Version Compatibility

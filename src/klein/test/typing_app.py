@@ -86,30 +86,30 @@ class Application:
 
     @router.route("/async-object")
     async def asyncReturnsObject(self, request: IRequest) -> KleinRenderable:
-        return succeed(object())  # type: ignore[arg-type]
+        return object()  # type: ignore[arg-type]
 
     @router.route("/async-str")
     async def asyncReturnsStr(self, request: IRequest) -> KleinRenderable:
-        return succeed("")
+        return ""
 
     @router.route("/async-bytes")
     async def asyncReturnsBytes(self, request: IRequest) -> KleinRenderable:
-        return succeed(b"")
+        return b""
 
     @router.route("/async-iresource")
     async def asyncReturnsIResource(self, request: IRequest) -> KleinRenderable:
-        return succeed(Resource())
+        return Resource()
 
     @router.route("/async-irenderable")
     async def asyncReturnsIRenderable(
         self, request: IRequest
     ) -> KleinRenderable:
-        return succeed(Element())
+        return Element()
 
     @router.route("/async-tag")
     async def asyncReturnsTag(self, request: IRequest) -> KleinRenderable:
-        return succeed(Tag(""))
+        return Tag("")
 
     @router.route("/async-none")
     async def asyncReturnsNone(self, request: IRequest) -> KleinRenderable:
-        return succeed(None)
+        return None

@@ -2,7 +2,11 @@
 This file contains code that should validate with type checking if type hints
 are correct.
 
-The code is not executed, it is here just to be checked by mypy.
+The code is not executed. Instead, the code should simply validate when checked
+with mypy, or fail and require a `type: ignore` comment.
+
+Because those comments produce an error if mypy thinks they are unnecessary,
+they service to confirm that code that should fail to verify does so.
 """
 
 from twisted.internet.defer import succeed
@@ -15,6 +19,8 @@ from klein import Klein, KleinRenderable
 
 class Application:
     router = Klein()
+
+    # Ensure that various return object types for a route are valid.
 
     @router.route("/object")
     def returnsObject(self, request: IRequest) -> KleinRenderable:
@@ -44,6 +50,9 @@ class Application:
     def returnsNone(self, request: IRequest) -> KleinRenderable:
         return None
 
+    # Ensure that same return object types for a route are valid when wrapped
+    # in a Deferred object.
+
     @router.route("/deferred-object")
     def returnsDeferredObject(self, request: IRequest) -> KleinRenderable:
         return succeed(object())  # type: ignore[arg-type]
@@ -70,4 +79,37 @@ class Application:
 
     @router.route("/deferred-none")
     def returnsDeferredNone(self, request: IRequest) -> KleinRenderable:
+        return succeed(None)
+
+    # Ensure that same return object types for a route are valid in async
+    # methods.
+
+    @router.route("/async-object")
+    async def asyncReturnsObject(self, request: IRequest) -> KleinRenderable:
+        return succeed(object())  # type: ignore[arg-type]
+
+    @router.route("/async-str")
+    async def asyncReturnsStr(self, request: IRequest) -> KleinRenderable:
+        return succeed("")
+
+    @router.route("/async-bytes")
+    async def asyncReturnsBytes(self, request: IRequest) -> KleinRenderable:
+        return succeed(b"")
+
+    @router.route("/async-iresource")
+    async def asyncReturnsIResource(self, request: IRequest) -> KleinRenderable:
+        return succeed(Resource())
+
+    @router.route("/async-irenderable")
+    async def asyncReturnsIRenderable(
+        self, request: IRequest
+    ) -> KleinRenderable:
+        return succeed(Element())
+
+    @router.route("/async-tag")
+    async def asyncReturnsTag(self, request: IRequest) -> KleinRenderable:
+        return succeed(Tag(""))
+
+    @router.route("/async-none")
+    async def asyncReturnsNone(self, request: IRequest) -> KleinRenderable:
         return succeed(None)

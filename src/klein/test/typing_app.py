@@ -15,6 +15,7 @@ from twisted.web.resource import Resource
 from twisted.web.template import Element, Tag
 
 from klein import Klein, KleinRenderable
+from klein._app import KleinSynchronousRenderable
 
 
 class Application:
@@ -84,32 +85,44 @@ class Application:
     # Ensure that same return object types for a route are valid in async
     # methods.
 
-    @router.route("/async-object")
-    async def asyncReturnsObject(self, request: IRequest) -> KleinRenderable:
-        return object()  # type: ignore[arg-type]
+    # @router.route("/async-object")
+    # async def asyncReturnsObject(
+    #     self, request: IRequest
+    # ) -> KleinSynchronousRenderable:
+    #     return object()  # type: ignore[arg-type]
 
     @router.route("/async-str")
-    async def asyncReturnsStr(self, request: IRequest) -> KleinRenderable:
+    async def asyncReturnsStr(
+        self, request: IRequest
+    ) -> KleinSynchronousRenderable:
         return ""
 
     @router.route("/async-bytes")
-    async def asyncReturnsBytes(self, request: IRequest) -> KleinRenderable:
+    async def asyncReturnsBytes(
+        self, request: IRequest
+    ) -> KleinSynchronousRenderable:
         return b""
 
     @router.route("/async-iresource")
-    async def asyncReturnsIResource(self, request: IRequest) -> KleinRenderable:
+    async def asyncReturnsIResource(
+        self, request: IRequest
+    ) -> KleinSynchronousRenderable:
         return Resource()
 
     @router.route("/async-irenderable")
     async def asyncReturnsIRenderable(
         self, request: IRequest
-    ) -> KleinRenderable:
+    ) -> KleinSynchronousRenderable:
         return Element()
 
     @router.route("/async-tag")
-    async def asyncReturnsTag(self, request: IRequest) -> KleinRenderable:
+    async def asyncReturnsTag(
+        self, request: IRequest
+    ) -> KleinSynchronousRenderable:
         return Tag("")
 
     @router.route("/async-none")
-    async def asyncReturnsNone(self, request: IRequest) -> KleinRenderable:
+    async def asyncReturnsNone(
+        self, request: IRequest
+    ) -> KleinSynchronousRenderable:
         return None

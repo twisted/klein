@@ -1,6 +1,8 @@
 """
 This file contains code that should validate with type checking if type hints
 are correct.
+
+The code is not executed, it is here just to be checked by mypy.
 """
 
 from twisted.internet.defer import succeed

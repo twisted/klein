@@ -225,7 +225,9 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: |
+            ${{ matrix.python-version }}
+            3.11
 
       - name: System Python Information
         uses: twisted/python-info-action@v1
@@ -263,6 +265,16 @@ jobs:
 
       - name: Run unit tests
         run: tox run -e ${TOX_ENV}
+
+      - name: Combine coverage
+        run: tox run -e coverage_combine,coverage_report
+        if: ${{ matrix.tox-prefix == 'coverage' }}
+
+      - name: Upload Coverage XML
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-debug
+          path: coverage.xml
 
       - name: Upload Trial log artifact
         if: ${{ failure() }}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncContextManager,
     Callable,
     Dict,
     Iterable,
@@ -403,6 +404,21 @@ class IRequiredParameter(Interface):
             on C{injectValue} to run the requisite logic each time so that
             DependencyInjectors may cooperate on logic that needs to be
             duplicated, such as provisioning a session.
+        """
+
+
+class IRequirementContext(Interface):
+    """
+    An L{IRequirementContext} is a request component that can be used during
+    C{@require} dependency injection.
+
+    In particular, this can be used to raise L{EarlyExit} from C{__exit__} to
+    reconsider the return value I{after} the route's returning.
+    """
+
+    async def enter_async_context(cm: AsyncContextManager[T]) -> T:
+        """
+        Add the contextmanager to the list of context managers.
         """
 
 

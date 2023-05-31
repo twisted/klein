@@ -1,4 +1,17 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Sequence, Type
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import attr
 from constantly import NamedConstant, Names
@@ -7,6 +20,8 @@ from zope.interface import Attribute, Interface
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
+
+from ._typing_compat import Protocol
 
 
 if TYPE_CHECKING:
@@ -52,6 +67,30 @@ class SessionMechanism(Names):
     Header = NamedConstant()
 
 
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+class AuthorizationMap(Protocol):
+    @overload
+    def get(self, key: Type[V]) -> V:
+        ...
+
+    @overload
+    def get(self, key: Type[V], default: T) -> Union[V, T]:
+        ...
+
+    def get(self, *args: Any, **kwargs: Any) -> Any:
+        ...
+
+    def __getitem__(self, key: Type[V]) -> V:
+        ...
+
+    def __setitem__(self, key: Type[V], value: V) -> None:
+        ...
+
+
 class ISession(Interface):
     """
     An L{ISession} provider contains an identifier for the session, information
@@ -90,7 +129,9 @@ class ISession(Interface):
         """
     )
 
-    def authorize(interfaces: Iterable[Type[Interface]]) -> Deferred:
+    def authorize(
+        interfaces: Iterable[Type[object]],
+    ) -> Deferred[AuthorizationMap]:
         """
         Retrieve other objects from this session.
 
@@ -370,4 +411,4 @@ class EarlyExit(Exception):
         supplied as the route's response.
     """
 
-    alternateReturnValue: "KleinRenderable"
+    alternateReturnValue: KleinRenderable

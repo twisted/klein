@@ -2,7 +2,29 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from hashlib import scrypt
+
+
+try:
+    from hashlib import scrypt
+except ImportError:
+    # PyPy ships without scrypt so we need cryptography there.
+    from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
+    def scrypt(  # type:ignore[misc]
+        # these 'bytes' fields are much more complex types with memoryviews and
+        # random pickle nonsense in the stdlib.
+        password: bytes,
+        *,
+        salt: bytes,
+        n: int,
+        r: int,
+        p: int,
+        maxmem: int = 0,
+        dklen: int = 64,
+    ) -> bytes:
+        return Scrypt(salt=salt, length=dklen, n=n, r=r, p=p).derive(password)
+
+
 from os import urandom
 from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Type
 from unicodedata import normalize

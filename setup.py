@@ -35,6 +35,9 @@ if __name__ == "__main__":
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
             "typing_extensions ; python_version<'3.10'",
+            # PyPy doesn't have hashlib.scrypt, which we need for secure
+            # password storage.
+            "cryptography ; platform_python_implementation == 'PyPy'",
             "Werkzeug",
             "zope.interface",
         ],

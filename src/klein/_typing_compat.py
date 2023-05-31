@@ -9,7 +9,19 @@ import sys
 if sys.version_info > (3, 10):
     from typing import Concatenate, ParamSpec, Protocol
 else:
-    from typing_extensions import Concatenate, ParamSpec, Protocol
+    from typing_extensions import Concatenate, Protocol
+
+    # PyPy 3.9 seems to have a bonus runtime check for Protocol's generic
+    # arguments all being TypeVars, so lie to it about ParamSpec.
+    from typing import TYPE_CHECKING
+    if TYPE_CHECKING:
+        from typing_extensions import ParamSpec
+    else:
+        from platform import python_implementation
+        if python_implementation() == 'PyPy':
+            from typing import TypeVar as ParamSpec
+        else:
+            from typing_extensions import ParamSpec
 
 
 __all__ = [

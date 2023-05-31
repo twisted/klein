@@ -6,6 +6,8 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    List,
+    Optional,
     Sequence,
     Type,
     TypeVar,
@@ -213,14 +215,16 @@ class ISimpleAccountBinding(Interface):
     attribute as a component.
     """
 
-    def bindIfCredentialsMatch(username: str, password: str) -> None:
+    def bindIfCredentialsMatch(
+        username: str, password: str
+    ) -> Deferred[Optional[ISimpleAccount]]:
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
         authenticate a principal.
         """
 
-    def boundAccounts() -> Deferred:
+    def boundAccounts() -> Deferred[List[ISimpleAccount]]:
         """
         Retrieve the accounts currently associated with the session this is a
         component of.
@@ -228,13 +232,15 @@ class ISimpleAccountBinding(Interface):
         @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
         """
 
-    def unbindThisSession() -> None:
+    def unbindThisSession() -> Deferred[None]:
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
         """
 
-    def createAccount(username: str, email: str, password: str) -> None:
+    def createAccount(
+        username: str, email: str, password: str
+    ) -> Deferred[Optional[ISimpleAccount]]:
         """
         Create a new account with the given username, email and password.
         """
@@ -245,25 +251,25 @@ class ISimpleAccount(Interface):
     Data-store agnostic account interface.
     """
 
-    username = Attribute(
+    username: str = Attribute(
         """
         Unicode username.
         """
     )
 
-    accountID = Attribute(
+    accountID: str = Attribute(
         """
         Unicode account-ID.
         """
     )
 
-    def bindSession(session: ISession) -> None:
+    def bindSession(session: ISession) -> Deferred[None]:
         """
         Bind the given session to this account; i.e. authorize the given
         session to act on behalf of this account.
         """
 
-    def changePassword(newPassword: str) -> None:
+    def changePassword(newPassword: str) -> Deferred[None]:
         """
         Change the password of this account.
         """
@@ -277,7 +283,7 @@ class ISessionProcurer(Interface):
 
     def procureSession(
         request: IRequest, forceInsecure: bool = False
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         """
         Retrieve a session using whatever technique is necessary.
 
@@ -357,8 +363,8 @@ class IRequestLifecycle(Interface):
 
     def addPrepareHook(
         beforeHook: Callable,
-        requires: Sequence[Type[Interface]] = (),
-        provides: Sequence[Type[Interface]] = (),
+        requires: Sequence[Type[object]] = (),
+        provides: Sequence[Type[object]] = (),
     ) -> None:
         """
         Add a hook that promises to prepare the request by supplying the given

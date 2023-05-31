@@ -47,9 +47,9 @@ if __name__ == "__main__":
             "klein.test",
         ],
         package_dir={"": "src"},
-        package_data=dict(
-            klein=["py.typed"],
-        ),
+        package_data={
+            "klein": ["py.typed"],
+        },
         url="https://github.com/twisted/klein",
         maintainer="Twisted Matrix Laboratories",
         maintainer_email="twisted-python@twistedmatrix.com",

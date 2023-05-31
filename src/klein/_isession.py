@@ -117,19 +117,26 @@ class ISessionStore(Interface):
     def newSession(
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         """
         Create a new L{ISession}.
 
-        @return: a new session with a new identifier.
-        @rtype: L{Deferred} firing with L{ISession}.
+        @param isConfidential: Is the new session being created a confidential
+            (i.e. “sent over HTTPS” session)?
+
+        @param authenticatedBy: Was the request for this new session
+            authenticated by a header or a cookie?
+
+        @return: a new session with a new (randomly generated) identifier that
+            can later be passed back to this object's
+            L{ISessionStore.loadSession}.
         """
 
     def loadSession(
         identifier: str,
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         """
         Load a session given the given identifier and security properties.
 

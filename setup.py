@@ -46,6 +46,8 @@ if __name__ == "__main__":
             "klein.storage",
             "klein.storage.memory",
             "klein.storage.memory.test",
+            "klein.storage.dbaccess",
+            "klein.storage.dbaccess.test",
             "klein.test",
         ],
         package_dir={"": "src"},

@@ -1,19 +1,35 @@
-from typing import Any, Callable, Dict, Generator, List, Sequence, Type
+# -*- test-case-name: klein.test.test_requirer -*-
+from contextlib import AsyncExitStack
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import attr
-from zope.interface import Interface, implementer
+from zope.interface import implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
+from twisted.web.server import Request
 
 from ._app import _call
 from ._decorators import bindable, modified
+from ._util import eagerDeferredCoroutine
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
     IRequestLifecycle,
     IRequiredParameter,
+    IRequirementContext,
 )
 
 
@@ -29,8 +45,8 @@ class RequestLifecycle:
     def addPrepareHook(
         self,
         beforeHook: Callable,
-        requires: Sequence[Type[Interface]] = (),
-        provides: Sequence[Type[Interface]] = (),
+        requires: Sequence[Type[object]] = (),
+        provides: Sequence[Type[object]] = (),
     ) -> None:
         # TODO: topological requirements sort
         self._prepareHooks.append(beforeHook)
@@ -51,10 +67,26 @@ class RequestLifecycle:
             yield _call(instance, hook, request)
 
 
+@implementer(IRequirementContext)
+class RequirementContext(AsyncExitStack):
+    """
+    Subclass only to mark the implementation of this interface; this is in
+    every way an C{ExitStack}.
+    """
+
+
 _routeDecorator = Any  # a decorator like @route
 _routeT = Any  # a thing decorated by a decorator like @route
 
 _prerequisiteCallback = Callable[[IRequestLifecycle], None]
+
+T = TypeVar("T")
+
+
+async def _maybeAsync(v: Union[T, Awaitable[T]]) -> T:
+    if isinstance(v, Awaitable):
+        return await v
+    return v
 
 
 @attr.s(auto_attribs=True)
@@ -67,8 +99,8 @@ class Requirer:
 
     def prerequisite(
         self,
-        providesComponents: Sequence[Type[Interface]],
-        requiresComponents: Sequence[Type[Interface]] = (),
+        providesComponents: Sequence[Type[object]],
+        requiresComponents: Sequence[Type[object]] = (),
     ) -> Callable[[Callable], Callable]:
         """
         Specify a component that is a pre-requisite of every request routed
@@ -127,24 +159,31 @@ class Requirer:
 
             @modified("dependency-injecting route", functionWithRequirements)
             @bindable
-            @inlineCallbacks
-            def router(
-                instance: Any, request: IRequest, *args: Any, **routeParams: Any
+            @eagerDeferredCoroutine
+            async def router(
+                instance: Any, request: Request, *args: Any, **routeParams: Any
             ) -> Any:
-                injected = routeParams.copy()
                 try:
-                    yield lifecycle.runPrepareHooks(instance, request)
-                    for k, injector in injectors.items():
-                        injected[k] = yield injector.injectValue(
-                            instance, request, routeParams
+                    async with RequirementContext() as stack:
+                        request.setComponent(IRequirementContext, stack)
+                        injected = routeParams.copy()
+                        await lifecycle.runPrepareHooks(instance, request)
+                        for k, injector in injectors.items():
+                            injected[k] = await _maybeAsync(
+                                injector.injectValue(
+                                    instance, request, routeParams
+                                )
+                            )
+                        return await _maybeAsync(
+                            _call(
+                                instance,
+                                functionWithRequirements,
+                                *args,
+                                **injected,
+                            )
                         )
                 except EarlyExit as ee:
-                    result = ee.alternateReturnValue
-                else:
-                    result = yield _call(
-                        instance, functionWithRequirements, *args, **injected
-                    )
-                return result
+                    return ee.alternateReturnValue
 
             fWR, iC = functionWithRequirements, injectionComponents
             fWR.injectionComponents = iC  # type: ignore[attr-defined]

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Awaitable, Callable, List, Tuple
 
 from twisted.trial.unittest import SynchronousTestCase, TestCase
 
@@ -11,13 +11,19 @@ from ..passwords import (
 )
 
 
+def pwStorage() -> Tuple[List[str], Callable[[str], Awaitable[None]]]:
+    hashes = []
+
+    async def storeSomething(something: str) -> None:
+        hashes.append(something)
+
+    return hashes, storeSomething
+
+
 class PasswordStorageTests(TestCase):
     def setUp(self) -> None:
-        self.newHashes: List[str] = []
         self.engine: PasswordEngine = KleinV1PasswordEngine(2**14, 2**15)
-
-    async def storeSomething(self, something: str) -> None:
-        self.newHashes.append(something)
+        self.newHashes, self.storeSomething = pwStorage()
 
     @eagerDeferredCoroutine
     async def test_checkAndResetDefault(self) -> None:
@@ -78,16 +84,13 @@ class TestTesting(SynchronousTestCase):
         """
         A cached password engine can verify passwords.
         """
-        changes: List[str] = []
+        changes, storeSomething = pwStorage()
         engine1 = engineForTesting(self)
         engine2 = engineForTesting(self)
         # The same test should get back the same engine.
         self.assertIs(engine1, engine2)
         # should complete synchronously
         kt1 = self.successResultOf(engine1.computeKeyText("hello world"))
-
-        async def storeSomething(something: str) -> None:
-            changes.append(something)
 
         self.assertEqual(
             True,

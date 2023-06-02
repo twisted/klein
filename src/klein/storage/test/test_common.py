@@ -23,7 +23,7 @@ from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
 from ..dbaccess.dbapi_async import transaction
-from ..passwords import engineForTesting
+from ..passwords import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer
 
 
@@ -303,5 +303,9 @@ class CommonStoreTests(TestCase):
                 None,
             )
 
-        proc = SQLSessionProcurer(pool.connectable, [], engineForTesting(self))
+        self.assertEqual(hashUpgradeCount(self), 0)
+        proc = SQLSessionProcurer(
+            pool.connectable, [], engineForTesting(self, upgradeHashes=True)
+        )
         await self.authWithStoreTest(newSession, proc, pool)
+        self.assertEqual(hashUpgradeCount(self), 1)

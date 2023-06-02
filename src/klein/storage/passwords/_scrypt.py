@@ -173,5 +173,23 @@ class KleinV1PasswordEngine:
             return False
 
 
+def defaultSecureEngine() -> PasswordEngine:
+    """
+    Supply an implementation to the caller of L{PasswordEngine} suitable for
+    deployment to production.
+
+    Presently this is an C{scrypt}-based implementation using cost parameters
+    recommended by OWASP as this is a least-common-denominator approach.
+
+    However, this entrypoint is guaranteed to return a L{PasswordEngine} in the
+    future that can backward-compatibly parse outputs from C{computeKeyText}
+    and C{checkAndReset} from any previous version of Klein, as well as store
+    upgraded hashes whenever modern security standards are upgraded.
+
+    @see: for testing, use L{klein.storage.passwords.testing.engineForTesting}.
+    """
+    return KleinV1PasswordEngine()
+
+
 if TYPE_CHECKING:
     _1: Type[PasswordEngine] = KleinV1PasswordEngine

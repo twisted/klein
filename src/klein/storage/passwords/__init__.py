@@ -1,9 +1,9 @@
 from ._interfaces import PasswordEngine
-from ._scrypt import InvalidPasswordRecord, KleinV1PasswordEngine
+from ._scrypt import InvalidPasswordRecord, defaultSecureEngine
 
 
 __all__ = [
     "InvalidPasswordRecord",
-    "KleinV1PasswordEngine",
+    "defaultSecureEngine",
     "PasswordEngine",
 ]

@@ -22,7 +22,7 @@ from klein.interfaces import (
 
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import IRequirementContext
-from ..dbaccess.dbapi_async import AsyncConnectable, AsyncConnection
+from ..dbxs.dbapi_async import AsyncConnectable, AsyncConnection
 
 
 log = Logger()

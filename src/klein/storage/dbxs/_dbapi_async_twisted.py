@@ -1,4 +1,4 @@
-# -*- test-case-name: klein.storage.dbaccess.test.test_sync_adapter -*-
+# -*- test-case-name: klein.storage.dbxs.test.test_sync_adapter -*-
 """
 Async version of db-api methods which associate each underlying db-api
 connection with a specific thread, since some database drivers have issues with

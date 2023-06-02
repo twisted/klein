@@ -15,8 +15,8 @@ from twisted.trial.unittest import SynchronousTestCase
 from klein import Klein, Requirer
 from klein.storage.sql._transactions import Transaction
 
-from ...dbaccess.dbapi_async import AsyncConnectable, AsyncConnection
-from ...dbaccess.testing import MemoryPool
+from ...dbxs.dbapi_async import AsyncConnectable, AsyncConnection
+from ...dbxs.testing import MemoryPool
 
 
 @dataclass

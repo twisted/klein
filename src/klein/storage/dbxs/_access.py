@@ -1,4 +1,4 @@
-# -*- test-case-name: klein.storage.dbaccess.test.test_access -*-
+# -*- test-case-name: klein.storage.dbxs.test.test_access -*-
 from __future__ import annotations
 
 from dataclasses import dataclass, field

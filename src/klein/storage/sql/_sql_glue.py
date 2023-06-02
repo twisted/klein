@@ -39,7 +39,7 @@ from ..._isession import AuthorizationMap
 from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISessionStore, ISimpleAccount
-from ..dbaccess.dbapi_async import AsyncConnectable, AsyncConnection
+from ..dbxs.dbapi_async import AsyncConnectable, AsyncConnection
 from ..passwords import PasswordEngine, defaultSecureEngine
 from ._sql_dal import AccountRecord, SessionDAL, SessionDB, SessionRecord
 from ._transactions import requestBoundTransaction

@@ -17,13 +17,13 @@ from klein.interfaces import (
     ISimpleAccountBinding,
     SessionMechanism,
 )
-from klein.storage.dbaccess.testing import MemoryPool, immediateTest
 from klein.storage.memory import MemoryAccountStore, MemorySessionStore
 from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
-from ..dbaccess.dbapi_async import transaction
-from ..passwords import engineForTesting, hashUpgradeCount
+from ..dbxs.dbapi_async import transaction
+from ..dbxs.testing import MemoryPool, immediateTest
+from ..passwords.testing import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer
 
 

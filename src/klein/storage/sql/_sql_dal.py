@@ -8,7 +8,7 @@ from attrs import define
 from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISession
-from ..dbaccess import accessor, many, maybe, query, statement
+from ..dbxs import accessor, many, maybe, query, statement
 
 
 @define

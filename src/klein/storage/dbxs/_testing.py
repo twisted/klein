@@ -1,4 +1,4 @@
-# -*- test-case-name: klein.storage.dbaccess.test -*-
+# -*- test-case-name: klein.storage.dbxs.test -*-
 from __future__ import annotations
 
 import sqlite3

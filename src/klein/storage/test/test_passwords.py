@@ -1,12 +1,13 @@
 from typing import List
 
-from twisted.trial.unittest import TestCase
+from twisted.trial.unittest import SynchronousTestCase, TestCase
 
 from ..._util import eagerDeferredCoroutine
 from ..passwords import (
     InvalidPasswordRecord,
     KleinV1PasswordEngine,
     PasswordEngine,
+    engineForTesting,
 )
 
 
@@ -15,7 +16,6 @@ class PasswordStorageTests(TestCase):
         self.newHashes: List[str] = []
         self.engine: PasswordEngine = KleinV1PasswordEngine(2**14, 2**15)
 
-    @eagerDeferredCoroutine
     async def storeSomething(self, something: str) -> None:
         self.newHashes.append(something)
 
@@ -67,3 +67,45 @@ class PasswordStorageTests(TestCase):
             await engine.checkAndReset(
                 "gibberish", "my-password", self.storeSomething
             )
+
+
+class TestTesting(SynchronousTestCase):
+    """
+    Tests for L{engineForTesting}
+    """
+
+    def test_testingEngine(self) -> None:
+        """
+        A cached password engine can verify passwords.
+        """
+        changes: List[str] = []
+        engine1 = engineForTesting(self)
+        engine2 = engineForTesting(self)
+        # The same test should get back the same engine.
+        self.assertIs(engine1, engine2)
+        # should complete synchronously
+        kt1 = self.successResultOf(engine1.computeKeyText("hello world"))
+
+        async def storeSomething(something: str) -> None:
+            changes.append(something)
+
+        self.assertEqual(
+            True,
+            self.successResultOf(
+                engine1.checkAndReset(
+                    kt1,
+                    "hello world",
+                    storeSomething,
+                )
+            ),
+        )
+        self.assertEqual(
+            False,
+            self.successResultOf(
+                engine1.checkAndReset(
+                    kt1,
+                    "hello wordl",
+                    storeSomething,
+                )
+            ),
+        )

@@ -273,14 +273,6 @@ class CommonStoreTests(TestCase):
         """
         Test that L{procurerFromConnectable} gives us a usable session procurer.
         """
-
-        # XXX need a cleaner way to make async-passlib functions be not-async
-        from twisted.internet.defer import maybeDeferred
-
-        from klein import _util
-
-        self.patch(_util, "deferToThread", maybeDeferred)
-
         async with transaction(pool.connectable) as c:
             cursor = await c.cursor()
             for stmt in (

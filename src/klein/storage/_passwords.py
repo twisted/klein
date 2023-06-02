@@ -1,12 +1,15 @@
 # -*- test-case-name: klein.storage.test.test_passwords -*-
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from os import urandom
 from re import compile as compileRE
-from typing import TYPE_CHECKING, Callable, Type
+from typing import TYPE_CHECKING, Awaitable, Callable, Type
 from unicodedata import normalize
 
+
+if TYPE_CHECKING:
+    from unittest import TestCase
 
 try:
     from hashlib import scrypt
@@ -34,7 +37,7 @@ except ImportError:
             )
 
 
-from twisted.internet.defer import Deferred
+from hashlib import sha256
 
 from klein._typing_compat import Protocol
 from klein._util import threadedDeferredFunction
@@ -156,14 +159,14 @@ class PasswordEngine(Protocol):
 
         @param passwordText: The text of a new password, as entered by a user.
 
-        @return: a L{Deferred} firing with L{unicode}.
+        @return: The hashed text to store.
         """
 
     async def checkAndReset(
         self,
         storedPasswordHash: str,
         providedPasswordText: str,
-        storeNewHash: Callable[[str], Deferred[None]],
+        storeNewHash: Callable[[str], Awaitable[None]],
     ) -> bool:
         """
         Check the given stored password text against the given provided
@@ -197,23 +200,19 @@ class KleinV1PasswordEngine:
     minimumN: int = 2**18
     preferredN: int = 2**19
 
-    async def computeKeyText(
-        self,
-        passwordText: str,
-    ) -> str:
-        return (
-            await SCryptHashedPassword.new(passwordText, self.preferredN)
-        ).serialize()
+    async def computeKeyText(self, passwordText: str) -> str:
+        hashed = await SCryptHashedPassword.new(passwordText, self.preferredN)
+        return hashed.serialize()
 
     async def checkAndReset(
         self,
         storedPasswordHash: str,
         providedPasswordText: str,
-        storeNewHash: Callable[[str], Deferred[None]],
+        storeNewHash: Callable[[str], Awaitable[None]],
     ) -> bool:
-        hashObj = SCryptHashedPassword.load(storedPasswordHash)
-        if await hashObj.verify(providedPasswordText):
-            if hashObj.n < self.minimumN:
+        hashed = SCryptHashedPassword.load(storedPasswordHash)
+        if await hashed.verify(providedPasswordText):
+            if hashed.n < self.minimumN:
                 newHash = await SCryptHashedPassword.new(
                     providedPasswordText, self.preferredN
                 )
@@ -221,6 +220,49 @@ class KleinV1PasswordEngine:
             return True
         else:
             return False
+
+
+@dataclass
+class InsecurePasswordEngineOnlyForTesting:
+    """
+    Very fast in-memory password engine that is suitable only for testing.
+    """
+
+    tempSalt: bytes = field(default_factory=lambda: urandom(16))
+
+    async def computeKeyText(self, passwordText: str) -> str:
+        # hashing here only in case someone *does* put this into production;
+        # the salt will be lost, and this will be garbage, so all auth will
+        # fail.
+        return sha256(
+            normalize("NFD", passwordText).encode("utf-8") + self.tempSalt
+        ).hexdigest()
+
+    async def checkAndReset(
+        self,
+        storedPasswordHash: str,
+        providedPasswordText: str,
+        storeNewHash: Callable[[str], Awaitable[None]],
+    ) -> bool:
+        receivedHash = await self.computeKeyText(providedPasswordText)
+        return storedPasswordHash == receivedHash
+
+
+cacheAttribute = "__insecurePasswordEngine__"
+
+
+def engineForTesting(testCase: TestCase) -> PasswordEngine:
+    """
+    Return an insecure password engine that is very fast, suitable for using in
+    unit tests.
+    """
+    result: InsecurePasswordEngineOnlyForTesting
+    if hasattr(testCase, cacheAttribute):
+        result = getattr(testCase, cacheAttribute)
+        return result
+    result = InsecurePasswordEngineOnlyForTesting()
+    setattr(testCase, cacheAttribute, result)
+    return result
 
 
 if TYPE_CHECKING:

@@ -51,6 +51,8 @@ if __name__ == "__main__":
             "klein.storage.memory.test",
             "klein.storage.dbaccess",
             "klein.storage.dbaccess.test",
+            "klein.storage.passwords",
+            "klein.storage.passwords.test",
             "klein.storage.sql",
             "klein.storage.sql.test",
             "klein.test",

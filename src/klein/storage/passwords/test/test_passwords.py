@@ -2,8 +2,8 @@ from typing import Awaitable, Callable, List, Tuple
 
 from twisted.trial.unittest import SynchronousTestCase, TestCase
 
-from ..._util import eagerDeferredCoroutine
-from ..passwords import (
+from ...._util import eagerDeferredCoroutine
+from .. import (
     InvalidPasswordRecord,
     KleinV1PasswordEngine,
     PasswordEngine,

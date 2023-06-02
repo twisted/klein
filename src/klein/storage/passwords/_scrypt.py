@@ -1,4 +1,4 @@
-# -*- test-case-name: klein.storage.test.test_passwords -*-
+# -*- test-case-name: klein.storage.passwords.test.test_passwords -*-
 from __future__ import annotations
 
 from dataclasses import dataclass, field

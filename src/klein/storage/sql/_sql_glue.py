@@ -39,8 +39,8 @@ from ..._isession import AuthorizationMap
 from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISessionStore, ISimpleAccount
-from .._passwords import KleinV1PasswordEngine, PasswordEngine
 from ..dbaccess.dbapi_async import AsyncConnectable, AsyncConnection
+from ..passwords import KleinV1PasswordEngine, PasswordEngine
 from ._sql_dal import AccountRecord, SessionDAL, SessionDB, SessionRecord
 from ._transactions import requestBoundTransaction
 

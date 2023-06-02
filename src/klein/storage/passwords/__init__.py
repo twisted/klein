@@ -1,4 +1,4 @@
-from ._passwords import (
+from ._scrypt import (
     InvalidPasswordRecord,
     KleinV1PasswordEngine,
     PasswordEngine,

@@ -1,15 +1,15 @@
 # -*- test-case-name: klein.storage.passwords.test.test_passwords -*-
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from os import urandom
 from re import compile as compileRE
-from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Type
+from typing import TYPE_CHECKING, Awaitable, Callable, Type
 from unicodedata import normalize
 
+from ..._util import threadedDeferredFunction
+from ._interfaces import PasswordEngine
 
-if TYPE_CHECKING:
-    from unittest import TestCase
 
 try:
     from hashlib import scrypt
@@ -35,12 +35,6 @@ except ImportError:
             return Scrypt(salt=salt, length=dklen, n=n, r=r, p=p).derive(
                 password
             )
-
-
-from hashlib import sha256
-
-from klein._typing_compat import Protocol
-from klein._util import threadedDeferredFunction
 
 
 @threadedDeferredFunction
@@ -145,49 +139,6 @@ class SCryptHashedPassword:
         return cls(await runScrypt(inputText, salt, n, r, p), salt, n, r, p)
 
 
-class PasswordEngine(Protocol):
-    """
-    Interface required to hash passwords for secure storage.
-    """
-
-    async def computeKeyText(
-        self,
-        passwordText: str,
-    ) -> str:
-        """
-        Compute some text to store for a given plain-text password.
-
-        @param passwordText: The text of a new password, as entered by a user.
-
-        @return: The hashed text to store.
-        """
-
-    async def checkAndReset(
-        self,
-        storedPasswordHash: str,
-        providedPasswordText: str,
-        storeNewHash: Callable[[str], Awaitable[None]],
-    ) -> bool:
-        """
-        Check the given stored password text against the given provided
-        password text.  If password policies have changed since the given hash
-        was stored and C{providedPasswordText} is correct, compute a new hash
-        and use C{storeNewHash} to write it back to the data store.
-
-        @param storedPasswordText: the opaque hashed output from our hash
-            function, stored in a datastore.
-
-        @param providedPasswordText: the plain-text password provided by the
-            user.
-
-        @param storeNewHash: A function that stores a new hash in the database.
-
-        @return: an awaitable boolean; C{True} if the password matches (i.e,
-            the user has successfully authenticated) and C{False} if the
-            password does not match.
-        """
-
-
 @dataclass
 class KleinV1PasswordEngine:
     """
@@ -220,81 +171,6 @@ class KleinV1PasswordEngine:
             return True
         else:
             return False
-
-
-@dataclass
-class InsecurePasswordEngineOnlyForTesting:
-    """
-    Very fast in-memory password engine that is suitable only for testing.
-    """
-
-    tempSalt: bytes = field(default_factory=lambda: urandom(16))
-    hashVersion: int = 1
-    upgradedHashes: int = 0
-
-    async def computeKeyText(self, passwordText: str) -> str:
-        # hashing here only in case someone *does* put this into production;
-        # the salt will be lost, and this will be garbage, so all auth will
-        # fail.
-        return (
-            f"{self.hashVersion}-"
-            + sha256(
-                normalize("NFD", passwordText).encode("utf-8") + self.tempSalt
-            ).hexdigest()
-        )
-
-    async def checkAndReset(
-        self,
-        storedPasswordHash: str,
-        providedPasswordText: str,
-        storeNewHash: Callable[[str], Awaitable[None]],
-    ) -> bool:
-        storedVersion, storedActualHash = storedPasswordHash.split("-")
-        computedHash = await self.computeKeyText(providedPasswordText)
-        newVersion, receivedActualHash = computedHash.split("-")
-        valid = storedActualHash == receivedActualHash
-        if valid and int(newVersion) > int(storedVersion):
-            await storeNewHash(newVersion)
-            self.upgradedHashes += 1
-        return valid
-
-
-cacheAttribute = "__insecurePasswordEngine__"
-
-
-def engineForTesting(
-    testCase: TestCase, *, upgradeHashes: bool = False
-) -> PasswordEngine:
-    """
-    Return an insecure password engine that is very fast, suitable for using in
-    unit tests.
-
-    @param testCase: The test case for which this engine is to be used.  The
-        engine will be cached on the test case, so that multiple calls will
-        return the same object.
-
-    @param storeNewHashes: Should the engine's C{checkAndReset} method call its
-        C{storePasswordHash} argument?  Note that this mutates the existing
-        engine if one has already been cached.
-    """
-    result: Optional[InsecurePasswordEngineOnlyForTesting] = getattr(
-        testCase, cacheAttribute, None
-    )
-    if result is None:
-        result = InsecurePasswordEngineOnlyForTesting()
-        setattr(testCase, cacheAttribute, result)
-    result.hashVersion += upgradeHashes
-    return result
-
-
-def hashUpgradeCount(testCase: TestCase) -> int:
-    """
-    How many times has the L{engineForTesting} for the given test upgraded the
-    hash of a stored password?
-    """
-    engine = engineForTesting(testCase)
-    assert isinstance(engine, InsecurePasswordEngineOnlyForTesting)
-    return engine.upgradedHashes
 
 
 if TYPE_CHECKING:

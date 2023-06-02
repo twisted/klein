@@ -3,12 +3,8 @@ from typing import Awaitable, Callable, List, Tuple
 from twisted.trial.unittest import SynchronousTestCase, TestCase
 
 from ...._util import eagerDeferredCoroutine
-from .. import (
-    InvalidPasswordRecord,
-    KleinV1PasswordEngine,
-    PasswordEngine,
-    engineForTesting,
-)
+from .. import InvalidPasswordRecord, KleinV1PasswordEngine, PasswordEngine
+from ..testing import engineForTesting, hashUpgradeCount
 
 
 def pwStorage() -> Tuple[List[str], Callable[[str], Awaitable[None]]]:
@@ -112,3 +108,20 @@ class TestTesting(SynchronousTestCase):
                 )
             ),
         )
+
+        self.assertEqual(hashUpgradeCount(self), 0)
+        engine3 = engineForTesting(self, upgradeHashes=True)
+        # Still the same.
+        self.assertIs(engine2, engine3)
+        # But now we will upgrade hashes upon reset.
+        self.successResultOf(
+            engine1.checkAndReset(kt1, "hello world", storeSomething)
+        )
+        self.assertEqual(len(changes), 1)
+        self.assertEqual(hashUpgradeCount(self), 1)
+        kt2 = changes.pop()
+        self.successResultOf(
+            engine1.checkAndReset(kt2, "hello world", storeSomething)
+        )
+        self.assertEqual(len(changes), 0)
+        self.assertEqual(hashUpgradeCount(self), 1)

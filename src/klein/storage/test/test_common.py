@@ -22,17 +22,9 @@ from klein.storage.memory import MemoryAccountStore, MemorySessionStore
 from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
-from .._passwords import KleinV1PasswordEngine, PasswordEngine
 from ..dbaccess.dbapi_async import transaction
+from ..passwords import engineForTesting
 from ..sql import SQLSessionProcurer
-
-
-def fewerRounds() -> PasswordEngine:
-    return KleinV1PasswordEngine(2**4, 2**5)
-
-
-def moreRounds() -> PasswordEngine:
-    return KleinV1PasswordEngine(2**6, 2**7)
 
 
 @attr.s(auto_attribs=True, hash=False)
@@ -291,12 +283,12 @@ class CommonStoreTests(TestCase):
             isSecure: bool, mechanism: SessionMechanism
         ) -> ISession:
             async with transaction(pool.connectable) as c:
-                return await SessionStore(c, [], fewerRounds()).newSession(
-                    isSecure, mechanism
-                )
+                return await SessionStore(
+                    c, [], engineForTesting(self)
+                ).newSession(isSecure, mechanism)
 
         async with transaction(pool.connectable) as c:
-            sampleStore = SessionStore(c, [], fewerRounds())
+            sampleStore = SessionStore(c, [], engineForTesting(self))
             sampleSession = await newSession(True, SessionMechanism.Cookie)
             b = AccountSessionBinding(sampleStore, sampleSession, c)
             self.assertIsNot(
@@ -311,5 +303,5 @@ class CommonStoreTests(TestCase):
                 None,
             )
 
-        proc = SQLSessionProcurer(pool.connectable, [], moreRounds())
+        proc = SQLSessionProcurer(pool.connectable, [], engineForTesting(self))
         await self.authWithStoreTest(newSession, proc, pool)

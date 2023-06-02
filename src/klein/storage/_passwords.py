@@ -3,7 +3,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from os import urandom
-from typing import TYPE_CHECKING, Callable, ClassVar, Optional, Type
+from re import compile as compileRE
+from typing import TYPE_CHECKING, Callable, Type
 from unicodedata import normalize
 
 
@@ -55,6 +56,29 @@ def runScrypt(password: str, salt: bytes, n: int, r: int, p: int) -> bytes:
     )
 
 
+class InvalidPasswordRecord(Exception):
+    """
+    A stored password was not in a valid format.
+    """
+
+
+sep = "\\$"
+MARKER = "klein-scrypt"
+
+
+HEX = "[0-9a-f]+"
+INT = "[0-9]+"
+
+
+def g(**names: str) -> str:
+    [[name, expression]] = list(names.items())
+    return f"(?P<{name}>{expression})"
+
+
+fields = [MARKER, g(hashed=HEX), g(salt=HEX), g(n=INT), g(r=INT), g(p=INT)]
+recordRE = compileRE(sep + sep.join(fields) + sep)
+
+
 @dataclass
 class SCryptHashedPassword:
     """
@@ -67,15 +91,13 @@ class SCryptHashedPassword:
     r: int
     p: int
 
-    typeCode: ClassVar[str] = "klein-scrypt"
-
     def serialize(self) -> str:
         """
         Serialize this L{SCryptHashedPassword} to a string.  Callers must
         consider this opaque.
         """
         return (
-            f"${self.typeCode}${self.hashed.hex()}"
+            f"${MARKER}${self.hashed.hex()}"
             f"${self.salt.hex()}${self.n}${self.r}${self.p}$"
         )
 
@@ -89,21 +111,21 @@ class SCryptHashedPassword:
         return self.hashed == (computed)
 
     @classmethod
-    def load(cls, serialized: str) -> Optional[SCryptHashedPassword]:
+    def load(cls, serialized: str) -> SCryptHashedPassword:
         """
         Load a SCryptHashedPassword from a string produced by
         L{SCryptHashedPassword.serialize}.
         """
-        fields = serialized.split("$")
-        if len(fields) != 8:
-            return None
-        blank1, pwType, password, salt, n, r, p, blank2 = fields
-        if blank1 != "" or blank2 != "" or pwType != cls.typeCode:
-            return None
-        self = cls(
-            bytes.fromhex(password), bytes.fromhex(salt), int(n), int(r), int(p)
+        matched = recordRE.fullmatch(serialized)
+        if not matched:
+            raise InvalidPasswordRecord("invalid password record")
+        return cls(
+            bytes.fromhex(matched["hashed"]),
+            bytes.fromhex(matched["salt"]),
+            int(matched["n"]),
+            int(matched["r"]),
+            int(matched["p"]),
         )
-        return self
 
     @classmethod
     # "If Argon2id is not available, use scrypt with a minimum CPU/memory cost
@@ -117,9 +139,7 @@ class SCryptHashedPassword:
         Hash C{inputText} in a thread to create a new L{SCryptHashedPassword}.
         """
         salt = urandom(16)
-        hashedBytes = await runScrypt(inputText, salt, n, r, p)
-        self = cls(hashedBytes, salt, n, r, p)
-        return self
+        return cls(await runScrypt(inputText, salt, n, r, p), salt, n, r, p)
 
 
 class PasswordEngine(Protocol):
@@ -168,8 +188,10 @@ class PasswordEngine(Protocol):
 @dataclass
 class KleinV1PasswordEngine:
     """
-    Built-in engine for hashing and storing passwords with basic C{scrypt}
-    parameters.
+    Built-in engine for hashing passwords for secure storage with basic
+    C{scrypt} parameters.
+
+    Implementation of L{PasswordEngine}.
     """
 
     minimumN: int = 2**18
@@ -190,8 +212,6 @@ class KleinV1PasswordEngine:
         storeNewHash: Callable[[str], Deferred[None]],
     ) -> bool:
         hashObj = SCryptHashedPassword.load(storedPasswordHash)
-        if hashObj is None:
-            return False
         if await hashObj.verify(providedPasswordText):
             if hashObj.n < self.minimumN:
                 newHash = await SCryptHashedPassword.new(

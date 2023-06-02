@@ -3,13 +3,17 @@ from typing import List
 from twisted.trial.unittest import TestCase
 
 from ..._util import eagerDeferredCoroutine
-from .._passwords import KleinV1PasswordEngine
+from ..passwords import (
+    InvalidPasswordRecord,
+    KleinV1PasswordEngine,
+    PasswordEngine,
+)
 
 
 class PasswordStorageTests(TestCase):
     def setUp(self) -> None:
         self.newHashes: List[str] = []
-        self.engine = KleinV1PasswordEngine(2**14, 2**15)
+        self.engine: PasswordEngine = KleinV1PasswordEngine(2**14, 2**15)
 
     @eagerDeferredCoroutine
     async def storeSomething(self, something: str) -> None:
@@ -52,3 +56,14 @@ class PasswordStorageTests(TestCase):
         )
         self.assertTrue(check2)
         self.assertEqual(self.newHashes, [])
+
+    @eagerDeferredCoroutine
+    async def test_serializationErrorHandling(self) -> None:
+        """
+        Un-parseable passwords will result in a L{BadStoredPassword} exception.
+        """
+        engine = KleinV1PasswordEngine(2**5, 2**6)
+        with self.assertRaises(InvalidPasswordRecord):
+            await engine.checkAndReset(
+                "gibberish", "my-password", self.storeSomething
+            )

@@ -1,3 +1,7 @@
+"""
+Minimal asynchronous mapping of DB-API 2.0 interfaces, along with tools to
+"""
+
 from ._dbapi_async_protocols import (
     AsyncConnectable,
     AsyncConnection,

@@ -43,6 +43,9 @@ class MemoryPool:
     controlled a single operation at a time.  Each operation that would
     normally be asynchronoulsy dispatched to a thread can be invoked with the
     L{MemoryPool.pump} and L{MemoryPool.flush} methods.
+
+    @ivar connectable: The L{AsyncConnectable} to be passed to the system under
+        test.
     """
 
     connectable: AsyncConnectable

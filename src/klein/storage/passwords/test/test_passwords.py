@@ -3,7 +3,8 @@ from typing import Awaitable, Callable, List, Tuple
 from twisted.trial.unittest import SynchronousTestCase, TestCase
 
 from ...._util import eagerDeferredCoroutine
-from .. import InvalidPasswordRecord, KleinV1PasswordEngine, PasswordEngine
+from .. import InvalidPasswordRecord, PasswordEngine, defaultSecureEngine
+from .._scrypt import KleinV1PasswordEngine
 from ..testing import engineForTesting, hashUpgradeCount
 
 
@@ -69,6 +70,18 @@ class PasswordStorageTests(TestCase):
             await engine.checkAndReset(
                 "gibberish", "my-password", self.storeSomething
             )
+
+
+class TestDefaultEntryPoint(SynchronousTestCase):
+    """
+    Test for externally facing /public API.
+    """
+
+    def test_entryPoint(self) -> None:
+        """
+        L{defaultSecureEngine} returns a L{KleinV1PasswordEngine}
+        """
+        self.assertIsInstance(defaultSecureEngine(), KleinV1PasswordEngine)
 
 
 class TestTesting(SynchronousTestCase):

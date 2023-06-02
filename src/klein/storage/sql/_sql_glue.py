@@ -40,7 +40,7 @@ from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISessionStore, ISimpleAccount
 from ..dbaccess.dbapi_async import AsyncConnectable, AsyncConnection
-from ..passwords import KleinV1PasswordEngine, PasswordEngine
+from ..passwords import PasswordEngine, defaultSecureEngine
 from ._sql_dal import AccountRecord, SessionDAL, SessionDB, SessionRecord
 from ._transactions import requestBoundTransaction
 
@@ -325,9 +325,7 @@ class SQLSessionProcurer:
 
     _connectable: AsyncConnectable
     _authorizers: Sequence[SQLAuthorizer[object]]
-    _passwordEngine: PasswordEngine = field(
-        default_factory=KleinV1PasswordEngine
-    )
+    _passwordEngine: PasswordEngine = field(default_factory=defaultSecureEngine)
 
     @eagerDeferredCoroutine
     async def procureSession(

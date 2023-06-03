@@ -15,7 +15,7 @@ from typing import (
 )
 
 import attr
-from zope.interface import Interface, implementer
+from zope.interface import implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
@@ -237,7 +237,7 @@ class SessionProcurer:
 
 
 class AuthorizationDenied(Resource):
-    def __init__(self, interface: Type[Interface], instance: Any) -> None:
+    def __init__(self, interface: Type[object], instance: Any) -> None:
         self._interface = interface
         super().__init__()
 
@@ -301,9 +301,9 @@ class Authorization:
         C{required} is set to C{False}.
     """
 
-    _interface: Type[Interface]
+    _interface: Type[object]
     _required: bool = True
-    _whenDenied: Callable[[Type[Interface], Any], Any] = AuthorizationDenied
+    _whenDenied: Callable[[Type[object], Any], Any] = AuthorizationDenied
 
     def registerInjector(
         self,

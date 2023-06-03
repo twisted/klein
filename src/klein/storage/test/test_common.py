@@ -235,6 +235,17 @@ class CommonStoreTests(TestCase):
         self.assertEqual(response.code, 401)
         self.assertIn(b"DENIED", await content(response))
 
+        # sending invalid tokens insecurely should be like sending no tokens
+        # (i.e. this happens when you clear a database, or restart an in-memory
+        # server)
+
+        response = await stub.get(
+            "http://localhost/private",
+            cookies={"Klein-Secure-Session": "never seen this session"},
+        )
+        self.assertEqual(response.code, 401)
+        self.assertIn(b"DENIED", await content(response))
+
         response = await stub.get("https://localhost/private", cookies=cookies)
         # jar = response.cookies()
         # self.assertEqual()

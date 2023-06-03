@@ -199,4 +199,4 @@ class MemorySessionStore:
 
     def sentInsecurely(self, tokens: Iterable[str]) -> None:
         for token in tokens:
-            del self._storage(True)[token]
+            self._storage(True).pop(token, None)

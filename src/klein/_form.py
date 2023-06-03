@@ -287,6 +287,7 @@ class Field:
             formInputType="submit",
             noLabel=True,
             default=value,
+            value=value,
         )
 
 

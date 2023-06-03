@@ -200,6 +200,20 @@ async def login(
 
 @requirer.require(
     style.routed(
+        app.route("/logout", methods=["POST"]),
+        tags.div(tags.h1("logged out ", slot("didlogout"))),
+    ),
+    binding=Authorization(ISimpleAccountBinding),
+)
+async def logout(
+    username: str, password: str, binding: ISimpleAccountBinding
+) -> dict:
+    await binding.unbindThisSession()
+    return {"didlogout": "yes", "headExtras": refresh("/")}
+
+
+@requirer.require(
+    style.routed(
         app.route("/login", methods=["GET"]),
         tags.div("form", slot("form")),
     ),
@@ -255,15 +269,18 @@ def food(name: str, rating: str) -> Tag:
         tags.div(
             tags.ul(tags.li(render="foods:list")(slot("item"))),
             tags.div(slot("addFoodForm")),
+            tags.div(slot("loginForm")),
         ),
     ),
     theForm=Form.rendererFor(postHandler, action="/?post=yes"),
     loginForm=Form.rendererFor(login, action="/login"),
+    logoutForm=Form.rendererFor(logout, action="/logout"),
     foodList=Authorization(FoodList, required=False),
 )
 async def formRenderer(
     theForm: RenderableForm,
     loginForm: RenderableForm,
+    logoutForm: RenderableForm,
     foodList: Optional[FoodList],
 ) -> dict:
     print("fl", foodList)
@@ -273,7 +290,7 @@ async def formRenderer(
             result.append(eachFood)
     return {
         "addFoodForm": theForm if (foodList is not None) else "",
-        "loginForm": loginForm if (foodList is None) else "",
+        "loginForm": loginForm if (foodList is None) else logoutForm,
         "foods": [
             food(name=each.name, rating="\N{BLACK STAR}" * each.rating)
             for each in result

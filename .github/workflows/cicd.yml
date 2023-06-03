@@ -201,12 +201,13 @@ jobs:
           - os: "ubuntu-latest"
             python-version: "pypy-3.8"
             twisted-version: "current"
+            # We need at least one PyPy environment with coverage enabled, but
+            # it's quite slow so we'll disable it everywhere else.
             tox-prefix: "test"
             optional: false
           - os: "ubuntu-latest"
             python-version: "pypy-3.9"
             twisted-version: "current"
-            tox-prefix: "test"
             optional: false
           # Test Python 3.12 but allow it to fail
           - os: "ubuntu-latest"

@@ -14,27 +14,25 @@ from ._interfaces import PasswordEngine
 try:
     from hashlib import scrypt
 except ImportError:
-    if not TYPE_CHECKING:
-        # PyPy ships without scrypt so we need cryptography there.  There are a
-        # bunch of spurious type-checking issues here, like the signature not
-        # matching due to weird extra buffer types in the stdlib and not having
-        # the `cryptography` stubs available in our typechecking environment,
-        # so we'll just ignore it.
-        from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+    # PyPy ships without scrypt so we need cryptography there.
+    from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
-        def scrypt(
-            password: bytes,
-            *,
-            salt: bytes,
-            n: int,
-            r: int,
-            p: int,
-            maxmem: int = 0,
-            dklen: int = 64,
-        ) -> bytes:
-            return Scrypt(salt=salt, length=dklen, n=n, r=r, p=p).derive(
-                password
-            )
+    # The signature of C{scrypt} from the standard library has a bunch of
+    # additional complexity, supporting memory views and types other than
+    # `bytes`, but this is not a publicly exposed or particularly principled
+    # annotation so we ignore the minor differences in the two signatures here.
+
+    def scrypt(  # type:ignore[misc]
+        password: bytes,
+        *,
+        salt: bytes,
+        n: int,
+        r: int,
+        p: int,
+        maxmem: int = 0,
+        dklen: int = 64,
+    ) -> bytes:
+        return Scrypt(salt=salt, length=dklen, n=n, r=r, p=p).derive(password)
 
 
 @threadedDeferredFunction

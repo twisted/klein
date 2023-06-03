@@ -208,6 +208,7 @@ jobs:
           - os: "ubuntu-latest"
             python-version: "pypy-3.9"
             twisted-version: "current"
+            tox-prefix: "coverage"
             optional: false
           # Test Python 3.12 but allow it to fail
           - os: "ubuntu-latest"

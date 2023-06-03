@@ -233,6 +233,14 @@ class Plating:
                 instance: Any, request: IRequest, *args: Any, **kw: Any
             ) -> Any:
                 data = yield _call(instance, method, request, *args, **kw)
+                if not hasattr(data, "__setitem__"):
+                    # Allow plating routes to return other forms of Klein
+                    # renderable object, if they want to customize an HTTP
+                    # response in specific cases, such as returning a redirect.
+                    # This is a very narrow test rather than a more general
+                    # isinstance(data, dict) or similar because older versions
+                    # of Klein did not have this check.
+                    return data
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
                     json_data.update(data)

@@ -626,3 +626,18 @@ class PlatingTests(AsynchronousTestCase):
 
         test("garbage")
         test("garbage:missing")
+
+    def test_alternateReturn(self) -> None:
+        """
+        If a L{Plating.routed} route returns a klein renderable value other
+        than a mutable mapping, it will be returned as if the route were not
+        plated at all.
+        """
+
+        @page.routed(self.app.route("/"), tags.span(slot("ok")))
+        def plateMe(request):
+            return "oops, not a dict!"
+
+        request, written = self.get(b"/")
+
+        self.assertEqual(b"oops, not a dict!", written)

@@ -153,7 +153,7 @@ style = Plating(
         tags.body(tags.div(slot(Plating.CONTENT))),
     ),
     defaults={"pageTitle": "Food List", "headExtras": ""},
-    presentation_slots={"pageTitle", "headExtras", "addFoodForm"},
+    presentation_slots={"pageTitle", "headExtras", "addFoodForm", "loginForm"},
 )
 
 foodsList = [("test", 1)]
@@ -195,7 +195,10 @@ async def login(
     username: str, password: str, binding: ISimpleAccountBinding
 ) -> dict:
     await binding.bindIfCredentialsMatch(username, password)
-    return {"didlogin": "yes"}
+    return {
+        "didlogin": "yes",
+        "headExtras": refresh("/"),
+    }
 
 
 @requirer.require(
@@ -204,9 +207,11 @@ async def login(
         tags.div(tags.h1("logged out ", slot("didlogout"))),
     ),
     binding=Authorization(ISimpleAccountBinding),
+    ignored=Field.submit("log out"),
 )
 async def logout(
-    username: str, password: str, binding: ISimpleAccountBinding
+    binding: ISimpleAccountBinding,
+    ignored: str,
 ) -> dict:
     await binding.unbindThisSession()
     return {"didlogout": "yes", "headExtras": refresh("/")}

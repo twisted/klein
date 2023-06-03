@@ -12,7 +12,7 @@ from twisted.internet.defer import Deferred, succeed
 from twisted.trial.unittest import SynchronousTestCase
 from twisted.trial.unittest import TestCase as AsynchronousTestCase
 from twisted.web.error import FlattenerError, MissingRenderMethod
-from twisted.web.template import slot, tags
+from twisted.web.template import Tag, slot, tags
 
 from .. import Klein, Plating
 from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
@@ -550,6 +550,38 @@ class PlatingTests(AsynchronousTestCase):
                 "instance-widget": {"a": 5, "b": 6},
                 "title": "default title unchanged",
             },
+        )
+
+    def test_platingFragmentList(self) -> None:
+        """
+        A function decorated with L{Plating.fragment} can serve as a list.
+        """
+
+        @page.fragment
+        def color(r: str, g: str, b: str) -> Tag:
+            return tags.div("red: ", r, " green: ", g, " blue: ", b)
+
+        @page.routed(
+            self.app.route("/"), tags.div(render="colors:list")(slot("item"))
+        )
+        def plateMe(result):
+            return {
+                "colors": [
+                    color("1", "2", "3"),
+                    color(r="4", g="5", b="6"),
+                ],
+            }
+
+        _, writtenJSON = self.get(b"/?json=1")
+        _, writtenHTML = self.get(b"/")
+        self.assertEqual(
+            json.loads(writtenJSON)["colors"],
+            [{"r": "1", "g": "2", "b": "3"}, {"r": "4", "g": "5", "b": "6"}],
+        )
+        self.assertIn(
+            b"<div><div>red: 1 green: 2 blue: 3</div></div>"
+            b"<div><div>red: 4 green: 5 blue: 6</div></div></div>",
+            writtenHTML,
         )
 
     def test_prime_directive_return(self):

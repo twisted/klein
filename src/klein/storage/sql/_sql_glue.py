@@ -24,6 +24,7 @@ from attrs import define
 from zope.interface import implementer
 
 from twisted.internet.defer import Deferred, gatherResults, succeed
+from twisted.python.modules import getModule
 from twisted.web.iweb import IRequest
 
 from klein.interfaces import (
@@ -39,7 +40,7 @@ from ..._isession import AuthorizationMap
 from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISessionStore, ISimpleAccount
-from ..dbxs.dbapi_async import AsyncConnectable, AsyncConnection
+from ..dbxs.dbapi_async import AsyncConnectable, AsyncConnection, transaction
 from ..passwords import PasswordEngine, defaultSecureEngine
 from ._sql_dal import AccountRecord, SessionDAL, SessionDB, SessionRecord
 from ._transactions import requestBoundTransaction
@@ -324,7 +325,7 @@ class SQLSessionProcurer:
     """
 
     _connectable: AsyncConnectable
-    _authorizers: Sequence[SQLAuthorizer[object]]
+    _authorizers: Sequence[SQLAuthorizer[Any]]
     _passwordEngine: PasswordEngine = field(default_factory=defaultSecureEngine)
 
     @eagerDeferredCoroutine
@@ -440,3 +441,23 @@ async def logMeIn(
     for account in accounts:
         return account
     return None
+
+
+async def applyBasicSchema(connectable: AsyncConnectable) -> None:
+    """
+    Apply the session and authentication schema to the given database within a
+    dedicated transaction.
+    """
+    async with transaction(connectable) as c:
+        cursor = await c.cursor()
+        for stmt in (
+            getModule(__name__)
+            .filePath.parent()
+            .parent()
+            .child("sql")
+            .child("basic_auth_schema.sql")
+            .getContent()
+            .decode("utf-8")
+            .split(";")
+        ):
+            await cursor.execute(stmt)

@@ -6,7 +6,6 @@ from treq.testing import StubTreq
 
 from twisted.internet.defer import Deferred
 from twisted.python.compat import nativeString
-from twisted.python.modules import getModule
 from twisted.trial.unittest import TestCase
 from twisted.web.iweb import IRequest
 
@@ -24,7 +23,7 @@ from ...interfaces import ISimpleAccount
 from ..dbxs.dbapi_async import transaction
 from ..dbxs.testing import MemoryPool, immediateTest
 from ..passwords.testing import engineForTesting, hashUpgradeCount
-from ..sql import SQLSessionProcurer
+from ..sql import SQLSessionProcurer, applyBasicSchema
 
 
 @attr.s(auto_attribs=True, hash=False)
@@ -276,19 +275,8 @@ class CommonStoreTests(TestCase):
         """
         Test that L{procurerFromConnectable} gives us a usable session procurer.
         """
-        async with transaction(pool.connectable) as c:
-            cursor = await c.cursor()
-            for stmt in (
-                getModule(__name__)
-                .filePath.parent()
-                .parent()
-                .child("sql")
-                .child("basic_auth_schema.sql")
-                .getContent()
-                .decode("utf-8")
-                .split(";")
-            ):
-                await cursor.execute(stmt)
+
+        await applyBasicSchema(pool.connectable)
 
         async def newSession(
             isSecure: bool, mechanism: SessionMechanism

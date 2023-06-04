@@ -20,7 +20,6 @@ from klein import (
     RenderableForm,
     Requirer,
 )
-from klein._util import eagerDeferredCoroutine
 from klein.interfaces import (
     ISession,
     ISessionStore,
@@ -110,7 +109,6 @@ class FoodList:
 
 
 @authorizerFor(FoodList)
-@eagerDeferredCoroutine
 async def flub(
     store: ISessionStore, conn: AsyncConnection, session: ISession
 ) -> Optional[FoodList]:

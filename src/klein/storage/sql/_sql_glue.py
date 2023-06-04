@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from os import urandom
 from typing import (
     Any,
+    Awaitable,
     Callable,
     Generic,
     Iterable,
@@ -361,7 +362,7 @@ class SQLSessionProcurer:
 
 
 _authorizerFunction = Callable[
-    [SessionStore, AsyncConnection, ISession], "Deferred[T]"
+    [SessionStore, AsyncConnection, ISession], "Awaitable[Optional[T]]"
 ]
 
 
@@ -390,7 +391,7 @@ class SQLAuthorizer(Generic[T]):
         sessionStore: SessionStore,
         transaction: AsyncConnection,
         session: ISession,
-    ) -> Deferred[T]:
+    ) -> Awaitable[Optional[T]]:
         return self._decorated(sessionStore, transaction, session)
 
 
@@ -425,7 +426,6 @@ def simpleAccountBinding(
 
 
 @authorizerFor(ISimpleAccount)
-@eagerDeferredCoroutine
 async def logMeIn(
     sessionStore: ISessionStore,
     transaction: AsyncConnection,

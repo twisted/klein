@@ -113,11 +113,9 @@ async def flub(
     store: ISessionStore, conn: AsyncConnection, session: ISession
 ) -> Optional[FoodList]:
     authd = await session.authorize([ISimpleAccountBinding])
-    print("authd", authd)
     binding = authd[ISimpleAccountBinding]
     assert binding is not None
     accts = await binding.boundAccounts()
-    print("bound accts", accts)
     if not accts:
         return None
     acct = accts[0]
@@ -286,7 +284,6 @@ async def formRenderer(
     logoutForm: RenderableForm,
     foodList: Optional[FoodList],
 ) -> dict:
-    print("fl", foodList)
     result = []
     if foodList is not None:
         async for eachFood in foodList.foodsForUser():

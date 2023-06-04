@@ -46,24 +46,23 @@ asyncDriver = adaptSynchronousDriver(
     (lambda: sqlite3.connect("food-wiki.sqlite")), sqlite3.paramstyle
 )
 
+foodTable = """
+CREATE TABLE food (
+    name VARCHAR NOT NULL,
+    rating INTEGER NOT NULL,
+    account_id VARCHAR NOT NULL,
+    FOREIGN KEY(account_id)
+      REFERENCES account(account_id)
+      ON DELETE CASCADE
+)
+"""
+
 
 async def applySchema() -> None:
-    print("creating...")
     await applyBasicSchema(asyncDriver)
     async with transaction(asyncDriver) as c:
         cur = await c.cursor()
-        await cur.execute(
-            """
-        create table food (
-            name varchar not null,
-            rating integer not null,
-            account_id varchar not null,
-            foreign key(account_id)
-                references account(account_id) on delete cascade
-        )
-        """
-        )
-    print("created!")
+        await cur.execute(foodTable)
 
 
 @dataclass

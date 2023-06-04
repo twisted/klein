@@ -1,13 +1,13 @@
 
-HTML Forms and Dependency Injection
-===================================
+Handling Forms and API Calls
+============================
 
 In :ref:`“Streamlined Apps With HTML and JSON” <htmljson>` we set up a basic
 site that could render HTML and read data.  However, for most applications, you
-will need some way for users to input data; in other words: handling forms,
+will need some way for users to **input** data; in other words: handling forms,
 both rendering them and posting them.
 
-In order to handle forms `securely
+In order to handle HTML forms from the browser `securely
 <https://owasp.org/www-community/attacks/csrf>`_, we also have to implement
 some form of authenticated session along with them.
 

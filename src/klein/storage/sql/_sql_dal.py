@@ -55,30 +55,43 @@ class SessionDAL(Protocol):
 
     @statement(
         sql="delete from session where "
-        "session_id = {session_id} and "
+        "session_id = {sessionID} and "
         "confidential = true"
     )
-    async def deleteSession(self, session_id: str) -> None:
+    async def deleteSession(self, sessionID: str) -> None:
         """
         Signature for deleting a session by session ID.
         """
 
-    @statement(sql="insert into session values ({session_id}, {confidential})")
-    async def insertSession(self, session_id: str, confidential: bool) -> None:
+    @statement(
+        sql="""
+        insert into session
+            ( session_id,  confidential,   created,   mechanism )
+        values
+            ({sessionID}, {confidential}, {created}, {mechanism})
+        """
+    )
+    async def insertSession(
+        self, sessionID: str, confidential: bool, created: float, mechanism: str
+    ) -> None:
         """
         Signature for deleting a session by session ID.
         """
 
     @query(
-        sql=(
-            "select session_id, confidential from session "
-            "where session_id = {session_id} and "
-            "confidential = {is_confidential}"
-        ),
+        sql="""
+        select session_id, confidential from session
+        where session_id = {session_id} and
+        confidential = {is_confidential} and
+        mechanism = {mechanism}
+        """,
         load=maybe(SessionRecord),
     )
     async def sessionByID(
-        self, session_id: str, is_confidential: bool
+        self,
+        session_id: str,
+        is_confidential: bool,
+        mechanism: str,
     ) -> Optional[SessionRecord]:
         """
         Signature for getting a session by session ID.

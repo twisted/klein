@@ -2,6 +2,8 @@
 CREATE TABLE session (
   session_id VARCHAR NOT NULL,
   confidential BOOLEAN NOT NULL,
+  created REAL NOT NULL,
+  mechanism TEXT NOT NULL,
   PRIMARY KEY (session_id)
 );
 

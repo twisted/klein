@@ -8,6 +8,7 @@ from __future__ import annotations
 from binascii import hexlify
 from dataclasses import dataclass, field
 from os import urandom
+from time import time
 from typing import (
     Any,
     Awaitable,
@@ -151,7 +152,9 @@ class SessionStore:
         self, isConfidential: bool, authenticatedBy: SessionMechanism
     ) -> ISession:
         identifier = hexlify(urandom(32)).decode("ascii")
-        await self.db.insertSession(identifier, isConfidential)
+        await self.db.insertSession(
+            identifier, isConfidential, time(), authenticatedBy.name
+        )
         result = SQLSession(
             self,
             identifier=identifier,
@@ -167,7 +170,9 @@ class SessionStore:
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
     ) -> ISession:
-        record = await self.db.sessionByID(identifier, isConfidential)
+        record = await self.db.sessionByID(
+            identifier, isConfidential, authenticatedBy.name
+        )
         if record is None:
             raise NoSuchSession("session not found")
         return SQLSession.realize(record, self, authenticatedBy)
@@ -325,9 +330,12 @@ class SQLSessionProcurer:
     associated with both it and the request.
     """
 
-    _connectable: AsyncConnectable
-    _authorizers: Sequence[SQLAuthorizer[Any]]
-    _passwordEngine: PasswordEngine = field(default_factory=defaultSecureEngine)
+    connectable: AsyncConnectable
+    authorizers: Sequence[SQLAuthorizer[Any]]
+    passwordEngine: PasswordEngine = field(default_factory=defaultSecureEngine)
+    storeToProcurer: Callable[
+        [ISessionStore], SessionProcurer
+    ] = SessionProcurer
 
     @eagerDeferredCoroutine
     async def procureSession(
@@ -352,11 +360,11 @@ class SQLSessionProcurer:
         allAuthorizers: Sequence[SQLAuthorizer[Any]] = [
             simpleAccountBinding.authorizer,
             logMeIn.authorizer,
-            *self._authorizers,
+            *self.authorizers,
         ]
-        transaction = await requestBoundTransaction(request, self._connectable)
-        procurer = SessionProcurer(
-            SessionStore(transaction, allAuthorizers, self._passwordEngine)
+        transaction = await requestBoundTransaction(request, self.connectable)
+        procurer = self.storeToProcurer(
+            SessionStore(transaction, allAuthorizers, self.passwordEngine)
         )
         return await procurer.procureSession(request, forceInsecure)
 

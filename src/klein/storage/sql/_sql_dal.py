@@ -1,3 +1,4 @@
+# -*- test-case-name: klein.storage.sql.test,klein.storage.test.test_common -*-
 from __future__ import annotations
 
 from datetime import datetime

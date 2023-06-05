@@ -6,11 +6,13 @@ from foodwiki_db import allAuthorizers
 from twisted.internet.defer import Deferred, succeed
 from twisted.web.iweb import IRequest
 
-from klein import Requirer
+from klein import Klein, Requirer
 from klein.interfaces import ISession
 from klein.storage.dbxs.dbapi_async import adaptSynchronousDriver
 from klein.storage.sql import SQLSessionProcurer
 
+
+app = Klein()
 
 DB_FILE = "food-wiki.sqlite"
 

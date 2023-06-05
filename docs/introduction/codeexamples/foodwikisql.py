@@ -50,8 +50,8 @@ foodTable = """
 CREATE TABLE food (
     name VARCHAR NOT NULL,
     rating INTEGER NOT NULL,
-    account_id VARCHAR NOT NULL,
-    FOREIGN KEY(account_id)
+    rated_by VARCHAR NOT NULL,
+    FOREIGN KEY(rated_by)
       REFERENCES account(account_id)
       ON DELETE CASCADE
 )
@@ -70,7 +70,7 @@ class Food:
     txn: AsyncConnection
     name: str
     rating: int
-    accountID: str
+    ratedByAccountID: str
 
 
 class FoodListSQL(Protocol):
@@ -108,23 +108,21 @@ class FoodList:
 
 
 @authorizerFor(FoodList)
-async def flub(
+async def authorizeFoodList(
     store: ISessionStore, conn: AsyncConnection, session: ISession
 ) -> Optional[FoodList]:
-    authd = await session.authorize([ISimpleAccountBinding])
-    binding = authd[ISimpleAccountBinding]
-    assert binding is not None
-    accts = await binding.boundAccounts()
+    accts = await (await session.authorize([ISimpleAccountBinding]))[
+        ISimpleAccountBinding
+    ].boundAccounts()
     if not accts:
         return None
-    acct = accts[0]
-    return FoodList(acct, FoodListQueries(conn))
+    return FoodList(accts[0], FoodListQueries(conn))
 
 
 if not os.path.exists("food-wiki.sqlite"):
     Deferred.fromCoroutine(applySchema())
 
-sessions = SQLSessionProcurer(asyncDriver, [flub.authorizer])
+sessions = SQLSessionProcurer(asyncDriver, [authorizeFoodList.authorizer])
 requirer = Requirer()
 
 

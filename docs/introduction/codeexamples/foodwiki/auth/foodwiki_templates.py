@@ -8,13 +8,38 @@ page = Plating(
         tags.head(
             tags.title("Food Ratings Example: ", slot("pageTitle")),
             slot("headExtras"),
+            tags.style(
+                """
+            .nav a {
+                padding-left: 2em;
+            }
+            form {
+                border: 1px solid grey;
+                border-radius: 1em;
+                padding: 1em;
+            }
+            form label {
+                display: block;
+                padding: 0.2em;
+            }
+            """
+            ),
         ),
         tags.body(
+            tags.div(class_="nav")(
+                "navigation:",
+                tags.a(href="/")("home"),
+                tags.a(href="/login")("login"),
+                tags.a(href="/signup")("signup"),
+                tags.a(href="/api-keys")("API Key Management"),
+                tags.a(href="/logout")("logout"),
+            ),
             tags.h1("Food Ratings Example: ", slot("pageTitle")),
             tags.div(slot(Plating.CONTENT)),
         ),
     ),
     defaults={"pageTitle": "", "headExtras": ""},
+    presentation_slots=["pageTitle", "headExtras"],
 )
 
 
@@ -23,6 +48,15 @@ def food(name: str, rating: str) -> Tag:
     return tags.div(
         tags.div("food:", name),
         tags.div("rating:", rating),
+    )
+
+
+@page.fragment
+def linkedFood(name: str, rating: str, username: str) -> Tag:
+    return tags.div(
+        tags.div("food:", name),
+        tags.div("rating:", rating),
+        tags.div("user:", tags.a(href=["/users/", username])(username)),
     )
 
 

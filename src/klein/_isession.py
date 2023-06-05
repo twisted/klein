@@ -100,7 +100,7 @@ class ISession(Interface):
     about how the session was negotiated with the client software, and
     """
 
-    identifier = Attribute(
+    identifier: str = Attribute(
         """
         L{str} identifying a session.
 

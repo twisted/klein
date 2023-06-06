@@ -30,13 +30,9 @@ async def signup(
         app.route("/signup", methods=["GET"]),
         tags.div(tags.h1("sign up pls"), slot("signupForm")),
     ),
-    binding=Authorization(ISimpleAccountBinding),
     theForm=Form.rendererFor(signup, action="/signup"),
 )
-async def showSignup(
-    binding: ISimpleAccountBinding,
-    theForm: RenderableForm,
-) -> dict:
+async def showSignup(theForm: RenderableForm) -> dict:
     return {"signupForm": theForm}
 
 

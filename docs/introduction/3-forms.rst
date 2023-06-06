@@ -3,8 +3,8 @@
 Handling Form Input
 ===================
 
-Prologue
---------
+Introduction
+------------
 
 In :ref:`“Streamlined Apps With HTML and JSON” <htmljson>` we set up a basic
 site that could render HTML and read data.  However, for most applications, you
@@ -155,6 +155,9 @@ are not used in your queries, or if the queries use arguments you didn't
 provide.  However, you will need to verify that the SQL itself is valid; we'll
 cover that in a later section on testing.
 
+Creating an Authorizer
+----------------------
+
 Now that we've got a basic data-access layer in place, let's put some access
 control in place.  For this simple anonymous site, the access control is pretty
 lenient; everyone should bea uthorized to access these methods all the time.
@@ -185,3 +188,145 @@ above:
 
 .. literalinclude:: codeexamples/foodwiki/anon/foodwiki_db.py
    :lines: 70
+
+Now that everything is set up, let's move on to our main application and
+declare some routes!
+
+Handling Form Fields with Requirer
+----------------------------------
+
+For this quick, anonymous version of the application, let's first set up a
+route to rate foods, which will serve as our form.
+
+.. literalinclude:: codeexamples/foodwiki/anon/foodwiki_routes.py
+   :pyobject: postHandler
+
+As before, you can see we've wrapped the ``Plating.routed`` decorator around
+our klein app's ``route`` method decorator, which takes care of templating and
+handling our return value as the mapping of slot names to slot values.
+However, we are now wrapping an additional decorator around the ``routed``
+decorator: ``require``.
+
+As its first (positional) argument, ``Requirer.require`` takes a decorator,
+something that expects to receive a Twisted HTTP request object (or ``self``,
+then, a request, if you're using a ``Klein`` bound to an instance) as its first
+argument, as well as any additional arguments.  So you can use
+``Plating.routed`` or ``Klein.route`` here, depending on whether your
+application requires HTML templating or not.
+
+.. note::
+
+   ``Requirer.require`` *consumes* the request that it is given, so you can't
+   access it any more.  The idea here is that interacting with ``Request``
+   directly is a low-level way of expressing what values you require from the
+   request, and ``Requirer`` is trying to provide a high-level way to get those
+   requirements, where you've expressed the things you need and your route is
+   not even invoked if they can't be retrieved.  If you need data from the
+   request that is not exposed by Klein, you can implement your own
+   ``IRequiredParameter`` to take the request and supply whatever value you
+   require.
+
+Next, it takes a set of keyword arguments.  Each argument corresponds to an
+argument taken by the decorated function, and is an ``IRequiredParameter``
+which describes what will be passed and how it will be fetched from either the
+request in the database.
+
+In simpler terms, in code like this::
+
+    @requirer.require(..., something=SomeRequiredParameter())
+    def routeHandler(something: SomeRequiredParameterType):
+        ...
+
+What is happening is that ``routeHandler`` is saying to Klein, "I take a
+parameter called ``something``, which ``SomeRequiredParameter`` knows how to
+supply".
+
+In our ``postHandler`` example above, ``require`` is given instructions to pass
+3 relevant parameters to ``postHandler``.  Let's look at the first two:
+
+1. ``name``, which is text form field
+2. ``rating``, which an integer form field with a value between 1 and 5
+
+The first two values here are fairly simple; ``klein.Field`` declares that
+they'll be extracted from a form POST in multipart/form-data or JSON formats,
+it will validate them, and then pass them along to ``postHandler`` as arguments
+assuming everything looks correct.
+
+Using the authorizer we created with ``Authorization``
+------------------------------------------------------
+
+The third requirement is ``foodRater``, which is *a request to authorize the
+current session* to access a ``FoodRater`` object, using ``Authorization`` .
+
+Remember that ``@authorizerFor(FoodRater)`` function that we wrote before?  It
+pulls the ``ISession`` implementation from our ``ISession`` prerequisite,
+checks if the user is authorized for ``FoodRater``, then passes the created
+object along to us.  In other words, to use this route, *an authorization for a
+food rater is required*.
+
+Finally, our implementation job is very simple here.  We call the ``rateFood``
+method on the ``FoodRater`` we have been passed, then format some outputs for
+our template, including a synthetic redirect to send the user back over to
+``/`` to look at the rating list after the form post is processed.
+
+Rendering an HTML form with ``Form.rendererFor``
+------------------------------------------------
+
+It might have seemed slightly odd to describe the *handler* for a form before
+we've even drawn the form itself, but the idea behind this is that you think
+first about what you want to do with the form, what values are required, and
+then the description of those values serves as the description of the form
+itself.  So now that we have a function decorated with ``@requirer.require``
+that takes some ``klein.Field`` parameters, we can get a renderable form out of
+it, to render on the front page.
+
+.. literalinclude:: codeexamples/foodwiki/anon/foodwiki_routes.py
+   :pyobject: frontPage
+
+In the ``GET`` route for ``/``, we do not require any other ``Field``\ s, but we
+still require the ``FoodRater`` authorization in order to use its
+``allRatings`` method.  Once again, we ask for it via an ``IRequiredParameter``
+passed to ``require``, by calling
+``klein.Form.rendererFor(theRouteWithRequiredFields)``, which will pass along a
+``RenderableForm`` object, that can be dropped into a slot in a ``Plating``
+template.
+
+Here, we also use the ``food`` fragment that we declared before in our template
+module, which allows us to embed more complex template fragments into a
+list-item slot.
+
+Handling Validation Errors with ``Form.onValidationFailureFor``
+---------------------------------------------------------------
+
+Next, we need to do something about validation failures.  We don't want our
+users to see a generic error message (or worse, a traceback) when something
+doesn't validate, and we'd like Klein to be able to communicate the nature of
+the validation issue on a per-field basis.  To do that, we use
+``Form.onValidationFailureFor(theRouteWithRequiredFields)``.  This decorator
+functions similarly to ``app.route``, as it also handles a URL, although
+*which* URL it's handling depends on the post-handling route it is wrapping.
+
+.. literalinclude:: codeexamples/foodwiki/anon/foodwiki_routes.py
+   :pyobject: validationFailed
+
+This route defines a template and logic to use to render the form-validation
+failure on ``/rate-food``.  By using ``page.routed``, we ensure that the
+template used is not a generic placeholder default for the form being handled,
+but contains all the relevant decorations for our page template.
+
+Putting it all together
+-----------------------
+
+.. literalinclude:: codeexamples/foodwiki/anon/foodwiki_routes.py
+   :lines: 70-81
+
+Finally, we ensure that the database schema is applied, and we start our server
+up using ``app.run`` as usual.  You should be able to start up a server and see
+the example food-rating app there, post a form, try to post negative stars or
+more than five stars, see the validation either fail or succeed depending on
+those values, and see all the ratings you've put into the system.
+
+Next up, we will cover a modified version of this application that shows you
+how to implement a signup form, a login form, and actually leverage the power
+of an ``Authorizer`` when authorization is not available to every
+unauthenticated user.

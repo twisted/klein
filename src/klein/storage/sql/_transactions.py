@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Callable, Dict
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 
 from attrs import Factory, define, field
 from zope.interface import Interface, implementer
@@ -50,8 +50,10 @@ class TransactionRequestAssociator:
 
     request: Request
     map: Dict[AsyncConnectable, AsyncConnection] = field(default=Factory(dict))
+    waitMap: Dict[AsyncConnectable, Awaitable[None]] = field(
+        default=Factory(dict)
+    )
     attached: bool = False
-    committing: bool = False
 
     @eagerDeferredCoroutine
     async def transactionForConnectable(
@@ -60,12 +62,17 @@ class TransactionRequestAssociator:
         """
         Retrieve a transaction from the async connection.
         """
+        if connectable in self.waitMap:
+            await self.waitMap[connectable]
         if connectable in self.map:
             return self.map[connectable]
         reqctx = IRequirementContext(self.request)
+        waiter = self.waitMap[connectable] = Deferred()
         await reqctx.enter_async_context(self.transactify())
         cxn = await connectable.connect()
         self.map[connectable] = cxn
+        del self.waitMap[connectable]
+        waiter.callback(None)
         return cxn
 
     @asynccontextmanager
@@ -76,10 +83,13 @@ class TransactionRequestAssociator:
         @param ignored: To be usable as a Deferred callback, accept an
             argument, but discard it.
         """
+        print("start")
         try:
             yield
         finally:
-            self.committing = True
+            # Break cycle, allow for sub-transactions later (i.e. in renderers)
+            print("dissociating")
+            self.request.unsetComponent(ITransactionRequestAssociator)
             await gatherResults(
                 [
                     Deferred.fromCoroutine(value.commit())

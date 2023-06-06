@@ -3,15 +3,28 @@ Simple example of a public website.
 """
 
 
-from typing import Optional
+from typing import Optional, Union
 
 from foodwiki_config import app, requirer
 from foodwiki_db import FoodCritic, RatingsViewer
 from foodwiki_templates import food, linkedFood, page, refresh
 
-from twisted.web.template import slot, tags
+from twisted.web.template import Tag, slot, tags
 
-from klein import Authorization, Field, FieldValues, Form, RenderableForm
+from klein import (
+    Authorization,
+    Field,
+    FieldValues,
+    Form,
+    Plating,
+    RenderableForm,
+)
+from klein.interfaces import ISimpleAccount
+
+
+@page.widgeted
+def notLoggedIn() -> dict:
+    return {Plating.CONTENT: "You are not logged in."}
 
 
 @requirer.require(
@@ -21,7 +34,9 @@ from klein import Authorization, Field, FieldValues, Form, RenderableForm
     ),
     name=Field.text(),
     rating=Field.number(minimum=1, maximum=5, kind=int),
-    critic=Authorization(FoodCritic),
+    critic=Authorization(
+        FoodCritic, whenDenied=lambda interface, instance: notLoggedIn.widget()
+    ),
 )
 async def postHandler(name: str, rating: int, critic: FoodCritic) -> dict:
     await critic.rateFood(name, rating)
@@ -88,6 +103,22 @@ async def userPage(viewer: RatingsViewer, username: str) -> dict:
         "userRatings": userRatings,
         "pageTitle": f"ratings by {username}",
     }
+
+
+@requirer.require(
+    page.renderMethod, critic=Authorization(ISimpleAccount, required=False)
+)
+def whenLoggedIn(tag: Tag, critic: Optional[ISimpleAccount]) -> Union[Tag, str]:
+    return "" if critic is None else tag
+
+
+@requirer.require(
+    page.renderMethod, critic=Authorization(FoodCritic, required=False)
+)
+def whenLoggedOut(
+    tag: Tag, critic: Optional[ISimpleAccount]
+) -> Union[Tag, str]:
+    return "" if critic is not None else tag
 
 
 @requirer.require(

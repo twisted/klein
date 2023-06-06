@@ -20,7 +20,7 @@ from klein.storage.memory import MemoryAccountStore, MemorySessionStore
 from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
-from ..dbxs.dbapi_async import transaction
+from ..dbxs.dbapi_async import AsyncConnection, transaction
 from ..dbxs.testing import MemoryPool, immediateTest
 from ..passwords.testing import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer, applyBasicSchema
@@ -282,12 +282,20 @@ class CommonStoreTests(TestCase):
             isSecure: bool, mechanism: SessionMechanism
         ) -> ISession:
             async with transaction(pool.connectable) as c:
+
+                async def getc() -> AsyncConnection:
+                    return c
+
                 return await SessionStore(
-                    c, [], engineForTesting(self)
+                    getc, [], engineForTesting(self)
                 ).newSession(isSecure, mechanism)
 
         async with transaction(pool.connectable) as c:
-            sampleStore = SessionStore(c, [], engineForTesting(self))
+
+            async def getc() -> AsyncConnection:
+                return c
+
+            sampleStore = SessionStore(getc, [], engineForTesting(self))
             sampleSession = await newSession(True, SessionMechanism.Cookie)
             b = AccountSessionBinding(sampleStore, sampleSession, c)
             self.assertIsNot(

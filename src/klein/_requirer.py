@@ -164,24 +164,31 @@ class Requirer:
                 instance: Any, request: Request, *args: Any, **routeParams: Any
             ) -> Any:
                 try:
-                    async with RequirementContext() as stack:
-                        request.setComponent(IRequirementContext, stack)
-                        injected = routeParams.copy()
-                        await lifecycle.runPrepareHooks(instance, request)
-                        for k, injector in injectors.items():
-                            injected[k] = await _maybeAsync(
-                                injector.injectValue(
-                                    instance, request, routeParams
+                    try:
+                        shouldSet = False
+                        async with RequirementContext() as stack:
+                            if IRequirementContext(request, None) is None:
+                                shouldSet = True
+                                request.setComponent(IRequirementContext, stack)
+                            injected = routeParams.copy()
+                            await lifecycle.runPrepareHooks(instance, request)
+                            for k, injector in injectors.items():
+                                injected[k] = await _maybeAsync(
+                                    injector.injectValue(
+                                        instance, request, routeParams
+                                    )
+                                )
+                            return await _maybeAsync(
+                                _call(
+                                    instance,
+                                    functionWithRequirements,
+                                    *args,
+                                    **injected,
                                 )
                             )
-                        return await _maybeAsync(
-                            _call(
-                                instance,
-                                functionWithRequirements,
-                                *args,
-                                **injected,
-                            )
-                        )
+                    finally:
+                        if shouldSet:
+                            request.unsetComponent(IRequirementContext)
                 except EarlyExit as ee:
                     return ee.alternateReturnValue
 

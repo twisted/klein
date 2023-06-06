@@ -73,7 +73,7 @@ class SQLSession:
         # ^ mypy really wants this container to be homogenous along some axis,
         # so a dict with value types that depend on keys doesn't look right to
         # it.
-        txn = self._sessionStore._transaction
+        txn = await self._sessionStore._transaction()
         store = self._sessionStore
 
         async def doAuthorize(a: SQLAuthorizer[T]) -> None:
@@ -117,16 +117,9 @@ class SessionStore:
     stores sessions in a database.
     """
 
-    _transaction: AsyncConnection
+    _transaction: Callable[[], Awaitable[AsyncConnection]]
     _authorizers: Sequence[SQLAuthorizer[object]]
     _passwordEngine: PasswordEngine
-
-    @property
-    def db(self) -> SessionDAL:
-        """
-        return database wrapper
-        """
-        return SessionDB(self._transaction)
 
     async def _sentInsecurely(self, tokens: Sequence[str]) -> None:
         """
@@ -138,8 +131,9 @@ class SessionStore:
         @return: a L{Deferred} that fires when the tokens have been
             invalidated.
         """
+        db = SessionDB(await self._transaction())
         for token in tokens:
-            await self.db.deleteSession(token)
+            await db.deleteSession(token)
 
     def sentInsecurely(self, tokens: Sequence[str]) -> None:
         """
@@ -152,7 +146,8 @@ class SessionStore:
         self, isConfidential: bool, authenticatedBy: SessionMechanism
     ) -> ISession:
         identifier = hexlify(urandom(32)).decode("ascii")
-        await self.db.insertSession(
+        db = SessionDB(await self._transaction())
+        await db.insertSession(
             identifier, isConfidential, time(), authenticatedBy.name
         )
         result = SQLSession(
@@ -170,7 +165,8 @@ class SessionStore:
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
     ) -> ISession:
-        record = await self.db.sessionByID(
+        db = SessionDB(await self._transaction())
+        record = await db.sessionByID(
             identifier, isConfidential, authenticatedBy.name
         )
         if record is None:
@@ -362,9 +358,12 @@ class SQLSessionProcurer:
             logMeIn.authorizer,
             *self.authorizers,
         ]
-        transaction = await requestBoundTransaction(request, self.connectable)
+
+        async def getTransaction() -> AsyncConnection:
+            return await requestBoundTransaction(request, self.connectable)
+
         procurer = self.storeToProcurer(
-            SessionStore(transaction, allAuthorizers, self.passwordEngine)
+            SessionStore(getTransaction, allAuthorizers, self.passwordEngine)
         )
         return await procurer.procureSession(request, forceInsecure)
 

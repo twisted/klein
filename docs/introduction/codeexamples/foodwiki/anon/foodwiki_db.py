@@ -61,10 +61,10 @@ class FoodRater:
 
 
 @authorizerFor(FoodRater)
-async def authorizeFoodList(
+async def authorizeFoodRater(
     store: ISessionStore, conn: AsyncConnection, session: ISession
 ) -> Optional[FoodRater]:
     return FoodRater(accessRatings(conn))
 
 
-allAuthorizers = [authorizeFoodList.authorizer]
+allAuthorizers = [authorizeFoodRater.authorizer]

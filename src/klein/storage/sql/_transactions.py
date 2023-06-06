@@ -83,12 +83,10 @@ class TransactionRequestAssociator:
         @param ignored: To be usable as a Deferred callback, accept an
             argument, but discard it.
         """
-        print("start")
         try:
             yield
         finally:
             # Break cycle, allow for sub-transactions later (i.e. in renderers)
-            print("dissociating")
             self.request.unsetComponent(ITransactionRequestAssociator)
             await gatherResults(
                 [

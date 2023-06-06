@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 from attrs import Factory, define, field
 from zope.interface import Interface, implementer
 
-from twisted.internet.defer import Deferred, gatherResults
+from twisted.internet.defer import Deferred, gatherResults, succeed
 from twisted.logger import Logger
 from twisted.python.components import Componentized, registerAdapter
 from twisted.web.iweb import IRequest
@@ -41,6 +41,9 @@ class ITransactionRequestAssociator(Interface):
         """
 
 
+synchronous = succeed(None)
+
+
 @implementer(ITransactionRequestAssociator)
 @define
 class TransactionRequestAssociator:
@@ -62,8 +65,7 @@ class TransactionRequestAssociator:
         """
         Retrieve a transaction from the async connection.
         """
-        if connectable in self.waitMap:
-            await self.waitMap[connectable]
+        await self.waitMap.get(connectable, synchronous)
         if connectable in self.map:
             return self.map[connectable]
         reqctx = IRequirementContext(self.request)

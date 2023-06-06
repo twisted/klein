@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable, List, Optional, TypeVar
 
 import attr
 from treq import content
@@ -20,10 +20,13 @@ from klein.storage.memory import MemoryAccountStore, MemorySessionStore
 from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
-from ..dbxs.dbapi_async import AsyncConnection, transaction
+from ..dbxs.dbapi_async import transaction
 from ..dbxs.testing import MemoryPool, immediateTest
 from ..passwords.testing import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer, applyBasicSchema
+
+
+T = TypeVar("T")
 
 
 @attr.s(auto_attribs=True, hash=False)
@@ -278,24 +281,22 @@ class CommonStoreTests(TestCase):
 
         await applyBasicSchema(pool.connectable)
 
+        def asyncify(x: T) -> Callable[[], Awaitable[T]]:
+            async def get() -> T:
+                return x
+
+            return get
+
         async def newSession(
             isSecure: bool, mechanism: SessionMechanism
         ) -> ISession:
             async with transaction(pool.connectable) as c:
-
-                async def getc() -> AsyncConnection:
-                    return c
-
                 return await SessionStore(
-                    getc, [], engineForTesting(self)
+                    asyncify(c), [], engineForTesting(self)
                 ).newSession(isSecure, mechanism)
 
         async with transaction(pool.connectable) as c:
-
-            async def getc() -> AsyncConnection:
-                return c
-
-            sampleStore = SessionStore(getc, [], engineForTesting(self))
+            sampleStore = SessionStore(asyncify(c), [], engineForTesting(self))
             sampleSession = await newSession(True, SessionMechanism.Cookie)
             b = AccountSessionBinding(sampleStore, sampleSession, c)
             self.assertIsNot(

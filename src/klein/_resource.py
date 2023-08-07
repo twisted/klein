@@ -304,16 +304,18 @@ class KleinResource(Resource):
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
-        def write_response(r: object) -> None:
-            if r is not StandInResource:
-                if isinstance(r, str):
-                    r = r.encode("utf-8")
+        def write_response(r: Union[StandInResource, str, bytes, int, None]) -> None:
+            if r is StandInResource:
+                return
 
-                if (r is not None) and (r != NOT_DONE_YET):
-                    request.write(r)
+            if isinstance(r, str):
+                r = r.encode("utf-8")
 
-                if not request_finished[0]:
-                    request.finish()
+            if isinstance(r, bytes):
+                request.write(r)
+
+            if not request_finished[0]:
+                request.finish()
 
         d.addCallback(write_response)
         d.addErrback(log.err, _why="Unhandled Error writing response")

@@ -12,7 +12,6 @@ from twisted.python.failure import Failure
 from twisted.web import server
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
-from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
 
 from ._dihttp import Response
@@ -304,7 +303,9 @@ class KleinResource(Resource):
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
-        def write_response(r: Union[StandInResource, str, bytes, int, None]) -> None:
+        def write_response(
+            r: Union[StandInResource, str, bytes, int, None]
+        ) -> None:
             if r is StandInResource:
                 return
 

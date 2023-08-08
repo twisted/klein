@@ -1315,7 +1315,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         Raises URLDecodeError if SERVER_NAME can't be decoded.
         """
         request = MockRequest(b"/foo")
-        request.getRequestHostname = (  # type: ignore[assignment]
+        request.getRequestHostname = (  # type:ignore[method-assign]
             lambda: b"f\xc3\xc3\xb6"
         )
         e = self.assertRaises(URLDecodeError, extractURLparts, request)
@@ -1345,7 +1345,7 @@ class ExtractURLpartsTests(SynchronousTestCase):
         """
         request = MockRequest(b"/f\xc3\xc3\xb6")
         request.prepath = [b"f\xc3\xc3\xb6"]
-        request.getRequestHostname = (  # type: ignore[assignment]
+        request.getRequestHostname = (  # type:ignore[method-assign]
             lambda: b"f\xc3\xc3\xb6"
         )
         e = self.assertRaises(URLDecodeError, extractURLparts, request)

@@ -148,9 +148,14 @@ class Field:
         value = self.value
         if value is None:
             value = ""  # type: ignore[unreachable]
+        fieldName = self.formFieldName
+
+        if fieldName is None:
+            raise ValueError("Cannot generate tags for unnamed form field.")
+
         input_tag = tags.input(
             type=self.formInputType,
-            name=self.formFieldName,  # type: ignore[arg-type]
+            name=fieldName,
             value=value,
         )
         error_tags = []
@@ -309,7 +314,7 @@ class RenderableForm:
     _method: str
     _enctype: str
     _encoding: str
-    prevalidationValues: Dict[Field, Optional[str]] = attr.ib(factory=dict)
+    prevalidationValues: Dict[Field, str] = attr.ib(factory=dict)
     validationErrors: Dict[Field, ValidationError] = attr.ib(factory=dict)
 
     ENCTYPE_FORM_DATA = "multipart/form-data"
@@ -529,7 +534,7 @@ class FieldValues:
 
     form: "Form"
     arguments: Dict[str, Any]
-    prevalidationValues: Dict[Field, Optional[str]]
+    prevalidationValues: Dict[Field, str]
     validationErrors: Dict[Field, ValidationError]
     _injectionComponents: Componentized
 

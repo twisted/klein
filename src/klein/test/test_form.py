@@ -8,6 +8,7 @@ from treq.testing import StubTreq
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import nativeString
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.web.error import FlattenerError
 from twisted.web.iweb import IRequest
 from twisted.web.template import Element, TagLoader, renderer, tags
 
@@ -71,6 +72,13 @@ class TestObject:
     )
     def danglingParameter(self, dangling: str) -> None:
         "..."
+
+    @requirer.require(
+        router.route("/dangling-param", methods=["GET"]),
+        form=Form.rendererFor(danglingParameter, action="/dangling-param"),
+    )
+    def renderDanglingParameter(self, form: Form) -> Form:
+        return form
 
     @requirer.require(
         router.route("/handle", methods=["POST"]),
@@ -365,7 +373,22 @@ class TestForms(SynchronousTestCase):
         errors = self.flushLoggedErrors(ValueError)
         self.assertEqual(len(errors), 1)
         self.assertIn(
-            str(errors[0].value), "Cannot extract unnamed form field."
+            "Cannot extract unnamed form field.",
+            str(errors[0].value),
+        )
+
+        self.successResultOf(
+            stub.get(
+                "https://localhost/dangling-param",
+                headers={b"X-Test-Session": session.identifier},
+            ),
+        )
+        self.assertEqual(response.code, 500)
+        errors = self.flushLoggedErrors(FlattenerError)
+        self.assertEqual(len(errors), 1)
+        self.assertIn(
+            "Cannot generate tags for unnamed form field.",
+            str(errors[0].value.args[0]),
         )
 
     def test_handlingGET(self) -> None:

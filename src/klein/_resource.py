@@ -12,7 +12,6 @@ from twisted.python.failure import Failure
 from twisted.web import server
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
-from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
 
 from ._dihttp import Response
@@ -304,16 +303,20 @@ class KleinResource(Resource):
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
-        def write_response(r: object) -> None:
-            if r is not StandInResource:
-                if isinstance(r, str):
-                    r = r.encode("utf-8")
+        def write_response(
+            r: Union[_StandInResource, str, bytes, int, None]
+        ) -> None:
+            if r is StandInResource:
+                return
 
-                if (r is not None) and (r != NOT_DONE_YET):
-                    request.write(r)
+            if isinstance(r, str):
+                r = r.encode("utf-8")
 
-                if not request_finished[0]:
-                    request.finish()
+            if isinstance(r, bytes):
+                request.write(r)
+
+            if not request_finished[0]:
+                request.finish()
 
         d.addCallback(write_response)
         d.addErrback(log.err, _why="Unhandled Error writing response")

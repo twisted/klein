@@ -7,6 +7,6 @@ incremental==21.3.0
 PyHamcrest==2.0.4
 six==1.16.0
 Tubes==0.2.1
-Werkzeug==2.3.4; python_version > '3.7'
+Werkzeug==2.3.6; python_version > '3.7'
 Werkzeug==2.1.2; python_version <= '3.7'
 zope.interface==6.0

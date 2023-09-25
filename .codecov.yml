@@ -13,3 +13,6 @@ coverage:
       default:
         informational: false
         target: 100%
+
+ignore:
+  - "src/klein/test/typing_*.py"

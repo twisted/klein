@@ -4,7 +4,7 @@ Example -- Disabling signal handler installation
 
 You have the possibility to print raised errors directly in the file descriptor specified in the ``Klein.run()`` ``logFile`` parameter, it can be useful for troubleshooting or logging fins.
 
-Below is an example of such implementation, the raised errors will be printed in ``sys.stdout`` by default : 
+Below is an example of such implementation, the raised errors will be printed in ``sys.stdout`` by default :
 
 
 .. code-block:: python

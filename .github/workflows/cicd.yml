@@ -194,24 +194,24 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.7", "3.9", "3.10", "3.11"]
-        twisted-version: ["21.2", "22.1", "current"]
+        twisted-version: ["21.2", "22.1", "23.8.0"]
         tox-prefix: ["coverage"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
             python-version: "pypy-3.8"
-            twisted-version: "current"
+            twisted-version: "23.8.0"
             tox-prefix: "test"
             optional: false
           - os: "ubuntu-latest"
             python-version: "pypy-3.9"
-            twisted-version: "current"
+            twisted-version: "23.8.0"
             tox-prefix: "test"
             optional: false
           # Test Python 3.12 but allow it to fail
           - os: "ubuntu-latest"
-            python-version: "3.12.0-alpha.7"
-            twisted-version: "current"
+            python-version: "3.12.0"
+            twisted-version: "23.8.0"
             tox-prefix: "test"
             optional: true
 

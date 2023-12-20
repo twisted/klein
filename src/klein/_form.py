@@ -89,7 +89,7 @@ class Field:
     @ivar converter: The converter.
     """
 
-    converter: Callable[[AnyStr], Any]
+    converter: Callable[[str], Any]
     formInputType: str
     pythonArgumentName: Optional[str] = None
     formFieldName: Optional[str] = None

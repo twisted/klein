@@ -13,12 +13,12 @@ Klein is an open source project that welcomes contributions of all kinds coming 
 Getting started
 ===============
 
-Here is a list of shell commands that will install the dependencies of Klein, run the test suite with Python 3.8 and the current version of Twisted, compile the documentation, and check for coding style issues with flake8.
+Here is a list of shell commands that will install the dependencies of Klein, run the test suite with Python 3.8 and Twisted 23.8, compile the documentation, and check for coding style issues with flake8.
 
 .. code-block:: shell
 
    pip install --user tox
-   tox -e py38-twcurrent
+   tox -e py312-tw238
    tox -e docs
    tox -e flake8
 
@@ -45,7 +45,7 @@ Code
   Klein uses `Twisted Trial <https://docs.twisted.org/en/stable/api/twisted.trial.html>`_ and `tox <https://tox.readthedocs.io/en/latest/>`_ for its tests.
   The command to run the full test suite is ``tox`` with no arguments.
   This will run tests against several versions of Python and Twisted, which can be time-consuming.
-  To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py38-twcurrent`` will run tests with Python 3.8 and the current released version of Twisted.
+  To run tests against only one or a few versions, pass a ``-e`` argument with an environment from the envlist in ``tox.ini``: for example, ``tox -e py38-tw238`` will run tests with Python 3.8 and Twisted 23.8.
   To run only one or a few specific tests in the suite, add a filename or fully-qualified Python path to the end of the test invocation: for example, ``tox klein.test.test_app.KleinTestCase.test_foo`` will run only the ``test_foo()`` method of the ``KleinTestCase`` class in ``klein/test/test_app.py``.
   These two test shortcuts can be combined to give you a quick feedback cycle, but make sure to check on the full test suite from time to time to make sure changes haven't had unexpected side effects.
 - Show us your code changes through pull requests sent to `Klein's GitHub repo <https://github.com/twisted/klein>`_.

@@ -4,9 +4,9 @@ characteristic==14.3.0
 constantly==15.1.0
 hyperlink==21.0.0
 incremental==22.10.0
-PyHamcrest==2.0.4
+PyHamcrest==2.1.0
 six==1.16.0
 Tubes==0.2.1
-Werkzeug==2.3.7; python_version > '3.7'
+Werkzeug==3.0.1; python_version > '3.7'
 Werkzeug==2.1.2; python_version <= '3.7'
-zope.interface==6.0
+zope.interface==6.1

@@ -263,7 +263,7 @@ def publishRelease(final: bool, test: bool = False) -> None:
             1,
         )
 
-    incrementVersion(candidate=False)
+    incrementVersion(candidate=not final)
     version = currentVersion()
 
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"

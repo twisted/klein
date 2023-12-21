@@ -66,7 +66,7 @@ def fadeToBlack() -> None:
     """
     Run black to reformat the source code.
     """
-    spawn(["tox", "-e", "black-reformat"])
+    spawn(["pre-commit", "run", "black"])
 
 
 def incrementVersion(candidate: bool) -> None:

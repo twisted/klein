@@ -308,10 +308,14 @@ def bump() -> None:
 
 @main.command()
 @commandOption(
-    "--test/--production", help="Use test (or production) PyPI server"
+    "--test/--production",
+    help="Use test (or production) PyPI server",
+    default=False,
 )
 @commandOption(
-    "--final/--candidate", help="Publish a final (or candidate) release"
+    "--final/--candidate",
+    help="Publish a final (or candidate) release",
+    default=False,
 )
 def publish(final: bool, test: bool) -> None:
     publishRelease(final=final, test=test)

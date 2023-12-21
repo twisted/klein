@@ -77,7 +77,7 @@ def incrementVersion(candidate: bool) -> None:
     """
     # Incremental doesn't have an API to do this, so we have to run a
     # subprocess. Boo.
-    args = ["python", "-m", "incremental.update", "klein"]
+    args = ["python", "-m", "incremental.update", "Klein"]
     if candidate:
         args.append("--rc")
     spawn(args)

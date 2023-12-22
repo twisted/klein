@@ -1,7 +1,7 @@
 NEWS
 ====
 
-23.12.0 - 2023-12-21
+23.12.0 - 2023-12-22
 --------------------
 
  * Fixed a compatibility issue with Werkzeug versions greater than 2.2. [`#575 <https://github.com/twisted/klein/pull/575>`]

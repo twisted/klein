@@ -266,7 +266,7 @@ def publishRelease(final: bool, test: bool = False) -> None:
     incrementVersion(candidate=not final)
     version = currentVersion()
 
-    repository.index.add("src")
+    repository.index.add("src/klein")
     repository.index.commit(f"Update version to {version}")
 
     tagName = releaseTagName(version)

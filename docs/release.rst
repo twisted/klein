@@ -13,6 +13,9 @@ Releasing Klein
 
 #. Start with a clean (no changes) source tree on the trunk branch.
 #. Create a new release candidate: :code:`tox -e release -- start`
+#. Manually update the ``NEXT`` heading in ``NEWS.rst`` to reference the
+   version that was just updated, *without* the "rc" release-candidate tag;
+   i.e. write the ``NEWS.rst`` file as if it were for teh final release.
 #. Commit and push the branch
 #. Open a PR from the branch (follow the usual process for opening a PR).
 #. As appropriate, pull the latest code from :code:`trunk`: :code:`git checkout
@@ -20,7 +23,7 @@ Releasing Klein
 #. To publish a release candidate to PyPI: :code:`tox -e release -- publish --candidate`
 #. Obtain an approving review for the PR using the usual process.
 #. To publish a production release: :code:`tox -e release -- publish --final`
-#. In ``NEWS.rst``, add a new "Klein NEXT" section at the top, which will be
-   updated by the next release.  You do not need a separate review for this
-   addition; it should be done after the release, but before merging to trunk.
+#. In ``NEWS.rst``, add a new "NEXT" section at the top.  You do not need a
+   separate review for this addition; it should be done after the release, but
+   before merging to trunk.
 #. Merge the PR to the trunk branch.

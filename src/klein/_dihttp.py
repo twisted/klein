@@ -47,7 +47,7 @@ class RequestURL:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
-    @since: Klein 23.12.0.rc4
+    @since: Klein 23.12.0.rc5
     """
 
     @classmethod
@@ -80,7 +80,7 @@ class RequestComponent:
     """
     Require a hyperlink L{DecodedURL} object from a L{Requirer}.
 
-    @since: Klein 23.12.0.rc4
+    @since: Klein 23.12.0.rc5
     """
 
     interface: Type[Interface]
@@ -120,7 +120,7 @@ class Response:
         - a body object, which can be anything else Klein understands; for
           example, an IResource, an IRenderable, str, bytes, etc.
 
-    @since: Klein 23.12.0.rc4
+    @since: Klein 23.12.0.rc5
     """
 
     code: int = 200

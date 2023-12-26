@@ -66,7 +66,7 @@ def fadeToBlack() -> None:
     """
     Run black to reformat the source code.
     """
-    spawn(["tox", "-e", "black-reformat"])
+    spawn(["pre-commit", "run", "black"])
 
 
 def incrementVersion(candidate: bool) -> None:
@@ -77,7 +77,7 @@ def incrementVersion(candidate: bool) -> None:
     """
     # Incremental doesn't have an API to do this, so we have to run a
     # subprocess. Boo.
-    args = ["python", "-m", "incremental.update", "klein"]
+    args = ["python", "-m", "incremental.update", "Klein"]
     if candidate:
         args.append("--rc")
     spawn(args)
@@ -263,11 +263,10 @@ def publishRelease(final: bool, test: bool = False) -> None:
             1,
         )
 
-    incrementVersion(candidate=False)
+    incrementVersion(candidate=not final)
     version = currentVersion()
 
-    versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
-    repository.index.add(str(versonFile))
+    repository.index.add("src/klein")
     repository.index.commit(f"Update version to {version}")
 
     tagName = releaseTagName(version)
@@ -308,10 +307,14 @@ def bump() -> None:
 
 @main.command()
 @commandOption(
-    "--test/--production", help="Use test (or production) PyPI server"
+    "--test/--production",
+    help="Use test (or production) PyPI server",
+    default=False,
 )
 @commandOption(
-    "--final/--candidate", help="Publish a final (or candidate) release"
+    "--final/--candidate",
+    help="Publish a final (or candidate) release",
+    default=False,
 )
 def publish(final: bool, test: bool) -> None:
     publishRelease(final=final, test=test)

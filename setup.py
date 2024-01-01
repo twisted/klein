@@ -38,10 +38,17 @@ if __name__ == "__main__":
             "Werkzeug",
             "zope.interface",
         ],
+        extra_requires={
+            "sql": [
+                "alchimia",
+                "passlib",
+                "bcrypt",
+            ],
+        },
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
-        packages=["klein", "klein.storage", "klein.test"],
+        packages=["klein", "klein.storage", "klein.test", "klein.storage.test"],
         package_dir={"": "src"},
         package_data=dict(
             klein=["py.typed"],

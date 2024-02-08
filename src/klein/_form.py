@@ -267,7 +267,7 @@ class Field:
         An integer within the range [minimum, maximum].
         """
 
-        def bounded_number(text: AnyStr) -> Any:
+        def bounded_number(text: str) -> Any:
             try:
                 value = kind(text)
             except (ValueError, ArithmeticError):

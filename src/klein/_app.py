@@ -639,6 +639,7 @@ class Klein:
         logFile: Optional[IO] = None,
         endpoint_description: Optional[str] = None,
         displayTracebacks: bool = True,
+        installSignalHandlers: bool = True,
     ) -> None:
         """
         Run a minimal twisted.web server on the specified C{port}, bound to the
@@ -678,7 +679,7 @@ class Klein:
         site.displayTracebacks = displayTracebacks
 
         endpoint.listen(site)
-        reactor.run()  # type: ignore[attr-defined]
+        reactor.run(installSignalHandlers=installSignalHandlers)  # type: ignore[attr-defined]
 
 
 _globalKleinApp = Klein()

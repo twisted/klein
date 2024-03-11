@@ -12,7 +12,7 @@ from typing import (
     NoReturn,
     Optional,
     Sequence,
-    Type,
+    TypeVar,
     cast,
 )
 
@@ -29,6 +29,7 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from ._app import KleinRenderable, _call
 from ._decorators import bindable
+from ._typing_compat import Protocol
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -39,6 +40,20 @@ from .interfaces import (
     ValidationError,
     ValueAbsent,
 )
+
+
+_T = TypeVar("_T", contravariant=True)
+
+
+class _Numeric(Protocol[_T]):
+    def __float__(self) -> float:
+        ...
+
+    def __lt__(self, other: _T) -> bool:
+        ...
+
+    def __gt__(self, other: _T) -> bool:
+        ...
 
 
 class CrossSiteRequestForgery(Resource):
@@ -258,9 +273,9 @@ class Field:
     @classmethod
     def number(
         cls,
-        minimum: Optional[int] = None,
-        maximum: Optional[int] = None,
-        kind: Type = float,
+        minimum: Optional[_Numeric] = None,
+        maximum: Optional[_Numeric] = None,
+        kind: Callable[[str], _Numeric] = float,
         **kw: Any,
     ) -> "Field":
         """

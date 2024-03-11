@@ -89,7 +89,7 @@ class Field:
     @ivar converter: The converter.
     """
 
-    converter: Callable[[AnyStr], Any]
+    converter: Callable[[str], Any]
     formInputType: str
     pythonArgumentName: Optional[str] = None
     formFieldName: Optional[str] = None
@@ -267,7 +267,7 @@ class Field:
         An integer within the range [minimum, maximum].
         """
 
-        def bounded_number(text: AnyStr) -> Any:
+        def bounded_number(text: str) -> Any:
             try:
                 value = kind(text)
             except (ValueError, ArithmeticError):

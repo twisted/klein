@@ -14,6 +14,7 @@ from typing import (
     Sequence,
     TypeVar,
     cast,
+    overload,
 )
 
 import attr
@@ -43,17 +44,21 @@ from .interfaces import (
 
 
 _T = TypeVar("_T", contravariant=True)
+_Self = TypeVar("_Self")
 
 
-class _Numeric(Protocol[_T]):
+class _Numeric(Protocol):
     def __float__(self) -> float:
         ...
 
-    def __lt__(self, other: _T) -> bool:
+    def __lt__(self: _Self, other: _Self) -> bool:
         ...
 
-    def __gt__(self, other: _T) -> bool:
+    def __gt__(self: _Self, other: _Self) -> bool:
         ...
+
+
+_N = TypeVar("_N", bound=_Numeric)
 
 
 class CrossSiteRequestForgery(Resource):
@@ -270,12 +275,46 @@ class Field:
             **kw,
         ).maybeNamed(name)
 
+    @overload
     @classmethod
     def number(
         cls,
-        minimum: Optional[_Numeric] = None,
-        maximum: Optional[_Numeric] = None,
-        kind: Callable[[str], _Numeric] = float,
+        minimum: Optional[float] = None,
+        maximum: Optional[float] = None,
+        kind: Callable[[str], float] = float,
+        **kw: Any,
+    ) -> "Field":
+        ...
+
+    @overload
+    @classmethod
+    def number(
+        cls,
+        minimum: Optional[_N] = None,
+        maximum: Optional[_N] = None,
+        *,
+        kind: Callable[[str], _N],
+        **kw: Any,
+    ) -> "Field":
+        ...
+
+    @overload
+    @classmethod
+    def number(
+        cls,
+        minimum: _N,
+        maximum: _N,
+        kind: Callable[[str], _N],
+        **kw: Any,
+    ) -> "Field":
+        ...
+
+    @classmethod
+    def number(
+        cls,
+        minimum: Optional[_N] = None,
+        maximum: Optional[_N] = None,
+        kind: Callable[[str], _N] = float,  # type:ignore[assignment]
         **kw: Any,
     ) -> "Field":
         """

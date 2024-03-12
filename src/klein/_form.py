@@ -43,7 +43,6 @@ from .interfaces import (
 )
 
 
-_T = TypeVar("_T", contravariant=True)
 _Self = TypeVar("_Self")
 
 

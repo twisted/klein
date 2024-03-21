@@ -8,8 +8,8 @@ omit = src/klein/test/typing_*.py
 source=
    src/klein
    .tox/*/lib/python*/site-packages/klein
+   .tox/*/lib/pypy*/site-packages/klein
    .tox/*/Lib/site-packages/klein
-   .tox/pypy*/site-packages/klein
 
 [report]
 exclude_lines =

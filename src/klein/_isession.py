@@ -1,4 +1,20 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, Sequence, Type
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncContextManager,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 import attr
 from constantly import NamedConstant, Names
@@ -7,6 +23,8 @@ from zope.interface import Attribute, Interface
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
+
+from ._typing_compat import Protocol
 
 
 if TYPE_CHECKING:
@@ -52,13 +70,37 @@ class SessionMechanism(Names):
     Header = NamedConstant()
 
 
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+class AuthorizationMap(Protocol):
+    @overload
+    def get(self, key: Type[V]) -> V:
+        ...
+
+    @overload
+    def get(self, key: Type[V], default: T) -> Union[V, T]:
+        ...
+
+    def get(self, *args: Any, **kwargs: Any) -> Any:
+        ...
+
+    def __getitem__(self, key: Type[V]) -> V:
+        ...
+
+    def __setitem__(self, key: Type[V], value: V) -> None:
+        ...
+
+
 class ISession(Interface):
     """
     An L{ISession} provider contains an identifier for the session, information
     about how the session was negotiated with the client software, and
     """
 
-    identifier = Attribute(
+    identifier: str = Attribute(
         """
         L{str} identifying a session.
 
@@ -90,7 +132,9 @@ class ISession(Interface):
         """
     )
 
-    def authorize(interfaces: Iterable[Type[Interface]]) -> Deferred:
+    def authorize(
+        interfaces: Iterable[Type[object]],
+    ) -> Deferred[AuthorizationMap]:
         """
         Retrieve other objects from this session.
 
@@ -117,19 +161,26 @@ class ISessionStore(Interface):
     def newSession(
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         """
         Create a new L{ISession}.
 
-        @return: a new session with a new identifier.
-        @rtype: L{Deferred} firing with L{ISession}.
+        @param isConfidential: Is the new session being created a confidential
+            (i.e. “sent over HTTPS” session)?
+
+        @param authenticatedBy: Was the request for this new session
+            authenticated by a header or a cookie?
+
+        @return: a new session with a new (randomly generated) identifier that
+            can later be passed back to this object's
+            L{ISessionStore.loadSession}.
         """
 
     def loadSession(
         identifier: str,
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         """
         Load a session given the given identifier and security properties.
 
@@ -165,14 +216,16 @@ class ISimpleAccountBinding(Interface):
     attribute as a component.
     """
 
-    def bindIfCredentialsMatch(username: str, password: str) -> None:
+    def bindIfCredentialsMatch(
+        username: str, password: str
+    ) -> Deferred[Optional[ISimpleAccount]]:
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
         authenticate a principal.
         """
 
-    def boundAccounts() -> Deferred:
+    def boundAccounts() -> Deferred[List[ISimpleAccount]]:
         """
         Retrieve the accounts currently associated with the session this is a
         component of.
@@ -180,13 +233,15 @@ class ISimpleAccountBinding(Interface):
         @return: L{Deferred} firing with a L{list} of L{ISimpleAccount}.
         """
 
-    def unbindThisSession() -> None:
+    def unbindThisSession() -> Deferred[None]:
         """
         Disassociate the session this is a component of from any accounts it's
         logged in to.
         """
 
-    def createAccount(username: str, email: str, password: str) -> None:
+    def createAccount(
+        username: str, email: str, password: str
+    ) -> Deferred[Optional[ISimpleAccount]]:
         """
         Create a new account with the given username, email and password.
         """
@@ -197,25 +252,25 @@ class ISimpleAccount(Interface):
     Data-store agnostic account interface.
     """
 
-    username = Attribute(
+    username: str = Attribute(
         """
         Unicode username.
         """
     )
 
-    accountID = Attribute(
+    accountID: str = Attribute(
         """
         Unicode account-ID.
         """
     )
 
-    def bindSession(session: ISession) -> None:
+    def bindSession(session: ISession) -> Deferred[None]:
         """
         Bind the given session to this account; i.e. authorize the given
         session to act on behalf of this account.
         """
 
-    def changePassword(newPassword: str) -> None:
+    def changePassword(newPassword: str) -> Deferred[None]:
         """
         Change the password of this account.
         """
@@ -229,7 +284,7 @@ class ISessionProcurer(Interface):
 
     def procureSession(
         request: IRequest, forceInsecure: bool = False
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         """
         Retrieve a session using whatever technique is necessary.
 
@@ -309,8 +364,8 @@ class IRequestLifecycle(Interface):
 
     def addPrepareHook(
         beforeHook: Callable,
-        requires: Sequence[Type[Interface]] = (),
-        provides: Sequence[Type[Interface]] = (),
+        requires: Sequence[Type[object]] = (),
+        provides: Sequence[Type[object]] = (),
     ) -> None:
         """
         Add a hook that promises to prepare the request by supplying the given
@@ -352,6 +407,21 @@ class IRequiredParameter(Interface):
         """
 
 
+class IRequirementContext(Interface):
+    """
+    An L{IRequirementContext} is a request component that can be used during
+    C{@require} dependency injection.
+
+    In particular, this can be used to raise L{EarlyExit} from C{__exit__} to
+    reconsider the return value I{after} the route's returning.
+    """
+
+    async def enter_async_context(cm: AsyncContextManager[T]) -> T:
+        """
+        Add the contextmanager to the list of context managers.
+        """
+
+
 @attr.s(auto_attribs=True)
 class EarlyExit(Exception):
     """
@@ -363,4 +433,4 @@ class EarlyExit(Exception):
         supplied as the route's response.
     """
 
-    alternateReturnValue: "KleinRenderable"
+    alternateReturnValue: KleinRenderable

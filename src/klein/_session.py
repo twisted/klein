@@ -1,9 +1,21 @@
 # -*- test-case-name: klein.test.test_session -*-
 
-from typing import Any, Callable, Dict, Optional, Sequence, Type, Union, cast
+from __future__ import annotations
+
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 import attr
-from zope.interface import Interface, implementer
+from zope.interface import implementer
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.components import Componentized
@@ -11,7 +23,9 @@ from twisted.python.reflect import qual
 from twisted.web.http import UNAUTHORIZED
 from twisted.web.iweb import IRequest
 from twisted.web.resource import Resource
+from twisted.web.server import Request
 
+from ._util import eagerDeferredCoroutine
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -24,6 +38,90 @@ from .interfaces import (
     SessionMechanism,
     TooLateForCookies,
 )
+
+
+async def cookieLoader(
+    self: SessionProcurer,
+    request: IRequest,
+    token: str,
+    sentSecurely: bool,
+    cookieName: Union[str, bytes],
+) -> ISession:
+    """
+    Procuring a session from a cookie is complex.  First, just try to look it
+    up based on the current cookie, but then, do a bunch of checks to see if we
+    can set up a new session, then set one up.
+    """
+    try:
+        return await self._store.loadSession(
+            token, sentSecurely, SessionMechanism.Cookie
+        )
+    except NoSuchSession:
+        pass
+
+    # No existing session.
+    if request.startedWriting:  # type: ignore[attr-defined]
+        # At this point, if the mechanism is Header, we either have
+        # a valid session or we bailed after NoSuchSession above.
+        raise TooLateForCookies(
+            "You tried initializing a cookie-based session too"
+            " late in the request pipeline; the headers"
+            " were already sent."
+        )
+    if request.method != b"GET":
+        # Sessions should only ever be auto-created by GET
+        # requests; there's no way that any meaningful data
+        # manipulation could succeed (no CSRF token check could
+        # ever succeed, for example).
+        raise NoSuchSession(
+            "Can't initialize a session on a "
+            "{method} request.".format(method=request.method.decode("ascii"))
+        )
+    if not self._setCookieOnGET:
+        # We don't have a session ID at all, and we're not allowed
+        # by policy to set a cookie on the client.
+        raise NoSuchSession(
+            "Cannot auto-initialize a session for this request."
+        )
+    session = await self._store.newSession(
+        sentSecurely, SessionMechanism.Cookie
+    )
+
+    # https://github.com/twisted/twisted/issues/11865
+    wrongSignature: Request = request  # type:ignore[assignment]
+    wrongSignature.addCookie(
+        cookieName,
+        session.identifier,
+        max_age=str(self._maxAge),
+        domain=self._cookieDomain,
+        path=self._cookiePath,
+        secure=sentSecurely,
+        httpOnly=True,
+    )
+
+    return session
+
+
+async def headerLoader(
+    self: SessionProcurer,
+    request: IRequest,
+    token: str,
+    sentSecurely: bool,
+    cookieName: Union[str, bytes],
+) -> ISession:
+    """
+    Procuring a session via a header API key is very simple.  Just look it up
+    and fail if you can't find it.
+    """
+    return await self._store.loadSession(
+        token, sentSecurely, SessionMechanism.Header
+    )
+
+
+loaderForMechanism = {
+    SessionMechanism.Cookie: cookieLoader,
+    SessionMechanism.Header: headerLoader,
+}
 
 
 @implementer(ISessionProcurer)
@@ -64,115 +162,74 @@ class SessionProcurer:
     _insecureTokenHeader: bytes = b"X-INSECURE-Auth-Token"
     _setCookieOnGET: bool = True
 
-    @inlineCallbacks
-    def procureSession(
+    def _tokenTransportAttributes(
+        self, request: IRequest, forceInsecure: bool
+    ) -> Tuple[bytes, bytes, bool]:
+        """
+        @return: 3-tuple of header, cookie, secure
+        """
+        secure = (self._secureTokenHeader, self._secureCookie, True)
+        insecure = (self._insecureTokenHeader, self._insecureCookie, False)
+
+        if request.isSecure():
+            return insecure if forceInsecure else secure
+
+        # Have we inadvertently disclosed a secure token over an insecure
+        # transport, for example, due to a buggy client?
+        allPossibleSentTokens: Sequence[bytes] = sum(
+            (
+                request.requestHeaders.getRawHeaders(header, [])
+                for header in [
+                    self._secureTokenHeader,
+                    self._insecureTokenHeader,
+                ]
+            ),
+            [],
+        ) + [
+            it
+            for it in [
+                request.getCookie(cookie)
+                for cookie in [self._secureCookie, self._insecureCookie]
+                if cookie is not None
+            ]
+            if it
+        ]
+
+        # Fun future feature: honeypot that does this over HTTPS, but sets
+        # isSecure() to return false because it serves up a cert for the
+        # wrong hostname or an invalid cert, to keep API clients honest
+        # about chain validation.
+        self._store.sentInsecurely(
+            [each.decode() for each in allPossibleSentTokens]
+        )
+        return insecure
+
+    @eagerDeferredCoroutine
+    async def procureSession(
         self, request: IRequest, forceInsecure: bool = False
-    ) -> Any:
-        alreadyProcured = cast(Componentized, request).getComponent(ISession)
+    ) -> ISession:
+        alreadyProcured: Optional[ISession] = ISession(request, None)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
                 return alreadyProcured
 
-        if request.isSecure():
-            if forceInsecure:
-                tokenHeader = self._insecureTokenHeader
-                cookieName: Union[str, bytes] = self._insecureCookie
-                sentSecurely = False
-            else:
-                tokenHeader = self._secureTokenHeader
-                cookieName = self._secureCookie
-                sentSecurely = True
-        else:
-            # Have we inadvertently disclosed a secure token over an insecure
-            # transport, for example, due to a buggy client?
-            allPossibleSentTokens: Sequence[str] = sum(
-                (
-                    request.requestHeaders.getRawHeaders(header, [])
-                    for header in [
-                        self._secureTokenHeader,
-                        self._insecureTokenHeader,
-                    ]
-                ),
-                [],
-            ) + [
-                it
-                for it in [
-                    request.getCookie(cookie)
-                    for cookie in [self._secureCookie, self._insecureCookie]
-                ]
-                if it
-            ]
-            # Does it seem like this check is expensive? It sure is! Don't want
-            # to do it? Turn on your dang HTTPS!
-            self._store.sentInsecurely(allPossibleSentTokens)
-            tokenHeader = self._insecureTokenHeader
-            cookieName = self._insecureCookie
-            sentSecurely = False
-            # Fun future feature: honeypot that does this over HTTPS, but sets
-            # isSecure() to return false because it serves up a cert for the
-            # wrong hostname or an invalid cert, to keep API clients honest
-            # about chain validation.
+        tokenHeader, cookieName, sentSecurely = self._tokenTransportAttributes(
+            request, forceInsecure
+        )
+
         sentHeader = (request.getHeader(tokenHeader) or b"").decode("utf-8")
         sentCookie = (request.getCookie(cookieName) or b"").decode("utf-8")
-        if sentHeader:
-            mechanism = SessionMechanism.Header
-        else:
-            mechanism = SessionMechanism.Cookie
-        if not (sentHeader or sentCookie):
-            session = None
-        else:
-            try:
-                session = yield self._store.loadSession(
-                    sentHeader or sentCookie, sentSecurely, mechanism
-                )
-            except NoSuchSession:
-                if mechanism == SessionMechanism.Header:
-                    raise
-                session = None
-        if mechanism == SessionMechanism.Cookie and (
-            session is None or session.identifier != sentCookie
-        ):
-            if session is None:
-                if request.startedWriting:  # type: ignore[attr-defined]
-                    # At this point, if the mechanism is Header, we either have
-                    # a valid session or we bailed after NoSuchSession above.
-                    raise TooLateForCookies(
-                        "You tried initializing a cookie-based session too"
-                        " late in the request pipeline; the headers"
-                        " were already sent."
-                    )
-                if request.method != b"GET":
-                    # Sessions should only ever be auto-created by GET
-                    # requests; there's no way that any meaningful data
-                    # manipulation could succeed (no CSRF token check could
-                    # ever succeed, for example).
-                    raise NoSuchSession(
-                        "Can't initialize a session on a "
-                        "{method} request.".format(
-                            method=request.method.decode("ascii")
-                        )
-                    )
-                if not self._setCookieOnGET:
-                    # We don't have a session ID at all, and we're not allowed
-                    # by policy to set a cookie on the client.
-                    raise NoSuchSession(
-                        "Cannot auto-initialize a session for this request."
-                    )
-                session = yield self._store.newSession(sentSecurely, mechanism)
-            identifierInCookie = session.identifier
-            if not isinstance(identifierInCookie, str):
-                identifierInCookie = identifierInCookie.encode("ascii")
-            if not isinstance(cookieName, str):
-                cookieName = cookieName.decode("ascii")
-            request.addCookie(  # type: ignore[call-arg]
-                cookieName,
-                identifierInCookie,
-                max_age=str(self._maxAge),
-                domain=self._cookieDomain,
-                path=self._cookiePath,
-                secure=sentSecurely,
-                httpOnly=True,
-            )
+
+        mechanism, token = (
+            (SessionMechanism.Header, sentHeader)
+            if sentHeader
+            else (SessionMechanism.Cookie, sentCookie)
+        )
+
+        session = await loaderForMechanism[mechanism](
+            self, request, token, sentSecurely, cookieName
+        )
+
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
             cast(Componentized, request).setComponent(ISession, session)
@@ -180,7 +237,7 @@ class SessionProcurer:
 
 
 class AuthorizationDenied(Resource):
-    def __init__(self, interface: Type[Interface], instance: Any) -> None:
+    def __init__(self, interface: Type[object], instance: Any) -> None:
         self._interface = interface
         super().__init__()
 
@@ -244,9 +301,9 @@ class Authorization:
         C{required} is set to C{False}.
     """
 
-    _interface: Type[Interface]
+    _interface: Type[object]
     _required: bool = True
-    _whenDenied: Callable[[Type[Interface], Any], Any] = AuthorizationDenied
+    _whenDenied: Callable[[Type[object], Any], Any] = AuthorizationDenied
 
     def registerInjector(
         self,

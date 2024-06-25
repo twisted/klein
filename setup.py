@@ -35,17 +35,34 @@ if __name__ == "__main__":
             "Tubes",
             "Twisted>=16.6",  # 16.6 introduces ensureDeferred
             "typing_extensions ; python_version<'3.10'",
+            # PyPy doesn't have hashlib.scrypt, which we need for secure
+            # password storage.
+            "cryptography ; platform_python_implementation == 'PyPy'",
             "Werkzeug",
             "zope.interface",
         ],
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
-        packages=["klein", "klein.storage", "klein.test"],
+        packages=[
+            "klein",
+            "klein.storage",
+            "klein.storage.memory",
+            "klein.storage.memory.test",
+            "klein.storage.dbxs",
+            "klein.storage.dbxs.test",
+            "klein.storage.passwords",
+            "klein.storage.passwords.test",
+            "klein.storage.sql",
+            "klein.storage.sql.test",
+            "klein.test",
+            "klein.storage.test",
+        ],
         package_dir={"": "src"},
-        package_data=dict(
-            klein=["py.typed"],
-        ),
+        package_data={
+            "klein": ["py.typed"],
+            "klein.storage.sql": ["basic_auth_schema.sql"],
+        },
         url="https://github.com/twisted/klein",
         maintainer="Twisted Matrix Laboratories",
         maintainer_email="twisted-python@twistedmatrix.com",

@@ -20,3 +20,4 @@ recursive-include docs *.rst
 recursive-include docs *.txt
 recursive-exclude docs/_build *
 recursive-exclude requirements *
+recursive-include src *.sql

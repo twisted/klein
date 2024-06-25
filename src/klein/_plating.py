@@ -6,6 +6,7 @@ Templating wrapper support for Klein.
 from __future__ import annotations
 
 from functools import partial
+from inspect import signature
 from json import dumps
 from operator import setitem
 from typing import Any, Callable, Generator, List, Tuple, cast
@@ -15,10 +16,11 @@ import attr
 from twisted.internet.defer import inlineCallbacks
 from twisted.web.error import MissingRenderMethod
 from twisted.web.iweb import IRequest
-from twisted.web.template import Element, Tag, TagLoader
+from twisted.web.template import Element, Tag, TagLoader, slot
 
 from ._app import _call
 from ._decorators import bindable, modified, originalName
+from ._typing_compat import ParamSpec
 
 
 StackType = List[Tuple[Any, Callable[[Any], None]]]
@@ -193,6 +195,9 @@ class PlatedElement(Element):
             raise MissingRenderMethod(self, name)
 
 
+P = ParamSpec("P")
+
+
 class Plating:
     """
     A L{Plating} is a container which can be used to generate HTML from data.
@@ -233,6 +238,14 @@ class Plating:
                 instance: Any, request: IRequest, *args: Any, **kw: Any
             ) -> Any:
                 data = yield _call(instance, method, request, *args, **kw)
+                if not hasattr(data, "__setitem__"):
+                    # Allow plating routes to return other forms of Klein
+                    # renderable object, if they want to customize an HTTP
+                    # response in specific cases, such as returning a redirect.
+                    # This is a very narrow test rather than a more general
+                    # isinstance(data, dict) or similar because older versions
+                    # of Klein did not have this check.
+                    return data
                 if _should_return_json(request):
                     json_data = self._defaults.copy()
                     json_data.update(data)
@@ -312,3 +325,64 @@ class Plating:
         template elements.
         """
         return self._Widget(self, function, None)
+
+    @classmethod
+    def fragment(cls, f: Callable[P, Tag]) -> Callable[P, Tag]:
+        """
+        Decorator for a function that presents a formatted view of a set of
+        slots.  For example, if we have a page that displays a list of links to
+        articles::
+
+            page = Plating(tags=tags.html(tags.body(Plating.CONTENT)))
+
+            @Plating.fragment
+            def post(title: str, author: str,
+                     publishDate: str, url: str) -> Tag:
+                return tags.div(
+                    tags.div("Title: ", tags.a(href=url)(title)),
+                    tags.div("Author: ", author),
+                    tags.div("Published: ", publishDate),
+                )
+
+            @page.routed(self.app.route("/"),
+                         tags.div(render="posts:list")(slot("item")))
+            def plateMe(result):
+                return {
+                    "posts": [
+                        post("First Post", "Alice",
+                             "2023-01-01", "http://example.com/1"),
+                        post("Second Post", "Bob",
+                             "2023-02-02", "http://example.com/2"),
+                        ...
+                    ],
+                }
+
+        When viewed as HTML, this will render each post inline as a C{<div>},
+        and in JSON, it will be an object that looks like this::
+
+            {
+                "posts": [
+                    {"title": "First Post", "author": "Alice",
+                     "publishDate": "2023-01-01",
+                     "url": "http://example.com/1"},
+                    ...
+                ]
+            }
+
+        @note: The function being decorated will not be invoked each time it
+            appears to be called with strings, but rather, called once at
+            import time, and the types of its arguments will actually be
+            C{slot} objects, which will I{later} be filled in with the
+            stipulated types.
+        """
+        sigf = signature(f)
+        computedArgs: P.args = [slot(name) for name in sigf.parameters]
+
+        def makeDict(*args: object, **kwargs: object) -> dict[str, object]:
+            bound = sigf.bind(*args, **kwargs)
+            return bound.arguments
+
+        c: Callable[P, Tag] = (
+            cls(tags=f(*computedArgs)).widgeted(makeDict).widget
+        )
+        return c

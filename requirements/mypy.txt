@@ -1,3 +1,3 @@
 mypy==1.8.0
-mypy-zope==1.0.3
+mypy-zope==1.0.5
 types-click==7.1.8

@@ -33,3 +33,7 @@ class ProvidesTestCase(SynchronousTestCase):
     def test_no(self) -> None:
         with self.assertRaises(TypeError):
             WhateverContainer(NoWhatever())
+
+    def test_repr(self) -> None:
+        self.assertIn("provides validator for", repr(provides(IWhatever)))
+        self.assertIn("IWhatever", repr(provides(IWhatever)))

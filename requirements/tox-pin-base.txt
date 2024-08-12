@@ -3,7 +3,8 @@ Automat==22.10.0
 characteristic==14.3.0
 constantly==15.1.0
 hyperlink==21.0.0
-incremental==21.3.0
+incremental==22.10.0; python_version <= '3.7'
+incremental==24.1.2; python_version > '3.7'
 PyHamcrest==2.1.0
 six==1.16.0
 Tubes==0.2.1

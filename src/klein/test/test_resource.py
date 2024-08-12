@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from io import BytesIO
 from types import MappingProxyType
@@ -153,16 +155,16 @@ class SimpleElement(Element):
         self._name = name
 
     @renderer
-    def name(self, request: IRequest, tag: Tag) -> Tag:
+    def name(self, request: IRequest, tag: Tag) -> Tag | Deferred[None]:
         return tag(self._name)
 
 
 class DeferredElement(SimpleElement):
-    deferred: "Deferred[None]"
+    deferred: Deferred[None]
 
     @renderer
-    def name(self, request: IRequest, tag: Tag) -> "Deferred[None]":
-        self.deferred: "Deferred[None]" = Deferred()
+    def name(self, request: IRequest, tag: Tag) -> Deferred[None]:
+        self.deferred: Deferred[None] = Deferred()
         self.deferred.addCallback(lambda ignored: tag(self._name))
         return self.deferred
 
@@ -387,7 +389,7 @@ class KleinResourceTests(SynchronousTestCase):
     def test_deferredRendering(self) -> None:
         app = self.app
 
-        deferredResponse: "Deferred[bytes]" = Deferred()
+        deferredResponse: Deferred[bytes] = Deferred()
 
         @app.route("/deferred")
         def deferred(request: IRequest) -> KleinRenderable:
@@ -1011,7 +1013,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        finished: "Deferred[bytes]" = Deferred()
+        finished: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1050,7 +1052,7 @@ class KleinResourceTests(SynchronousTestCase):
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
             assert isinstance(request, Request)
-            _d: "Deferred[bytes]" = Deferred()
+            _d: Deferred[bytes] = Deferred()
             _d.addErrback(cancelled.append)
             request.notifyFinish().addCallback(lambda _: _d.cancel())
             return _d
@@ -1090,7 +1092,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        inner_d: "Deferred[bytes]" = Deferred()
+        inner_d: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1128,7 +1130,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
-            _d: "Deferred[bytes]" = Deferred()
+            _d: Deferred[bytes] = Deferred()
             assert isinstance(request, Request)
             request.notifyFinish().addErrback(lambda _: _d.cancel())
             return _d
@@ -1154,7 +1156,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        handler_d: "Deferred[bytes]" = Deferred()
+        handler_d: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:

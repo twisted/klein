@@ -48,6 +48,6 @@ if __name__ == "__main__":
         ),
         url="https://github.com/twisted/klein",
         maintainer="Twisted Matrix Laboratories",
-        maintainer_email="twisted-python@twistedmatrix.com",
+        maintainer_email="twisted@python.org",
         zip_safe=False,
     )

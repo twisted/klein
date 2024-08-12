@@ -59,7 +59,8 @@ def currentVersion() -> Version:
     versionInfo: Dict[str, Any] = {}
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
     exec(versonFile.read_text(), versionInfo)
-    return versionInfo["__version__"]
+    version: Version = versionInfo["__version__"]
+    return version
 
 
 def fadeToBlack() -> None:

@@ -231,6 +231,12 @@ class KleinResource(Resource):
             returns an IRenderable, then render it and let the result of that
             bubble back up.
             """
+            # isinstance() is faster than providedBy(), so this speeds up the
+            # very common case of returning pre-rendered results, at the cost
+            # of slightly slowing down other cases.
+            if isinstance(r, (bytes, str)):
+                return r
+
             if isinstance(r, Response):
                 r = r._applyToRequest(request)
 

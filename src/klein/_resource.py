@@ -91,12 +91,11 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         server_port = request.getHost().port
     else:
         server_port = 0
-    if (bool(request.isSecure()), server_port) not in [
+    is_secure = bool(request.isSecure())
+    if (is_secure, server_port) not in [
         (True, 443),
         (False, 80),
-        (False, 0),
-        (True, 0),
-    ]:
+    ] or server_port == 0:
         server_name = b"%s:%d" % (server_name, server_port)
 
     script_name = b""
@@ -113,7 +112,7 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         if not path_info.startswith(b"/"):
             path_info = b"/" + path_info
 
-    url_scheme = "https" if request.isSecure() else "http"
+    url_scheme = "https" if is_secure else "http"
 
     utf8Failures = []
     try:
@@ -232,6 +231,12 @@ class KleinResource(Resource):
             returns an IRenderable, then render it and let the result of that
             bubble back up.
             """
+            # isinstance() is faster than providedBy(), so this speeds up the
+            # very common case of returning pre-rendered results, at the cost
+            # of slightly slowing down other cases.
+            if isinstance(r, (bytes, str)):
+                return r
+
             if isinstance(r, Response):
                 r = r._applyToRequest(request)
 

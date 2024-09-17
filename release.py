@@ -8,7 +8,7 @@ from shutil import rmtree
 from subprocess import CalledProcessError, run
 from sys import exit, stderr
 from tempfile import mkdtemp
-from typing import Any, Dict, NoReturn, Optional, Sequence, cast
+from typing import Any, Dict, NoReturn, Optional, Sequence
 
 from click import group as commandGroup
 from click import option as commandOption
@@ -59,7 +59,8 @@ def currentVersion() -> Version:
     versionInfo: Dict[str, Any] = {}
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
     exec(versonFile.read_text(), versionInfo)
-    return versionInfo["__version__"]
+    version: Version = versionInfo["__version__"]
+    return version
 
 
 def fadeToBlack() -> None:
@@ -109,7 +110,7 @@ def releaseTagName(version: Version) -> str:
     """
     Compute the name of the release tag for the given version.
     """
-    return cast(str, version.public())
+    return version.public()
 
 
 def createReleaseBranch(repository: Repository, version: Version) -> Head:
@@ -286,22 +287,32 @@ def publishRelease(final: bool, test: bool = False) -> None:
 
     print("Pushing tag to origin:", tag)
     repository.remotes.origin.push(refspec=tag.path)
+    print("Pushing branch to origin:", branch)
+    repository.remotes.origin.push()
 
     distribute(repository, tag, test=test)
 
 
 @commandGroup()
 def main() -> None:
-    pass
+    """
+    Software release tool for Klein.
+    """
 
 
 @main.command()
 def start() -> None:
+    """
+    Begin a new release process.
+    """
     startRelease()
 
 
 @main.command()
 def bump() -> None:
+    """
+    Increase the version number for an in-progress release candidate.
+    """
     bumpRelease()
 
 
@@ -317,6 +328,9 @@ def bump() -> None:
     default=False,
 )
 def publish(final: bool, test: bool) -> None:
+    """
+    Publish the current version of the software to PyPI.
+    """
     publishRelease(final=final, test=test)
 
 

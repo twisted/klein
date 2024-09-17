@@ -21,7 +21,7 @@ from ._interfaces import IKleinRequest
 if TYPE_CHECKING:
     # NB: circular import, must not be imported at runtime.
     from ._app import (
-        ErrorHandlers,
+        ErrorMethods,
         Klein,
         KleinRenderable,
         KleinRouteHandler,
@@ -249,7 +249,7 @@ class KleinResource(Resource):
         d.addCallback(process)
 
         def processing_failed(
-            failure: Failure, error_handlers: ErrorHandlers
+            failure: Failure, error_handlers: ErrorMethods
         ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
@@ -287,9 +287,10 @@ class KleinResource(Resource):
             # Each error handler is a tuple of
             # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
+                handler_func = error_handler[1]
                 d = maybeDeferred(
                     self._app.execute_error_handler,
-                    error_handler[1],  # type: ignore[arg-type]
+                    handler_func,
                     request,
                     failure,
                 )

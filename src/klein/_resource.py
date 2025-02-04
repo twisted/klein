@@ -12,7 +12,6 @@ from twisted.python.failure import Failure
 from twisted.web import server
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
-from twisted.web.server import NOT_DONE_YET
 from twisted.web.template import renderElement
 
 from ._dihttp import Response
@@ -22,7 +21,7 @@ from ._interfaces import IKleinRequest
 if TYPE_CHECKING:
     # NB: circular import, must not be imported at runtime.
     from ._app import (
-        ErrorHandlers,
+        ErrorMethods,
         Klein,
         KleinRenderable,
         KleinRouteHandler,
@@ -92,12 +91,11 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         server_port = request.getHost().port
     else:
         server_port = 0
-    if (bool(request.isSecure()), server_port) not in [
+    is_secure = bool(request.isSecure())
+    if (is_secure, server_port) not in [
         (True, 443),
         (False, 80),
-        (False, 0),
-        (True, 0),
-    ]:
+    ] or server_port == 0:
         server_name = b"%s:%d" % (server_name, server_port)
 
     script_name = b""
@@ -114,7 +112,7 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         if not path_info.startswith(b"/"):
             path_info = b"/" + path_info
 
-    url_scheme = "https" if request.isSecure() else "http"
+    url_scheme = "https" if is_secure else "http"
 
     utf8Failures = []
     try:
@@ -233,6 +231,12 @@ class KleinResource(Resource):
             returns an IRenderable, then render it and let the result of that
             bubble back up.
             """
+            # isinstance() is faster than providedBy(), so this speeds up the
+            # very common case of returning pre-rendered results, at the cost
+            # of slightly slowing down other cases.
+            if isinstance(r, (bytes, str)):
+                return r
+
             if isinstance(r, Response):
                 r = r._applyToRequest(request)
 
@@ -251,7 +255,7 @@ class KleinResource(Resource):
         d.addCallback(process)
 
         def processing_failed(
-            failure: Failure, error_handlers: ErrorHandlers
+            failure: Failure, error_handlers: ErrorMethods
         ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
@@ -289,9 +293,10 @@ class KleinResource(Resource):
             # Each error handler is a tuple of
             # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
+                handler_func = error_handler[1]
                 d = maybeDeferred(
                     self._app.execute_error_handler,
-                    error_handler[1],  # type: ignore[arg-type]
+                    handler_func,
                     request,
                     failure,
                 )
@@ -304,16 +309,20 @@ class KleinResource(Resource):
 
         d.addErrback(processing_failed, self._app._error_handlers)
 
-        def write_response(r: object) -> None:
-            if r is not StandInResource:
-                if isinstance(r, str):
-                    r = r.encode("utf-8")
+        def write_response(
+            r: Union[_StandInResource, str, bytes, int, None]
+        ) -> None:
+            if r is StandInResource:
+                return
 
-                if (r is not None) and (r != NOT_DONE_YET):
-                    request.write(r)
+            if isinstance(r, str):
+                r = r.encode("utf-8")
 
-                if not request_finished[0]:
-                    request.finish()
+            if isinstance(r, bytes):
+                request.write(r)
+
+            if not request_finished[0]:
+                request.finish()
 
         d.addCallback(write_response)
         d.addErrback(log.err, _why="Unhandled Error writing response")

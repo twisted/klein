@@ -12,8 +12,9 @@ from typing import (
     NoReturn,
     Optional,
     Sequence,
-    Type,
+    TypeVar,
     cast,
+    overload,
 )
 
 import attr
@@ -29,6 +30,7 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from ._app import KleinRenderable, _call
 from ._decorators import bindable
+from ._typing_compat import Protocol
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -39,6 +41,23 @@ from .interfaces import (
     ValidationError,
     ValueAbsent,
 )
+
+
+_Self = TypeVar("_Self")
+
+
+class _Numeric(Protocol):
+    def __float__(self) -> float:
+        ...
+
+    def __lt__(self: _Self, other: _Self) -> bool:
+        ...
+
+    def __gt__(self: _Self, other: _Self) -> bool:
+        ...
+
+
+_N = TypeVar("_N", bound=_Numeric)
 
 
 class CrossSiteRequestForgery(Resource):
@@ -89,7 +108,7 @@ class Field:
     @ivar converter: The converter.
     """
 
-    converter: Callable[[AnyStr], Any]
+    converter: Callable[[str], Any]
     formInputType: str
     pythonArgumentName: Optional[str] = None
     formFieldName: Optional[str] = None
@@ -148,9 +167,14 @@ class Field:
         value = self.value
         if value is None:
             value = ""  # type: ignore[unreachable]
+        fieldName = self.formFieldName
+
+        if fieldName is None:
+            raise ValueError("Cannot generate tags for unnamed form field.")
+
         input_tag = tags.input(
             type=self.formInputType,
-            name=self.formFieldName,  # type: ignore[arg-type]
+            name=fieldName,
             value=value,
         )
         error_tags = []
@@ -250,19 +274,53 @@ class Field:
             **kw,
         ).maybeNamed(name)
 
+    @overload
     @classmethod
     def number(
         cls,
-        minimum: Optional[int] = None,
-        maximum: Optional[int] = None,
-        kind: Type = float,
+        minimum: Optional[float] = None,
+        maximum: Optional[float] = None,
+        kind: Callable[[str], float] = float,
+        **kw: Any,
+    ) -> "Field":
+        ...
+
+    @overload
+    @classmethod
+    def number(
+        cls,
+        minimum: Optional[_N] = None,
+        maximum: Optional[_N] = None,
+        *,
+        kind: Callable[[str], _N],
+        **kw: Any,
+    ) -> "Field":
+        ...
+
+    @overload
+    @classmethod
+    def number(
+        cls,
+        minimum: _N,
+        maximum: _N,
+        kind: Callable[[str], _N],
+        **kw: Any,
+    ) -> "Field":
+        ...
+
+    @classmethod
+    def number(
+        cls,
+        minimum: Optional[_N] = None,
+        maximum: Optional[_N] = None,
+        kind: Callable[[str], _N] = float,  # type:ignore[assignment]
         **kw: Any,
     ) -> "Field":
         """
         An integer within the range [minimum, maximum].
         """
 
-        def bounded_number(text: AnyStr) -> Any:
+        def bounded_number(text: str) -> Any:
             try:
                 value = kind(text)
             except (ValueError, ArithmeticError):
@@ -309,7 +367,7 @@ class RenderableForm:
     _method: str
     _enctype: str
     _encoding: str
-    prevalidationValues: Dict[Field, Optional[str]] = attr.ib(factory=dict)
+    prevalidationValues: Dict[Field, str] = attr.ib(factory=dict)
     validationErrors: Dict[Field, ValidationError] = attr.ib(factory=dict)
 
     ENCTYPE_FORM_DATA = "multipart/form-data"
@@ -529,7 +587,7 @@ class FieldValues:
 
     form: "Form"
     arguments: Dict[str, Any]
-    prevalidationValues: Dict[Field, Optional[str]]
+    prevalidationValues: Dict[Field, str]
     validationErrors: Dict[Field, ValidationError]
     _injectionComponents: Componentized
 

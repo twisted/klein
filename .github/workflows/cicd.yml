@@ -25,7 +25,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -59,7 +59,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -93,7 +93,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -127,7 +127,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -160,7 +160,7 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Python
         uses: actions/setup-python@v4
@@ -193,32 +193,36 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.7", "3.9", "3.10", "3.11"]
-        twisted-version: ["21.2", "22.1", "current"]
+        python-version: ["3.9", "3.10", "3.11"]
+        twisted-version: ["21.2", "22.1", "23.8"]
         tox-prefix: ["coverage"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python-version: "pypy-3.8"
-            twisted-version: "current"
-            tox-prefix: "test"
-            optional: false
-          - os: "ubuntu-latest"
             python-version: "pypy-3.9"
-            twisted-version: "current"
+            twisted-version: "23.8"
             tox-prefix: "test"
             optional: false
-          # Test Python 3.12 but allow it to fail
           - os: "ubuntu-latest"
-            python-version: "3.12.0-alpha.7"
-            twisted-version: "current"
+            python-version: "pypy-3.10"
+            twisted-version: "23.8"
             tox-prefix: "test"
-            optional: true
+            optional: false
+          - os: "ubuntu-latest"
+            python-version: "3.12.0"
+            twisted-version: "23.8"
+            tox-prefix: "test"
+            optional: false
+          - os: "ubuntu-latest"
+            python-version: "3.13.0"
+            twisted-version: "24.10"
+            tox-prefix: "test"
+            optional: false
 
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
@@ -266,9 +270,9 @@ jobs:
 
       - name: Upload Trial log artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: trial
+          name: "trial-py${{ matrix.python-version }}-twisted${{ matrix.twisted-version }}-os${{ matrix.os }}"
           path: .tox/${TOX_ENV}/log/trial.log
 
       # Use the latest supported Python version for combining coverage to

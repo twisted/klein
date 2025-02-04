@@ -1,12 +1,26 @@
-import imp
+import importlib.machinery
+import importlib.util
 import os
 import sys
+
+
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(
+        modname, filename, loader=loader
+    )
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
 
 
 # Add the extensions folder...
 sys.path.insert(0, os.path.abspath("./_extensions"))
 
-_version = imp.load_source("setup", "../src/klein/_version.py")
+_version = load_source("setup", "../src/klein/_version.py")
 
 extensions = []
 templates_path = ["_templates"]

@@ -185,7 +185,7 @@ class KleinRequest:
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-ErrorHandlers = List[Tuple[List[Type[Exception]], KleinErrorHandler]]
+ErrorMethods = List[Tuple[List[Type[Exception]], KleinErrorMethod]]
 
 
 # begin argument-processing hack to copy all args from current installed
@@ -271,7 +271,7 @@ class Klein:
     def __init__(self) -> None:
         self._url_map = Map()
         self._endpoints: Dict[str, KleinRouteHandler] = {}
-        self._error_handlers: ErrorHandlers = []
+        self._error_handlers: ErrorMethods = []
         self._instance: Optional[Klein] = None
         self._boundAs: Optional[str] = None
 

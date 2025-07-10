@@ -160,6 +160,26 @@ class KleinResource(Resource):
         return not result
 
     def render(self, request: IRequest) -> int | bytes:
+        """
+        Render the request based on the underlying L{Klein} application, in a
+        multi-step process:
+
+            1. convert twisted input request information into something legible
+               to werkzeug
+
+            2. bind that info (URL, method, query args, etc) into a request
+               mapper, and look up a werkzeug endpoint (i.e.: klein
+               C{@route}-decorated method) to invoke
+
+            3. invoke that endpoint, getting something renderable
+
+            4. render that thing
+
+            5. handle any errors in lookup or rendering with declared error
+               handlers
+
+            6. render the thing that the error handler returned
+        """
         try:
             (
                 url_scheme,
@@ -230,8 +250,9 @@ class KleinResource(Resource):
         def process(r: object) -> Any:
             """
             Recursively go through r and any child Resources until something
-            returns an IRenderable, then render it and let the result of that
-            bubble back up.
+            returns something renderable (L{IResource}, L{IRenderable},
+            L{bytes}, L{str}, or L{Iterable} of same), then render it and let
+            the result of that bubble back up.
             """
             # isinstance() is faster than providedBy(), so this speeds up the
             # very common case of returning pre-rendered results, at the cost

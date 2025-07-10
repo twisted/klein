@@ -514,8 +514,7 @@ class Klein:
             f_or_exception, Exception
         ):
             # f_or_exception is a KleinErrorHandler
-            f = cast(KleinErrorHandler, f_or_exception)
-            return self.handle_errors(Exception)(f)
+            return self.handle_errors(Exception)(f_or_exception)
 
         # f_or_exception is an Exception class
         exceptions = [f_or_exception] + list(additional_exceptions)

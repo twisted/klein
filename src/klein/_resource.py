@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from ._app import (
         ErrorMethods,
         Klein,
-        KleinRenderable,
         KleinRouteHandler,
         RouteMetadata,
     )
@@ -160,8 +159,7 @@ class KleinResource(Resource):
             return result
         return not result
 
-    def render(self, request: IRequest) -> KleinRenderable:
-        # Stuff we need to know for the mapper.
+    def render(self, request: IRequest) -> int | bytes:
         try:
             (
                 url_scheme,
@@ -339,4 +337,4 @@ class KleinResource(Resource):
         d.addCallback(write_response)
         d.addErrback(log.err, _why="Unhandled Error writing response")
 
-        return server.NOT_DONE_YET  # type: ignore[return-value]
+        return server.NOT_DONE_YET

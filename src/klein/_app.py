@@ -43,6 +43,7 @@ from twisted.web.server import Request, Site
 from twisted.web.template import Tag
 
 from ._decorators import modified, named
+from ._dihttp import Response
 from ._interfaces import IKleinRequest, KleinQueryValue
 from ._paramspec_workaround import _normalFunction, _werkzeugRuleArgs
 from ._resource import KleinResource, route_metadata
@@ -85,7 +86,7 @@ class KleinErrorMethod(Protocol):
         """
 
 
-KleinRouteHandler = Callable[..., KleinRenderable]
+KleinRouteHandler = Callable[..., KleinRenderable | Response]
 """
 A handler for a Klein route.  Sadly it is not possible to tell the type checker
 that the first argument is IRequest or the first/second arguments are (Self,
@@ -120,10 +121,10 @@ class RouteMetadata(Protocol):
 
 def _call(
     __klein_instance__: Optional[Klein],
-    __klein_f__: Callable[..., KleinRenderable],
+    __klein_f__: KleinRouteHandlerT,
     *args: Any,
     **kwargs: Any,
-) -> KleinRenderable:
+) -> KleinRenderable | Response:
     """
     Call C{__klein_f__} with the given C{*args} and C{**kwargs}.
 
@@ -235,12 +236,12 @@ class Klein:
 
     def execute_endpoint(
         self, endpoint: str, request: IRequest, *args: Any, **kwargs: Any
-    ) -> KleinRenderable:
+    ) -> KleinRenderable | Response:
         """
         Execute the named endpoint with all arguments and possibly a bound
         instance.
         """
-        endpoint_f: Callable[..., KleinRenderable] = self._endpoints[endpoint]
+        endpoint_f: KleinRouteHandler = self._endpoints[endpoint]
         # typing note: endpoint_f is a KleinRouteHandler, which is not defined
         # as taking *args, **kwargs (because they aren't required), but we're
         # going to pass them along here anyway.
@@ -357,7 +358,7 @@ class Klein:
                     request: IRequest,
                     *a: Any,
                     **kw: Any,
-                ) -> KleinRenderable:
+                ) -> KleinRenderable | Response:
                     IKleinRequest(request).branch_segments = kw.pop(
                         "__rest__", ""
                     ).split("/")
@@ -381,7 +382,7 @@ class Klein:
                 request: IRequest,
                 *a: Any,
                 **kw: Any,
-            ) -> KleinRenderable:
+            ) -> KleinRenderable | Response:
                 return _call(instance, f, request, *a, **kw)
 
             exec_metadata = route_metadata(_f)
@@ -525,7 +526,7 @@ class Klein:
                 instance: Optional[Klein],
                 request: IRequest,
                 failure: Failure,
-            ) -> KleinRenderable:
+            ) -> KleinRenderable | Response:
                 return _call(instance, f, request, failure)
 
             self._error_handlers.append((exceptions, _f))

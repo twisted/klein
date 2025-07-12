@@ -2,7 +2,18 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
+from __future__ import annotations
+
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 import attr
 from hyperlink import DecodedURL
@@ -16,6 +27,10 @@ from .interfaces import (
     IRequestLifecycle,
     IRequiredParameter,
 )
+
+
+if TYPE_CHECKING:
+    from ._app import KleinRenderable
 
 
 def urlFromRequest(request: IRequest) -> DecodedURL:
@@ -127,12 +142,12 @@ class Response:
     headers: Mapping[
         Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
     ] = attr.ib(factory=dict)
-    body: Any = ""
+    body: KleinRenderable = ""
 
-    def _applyToRequest(self, request: IRequest) -> Any:
+    def _applyToRequest(self, request: IRequest) -> KleinRenderable:
         """
         Apply this L{Response} to the given L{IRequest}, setting its response
-        code and headers.
+        code and headers, and returning its body.
 
         Private because:
 

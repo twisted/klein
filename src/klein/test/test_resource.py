@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
 from io import BytesIO
-from types import MappingProxyType
+from types import MappingProxyType, NotImplementedType
 from typing import Any, List, Mapping, Optional, Sequence, cast
 from unittest.mock import ANY, Mock, call
 from urllib.parse import parse_qs
@@ -129,7 +130,7 @@ class MockRequest(Request):
 
 
 def _render(
-    resource: KleinResource, request: IRequest, notifyFinish: bool = True
+    resource: KleinResource, request: Request, notifyFinish: bool = True
 ) -> Deferred:
     result = resource.render(request)
 
@@ -138,13 +139,13 @@ def _render(
         request.finish()
         return succeed(None)
 
-    if result is not NOT_DONE_YET:  # type: ignore[comparison-overlap]
+    if result is not NOT_DONE_YET:
         raise AssertionError("unreachable")  # pragma: no cover
 
-    if request.finished or not notifyFinish:  # type: ignore[attr-defined]
+    if request.finished or not notifyFinish:
         return succeed(None)
 
-    return request.notifyFinish()  # type: ignore[no-any-return,attr-defined]
+    return request.notifyFinish()
 
 
 class SimpleElement(Element):
@@ -558,6 +559,9 @@ class KleinResourceTests(SynchronousTestCase):
         self.assertEqual(request.getWrittenData(), b"\xe2\x98\x83")
 
     def test_renderNone(self) -> None:
+        """
+        A route that returns L{None} will result in an empty 404.
+        """
         app = self.app
 
         request = MockRequest(b"/None")
@@ -776,6 +780,11 @@ class KleinResourceTests(SynchronousTestCase):
         )
 
     def test_handlerRaises(self) -> None:
+        """
+        When a route handler (a function decorated with L{Klein.route}) raises
+        an exception, that exception will be relayed to
+        L{Request.processingFailed}.
+        """
         app = self.app
         request = MockRequest(b"/")
 
@@ -796,8 +805,23 @@ class KleinResourceTests(SynchronousTestCase):
 
         self.assertFired(d)
         self.assertEqual(request.code, 500)
-        processingFailed = request.processingFailed
-        processingFailed.assert_called_once_with(failures[0])
+
+        # the identity of the failure changes here because it is raised and
+        # re-caught by instantiating a Failure() under an except: and thus it's
+        # a different object. the exception should still be identical.
+
+        @dataclass(eq=False)
+        class SomeFailure:
+            failure: Failure
+
+            def __eq__(self, other: object) -> bool | NotImplementedType:
+                if isinstance(other, Failure):
+                    return other.value == self.failure.value
+                return NotImplemented
+
+        request.processingFailed.assert_called_once_with(
+            SomeFailure(failures[0])
+        )
         self.flushLoggedErrors(RouteFailureTest)
 
     def test_genericErrorHandler(self) -> None:
@@ -997,17 +1021,9 @@ class KleinResourceTests(SynchronousTestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.writeCount, 2)
         self.assertEqual(request.getWrittenData(), b"")
-        [failure] = self.flushLoggedErrors(RuntimeError)
-
-        self.assertEqual(
-            str(failure.value),
-            (
-                "Request.write called on a request after Request.finish was "
-                "called."
-            ),
-        )
+        # assert that write() *was* called (so that headers will be sent)
+        self.assertGreater(request.writeCount, 0)
 
     def test_requestFinishAfterConnectionLost(self) -> None:
         app = self.app
@@ -1067,10 +1083,7 @@ class KleinResourceTests(SynchronousTestCase):
         cancelled[0].trap(CancelledError)
         self.assertEqual(request.getWrittenData(), b"")
         self.assertEqual(request.writeCount, 1)
-        self.assertEqual(
-            request.processingFailed.call_count,
-            0,
-        )
+        self.assertEqual(request.processingFailed.call_count, 0)
 
     def test_url_for(self) -> None:
         app = self.app

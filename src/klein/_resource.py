@@ -1,19 +1,24 @@
 # -*- test-case-name: klein.test.test_resource -*-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Sequence, Tuple, Union
 
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers.response import Response as WerkResponse
 
-from twisted.internet import defer
 from twisted.internet.defer import Deferred, maybeDeferred, succeed
 from twisted.python import log
 from twisted.python.failure import Failure
 from twisted.web import server
+from twisted.web.http import NOT_FOUND
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
+from twisted.web.server import Request
 from twisted.web.template import renderElement
+
+
+if TYPE_CHECKING:
+    from ._app import KleinRenderable
 
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
@@ -22,7 +27,6 @@ from ._interfaces import IKleinRequest
 if TYPE_CHECKING:
     # NB: circular import, must not be imported at runtime.
     from ._app import (
-        ErrorMethods,
         Klein,
         KleinRouteHandler,
         RouteMetadata,
@@ -41,18 +45,6 @@ def ensure_utf8_bytes(v: Union[str, bytes]) -> bytes:
     if isinstance(v, str):
         v = v.encode("utf-8")
     return v
-
-
-class _StandInResource:
-    """
-    A standin for a Resource.
-
-    This is a sentinel value for L{KleinResource}, to say that we are rendering
-    a L{Resource}, which may close the connection itself later.
-    """
-
-
-StandInResource = cast("KleinResource", _StandInResource())
 
 
 class URLDecodeError(Exception):
@@ -137,6 +129,79 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
     return url_scheme, server_name, server_port, path_text, script_text
 
 
+def _werkzeugHandler(request: Request, he: HTTPException) -> bytes:
+    assert isinstance(he, HTTPException)
+    request.setResponseCode(he.code if he.code is not None else 500)
+    # we need to call iter_encoded later so we need to include an explicit
+    # workaround for https://github.com/pallets/werkzeug/issues/3056
+    resp: WerkResponse
+    resp = he.get_response({})  # type:ignore[assignment]
+
+    for header, value in resp.headers:
+        request.setHeader(
+            ensure_utf8_bytes(header),
+            ensure_utf8_bytes(value),
+        )
+
+    encoded = resp.iter_encoded()
+    return ensure_utf8_bytes(b"".join(encoded))
+
+
+def _isWritable(request: Request) -> bool:
+    """
+    Is the given request still writable?
+    """
+    return (getattr(request, "channel", None) is not None) and (
+        not request.finished
+    )
+
+
+def _unknownHandler(request: Request, failure: Failure) -> None:
+    if _isWritable(request):
+        request.processingFailed(failure)
+
+
+async def _endpointToRequest(
+    request: Request,
+    executingEndpoint: Deferred[KleinRenderable | Response],
+) -> None:
+    request.notifyFinish().addErrback(
+        lambda _: executingEndpoint.cancel(),
+    )
+
+    potentialResponse = await executingEndpoint
+
+    if isinstance(potentialResponse, Response):
+        potentialResponse = potentialResponse._applyToRequest(request)
+        # If it's a Response object, we apply some headers, then revert to
+        # previous case.
+
+    if potentialResponse is None:
+        potentialResponse = b""
+        request.setResponseCode(NOT_FOUND)
+
+    if isinstance(potentialResponse, str):
+        potentialResponse = potentialResponse.encode("utf-8")
+
+    if isinstance(potentialResponse, bytes):
+        if _isWritable(request):
+            request.write(potentialResponse)
+            request.finish()
+        return
+
+    if IResource.providedBy(potentialResponse):
+        ultimateResource = getChildForRequest(potentialResponse, request)
+        request.render(ultimateResource)
+        # Resource.render return-value handling / calling .finish()
+        # appropriately is built in to Request.render. We're done.
+        return
+
+    if IRenderable.providedBy(potentialResponse):
+        # renderElement generates a Deferred internally, and calls finish().
+        renderElement(request, potentialResponse)
+        return
+
+
 class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
@@ -159,7 +224,7 @@ class KleinResource(Resource):
             return result
         return not result
 
-    def render(self, request: IRequest) -> int | bytes:
+    def render(self, request: Request) -> int | bytes:
         """
         Render the request based on the underlying L{Klein} application, in a
         multi-step process:
@@ -180,182 +245,91 @@ class KleinResource(Resource):
 
             6. render the thing that the error handler returned
         """
-        try:
-            (
-                url_scheme,
-                server_name,
-                server_port,
-                path_info,
-                script_name,
-            ) = extractURLparts(request)
-        except URLDecodeError as e:
-            for what, fail in e.errors:
-                log.err(fail, f"Invalid encoding in {what}.")
-            request.setResponseCode(400)
-            return b"Non-UTF-8 encoding in URL."
 
-        # Bind our mapper.
-        mapper = self._app.url_map.bind(
-            server_name,
-            script_name,
-            path_info=path_info,
-            default_method=request.method.decode("utf-8"),
-            url_scheme=url_scheme,
-        )
-        # Make the mapper available to the view.
-        kleinRequest = IKleinRequest(request)
-        kleinRequest.mapper = mapper
+        async def _() -> None:
+            try:
 
-        # Make sure we'll notice when the connection goes away unambiguously.
-        request_finished = [False]
+                try:
+                    (
+                        url_scheme,
+                        server_name,
+                        server_port,
+                        path_info,
+                        script_name,
+                    ) = extractURLparts(request)
+                except URLDecodeError as e:
+                    for what, fail in e.errors:
+                        log.err(fail, f"Invalid encoding in {what}.")
+                    request.setResponseCode(400)
+                    request.write(b"Non-UTF-8 encoding in URL.")
+                    request.finish()
+                    return
 
-        def _finish(result: object) -> None:
-            request_finished[0] = True
-
-        def _execute() -> Deferred:
-            # Actually doing the match right here. This can cause an exception
-            # to percolate up. If that happens it will be handled below in
-            # processing_failed, either by a user-registered error handler or
-            # one of our defaults.
-            (rule, kwargs) = mapper.match(return_rule=True)
-            endpoint = rule.endpoint
-
-            # Try pretty hard to fix up prepath and postpath.
-            segment_count = route_metadata(
-                self._app.endpoints[endpoint]
-            ).segment_count
-            request.prepath.extend(request.postpath[:segment_count])
-            request.postpath = request.postpath[segment_count:]
-
-            request.notifyFinish().addBoth(  # type: ignore[attr-defined]
-                _finish,
-            )
-
-            # Standard Twisted Web stuff. Defer the method action, giving us
-            # something renderable or printable. Return NOT_DONE_YET and set up
-            # the incremental renderer.
-            d = maybeDeferred(
-                self._app.execute_endpoint, endpoint, request, **kwargs
-            )
-
-            request.notifyFinish().addErrback(  # type: ignore[attr-defined]
-                lambda _: d.cancel(),
-            )
-
-            return d
-
-        d = maybeDeferred(_execute)
-
-        # typing note: returns Any because Response._applyToRequest returns Any
-        def process(r: object) -> Any:
-            """
-            Recursively go through r and any child Resources until something
-            returns something renderable (L{IResource}, L{IRenderable},
-            L{bytes}, L{str}, or L{Iterable} of same), then render it and let
-            the result of that bubble back up.
-            """
-            # isinstance() is faster than providedBy(), so this speeds up the
-            # very common case of returning pre-rendered results, at the cost
-            # of slightly slowing down other cases.
-            if isinstance(r, (bytes, str)):
-                return r
-
-            if isinstance(r, Response):
-                r = r._applyToRequest(request)
-
-            if IResource.providedBy(r):
-                request.render(  # type: ignore[attr-defined]
-                    getChildForRequest(r, request)
+                # Bind our mapper.
+                mapper = self._app.url_map.bind(
+                    server_name,
+                    script_name,
+                    path_info=path_info,
+                    default_method=request.method.decode("utf-8"),
+                    url_scheme=url_scheme,
                 )
-                return StandInResource
+                # Make the mapper available to the view.
+                kleinRequest = IKleinRequest(request)
+                kleinRequest.mapper = mapper
 
-            if IRenderable.providedBy(r):
-                renderElement(request, r)
-                return StandInResource
+                # Actually doing the match right here. This can cause an
+                # exception to percolate up. If that happens it will be handled
+                # below in processing_failed, either by a user-registered error
+                # handler or one of our defaults.
+                (rule, kwargs) = mapper.match(return_rule=True)
+                endpoint = rule.endpoint
 
-            return r
+                # Try pretty hard to fix up prepath and postpath.
+                segment_count = route_metadata(
+                    self._app.endpoints[endpoint]
+                ).segment_count
 
-        d.addCallback(process)
+                assert request.prepath is not None
+                assert request.postpath is not None
 
-        def processing_failed(
-            failure: Failure, error_handlers: ErrorMethods
-        ) -> Optional[Deferred]:
-            # The failure processor writes to the request.  If the
-            # request is already finished we should suppress failure
-            # processing.  We don't return failure here because there
-            # is no way to surface this failure to the user if the
-            # request is finished.
-            if request_finished[0]:
-                # TODO: coverage
-                if not failure.check(defer.CancelledError):  # pragma: no branch
-                    log.err(
-                        failure, "Unhandled Error Processing Request."
-                    )  # pragma: no cover
-                return None
+                request.prepath.extend(request.postpath[:segment_count])
+                request.postpath = request.postpath[segment_count:]
 
-            # If there are no more registered handlers, apply some defaults
-            if len(error_handlers) == 0:
-                if failure.check(HTTPException):
-                    he = failure.value
-                    assert isinstance(he, HTTPException)
-                    request.setResponseCode(he.code)
-
-                    # we need to call iter_encoded later so we need to include
-                    # an explicit workaround for
-                    # https://github.com/pallets/werkzeug/issues/3056
-                    resp: WerkResponse
-                    resp = he.get_response({})  # type:ignore[assignment]
-
-                    for header, value in resp.headers:
-                        request.setHeader(
-                            ensure_utf8_bytes(header), ensure_utf8_bytes(value)
-                        )
-
-                    encoded = resp.iter_encoded()
-                    return succeed(ensure_utf8_bytes(b"".join(encoded)))
-                else:
-                    request.processingFailed(  # type: ignore[attr-defined]
-                        failure,
-                    )
-                    return None
-
-            error_handler = error_handlers[0]
-
-            # Each error handler is a tuple of
-            # (list_of_exception_types, handler_fn)
-            if failure.check(*error_handler[0]):
-                handler_func = error_handler[1]
-                d = maybeDeferred(
-                    self._app.execute_error_handler,
-                    handler_func,
+                await _endpointToRequest(
                     request,
-                    failure,
+                    maybeDeferred(
+                        self._app.execute_endpoint, endpoint, request, **kwargs
+                    ),
                 )
+            except Exception:
+                failure = Failure()
+                for excTypes, handlerFunc in self._app._error_handlers:
+                    if failure.check(*excTypes):
+                        await _endpointToRequest(
+                            request,
+                            maybeDeferred(
+                                self._app.execute_error_handler,
+                                handlerFunc,
+                                request,
+                                failure,
+                            ),
+                        )
+                        break
+                else:
+                    if failure.check(HTTPException):
+                        checked: HTTPException = (
+                            failure.value  # type:ignore[assignment]
+                        )
+                        await _endpointToRequest(
+                            request,
+                            succeed(_werkzeugHandler(request, checked)),
+                        )
+                    else:
+                        if _isWritable(request):
+                            _unknownHandler(request, failure)
 
-                d.addCallback(process)
-
-                return d.addErrback(processing_failed, error_handlers[1:])
-
-            return processing_failed(failure, error_handlers[1:])
-
-        d.addErrback(processing_failed, self._app._error_handlers)
-
-        def write_response(
-            r: Union[_StandInResource, str, bytes, int, None],
-        ) -> None:
-            if r is StandInResource:
-                return
-
-            if isinstance(r, str):
-                r = r.encode("utf-8")
-
-            if isinstance(r, bytes):
-                request.write(r)
-
-            if not request_finished[0]:
-                request.finish()
-
-        d.addCallback(write_response)
-        d.addErrback(log.err, _why="Unhandled Error writing response")
+        Deferred.fromCoroutine(_()).addErrback(
+            log.err, _why="Unhandled Error writing response"
+        )
 
         return server.NOT_DONE_YET

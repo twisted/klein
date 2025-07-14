@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers.response import Response as WerkResponse
 
-from twisted.internet.defer import Deferred, maybeDeferred, succeed
+from twisted.internet.defer import Deferred, maybeDeferred
 from twisted.python import log
 from twisted.python.failure import Failure
 from twisted.web import server
-from twisted.web.http import NOT_FOUND
+from twisted.web.http import BAD_REQUEST, NOT_FOUND
 from twisted.web.iweb import IRenderable, IRequest
 from twisted.web.resource import IResource, Resource, getChildForRequest
 from twisted.web.server import Request
@@ -18,7 +18,7 @@ from twisted.web.template import renderElement
 
 
 if TYPE_CHECKING:
-    from ._app import KleinRenderable
+    from ._app import KleinRenderable, ErrorMethods
 
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
@@ -129,19 +129,21 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
     return url_scheme, server_name, server_port, path_text, script_text
 
 
-def _werkzeugHandler(request: Request, he: HTTPException) -> bytes:
-    assert isinstance(he, HTTPException)
+def _werkzeugHandler(
+    self: object, request: IRequest, failure: Failure
+) -> bytes:
+    """
+    Handle HTTP errors from Werkzeug.
+    """
+    he: HTTPException = failure.value  # type:ignore[assignment]
     request.setResponseCode(he.code if he.code is not None else 500)
+
     # we need to call iter_encoded later so we need to include an explicit
     # workaround for https://github.com/pallets/werkzeug/issues/3056
-    resp: WerkResponse
-    resp = he.get_response({})  # type:ignore[assignment]
+    resp: WerkResponse = he.get_response({})  # type:ignore[assignment]
 
     for header, value in resp.headers:
-        request.setHeader(
-            ensure_utf8_bytes(header),
-            ensure_utf8_bytes(value),
-        )
+        request.setHeader(ensure_utf8_bytes(header), ensure_utf8_bytes(value))
 
     encoded = resp.iter_encoded()
     return ensure_utf8_bytes(b"".join(encoded))
@@ -202,6 +204,70 @@ async def _endpointToRequest(
         return
 
 
+async def respondTo(app: Klein, request: Request) -> None:
+    try:
+        try:
+            (url_scheme, server_name, server_port, path_info, script_name) = (
+                extractURLparts(request)
+            )
+        except URLDecodeError as e:
+            for what, fail in e.errors:
+                log.err(fail, f"Invalid encoding in {what}.")
+            request.setResponseCode(BAD_REQUEST)
+            request.write(b"Non-UTF-8 encoding in URL.")
+            request.finish()
+            return
+
+        # Bind our mapper to the information from the request.
+        mapper = app.url_map.bind(
+            server_name,
+            script_name,
+            path_info=path_info,
+            default_method=request.method.decode("utf-8"),
+            url_scheme=url_scheme,
+        )
+        # Make the bound mapper available to the view.
+        kleinRequest = IKleinRequest(request)
+        kleinRequest.mapper = mapper
+
+        # Actually doing the match right here. This can cause an
+        # exception to percolate up. If that happens it will be handled
+        # below in processing_failed, either by a user-registered error
+        # handler or one of our defaults.
+        (rule, kwargs) = mapper.match(return_rule=True)
+        endpoint = rule.endpoint
+
+        # Try pretty hard to fix up prepath and postpath.
+        segment_count = route_metadata(app.endpoints[endpoint]).segment_count
+
+        assert request.prepath is not None
+        assert request.postpath is not None
+        request.prepath.extend(request.postpath[:segment_count])
+        request.postpath = request.postpath[segment_count:]
+
+        await _endpointToRequest(
+            request,
+            maybeDeferred(app.execute_endpoint, endpoint, request, **kwargs),
+        )
+    except Exception:
+        failure = Failure()
+        handlers: ErrorMethods = app._error_handlers + [
+            ([HTTPException], _werkzeugHandler)
+        ]
+        for excTypes, handler in handlers:
+            if not failure.check(*excTypes):
+                continue
+            await _endpointToRequest(
+                request,
+                maybeDeferred(
+                    app.execute_error_handler, handler, request, failure
+                ),
+            )
+            return
+
+        _unknownHandler(request, failure)
+
+
 class KleinResource(Resource):
     """
     A ``Resource`` that can do URL routing.
@@ -224,112 +290,11 @@ class KleinResource(Resource):
             return result
         return not result
 
-    def render(self, request: Request) -> int | bytes:
+    def render(self, request: Request) -> int:
         """
-        Render the request based on the underlying L{Klein} application, in a
-        multi-step process:
-
-            1. convert twisted input request information into something legible
-               to werkzeug
-
-            2. bind that info (URL, method, query args, etc) into a request
-               mapper, and look up a werkzeug endpoint (i.e.: klein
-               C{@route}-decorated method) to invoke
-
-            3. invoke that endpoint, getting something renderable
-
-            4. render that thing
-
-            5. handle any errors in lookup or rendering with declared error
-               handlers
-
-            6. render the thing that the error handler returned
+        Render a result request based on the underlying L{Klein} application.
         """
-
-        async def _() -> None:
-            try:
-
-                try:
-                    (
-                        url_scheme,
-                        server_name,
-                        server_port,
-                        path_info,
-                        script_name,
-                    ) = extractURLparts(request)
-                except URLDecodeError as e:
-                    for what, fail in e.errors:
-                        log.err(fail, f"Invalid encoding in {what}.")
-                    request.setResponseCode(400)
-                    request.write(b"Non-UTF-8 encoding in URL.")
-                    request.finish()
-                    return
-
-                # Bind our mapper.
-                mapper = self._app.url_map.bind(
-                    server_name,
-                    script_name,
-                    path_info=path_info,
-                    default_method=request.method.decode("utf-8"),
-                    url_scheme=url_scheme,
-                )
-                # Make the mapper available to the view.
-                kleinRequest = IKleinRequest(request)
-                kleinRequest.mapper = mapper
-
-                # Actually doing the match right here. This can cause an
-                # exception to percolate up. If that happens it will be handled
-                # below in processing_failed, either by a user-registered error
-                # handler or one of our defaults.
-                (rule, kwargs) = mapper.match(return_rule=True)
-                endpoint = rule.endpoint
-
-                # Try pretty hard to fix up prepath and postpath.
-                segment_count = route_metadata(
-                    self._app.endpoints[endpoint]
-                ).segment_count
-
-                assert request.prepath is not None
-                assert request.postpath is not None
-
-                request.prepath.extend(request.postpath[:segment_count])
-                request.postpath = request.postpath[segment_count:]
-
-                await _endpointToRequest(
-                    request,
-                    maybeDeferred(
-                        self._app.execute_endpoint, endpoint, request, **kwargs
-                    ),
-                )
-            except Exception:
-                failure = Failure()
-                for excTypes, handlerFunc in self._app._error_handlers:
-                    if failure.check(*excTypes):
-                        await _endpointToRequest(
-                            request,
-                            maybeDeferred(
-                                self._app.execute_error_handler,
-                                handlerFunc,
-                                request,
-                                failure,
-                            ),
-                        )
-                        break
-                else:
-                    if failure.check(HTTPException):
-                        checked: HTTPException = (
-                            failure.value  # type:ignore[assignment]
-                        )
-                        await _endpointToRequest(
-                            request,
-                            succeed(_werkzeugHandler(request, checked)),
-                        )
-                    else:
-                        if _isWritable(request):
-                            _unknownHandler(request, failure)
-
-        Deferred.fromCoroutine(_()).addErrback(
+        Deferred.fromCoroutine(respondTo(self._app, request)).addErrback(
             log.err, _why="Unhandled Error writing response"
         )
-
         return server.NOT_DONE_YET

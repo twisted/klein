@@ -1,4 +1,7 @@
 # -*- test-case-name: klein.test.test_resource -*-
+"""
+Implementation of Klein L{Resource}-rendering behavior.
+"""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Sequence, Tuple, Union
@@ -6,7 +9,7 @@ from typing import TYPE_CHECKING, Sequence, Tuple, Union
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers.response import Response as WerkResponse
 
-from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.defer import CancelledError, Deferred, maybeDeferred
 from twisted.python import log
 from twisted.python.failure import Failure
 from twisted.web import server
@@ -133,7 +136,10 @@ def _werkzeugHandler(
     self: object, request: IRequest, failure: Failure
 ) -> bytes:
     """
-    Handle HTTP errors from Werkzeug.
+    This is the fallback response handler for Werkzeug exceptions, invoked when
+    no application-level handler is registered with
+    L{klein.Klein.handle_errors} for those exceptions, to relay Werkzeug's
+    internal error code and response content.
     """
     he: HTTPException = failure.value  # type:ignore[assignment]
     request.setResponseCode(he.code if he.code is not None else 500)
@@ -159,52 +165,77 @@ def _isWritable(request: Request) -> bool:
 
 
 def _unknownHandler(request: Request, failure: Failure) -> None:
+    """
+    This is the fallback error handler for arbitrary exception types, invoked
+    when a route handler raises an exception (not from Werkzeug, see
+    L{_werkzeugHandler} for those) and there is no handler registered.
+
+    It delegates to L{Request.processingFailed}.
+    """
+    if not failure.check(CancelledError):
+        log.err(failure, "while processing route")
     if _isWritable(request):
         request.processingFailed(failure)
 
 
-async def _endpointToRequest(
-    request: Request,
-    executingEndpoint: Deferred[KleinRenderable | Response],
+def applyResponse(
+    request: Request, response: KleinRenderable | Response
 ) -> None:
-    request.notifyFinish().addErrback(
-        lambda _: executingEndpoint.cancel(),
-    )
+    """
+    Apply a response, or L{KleinRenderable}, to a request, setting its response
+    code and content, and finishing the request if necessary.
 
-    potentialResponse = await executingEndpoint
+    @note: C{response} is in fact a L{KleinSynchronousRenderable}, but it's not
+        possible to represent it as such here, because of a bunch of type
+        complexity around L{maybeDeferred}, L{Awaitable}, and methods on
+        L{Deferred} itself.  In brief, you can't actually have a
+        C{Deferred[Awaitable[...]]} but the type system cannot know that.
+    """
+    # NB: many of the 'if' statements below fall through quite intentionally,
+    # so although this appears to be a slam dunk for a match statement, it is
+    # very much not.
 
-    if isinstance(potentialResponse, Response):
-        potentialResponse = potentialResponse._applyToRequest(request)
+    if isinstance(response, Response):
         # If it's a Response object, we apply some headers, then revert to
         # previous case.
+        response = response._applyToRequest(request)
 
-    if potentialResponse is None:
-        potentialResponse = b""
+    if response is None:
+        # If the response is None, that's a no-content 404.
         request.setResponseCode(NOT_FOUND)
+        response = b""
 
-    if isinstance(potentialResponse, str):
-        potentialResponse = potentialResponse.encode("utf-8")
+    if isinstance(response, str):
+        # If it's a string, encode it.
+        response = response.encode("utf-8")
 
-    if isinstance(potentialResponse, bytes):
+    if isinstance(response, bytes):
+        # If it's bytes, write it to the response and finish the response.
         if _isWritable(request):
-            request.write(potentialResponse)
+            request.write(response)
             request.finish()
         return
 
-    if IResource.providedBy(potentialResponse):
-        ultimateResource = getChildForRequest(potentialResponse, request)
-        request.render(ultimateResource)
+    if IResource.providedBy(response):
         # Resource.render return-value handling / calling .finish()
-        # appropriately is built in to Request.render. We're done.
+        # appropriately is built in to Request.render. Delegate to it, and
+        # we're done.
+        ultimateResource = getChildForRequest(response, request)
+        request.render(ultimateResource)
         return
 
-    if IRenderable.providedBy(potentialResponse):
-        # renderElement generates a Deferred internally, and calls finish().
-        renderElement(request, potentialResponse)
+    if IRenderable.providedBy(response):
+        # renderElement generates a Deferred internally, and calls finish();
+        # we're done.
+        renderElement(request, response)
         return
 
 
 async def respondTo(app: Klein, request: Request) -> None:
+    """
+    Respond to the given twisted.web request by looking up and executing the
+    given Klein route and rendering any errors.
+    """
     try:
         try:
             (url_scheme, server_name, server_port, path_info, script_name) = (
@@ -245,10 +276,10 @@ async def respondTo(app: Klein, request: Request) -> None:
         request.prepath.extend(request.postpath[:segment_count])
         request.postpath = request.postpath[segment_count:]
 
-        await _endpointToRequest(
-            request,
-            maybeDeferred(app.execute_endpoint, endpoint, request, **kwargs),
+        response = await maybeDeferred(
+            app.execute_endpoint, endpoint, request, **kwargs
         )
+        applyResponse(request, response)
     except Exception:
         failure = Failure()
         handlers: ErrorMethods = app._error_handlers + [
@@ -257,12 +288,10 @@ async def respondTo(app: Klein, request: Request) -> None:
         for excTypes, handler in handlers:
             if not failure.check(*excTypes):
                 continue
-            await _endpointToRequest(
-                request,
-                maybeDeferred(
-                    app.execute_error_handler, handler, request, failure
-                ),
+            response = await maybeDeferred(
+                app.execute_error_handler, handler, request, failure
             )
+            applyResponse(request, response)
             return
 
         _unknownHandler(request, failure)
@@ -292,9 +321,18 @@ class KleinResource(Resource):
 
     def render(self, request: Request) -> int:
         """
-        Render a result request based on the underlying L{Klein} application.
+        Render the response to the given request based on the underlying
+        L{Klein} application.
         """
-        Deferred.fromCoroutine(respondTo(self._app, request)).addErrback(
-            log.err, _why="Unhandled Error writing response"
-        )
+        # Respond to the request.
+        responseCoroutine = respondTo(self._app, request)
+
+        # Kick off the coroutine which will respond to the request.
+        inProgress = Deferred.fromCoroutine(responseCoroutine)
+
+        # Hook up app-logic cancellation to when the request is terminated.
+        request.notifyFinish().addErrback(lambda _: inProgress.cancel())
+
+        # We will call .write() and .finish() on the request when necessary -
+        # see applyResponse - so always be async here.
         return server.NOT_DONE_YET

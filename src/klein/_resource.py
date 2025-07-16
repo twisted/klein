@@ -230,6 +230,12 @@ def applyResponse(
         renderElement(request, response)
         return
 
+    # TODO: handle iterables like L{KleinRenderable} alleges we're supposed to
+    # be able to (has that ever worked?)
+
+    # TODO: report an error somehow if we are not any of the supported types
+    # (i.e. if we reach the end of this function, right here)
+
 
 async def respondTo(app: Klein, request: Request) -> None:
     """

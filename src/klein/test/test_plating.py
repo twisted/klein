@@ -2,7 +2,6 @@
 Tests for L{klein.plating}.
 """
 
-
 import json
 from typing import Any
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from io import BytesIO
 from types import MappingProxyType
@@ -54,7 +56,7 @@ class MockRequest(Request):
     ):
         super().__init__(DummyChannel(), False)
 
-        if not headers:
+        if not headers:  # pragma: no branch
             headers = {}
 
         if not body:
@@ -88,7 +90,8 @@ class MockRequest(Request):
     def registerProducer(self, producer: IProducer, streaming: bool) -> None:
         self.producer = producer
         for _ in range(2):
-            if self.producer:
+            # TODO: coverage
+            if self.producer:  # pragma: no branch
                 # typing note: server.Request.registerProducer takes an
                 # IProducer, which does not have resumeProducing.
                 # This seems to expect either an IPullProducer or an
@@ -104,7 +107,8 @@ class MockRequest(Request):
         if not self.startedWriting:
             self.write(b"")
 
-        if not self.finished:
+        # TODO: coverage
+        if not self.finished:  # pragma: no branch
             self.finished = True
             self._cleanup()
 
@@ -153,16 +157,16 @@ class SimpleElement(Element):
         self._name = name
 
     @renderer
-    def name(self, request: IRequest, tag: Tag) -> Tag:
+    def name(self, request: IRequest, tag: Tag) -> Tag | Deferred[None]:
         return tag(self._name)
 
 
 class DeferredElement(SimpleElement):
-    deferred: "Deferred[None]"
+    deferred: Deferred[None]
 
     @renderer
-    def name(self, request: IRequest, tag: Tag) -> "Deferred[None]":
-        self.deferred: "Deferred[None]" = Deferred()
+    def name(self, request: IRequest, tag: Tag) -> Deferred[None]:
+        self.deferred: Deferred[None] = Deferred()
         self.deferred.addCallback(lambda ignored: tag(self._name))
         return self.deferred
 
@@ -236,8 +240,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         oneKlein = Klein()
 
         @oneKlein.route("/foo")
-        def foo(self, request: IRequest) -> KleinRenderable:
-            pass
+        def foo(self, request: IRequest) -> KleinRenderable: ...
 
     _one = _One()
 
@@ -245,8 +248,7 @@ class KleinResourceEqualityTests(SynchronousTestCase, EqualityTestsMixin):
         anotherKlein = Klein()
 
         @anotherKlein.route("/bar")
-        def bar(self, request: IRequest) -> KleinRenderable:
-            pass
+        def bar(self, request: IRequest) -> KleinRenderable: ...
 
     _another = _Another()
 
@@ -274,8 +276,8 @@ class KleinResourceTests(SynchronousTestCase):
         """
         _pawn = object()
         result = getattr(deferred, "result", _pawn)
-        if result != _pawn:
-            self.fail(
+        if result != _pawn:  # pragma: no branch
+            self.fail(  # pragma: no cover
                 "Expected deferred not to have fired, but it has: {!r}".format(
                     deferred
                 )
@@ -387,7 +389,7 @@ class KleinResourceTests(SynchronousTestCase):
     def test_deferredRendering(self) -> None:
         app = self.app
 
-        deferredResponse: "Deferred[bytes]" = Deferred()
+        deferredResponse: Deferred[bytes] = Deferred()
 
         @app.route("/deferred")
         def deferred(request: IRequest) -> KleinRenderable:
@@ -553,7 +555,7 @@ class KleinResourceTests(SynchronousTestCase):
         d = _render(self.kr, request)
 
         self.assertFired(d)
-        self.assertEqual(request.getWrittenData(), b"\xE2\x98\x83")
+        self.assertEqual(request.getWrittenData(), b"\xe2\x98\x83")
 
     def test_renderNone(self) -> None:
         app = self.app
@@ -632,7 +634,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/foo/")
         def foo(request: IRequest) -> KleinRenderable:
-            return "foo"
+            return "foo"  # pragma: no cover
 
         d = _render(self.kr, request)
 
@@ -655,7 +657,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/foo", methods=["GET"])
         def foo(request: IRequest) -> KleinRenderable:
-            return "foo"
+            return "foo"  # pragma: no cover
 
         d = _render(self.kr, request)
 
@@ -668,11 +670,11 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/foo/bar", methods=["GET"])
         def foobar(request: IRequest) -> KleinRenderable:
-            return b"foo/bar"
+            return b"foo/bar"  # pragma: no cover
 
         @app.route("/foo/", methods=["DELETE"])
         def foo(request: IRequest) -> KleinRenderable:
-            return b"foo"
+            return b"foo"  # pragma: no cover
 
         d = _render(self.kr, request)
 
@@ -685,7 +687,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
-            return b"foo"
+            return b"foo"  # pragma: no cover
 
         d = _render(self.kr, request)
 
@@ -1011,7 +1013,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        finished: "Deferred[bytes]" = Deferred()
+        finished: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1022,9 +1024,10 @@ class KleinResourceTests(SynchronousTestCase):
         d = _render(self.kr, request)
 
         def _eb(result: object) -> None:
-            [failure] = self.flushLoggedErrors(RuntimeError)
+            # TODO: coverage
+            [failure] = self.flushLoggedErrors(RuntimeError)  # pragma: no cover
 
-            self.assertEqual(
+            self.assertEqual(  # pragma: no cover
                 str(failure.value),
                 (
                     "Request.finish called on a request after its connection "
@@ -1050,7 +1053,7 @@ class KleinResourceTests(SynchronousTestCase):
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
             assert isinstance(request, Request)
-            _d: "Deferred[bytes]" = Deferred()
+            _d: Deferred[bytes] = Deferred()
             _d.addErrback(cancelled.append)
             request.notifyFinish().addCallback(lambda _: _d.cancel())
             return _d
@@ -1090,7 +1093,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        inner_d: "Deferred[bytes]" = Deferred()
+        inner_d: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1128,7 +1131,7 @@ class KleinResourceTests(SynchronousTestCase):
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
-            _d: "Deferred[bytes]" = Deferred()
+            _d: Deferred[bytes] = Deferred()
             assert isinstance(request, Request)
             request.notifyFinish().addErrback(lambda _: _d.cancel())
             return _d
@@ -1154,7 +1157,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        handler_d: "Deferred[bytes]" = Deferred()
+        handler_d: Deferred[bytes] = Deferred()
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:

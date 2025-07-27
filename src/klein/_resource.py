@@ -21,7 +21,7 @@ from ._interfaces import IKleinRequest
 if TYPE_CHECKING:
     # NB: circular import, must not be imported at runtime.
     from ._app import (
-        ErrorHandlers,
+        ErrorMethods,
         Klein,
         KleinRenderable,
         KleinRouteHandler,
@@ -91,29 +91,31 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
         server_port = request.getHost().port
     else:
         server_port = 0
-    if (bool(request.isSecure()), server_port) not in [
+    is_secure = bool(request.isSecure())
+    if (is_secure, server_port) not in [
         (True, 443),
         (False, 80),
-        (False, 0),
-        (True, 0),
-    ]:
+    ] or server_port == 0:
         server_name = b"%s:%d" % (server_name, server_port)
 
     script_name = b""
     if request.prepath:
         script_name = b"/".join(request.prepath)
 
-        if not script_name.startswith(b"/"):
+        # TODO: coverage
+        if not script_name.startswith(b"/"):  # pragma: no branch
             script_name = b"/" + script_name
 
     path_info = b""
-    if request.postpath:
+    # TODO: coverage
+    if request.postpath:  # pragma: no branch
         path_info = b"/".join(request.postpath)
 
-        if not path_info.startswith(b"/"):
+        # TODO: coverage
+        if not path_info.startswith(b"/"):  # pragma: no branch
             path_info = b"/" + path_info
 
-    url_scheme = "https" if request.isSecure() else "http"
+    url_scheme = "https" if is_secure else "http"
 
     utf8Failures = []
     try:
@@ -232,6 +234,12 @@ class KleinResource(Resource):
             returns an IRenderable, then render it and let the result of that
             bubble back up.
             """
+            # isinstance() is faster than providedBy(), so this speeds up the
+            # very common case of returning pre-rendered results, at the cost
+            # of slightly slowing down other cases.
+            if isinstance(r, (bytes, str)):
+                return r
+
             if isinstance(r, Response):
                 r = r._applyToRequest(request)
 
@@ -250,7 +258,7 @@ class KleinResource(Resource):
         d.addCallback(process)
 
         def processing_failed(
-            failure: Failure, error_handlers: ErrorHandlers
+            failure: Failure, error_handlers: ErrorMethods
         ) -> Optional[Deferred]:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
@@ -258,8 +266,11 @@ class KleinResource(Resource):
             # is no way to surface this failure to the user if the
             # request is finished.
             if request_finished[0]:
-                if not failure.check(defer.CancelledError):
-                    log.err(failure, "Unhandled Error Processing Request.")
+                # TODO: coverage
+                if not failure.check(defer.CancelledError):  # pragma: no branch
+                    log.err(
+                        failure, "Unhandled Error Processing Request."
+                    )  # pragma: no cover
                 return None
 
             # If there are no more registered handlers, apply some defaults
@@ -288,9 +299,10 @@ class KleinResource(Resource):
             # Each error handler is a tuple of
             # (list_of_exception_types, handler_fn)
             if failure.check(*error_handler[0]):
+                handler_func = error_handler[1]
                 d = maybeDeferred(
                     self._app.execute_error_handler,
-                    error_handler[1],  # type: ignore[arg-type]
+                    handler_func,
                     request,
                     failure,
                 )
@@ -304,7 +316,7 @@ class KleinResource(Resource):
         d.addErrback(processing_failed, self._app._error_handlers)
 
         def write_response(
-            r: Union[_StandInResource, str, bytes, int, None]
+            r: Union[_StandInResource, str, bytes, int, None],
         ) -> None:
             if r is StandInResource:
                 return

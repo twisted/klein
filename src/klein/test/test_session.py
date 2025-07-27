@@ -100,7 +100,8 @@ def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
 
     @requirer.require(router.route("/denied"), nope=Authorization(IDenyMe))
     def testDenied(nope: IDenyMe) -> str:
-        return "bad"
+        # This should always be denied, so the code is uncovered.
+        return "bad"  # pragma: no cover
 
     treq = StubTreq(router.resource())
     return sessions, exceptions, token, cookie, treq

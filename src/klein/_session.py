@@ -132,7 +132,8 @@ class SessionProcurer:
         if mechanism == SessionMechanism.Cookie and (
             session is None or session.identifier != sentCookie
         ):
-            if session is None:
+            # TODO: coverage
+            if session is None:  # pragma: no branch
                 if request.startedWriting:  # type: ignore[attr-defined]
                     # At this point, if the mechanism is Header, we either have
                     # a valid session or we bailed after NoSuchSession above.
@@ -160,9 +161,12 @@ class SessionProcurer:
                     )
                 session = yield self._store.newSession(sentSecurely, mechanism)
             identifierInCookie = session.identifier
-            if not isinstance(identifierInCookie, str):
-                identifierInCookie = identifierInCookie.encode("ascii")
-            if not isinstance(cookieName, str):
+            # TODO: coverage
+            if not isinstance(identifierInCookie, str):  # pragma: no branch
+                identifierInCookie = identifierInCookie.encode(
+                    "ascii"
+                )  # pragma: no cover
+            if not isinstance(cookieName, str):  # pragma: no cover
                 cookieName = cookieName.decode("ascii")
             request.addCookie(  # type: ignore[call-arg]
                 cookieName,

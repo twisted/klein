@@ -270,7 +270,7 @@ jobs:
 
       - name: Upload Trial log artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: "trial-py${{ matrix.python-version }}-twisted${{ matrix.twisted-version }}-os${{ matrix.os }}"
           path: .tox/${TOX_ENV}/log/trial.log

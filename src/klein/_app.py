@@ -513,7 +513,6 @@ class Klein:
         if not isinstance(f_or_exception, type) or not issubclass(
             f_or_exception, Exception
         ):
-            # f_or_exception is a KleinErrorHandler
             return self.handle_errors(Exception)(f_or_exception)
 
         # f_or_exception is an Exception class

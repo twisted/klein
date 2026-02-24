@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from io import BytesIO
 from types import MappingProxyType
-from typing import Any, List, Mapping, Optional, Sequence, cast
+from typing import IO, Any, List, Mapping, Optional, Sequence, cast
 from unittest.mock import ANY, Mock, call
 from urllib.parse import parse_qs
 
@@ -43,6 +43,12 @@ class MockRequest(Request):
     processingFailed: Mock
     setResponseCode: Mock
     setHeader: Mock
+
+    # twisted seems to have some serious type issues with Request
+    # https://github.com/twisted/twisted/issues/12574
+    site: Site  # type:ignore[assignment]
+    content: IO[bytes]  # type:ignore[assignment]
+    args: dict[bytes, list[bytes]]  # type:ignore[assignment]
 
     def __init__(
         self,

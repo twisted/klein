@@ -1,7 +1,7 @@
 # -*- test-case-name: klein.test.test_resource -*-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
 
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers.response import Response as WerkResponse
@@ -52,7 +52,7 @@ class _StandInResource:
     """
 
 
-StandInResource = cast("KleinResource", _StandInResource())
+StandInResource = _StandInResource()
 
 
 class URLDecodeError(Exception):

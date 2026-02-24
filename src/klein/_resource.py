@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
 
 from werkzeug.exceptions import HTTPException
-from werkzeug.wrappers.response import Response as WerkResponse
 
 from twisted.internet import defer
 from twisted.internet.defer import Deferred, maybeDeferred, succeed
@@ -300,11 +299,7 @@ class KleinResource(Resource):
                     assert isinstance(he, HTTPException)
                     request.setResponseCode(he.code)
 
-                    # we need to call iter_encoded later so we need to include
-                    # an explicit workaround for
-                    # https://github.com/pallets/werkzeug/issues/3056
-                    resp: WerkResponse
-                    resp = he.get_response({})  # type:ignore[assignment]
+                    resp = he.get_response({})
 
                     for header, value in resp.headers:
                         request.setHeader(

@@ -11,3 +11,4 @@
 /htmldocs/
 /src/*.egg-info
 coverage.xml
+*/__pycache__/*

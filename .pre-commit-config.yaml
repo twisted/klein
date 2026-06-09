@@ -5,18 +5,18 @@ ci:
 repos:
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.4.0"
+    rev: "v3.21.2"
     hooks:
       - id: pyupgrade
         args: ["--py37-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/psf/black
-    rev: "23.3.0"
+    rev: "25.1.0"
     hooks:
       - id: black
 
   - repo: https://github.com/PyCQA/autoflake
-    rev: "v2.1.1"
+    rev: "v2.3.1"
     hooks:
       - id: autoflake
         args:
@@ -27,41 +27,99 @@ repos:
           - --remove-unused-variables
 
   - repo: https://github.com/PyCQA/flake8
-    rev: "6.0.0"
+    rev: "7.3.0"
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-bugbear==23.5.9
+          # duplicated because pre-commit cannot manage dependencies normally;
+          # see https://github.com/pre-commit/pre-commit/issues/730 - for now,
+          # paste and reformat from requirements/flake8.txt manually
+          - attrs==26.1.0
+          # via flake8-bugbear
+          - flake8==7.3.0
+          # via
+          #   flake8-bugbear
+          #   flake8-docstrings
+          #   flake8-mutable
+          #   flake8-pep3101
+          #   pep8-naming
+          - flake8-bugbear==25.11.29
+          # via -r flake8-deps.in
           - flake8-docstrings==1.7.0
+          # via -r flake8-deps.in
           - flake8-mutable==1.2.0
-          - flake8-pep3101==2.0.0
-          - pep8-naming==0.13.3
-          - pycodestyle==2.10.0
+          # via -r flake8-deps.in
+          - flake8-pep3101==3.0.0
+          # via -r flake8-deps.in
+          - mccabe==0.7.0
+          # via flake8
+          - pep8-naming==0.15.1
+          # via -r flake8-deps.in
+          - pycodestyle==2.14.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
           - pydocstyle==6.3.0
-          - pyflakes==3.0.1
+          # via
+          #   -r flake8-deps.in
+          #   flake8-docstrings
+          - pyflakes==3.4.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
+          - snowballstemmer==3.0.1
+          # via pydocstyle
 
   - repo: https://github.com/asottile/yesqa
-    rev: "v1.4.0"
+    rev: "v1.5.0"
     hooks:
       - id: yesqa
         additional_dependencies:
-          - flake8-bugbear==23.3.23
+          - attrs==26.1.0
+          # via flake8-bugbear
+          - flake8==7.3.0
+          # via
+          #   flake8-bugbear
+          #   flake8-docstrings
+          #   flake8-mutable
+          #   flake8-pep3101
+          #   pep8-naming
+          - flake8-bugbear==25.11.29
+          # via -r flake8-deps.in
           - flake8-docstrings==1.7.0
+          # via -r flake8-deps.in
           - flake8-mutable==1.2.0
-          - flake8-pep3101==2.0.0
-          - pep8-naming==0.13.3
-          - pycodestyle==2.10.0
+          # via -r flake8-deps.in
+          - flake8-pep3101==3.0.0
+          # via -r flake8-deps.in
+          - mccabe==0.7.0
+          # via flake8
+          - pep8-naming==0.15.1
+          # via -r flake8-deps.in
+          - pycodestyle==2.14.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
           - pydocstyle==6.3.0
-          - pyflakes==3.0.1
+          # via
+          #   -r flake8-deps.in
+          #   flake8-docstrings
+          - pyflakes==3.4.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
+          - snowballstemmer==3.0.1
+          # via pydocstyle
+        pass_filenames: false
 
   - repo: https://github.com/PyCQA/isort
-    rev: "5.12.0"
+    rev: "6.0.1"
     hooks:
     - id: isort
       args: ["--filter-files"]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.4.0"
+    rev: "v5.0.0"
     hooks:
       - id: check-ast
       - id: check-builtin-literals
@@ -103,6 +161,6 @@ repos:
       - id: text-unicode-replacement-char
 
   - repo: https://github.com/mgedmin/check-manifest
-    rev: "0.49"
+    rev: "0.50"
     hooks:
       - id: check-manifest

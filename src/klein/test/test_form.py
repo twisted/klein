@@ -165,7 +165,10 @@ class TestObject:
         class CustomElement(Element):
             @renderer
             def customize(self, request: IRequest, tag: Any) -> Any:
-                return tag("customized")
+                # The test here is validating that the custom renderer from the
+                # custom element will *not* be visible to the validation error
+                # renderer, so we don't get called.
+                return tag("customized")  # pragma: no cover
 
         form.validationErrors[form._form.fields[0]] = ValidationError(
             message=(tags.div(class_="checkme", render="customize"))

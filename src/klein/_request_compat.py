@@ -9,7 +9,6 @@ from io import BytesIO
 from typing import cast
 
 from attr import Factory, attrib, attrs
-from attr.validators import provides
 from hyperlink import DecodedURL
 from tubes.itube import IFount
 from zope.interface import implementer
@@ -17,6 +16,7 @@ from zope.interface import implementer
 from twisted.python.compat import nativeString
 from twisted.web.iweb import IRequest
 
+from ._attrs_zope import provides
 from ._headers import IHTTPHeaders
 from ._headers_compat import HTTPHeadersWrappingHeaders
 from ._message import FountAlreadyAccessedError, MessageState

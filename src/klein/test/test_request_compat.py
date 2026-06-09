@@ -42,7 +42,7 @@ _R = TypeVar("_R")
 
 
 def ensuringDeferred(
-    fn: Callable[[_T], Coroutine[Any, Any, _R]]
+    fn: Callable[[_T], Coroutine[Any, Any, _R]],
 ) -> Callable[[_T], Awaitable[_R]]:
     @functools.wraps(fn)
     def wrapper(self: _T) -> Awaitable[_R]:

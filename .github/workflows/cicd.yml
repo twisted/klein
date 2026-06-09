@@ -25,10 +25,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -59,10 +59,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -93,10 +93,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -127,10 +127,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -160,10 +160,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -193,37 +193,36 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.7", "3.9", "3.10", "3.11"]
-        twisted-version: ["21.2", "22.1", "23.8", "23.10"]
+        twisted-version: ["23.8", "23.10"]
+        python-version: ["3.9", "3.10", "3.11"]
         tox-prefix: ["coverage"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python-version: "pypy-3.8"
+            python-version: "pypy-3.11"
             twisted-version: "23.8"
             tox-prefix: "test"
             optional: false
-          - os: "ubuntu-latest"
-            python-version: "pypy-3.9"
-            twisted-version: "23.8"
-            tox-prefix: "test"
-            optional: false
-          # Test Python 3.12 but allow it to fail
           - os: "ubuntu-latest"
             python-version: "3.12.0"
             twisted-version: "23.8"
             tox-prefix: "test"
-            optional: true
+            optional: false
+          - os: "ubuntu-latest"
+            python-version: "3.13.0"
+            twisted-version: "24.10"
+            tox-prefix: "test"
+            optional: false
 
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: |
             ${{ matrix.python-version }}
@@ -278,19 +277,19 @@ jobs:
 
       - name: Upload Trial log artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
-          name: trial
+          name: "trial-py${{ matrix.python-version }}-twisted${{ matrix.twisted-version }}-os${{ matrix.os }}"
           path: .tox/${TOX_ENV}/log/trial.log
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.
-      - uses: "actions/setup-python@v4"
+      - uses: "actions/setup-python@v6"
         with:
           python-version: "3.11"
 
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v3"
+        uses: "codecov/codecov-action@v6"
         if: ${{ matrix.tox-prefix == 'coverage' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

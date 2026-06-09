@@ -57,10 +57,10 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
             return True
 
         def __ne__(self, other: Any) -> bool:
-            return False
+            return False  # pragma: no cover
 
         def __hash__(self) -> int:
-            return id(self)
+            return id(self)  # pragma: no cover
 
     _another = Klein()
 
@@ -426,7 +426,7 @@ class KleinTestCase(unittest.TestCase):
 
         @app.route("/foo", branch=True)
         def foo(request: IRequest) -> KleinRenderable:
-            return "foo"
+            return "foo"  # pragma: no cover
 
         c = app.url_map.bind("foo")
         self.assertEqual(

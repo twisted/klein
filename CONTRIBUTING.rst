@@ -34,7 +34,7 @@ Here are some suggestions to make the contributing process easier for everyone:
 Code
 ----
 
-- Use `Twisted's coding standards <https://docs.twisted.org/en/stable/core/development/policy/coding-standard.html>`_ as a guideline for code changes you make.
+- Use `Twisted's coding standards <https://docs.twisted.org/en/stable/development/coding-standard.html>`_ as a guideline for code changes you make.
   Some parts of Klein (eg. ``klein.resource.ensure_utf8_bytes``) do not adhere to the Twisted style guide, but changing that would break public APIs, which is worse than breaking the style guidelines.
   Similarly, if you change existing code, following the Twisted style guide is good, but is less important than not breaking public APIs.
 - Compatibility across versions is important: here are `Twisted's compatibility guidelines <https://docs.twisted.org/en/stable/development/compatibility-policy.html>`_, which Klein shares.

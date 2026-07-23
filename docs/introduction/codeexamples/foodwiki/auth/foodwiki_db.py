@@ -62,8 +62,7 @@ class PublicRatingsDB(Protocol):
         """,
         load=many(FoodRating),
     )
-    def ratingsByUserName(self, userName: str) -> AsyncIterable[FoodRating]:
-        ...
+    def ratingsByUserName(self, userName: str) -> AsyncIterable[FoodRating]: ...
 
     @query(
         sql="""
@@ -74,8 +73,7 @@ class PublicRatingsDB(Protocol):
         """,
         load=many(NamedRating),
     )
-    def topRatings(self) -> AsyncIterable[NamedRating]:
-        ...
+    def topRatings(self) -> AsyncIterable[NamedRating]: ...
 
 
 accessPublicRatings = accessor(PublicRatingsDB)
@@ -105,8 +103,7 @@ class RatingsDB(Protocol):
         "where rated_by = {accountID}",
         load=many(FoodRating),
     )
-    def ratingsByUserID(self, accountID: str) -> AsyncIterable[FoodRating]:
-        ...
+    def ratingsByUserID(self, accountID: str) -> AsyncIterable[FoodRating]: ...
 
     @statement(
         sql="""
@@ -114,8 +111,9 @@ class RatingsDB(Protocol):
         values ({accountID}, {name}, {rating})
         """
     )
-    async def addRating(self, accountID: str, name: str, rating: int) -> None:
-        ...
+    async def addRating(
+        self, accountID: str, name: str, rating: int
+    ) -> None: ...
 
 
 accessRatings = accessor(RatingsDB)

@@ -1,6 +1,7 @@
 """
 Tests for running synchronous DB-API drivers within threads.
 """
+
 from __future__ import annotations
 
 import sqlite3

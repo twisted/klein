@@ -38,12 +38,10 @@ class RatingsDB(Protocol):
         sql="select name, rating from food",
         load=many(FoodRating),
     )
-    def allRatings(self) -> AsyncIterable[FoodRating]:
-        ...
+    def allRatings(self) -> AsyncIterable[FoodRating]: ...
 
     @statement(sql="insert into food (name, rating) values ({name}, {rating})")
-    async def addRating(self, name: str, rating: int) -> None:
-        ...
+    async def addRating(self, name: str, rating: int) -> None: ...
 
 
 accessRatings = accessor(RatingsDB)

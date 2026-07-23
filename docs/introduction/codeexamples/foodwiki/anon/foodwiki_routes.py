@@ -2,7 +2,6 @@
 Simple example of a public website.
 """
 
-
 from foodwiki_config import requirer
 from foodwiki_db import FoodRater
 from foodwiki_templates import food, page, refresh

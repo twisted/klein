@@ -80,7 +80,7 @@ def one(
 
 
 def maybe(
-    load: Callable[..., T]
+    load: Callable[..., T],
 ) -> Callable[[object, AsyncCursor], Coroutine[object, object, Optional[T]]]:
     """
     Fetch a single result and pass it to a translator function, but return None
@@ -99,7 +99,7 @@ def maybe(
 
 
 def many(
-    load: Callable[..., T]
+    load: Callable[..., T],
 ) -> Callable[[object, AsyncCursor], AsyncIterable[T]]:
     """
     Fetch multiple results with a function to translate rows.
@@ -307,7 +307,7 @@ class AccessProxy:
 
 
 def accessor(
-    accessPatternProtocol: Callable[[], T]
+    accessPatternProtocol: Callable[[], T],
 ) -> Callable[[AsyncConnection], T]:
     """
     Create a factory which binds a database transaction in the form of an

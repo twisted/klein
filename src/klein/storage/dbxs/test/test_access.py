@@ -33,20 +33,16 @@ class Foo:
 
 class FooAccessPattern(Protocol):
     @query(sql="select bar, baz from foo where bar = {bar}", load=one(Foo))
-    async def getFoo(self, bar: int) -> Foo:
-        ...
+    async def getFoo(self, bar: int) -> Foo: ...
 
     @query(sql="select bar, baz from foo where bar = {bar}", load=maybe(Foo))
-    async def maybeFoo(self, bar: int) -> Optional[Foo]:
-        ...
+    async def maybeFoo(self, bar: int) -> Optional[Foo]: ...
 
     @query(sql="select bar, baz from foo where baz = {baz}", load=one(Foo))
-    async def oneFooByBaz(self, baz: int) -> Foo:
-        ...
+    async def oneFooByBaz(self, baz: int) -> Foo: ...
 
     @query(sql="select bar, baz from foo where baz = {baz}", load=maybe(Foo))
-    async def maybeFooByBaz(self, baz: int) -> Optional[Foo]:
-        ...
+    async def maybeFooByBaz(self, baz: int) -> Optional[Foo]: ...
 
     @statement(sql="insert into foo (baz) values ({baz})")
     async def newFoo(self, baz: int) -> None:
@@ -116,8 +112,7 @@ class AccessTestCase(TestCase):
 
             class MissingBar(Protocol):
                 @statement(sql="fake sql {bar}")
-                async def someUnused(self) -> None:
-                    ...
+                async def someUnused(self) -> None: ...
 
         self.assertIn("bar", str(pm.exception))
         self.assertIn("someUnused", str(pm.exception))
@@ -125,8 +120,7 @@ class AccessTestCase(TestCase):
 
             class DoesntUseBar(Protocol):
                 @statement(sql="fake sql")
-                async def someMissing(self, bar: str) -> None:
-                    ...
+                async def someMissing(self, bar: str) -> None: ...
 
     @immediateTest()
     async def test_tooManyResults(self, pool: MemoryPool) -> None:
@@ -151,8 +145,7 @@ class AccessTestCase(TestCase):
         """
 
         class NonAccessPatternProtocol(Protocol):
-            def randomNonQueryMethod(self) -> None:
-                ...
+            def randomNonQueryMethod(self) -> None: ...
 
         with self.assertRaises(ExtraneousMethods) as em:
             accessor(NonAccessPatternProtocol)

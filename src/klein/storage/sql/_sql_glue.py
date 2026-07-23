@@ -329,9 +329,9 @@ class SQLSessionProcurer:
     connectable: AsyncConnectable
     authorizers: Sequence[SQLAuthorizer[Any]]
     passwordEngine: PasswordEngine = field(default_factory=defaultSecureEngine)
-    storeToProcurer: Callable[
-        [ISessionStore], SessionProcurer
-    ] = SessionProcurer
+    storeToProcurer: Callable[[ISessionStore], SessionProcurer] = (
+        SessionProcurer
+    )
 
     @eagerDeferredCoroutine
     async def procureSession(

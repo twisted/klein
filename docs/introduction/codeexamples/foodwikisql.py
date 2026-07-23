@@ -1,6 +1,7 @@
 """
 Simple example of a public website.
 """
+
 import os
 import sqlite3
 from dataclasses import dataclass
@@ -81,15 +82,13 @@ class FoodListSQL(Protocol):
         """,
         load=many(Food),
     )
-    def getFoods(self, accountID: str) -> AsyncIterable[Food]:
-        ...
+    def getFoods(self, accountID: str) -> AsyncIterable[Food]: ...
 
     @statement(
         sql="insert into food (account_id, name, rating) values "
         "({accountID}, {name}, {rating})"
     )
-    async def addFood(self, accountID: str, name: str, rating: int) -> None:
-        ...
+    async def addFood(self, accountID: str, name: str, rating: int) -> None: ...
 
 
 FoodListQueries = accessor(FoodListSQL)

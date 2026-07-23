@@ -270,7 +270,7 @@ jobs:
         if: ${{ matrix.tox-prefix == 'coverage' }}
 
       - name: Upload Coverage XML
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-debug
           path: coverage.xml

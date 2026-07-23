@@ -25,10 +25,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -59,10 +59,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -93,10 +93,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -127,10 +127,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -160,10 +160,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -217,12 +217,12 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: |
             ${{ matrix.python-version }}
@@ -284,12 +284,12 @@ jobs:
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.
-      - uses: "actions/setup-python@v6"
+      - uses: "actions/setup-python@v7"
         with:
           python-version: "3.11"
 
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v6"
+        uses: "codecov/codecov-action@v7"
         if: ${{ matrix.tox-prefix == 'coverage' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

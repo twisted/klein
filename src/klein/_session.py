@@ -268,11 +268,14 @@ class SessionProcurer:
             identifierInCookie = session.identifier
             # TODO: coverage
             if not isinstance(identifierInCookie, str):  # pragma: no branch
-                identifierInCookie = (
-                    identifierInCookie.encode(  # type:ignore[unreachable]
+                # black invalidly moves the unreachable comment
+                # fmt: off
+                identifierInCookie = (  # type:ignore[unreachable]
+                    identifierInCookie.encode(
                         "ascii"
                     )
                 )  # pragma: no cover
+                #  fmt: on
             request.addCookie(  # type: ignore[call-arg]
                 cookieName,
                 identifierInCookie,

@@ -7,7 +7,6 @@ from typing import (
     Callable,
     Dict,
     Iterable,
-    List,
     Optional,
     Sequence,
     Type,
@@ -77,21 +76,16 @@ V = TypeVar("V")
 
 class AuthorizationMap(Protocol):
     @overload
-    def get(self, key: Type[V]) -> V:
-        ...
+    def get(self, key: Type[V]) -> V: ...
 
     @overload
-    def get(self, key: Type[V], default: T) -> Union[V, T]:
-        ...
+    def get(self, key: Type[V], default: T) -> Union[V, T]: ...
 
-    def get(self, *args: Any, **kwargs: Any) -> Any:
-        ...
+    def get(self, *args: Any, **kwargs: Any) -> Any: ...
 
-    def __getitem__(self, key: Type[V]) -> V:
-        ...
+    def __getitem__(self, key: Type[V]) -> V: ...
 
-    def __setitem__(self, key: Type[V], value: V) -> None:
-        ...
+    def __setitem__(self, key: Type[V], value: V) -> None: ...
 
 
 class ISession(Interface):
@@ -225,7 +219,7 @@ class ISimpleAccountBinding(Interface):
         authenticate a principal.
         """
 
-    def boundAccounts() -> Deferred[List[ISimpleAccount]]:
+    def boundAccounts() -> Deferred[Sequence[ISimpleAccount]]:
         """
         Retrieve the accounts currently associated with the session this is a
         component of.

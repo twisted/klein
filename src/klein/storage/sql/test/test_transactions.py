@@ -1,13 +1,15 @@
 """
 Tests for L{klein.storage.sql._transactions}
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import ClassVar, Optional
 
+from dbxs.async_dbapi import AsyncConnectable, AsyncConnection
+from dbxs.testing import MemoryPool
 from treq import content
-from treq.testing import StubTreq
 
 from twisted.internet.defer import Deferred
 from twisted.trial.unittest import SynchronousTestCase
@@ -15,8 +17,7 @@ from twisted.trial.unittest import SynchronousTestCase
 from klein import Klein, Requirer
 from klein.storage.sql._transactions import Transaction
 
-from ...dbxs.dbapi_async import AsyncConnectable, AsyncConnection
-from ...dbxs.testing import MemoryPool
+from ....test.util import makeStub as StubTreq
 
 
 @dataclass
@@ -64,7 +65,8 @@ class WriteHeadersHookTests(SynchronousTestCase):
         """
         mpool = MemoryPool.new()
         to = TestObject(self, mpool.connectable)
-        stub = StubTreq(to.router.resource())
+        rsrc = to.router.resource()
+        stub = StubTreq(rsrc)
         inProgress = stub.get("https://localhost/succeed")
         self.assertNoResult(inProgress)
         mpool.flush()

@@ -5,11 +5,11 @@ from datetime import datetime
 from typing import AsyncIterable, Optional
 
 from attrs import define
+from dbxs import accessor, many, maybe, query, statement
 
 from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISession
-from ..dbxs import accessor, many, maybe, query, statement
 
 
 @define

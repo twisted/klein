@@ -41,6 +41,9 @@ if __name__ == "__main__":
             "Werkzeug",
             "zope.interface",
         ],
+        extras_require={
+            "storage": ["dbxs"],
+        },
         keywords="twisted flask werkzeug web",
         license="MIT",
         name="klein",
@@ -49,8 +52,6 @@ if __name__ == "__main__":
             "klein.storage",
             "klein.storage.memory",
             "klein.storage.memory.test",
-            "klein.storage.dbxs",
-            "klein.storage.dbxs.test",
             "klein.storage.passwords",
             "klein.storage.passwords.test",
             "klein.storage.sql",

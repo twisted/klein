@@ -376,13 +376,13 @@ class Plating:
             stipulated types.
         """
         sigf = signature(f)
-        computedArgs: P.args = [slot(name) for name in sigf.parameters]
+        # should be P.args, but can't be
+        computedArgs: Any = [slot(name) for name in sigf.parameters]
 
         def makeDict(*args: object, **kwargs: object) -> dict[str, object]:
             bound = sigf.bind(*args, **kwargs)
             return bound.arguments
 
-        c: Callable[P, Tag] = (
-            cls(tags=f(*computedArgs)).widgeted(makeDict).widget
-        )
+        tags = f(*computedArgs)  # type: ignore[call-arg]
+        c: Callable[P, Tag] = cls(tags=tags).widgeted(makeDict).widget
         return c

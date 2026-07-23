@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 from typing import AsyncIterable, Optional, Protocol
 
-from klein.interfaces import ISession, ISessionStore
-from klein.storage.dbxs import accessor, many, query, statement
-from klein.storage.dbxs.dbapi_async import (
+from dbxs import accessor, many, query, statement
+from dbxs.adapters.dbapi_twisted import (
     AsyncConnectable,
     AsyncConnection,
-    transaction,
 )
+from dbxs.async_dbapi import transaction
+
+from klein.interfaces import ISession, ISessionStore
 from klein.storage.sql import applyBasicSchema, authorizerFor
 
 
@@ -38,12 +39,10 @@ class RatingsDB(Protocol):
         sql="select name, rating from food",
         load=many(FoodRating),
     )
-    def allRatings(self) -> AsyncIterable[FoodRating]:
-        ...
+    def allRatings(self) -> AsyncIterable[FoodRating]: ...
 
     @statement(sql="insert into food (name, rating) values ({name}, {rating})")
-    async def addRating(self, name: str, rating: int) -> None:
-        ...
+    async def addRating(self, name: str, rating: int) -> None: ...
 
 
 accessRatings = accessor(RatingsDB)

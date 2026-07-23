@@ -23,6 +23,7 @@ from typing import (
 from uuid import uuid4
 
 from attrs import define
+from dbxs.async_dbapi import AsyncConnectable, AsyncConnection, transaction
 from zope.interface import implementer
 
 from twisted.internet.defer import Deferred, gatherResults, succeed
@@ -42,7 +43,6 @@ from ..._isession import AuthorizationMap
 from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISessionStore, ISimpleAccount
-from ..dbxs.dbapi_async import AsyncConnectable, AsyncConnection, transaction
 from ..passwords import PasswordEngine, defaultSecureEngine
 from ._sql_dal import AccountRecord, SessionDAL, SessionDB, SessionRecord
 from ._transactions import requestBoundTransaction
@@ -329,9 +329,9 @@ class SQLSessionProcurer:
     connectable: AsyncConnectable
     authorizers: Sequence[SQLAuthorizer[Any]]
     passwordEngine: PasswordEngine = field(default_factory=defaultSecureEngine)
-    storeToProcurer: Callable[
-        [ISessionStore], SessionProcurer
-    ] = SessionProcurer
+    storeToProcurer: Callable[[ISessionStore], SessionProcurer] = (
+        SessionProcurer
+    )
 
     @eagerDeferredCoroutine
     async def procureSession(

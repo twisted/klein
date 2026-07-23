@@ -1,10 +1,18 @@
 """
 Simple example of a public website.
 """
+
 import os
 import sqlite3
 from dataclasses import dataclass
 from typing import AsyncIterable, Optional, Protocol
+
+from dbxs import accessor, many, query, statement
+from dbxs.dbapi_async import (
+    AsyncConnection,
+    adaptSynchronousDriver,
+    transaction,
+)
 
 from twisted.internet.defer import Deferred, succeed
 from twisted.web.iweb import IRequest
@@ -25,12 +33,6 @@ from klein.interfaces import (
     ISessionStore,
     ISimpleAccount,
     ISimpleAccountBinding,
-)
-from klein.storage.dbxs import accessor, many, query, statement
-from klein.storage.dbxs.dbapi_async import (
-    AsyncConnection,
-    adaptSynchronousDriver,
-    transaction,
 )
 from klein.storage.sql import (
     SQLSessionProcurer,
@@ -81,15 +83,13 @@ class FoodListSQL(Protocol):
         """,
         load=many(Food),
     )
-    def getFoods(self, accountID: str) -> AsyncIterable[Food]:
-        ...
+    def getFoods(self, accountID: str) -> AsyncIterable[Food]: ...
 
     @statement(
         sql="insert into food (account_id, name, rating) values "
         "({accountID}, {name}, {rating})"
     )
-    async def addFood(self, accountID: str, name: str, rating: int) -> None:
-        ...
+    async def addFood(self, accountID: str, name: str, rating: int) -> None: ...
 
 
 FoodListQueries = accessor(FoodListSQL)

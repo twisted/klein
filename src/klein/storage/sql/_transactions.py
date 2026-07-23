@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 
 from attrs import Factory, define, field
+from dbxs.async_dbapi import AsyncConnectable, AsyncConnection
 from zope.interface import Interface, implementer
 
 from twisted.internet.defer import Deferred, gatherResults, succeed
@@ -22,7 +23,6 @@ from klein.interfaces import (
 
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import IRequirementContext
-from ..dbxs.dbapi_async import AsyncConnectable, AsyncConnection
 
 
 log = Logger()

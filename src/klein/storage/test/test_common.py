@@ -1,8 +1,9 @@
 from typing import Awaitable, Callable, List, Optional, TypeVar
 
 import attr
+from dbxs.async_dbapi import transaction
+from dbxs.testing import MemoryPool, immediateTest
 from treq import content
-from treq.testing import StubTreq
 
 from twisted.internet.defer import Deferred
 from twisted.python.compat import nativeString
@@ -20,8 +21,7 @@ from klein.storage.memory import MemoryAccountStore, MemorySessionStore
 from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
-from ..dbxs.dbapi_async import transaction
-from ..dbxs.testing import MemoryPool, immediateTest
+from ...test.util import makeStub as StubTreq
 from ..passwords.testing import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer, applyBasicSchema
 
@@ -81,7 +81,7 @@ class TestObject:
         account = self.loggedInAs = await binder.bindIfCredentialsMatch(
             username, password
         )
-        self.boundAccounts = await binder.boundAccounts()
+        self.boundAccounts = list(await binder.boundAccounts())
         if account is None:
             return "auth fail"
         else:

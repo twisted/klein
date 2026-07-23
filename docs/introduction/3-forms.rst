@@ -73,7 +73,7 @@ the HTML UI.
    that you're always passing the correct slots to them later.
 
 
-Database Access with ``dbxs``
+Database Access with `DBXS <https://dbxs.readthedocs.io/en/latest/>`_
 -----------------------------
 
 You may have noticed that in the configuration above, we constructed our
@@ -81,8 +81,8 @@ You may have noticed that in the configuration above, we constructed our
 function that can look at a database and determine if a user is authorized to
 perform a task, so now we will implement the interaction with the database.
 
-We will use Klein's built-in lightweight asynchronous database access system,
-``dbxs``, allows you to keep your queries organized and construct simple
+We will use `DBXS <https://dbxs.readthedocs.io/>`_ , a lightweight query
+organizer, which allows you to keep your queries organized and construct simple
 classes from your query results, without bringing in the overhead of an ORM or
 query builder.  If you know SQL and you know basic Python data structures, you
 allmost know how to use it already.

@@ -111,7 +111,7 @@ def declareMemoryAuthorizer(
         decoratee: Callable[
             [Type[T], ISession, Componentized],
             Union[Deferred[Optional[T]], T, None],
-        ]
+        ],
     ) -> _MemoryAuthorizerFunction[T]:
         asAuthorizer = cast(_MemoryAuthorizerFunction, decoratee)
         asAuthorizer.__memoryAuthInterface__ = forInterface

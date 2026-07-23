@@ -1,6 +1,7 @@
 """
 Simple example of a public website.
 """
+
 from twisted.web.template import Tag, slot, tags
 
 from klein import Field, Form, Klein, Plating, Requirer, SessionProcurer

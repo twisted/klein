@@ -2,7 +2,6 @@
 Simple example of a public website.
 """
 
-
 from typing import Optional, Union
 
 from foodwiki_config import app, requirer

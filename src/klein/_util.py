@@ -12,15 +12,14 @@ _P = ParamSpec("_P")
 
 if TYPE_CHECKING:  # pragma: no cover
     # https://github.com/twisted/twisted/issues/11862
-    def deferToThread(f: Callable[[], _T]) -> Deferred[_T]:
-        ...
+    def deferToThread(f: Callable[[], _T]) -> Deferred[_T]: ...
 
 else:
     from twisted.internet.threads import deferToThread
 
 
 def eagerDeferredCoroutine(
-    f: Callable[_P, Coroutine[Deferred[object], object, _T]]
+    f: Callable[_P, Coroutine[Deferred[object], object, _T]],
 ) -> Callable[_P, Deferred[_T]]:
     def inner(*args: _P.args, **kwargs: _P.kwargs) -> Deferred[_T]:
         return Deferred.fromCoroutine(f(*args, **kwargs))

@@ -578,8 +578,10 @@ class PlatingTests(AsynchronousTestCase):
             [{"r": "1", "g": "2", "b": "3"}, {"r": "4", "g": "5", "b": "6"}],
         )
         self.assertIn(
+            b'<div Class="content">'
             b"<div><div>red: 1 green: 2 blue: 3</div></div>"
-            b"<div><div>red: 4 green: 5 blue: 6</div></div></div>",
+            b"<div><div>red: 4 green: 5 blue: 6</div></div>"
+            b"</div>",
             writtenHTML,
         )
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import scrypt
 from os import urandom
 from re import compile as compileRE
 from typing import TYPE_CHECKING, Awaitable, Callable, Type
@@ -9,30 +10,6 @@ from unicodedata import normalize
 
 from ..._util import threadedDeferredFunction
 from ._interfaces import PasswordEngine
-
-
-try:
-    from hashlib import scrypt
-except ImportError:
-    # PyPy ships without scrypt so we need cryptography there.
-    from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
-
-    # The signature of C{scrypt} from the standard library has a bunch of
-    # additional complexity, supporting memory views and types other than
-    # `bytes`, but this is not a publicly exposed or particularly principled
-    # annotation so we ignore the minor differences in the two signatures here.
-
-    def scrypt(  # type:ignore[misc]
-        password: bytes,
-        *,
-        salt: bytes,
-        n: int,
-        r: int,
-        p: int,
-        maxmem: int = 0,
-        dklen: int = 64,
-    ) -> bytes:
-        return Scrypt(salt=salt, length=dklen, n=n, r=r, p=p).derive(password)
 
 
 @threadedDeferredFunction

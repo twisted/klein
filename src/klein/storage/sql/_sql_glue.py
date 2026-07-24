@@ -133,7 +133,7 @@ class SessionStore:
         """
         db = SessionDB(await self._transaction())
         for token in tokens:
-            await db.deleteSession(token)
+            await db.deleteSession(token, secure=True)
 
     def sentInsecurely(self, tokens: Sequence[str]) -> None:
         """

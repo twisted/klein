@@ -53,10 +53,13 @@ class SessionDAL(Protocol):
     Data access layer for core sessions database.
     """
 
-    @statement(sql="delete from session where session_id = {sessionID} ")
-    async def deleteSession(self, sessionID: str) -> None:
+    @statement(
+        sql="delete from session where session_id = {sessionID} "
+        "and confidential = {secure}"
+    )
+    async def deleteSession(self, sessionID: str, secure: bool) -> None:
         """
-        Delete a session by session ID.
+        Delete all sessions with the given security level by session ID.
         """
 
     @statement(

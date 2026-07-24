@@ -74,11 +74,15 @@ class CreateAndDeleteSessions(TestCase):
             self.assertEqual(
                 await asyncList(db.boundAccounts("insecure-session")), [account]
             )
-            await db.deleteSession("secure-session")
+            await db.deleteSession("secure-session", False)
+            self.assertEqual(
+                await asyncList(db.boundAccounts("secure-session")), [account]
+            )
+            await db.deleteSession("secure-session", True)
             self.assertEqual(
                 await asyncList(db.boundAccounts("secure-session")), []
             )
-            await db.deleteSession("insecure-session")
+            await db.deleteSession("insecure-session", False)
             self.assertEqual(
                 await asyncList(db.boundAccounts("insecure-session")), []
             )

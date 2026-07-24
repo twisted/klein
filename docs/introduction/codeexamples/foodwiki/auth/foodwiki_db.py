@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, AsyncIterable, Optional, Protocol, Sequence
+from typing import AsyncIterable, Optional, Protocol
 
 from dbxs import accessor, many, query, statement
-from dbxs.dbapi_async import (
+from dbxs.async_dbapi import (
     AsyncConnectable,
     AsyncConnection,
     transaction,
@@ -16,7 +16,6 @@ from klein.interfaces import (
     SessionMechanism,
 )
 from klein.storage.sql import applyBasicSchema, authorizerFor
-from klein.storage.sql._sql_glue import SQLAuthorizer
 
 
 foodTable = """
@@ -173,7 +172,7 @@ async def authorizeProvisioner(
     return APIKeyProvisioner(store, session, accts[0])
 
 
-allAuthorizers: Sequence[SQLAuthorizer[Any]] = [
+allAuthorizers = [
     authorizeFoodCritic.authorizer,
     authorizeRatingsViewer.authorizer,
     authorizeProvisioner.authorizer,

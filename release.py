@@ -8,7 +8,7 @@ from shutil import rmtree
 from subprocess import CalledProcessError, run
 from sys import exit, stderr
 from tempfile import mkdtemp
-from typing import Any, Dict, NoReturn, Optional, Sequence
+from typing import Dict, NoReturn, Optional, Sequence
 
 from click import group as commandGroup
 from click import option as commandOption
@@ -56,7 +56,7 @@ def currentVersion() -> Version:
     """
     # Incremental doesn't have an API to do this, so we are duplicating some
     # code from its source tree. Boo.
-    versionInfo: Dict[str, Any] = {}
+    versionInfo: Dict[str, Version] = {}
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
     exec(versonFile.read_text(), versionInfo)
     version: Version = versionInfo["__version__"]

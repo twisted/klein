@@ -103,6 +103,8 @@ If you run this example and then visit ``http://localhost:8080/``, you will get 
 Streamlined Apps With HTML and JSON
 ===================================
 
+.. _htmljson:
+
 For a typical web application, the first order of business is generating some
 simple HTML pages that users can interact with and that search engines can
 easily index.

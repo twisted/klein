@@ -5,13 +5,21 @@ to avoid repeating conditional import logic.
 """
 
 import sys
-from typing import Protocol
 
 
 if sys.version_info > (3, 10):
-    from typing import Concatenate, ParamSpec
+    from typing import Concatenate, ParamSpec, Protocol
 else:
-    from typing_extensions import Concatenate, ParamSpec
+    # PyPy 3.9 seems to have a bonus runtime check for Protocol's generic
+    # arguments all being TypeVars, so lie to it about ParamSpec.
+    from typing import TYPE_CHECKING
+
+    from typing_extensions import Concatenate, Protocol
+
+    if TYPE_CHECKING:
+        from typing_extensions import ParamSpec
+    else:
+        from typing import TypeVar as ParamSpec
 
 __all__ = [
     "Protocol",

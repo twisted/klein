@@ -216,7 +216,7 @@ class Klein:
     def __ne__(self, other: Any) -> bool:
         result = self.__eq__(other)
         if result is NotImplemented:
-            return result
+            return NotImplemented
         return not result
 
     @property
@@ -607,7 +607,7 @@ class Klein:
         site.displayTracebacks = displayTracebacks
 
         endpoint.listen(site)
-        reactor.run()  # type: ignore[attr-defined]
+        reactor.run()
 
 
 _globalKleinApp = Klein()

@@ -46,9 +46,9 @@ class MockRequest(Request):
 
     # twisted seems to have some serious type issues with Request
     # https://github.com/twisted/twisted/issues/12574
-    site: Site  # type:ignore[assignment]
-    content: IO[bytes]  # type:ignore[assignment]
-    args: dict[bytes, list[bytes]]  # type:ignore[assignment]
+    site: Site
+    content: IO[bytes]
+    args: dict[bytes, list[bytes]]
 
     def __init__(
         self,
@@ -147,10 +147,10 @@ def _render(
     if result is not NOT_DONE_YET:
         raise AssertionError("unreachable")  # pragma: no cover
 
-    if request.finished or not notifyFinish:  # type: ignore[attr-defined]
+    if request.finished or not notifyFinish:  # type: ignore[unreachable]
         return succeed(None)
 
-    return request.notifyFinish()  # type: ignore[no-any-return,attr-defined]
+    return request.notifyFinish()
 
 
 class SimpleElement(Element):

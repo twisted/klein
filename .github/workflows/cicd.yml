@@ -25,10 +25,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -59,12 +59,12 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: System Python Information
         uses: twisted/python-info-action@v1
@@ -93,10 +93,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -127,10 +127,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -160,10 +160,10 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -193,18 +193,13 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
+        twisted-version: ["23.8", "23.10"]
         python-version: ["3.9", "3.10", "3.11"]
-        twisted-version: ["21.2", "22.1", "23.8"]
         tox-prefix: ["coverage"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python-version: "pypy-3.9"
-            twisted-version: "23.8"
-            tox-prefix: "test"
-            optional: false
-          - os: "ubuntu-latest"
-            python-version: "pypy-3.10"
+            python-version: "pypy-3.11"
             twisted-version: "23.8"
             tox-prefix: "test"
             optional: false
@@ -222,14 +217,16 @@ jobs:
     steps:
 
       - name: Checkout source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 2
 
       - name: Install Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: |
+            ${{ matrix.python-version }}
+            3.11
 
       - name: System Python Information
         uses: twisted/python-info-action@v1
@@ -268,21 +265,31 @@ jobs:
       - name: Run unit tests
         run: tox run -e ${TOX_ENV}
 
+      - name: Combine coverage
+        run: tox run -e coverage_combine,coverage_report
+        if: ${{ matrix.tox-prefix == 'coverage' }}
+
+      - name: Upload Coverage XML
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-debug
+          path: coverage.xml
+
       - name: Upload Trial log artifact
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: "trial-py${{ matrix.python-version }}-twisted${{ matrix.twisted-version }}-os${{ matrix.os }}"
           path: .tox/${TOX_ENV}/log/trial.log
 
       # Use the latest supported Python version for combining coverage to
       # prevent parsing errors in older versions when looking at modern code.
-      - uses: "actions/setup-python@v6"
+      - uses: "actions/setup-python@v7"
         with:
           python-version: "3.11"
 
       - name: "Upload coverage to Codecov"
-        uses: "codecov/codecov-action@v5"
+        uses: "codecov/codecov-action@v7"
         if: ${{ matrix.tox-prefix == 'coverage' }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

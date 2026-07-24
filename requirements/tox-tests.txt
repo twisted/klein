@@ -1,3 +1,4 @@
-idna==3.11
+dbxs==2026.5.20
+idna==3.18
+treq==25.5.0; python_version >= '3.13'
 treq==22.2.0; python_version < '3.13'
-treq==24.9.1; python_version >= '3.13'

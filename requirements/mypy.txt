@@ -1,3 +1,6 @@
-mypy==1.19.1
-mypy-zope==1.0.14
+cryptography==49.0.0
+dbxs==2026.5.20
+mypy==2.3.0
+mypy-zope==1.0.16
+treq==26.7.0
 types-click==7.1.8

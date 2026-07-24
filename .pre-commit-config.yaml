@@ -5,7 +5,7 @@ ci:
 repos:
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: "v3.20.0"
+    rev: "v3.21.2"
     hooks:
       - id: pyupgrade
         args: ["--py37-plus", "--keep-runtime-typing"]
@@ -27,37 +27,89 @@ repos:
           - --remove-unused-variables
 
   - repo: https://github.com/PyCQA/flake8
-    rev: "7.2.0"
+    rev: "7.3.0"
     hooks:
       - id: flake8
         additional_dependencies:
           # duplicated because pre-commit cannot manage dependencies normally;
           # see https://github.com/pre-commit/pre-commit/issues/730 - for now,
           # paste and reformat from requirements/flake8.txt manually
-
-          - "flake8-bugbear==24.12.12"
-          - "flake8-docstrings==1.7.0"
-          - "flake8-mutable==1.2.0"
-          - "flake8-pep3101==2.1.0"
-          - "pep8-naming==0.14.1"
-          - "pycodestyle==2.13.0"
-          - "pydocstyle==6.3.0"
-          - "pyflakes==3.3.2"
+          - attrs==26.1.0
+          # via flake8-bugbear
+          - flake8==7.3.0
+          # via
+          #   flake8-bugbear
+          #   flake8-docstrings
+          #   flake8-mutable
+          #   flake8-pep3101
+          #   pep8-naming
+          - flake8-bugbear==25.11.29
+          # via -r flake8-deps.in
+          - flake8-docstrings==1.7.0
+          # via -r flake8-deps.in
+          - flake8-mutable==1.2.0
+          # via -r flake8-deps.in
+          - flake8-pep3101==3.0.0
+          # via -r flake8-deps.in
+          - mccabe==0.7.0
+          # via flake8
+          - pep8-naming==0.15.1
+          # via -r flake8-deps.in
+          - pycodestyle==2.14.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
+          - pydocstyle==6.3.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8-docstrings
+          - pyflakes==3.4.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
+          - snowballstemmer==3.0.1
+          # via pydocstyle
 
   - repo: https://github.com/asottile/yesqa
     rev: "v1.5.0"
     hooks:
       - id: yesqa
         additional_dependencies:
-          # see 'duplicated' above
-          - "flake8-bugbear==24.12.12"
-          - "flake8-docstrings==1.7.0"
-          - "flake8-mutable==1.2.0"
-          - "flake8-pep3101==2.1.0"
-          - "pep8-naming==0.14.1"
-          - "pycodestyle==2.13.0"
-          - "pydocstyle==6.3.0"
-          - "pyflakes==3.3.2"
+          - attrs==26.1.0
+          # via flake8-bugbear
+          - flake8==7.3.0
+          # via
+          #   flake8-bugbear
+          #   flake8-docstrings
+          #   flake8-mutable
+          #   flake8-pep3101
+          #   pep8-naming
+          - flake8-bugbear==25.11.29
+          # via -r flake8-deps.in
+          - flake8-docstrings==1.7.0
+          # via -r flake8-deps.in
+          - flake8-mutable==1.2.0
+          # via -r flake8-deps.in
+          - flake8-pep3101==3.0.0
+          # via -r flake8-deps.in
+          - mccabe==0.7.0
+          # via flake8
+          - pep8-naming==0.15.1
+          # via -r flake8-deps.in
+          - pycodestyle==2.14.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
+          - pydocstyle==6.3.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8-docstrings
+          - pyflakes==3.4.0
+          # via
+          #   -r flake8-deps.in
+          #   flake8
+          - snowballstemmer==3.0.1
+          # via pydocstyle
         pass_filenames: false
 
   - repo: https://github.com/PyCQA/isort

@@ -5,8 +5,12 @@ Shared tools for Klein's test suite.
 from abc import ABC, abstractmethod
 from typing import Type, TypeVar, cast
 
+from treq.client import HTTPClient
+from treq.testing import StubTreq as _StubTreq
+
 from twisted.internet.defer import Deferred
 from twisted.trial.unittest import SynchronousTestCase
+from twisted.web.resource import IResource
 
 
 class EqualityTestsMixin(ABC):
@@ -135,3 +139,15 @@ _T = TypeVar("_T")
 
 def recover(d: "Deferred[_T]", exc_type: Type[Exception]) -> "Deferred[_T]":
     return d.addErrback(lambda f: f.trap(exc_type))
+
+
+class StubWithTypes(HTTPClient):
+    def flush(self) -> bool:
+        return True  # pragma: no cover
+
+
+def makeStub(resource: IResource) -> StubWithTypes:
+    """
+    Create a StubTreq but give it a more convincing type signature.
+    """
+    return _StubTreq(resource)  # type:ignore[return-value]

@@ -80,10 +80,7 @@ class TransactionRequestAssociator:
     @asynccontextmanager
     async def transactify(self) -> AsyncIterator[None]:
         """
-        Commit all associated transactions.
-
-        @param ignored: To be usable as a Deferred callback, accept an
-            argument, but discard it.
+        Commit all transactions associated with the request.
         """
         try:
             yield

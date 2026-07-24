@@ -75,7 +75,6 @@ def food(name: str, rating: str) -> Tag:
     theForm=Form.rendererFor(postHandler, action="/?post=yes"),
 )
 def formRenderer(theForm):
-    global foodsList
     return {
         "addFoodForm": theForm,
         "foods": [

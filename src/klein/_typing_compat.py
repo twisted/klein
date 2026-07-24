@@ -19,12 +19,7 @@ else:
     if TYPE_CHECKING:
         from typing_extensions import ParamSpec
     else:
-        from platform import python_implementation
-
-        if python_implementation() == "PyPy":
-            from typing import TypeVar as ParamSpec
-        else:
-            from typing_extensions import ParamSpec
+        from typing import TypeVar as ParamSpec
 
 __all__ = [
     "Protocol",

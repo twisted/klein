@@ -1,7 +1,7 @@
 import sqlite3
 from typing import Optional
 
-from dbxs.dbapi_async import adaptSynchronousDriver
+from dbxs.adapters.dbapi_twisted import adaptSynchronousDriver
 from foodwiki_db import allAuthorizers
 
 from twisted.internet.defer import Deferred, succeed

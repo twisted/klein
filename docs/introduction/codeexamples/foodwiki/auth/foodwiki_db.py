@@ -15,7 +15,7 @@ from klein.interfaces import (
     ISimpleAccountBinding,
     SessionMechanism,
 )
-from klein.storage.sql import applyBasicSchema, authorizerFor
+from klein.storage.sql import SQLAuthorizer, applyBasicSchema, authorizerFor
 
 
 foodTable = """
@@ -172,7 +172,7 @@ async def authorizeProvisioner(
     return APIKeyProvisioner(store, session, accts[0])
 
 
-allAuthorizers = [
+allAuthorizers: list[SQLAuthorizer[object]] = [
     authorizeFoodCritic.authorizer,
     authorizeRatingsViewer.authorizer,
     authorizeProvisioner.authorizer,

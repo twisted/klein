@@ -5,6 +5,7 @@ L{dbxs}.
 
 from ._sql_glue import (
     SessionStore,
+    SQLAuthorizer,
     SQLSessionProcurer,
     applyBasicSchema,
     authorizerFor,
@@ -12,6 +13,7 @@ from ._sql_glue import (
 
 
 __all__ = [
+    "SQLAuthorizer",
     "SQLSessionProcurer",
     "SessionStore",
     "authorizerFor",

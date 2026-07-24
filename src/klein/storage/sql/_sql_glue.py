@@ -388,8 +388,23 @@ class _FunctionWithAuthorizer(Protocol[T]):
         """
 
 
-@define
-class SQLAuthorizer(Generic[T]):
+T_co = TypeVar("T_co", covariant=True)
+
+
+class SQLAuthorizer(Protocol[T_co]):
+    @property
+    def authorizationType(self) -> Type[T_co]: ...
+
+    def authorizationForSession(
+        self,
+        sessionStore: SessionStore,
+        transaction: AsyncConnection,
+        session: ISession,
+    ) -> Awaitable[Optional[T_co]]: ...
+
+
+@define(frozen=True)
+class ConcreteSQLAuthorizer(Generic[T]):
     authorizationType: Type[T]
     _decorated: _authorizerFunction[T]
 
@@ -413,7 +428,9 @@ def authorizerFor(
         decorated: _authorizerFunction[T],
     ) -> _FunctionWithAuthorizer[T]:
         result: _FunctionWithAuthorizer = decorated  # type:ignore[assignment]
-        result.authorizer = SQLAuthorizer[T](authorizationType, decorated)
+        result.authorizer = ConcreteSQLAuthorizer[T](
+            authorizationType, decorated
+        )
         result.authorizerType = authorizationType
         return result
 

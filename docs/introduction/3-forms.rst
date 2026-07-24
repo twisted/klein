@@ -229,7 +229,7 @@ application requires HTML templating or not.
 Next, it takes a set of keyword arguments.  Each argument corresponds to an
 argument taken by the decorated function, and is an ``IRequiredParameter``
 which describes what will be passed and how it will be fetched from either the
-request in the database.
+request or the database.
 
 In simpler terms, in code like this::
 

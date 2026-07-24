@@ -8,9 +8,9 @@ from dataclasses import dataclass
 from typing import AsyncIterable, Optional, Protocol
 
 from dbxs import accessor, many, query, statement
-from dbxs.dbapi_async import (
+from dbxs.adapters.dbapi_twisted import adaptSynchronousDriver
+from dbxs.async_dbapi import (
     AsyncConnection,
-    adaptSynchronousDriver,
     transaction,
 )
 

@@ -2,24 +2,33 @@ import sqlite3
 from typing import Optional
 
 from dbxs.adapters.dbapi_twisted import adaptSynchronousDriver
+from dbxs.dbapi import DBAPIConnection
 from foodwiki_db import allAuthorizers
 
 from twisted.internet.defer import Deferred, succeed
 from twisted.web.iweb import IRequest
 
-from klein import Requirer
+from klein import Klein, Requirer
 from klein.interfaces import ISession
 from klein.storage.sql import SQLSessionProcurer
 
 
 DB_FILE = "food-wiki.sqlite"
 
+
+def connectAndEnableForeignKeys() -> DBAPIConnection:
+    conn = sqlite3.connect(DB_FILE)
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+
 asyncDriver = adaptSynchronousDriver(
-    (lambda: sqlite3.connect(DB_FILE)), sqlite3.paramstyle
+    connectAndEnableForeignKeys, sqlite3.paramstyle
 )
 
 sessions = SQLSessionProcurer(asyncDriver, allAuthorizers)
 requirer = Requirer()
+app = Klein()
 
 
 @requirer.prerequisite([ISession])

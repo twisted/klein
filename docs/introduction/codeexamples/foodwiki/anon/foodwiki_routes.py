@@ -2,16 +2,13 @@
 Simple example of a public website.
 """
 
-from foodwiki_config import requirer
+from foodwiki_config import app, requirer
 from foodwiki_db import FoodRater
 from foodwiki_templates import food, page, refresh
 
 from twisted.web.template import slot, tags
 
-from klein import Authorization, Field, FieldValues, Form, Klein, RenderableForm
-
-
-app = Klein()
+from klein import Authorization, Field, FieldValues, Form, RenderableForm
 
 
 @requirer.require(

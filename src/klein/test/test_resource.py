@@ -135,7 +135,7 @@ class MockRequest(Request):
 
 
 def _render(
-    resource: KleinResource, request: IRequest, notifyFinish: bool = True
+    resource: KleinResource, request: Request, notifyFinish: bool = True
 ) -> Deferred:
     result = resource.render(request)
 
@@ -147,7 +147,7 @@ def _render(
     if result is not NOT_DONE_YET:
         raise AssertionError("unreachable")  # pragma: no cover
 
-    if request.finished or not notifyFinish:  # type: ignore[unreachable]
+    if request.finished or not notifyFinish:
         return succeed(None)
 
     return request.notifyFinish()

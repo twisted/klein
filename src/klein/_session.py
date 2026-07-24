@@ -223,68 +223,10 @@ class SessionProcurer:
             mechanism = SessionMechanism.Header
         else:
             mechanism = SessionMechanism.Cookie
-        if not (sentHeader or sentCookie):
-            session = None
-        else:
-            try:
-                session = await self._store.loadSession(
-                    sentHeader or sentCookie, sentSecurely, mechanism
-                )
-            except NoSuchSession:
-                if mechanism == SessionMechanism.Header:
-                    raise
-                session = None
-        if mechanism == SessionMechanism.Cookie and (
-            session is None or session.identifier != sentCookie
-        ):
-            # TODO: coverage
-            if session is None:  # pragma: no branch
-                if request.startedWriting:  # type: ignore[attr-defined]
-                    # At this point, if the mechanism is Header, we either have
-                    # a valid session or we bailed after NoSuchSession above.
-                    raise TooLateForCookies(
-                        "You tried initializing a cookie-based session too"
-                        " late in the request pipeline; the headers"
-                        " were already sent."
-                    )
-                if request.method != b"GET":
-                    # Sessions should only ever be auto-created by GET
-                    # requests; there's no way that any meaningful data
-                    # manipulation could succeed (no CSRF token check could
-                    # ever succeed, for example).
-                    raise NoSuchSession(
-                        "Can't initialize a session on a "
-                        "{method} request.".format(
-                            method=request.method.decode("ascii")
-                        )
-                    )
-                if not self._setCookieOnGET:
-                    # We don't have a session ID at all, and we're not allowed
-                    # by policy to set a cookie on the client.
-                    raise NoSuchSession(
-                        "Cannot auto-initialize a session for this request."
-                    )
-                session = await self._store.newSession(sentSecurely, mechanism)
-            identifierInCookie = session.identifier
-            # TODO: coverage
-            if not isinstance(identifierInCookie, str):  # pragma: no branch
-                # black invalidly moves the unreachable comment
-                # fmt: off
-                identifierInCookie = (  # type:ignore[unreachable]
-                    identifierInCookie.encode(
-                        "ascii"
-                    )
-                )  # pragma: no cover
-                #  fmt: on
-            request.addCookie(  # type: ignore[call-arg]
-                cookieName,
-                identifierInCookie,
-                max_age=str(self._maxAge),
-                domain=self._cookieDomain,
-                path=self._cookiePath,
-                secure=sentSecurely,
-                httpOnly=True,
-            )
+        loader = loaderForMechanism[mechanism]
+        session = await loader(
+            self, request, sentHeader or sentCookie, sentSecurely, cookieName
+        )
         if sentSecurely or not request.isSecure():
             # Do not cache the insecure session on the secure request, thanks.
             cast(Componentized, request).setComponent(ISession, session)

@@ -734,7 +734,6 @@ class TestForms(SynchronousTestCase):
             )
         )
         self.assertEqual(response.code, 200)
-        # print(self.successResultOf(response.content()).decode('utf-8'))
         failures = self.flushLoggedErrors()
         self.assertEqual(len(failures), 1)
         self.assertIn("MissingRenderMethod", str(failures[0]))
@@ -785,7 +784,8 @@ class TestForms(SynchronousTestCase):
         stub = StubTreq(TestObject(mem).router.resource())
         response = self.successResultOf(stub.get("https://localhost/render"))
         self.assertEqual(response.code, 200)
-        print(list(response.cookies()))
+        cookies = response.cookies()
+        self.assertEqual(len(cookies), 1)
         setCookie = response.cookies()["Klein-Secure-Session"]
         expected = f'value="{setCookie}"'
         actual = self.successResultOf(content(response)).decode("utf-8")

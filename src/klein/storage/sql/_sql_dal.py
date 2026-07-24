@@ -53,14 +53,10 @@ class SessionDAL(Protocol):
     Data access layer for core sessions database.
     """
 
-    @statement(
-        sql="delete from session where "
-        "session_id = {sessionID} and "
-        "confidential = true"
-    )
+    @statement(sql="delete from session where session_id = {sessionID} ")
     async def deleteSession(self, sessionID: str) -> None:
         """
-        Signature for deleting a session by session ID.
+        Delete a session by session ID.
         """
 
     @statement(
@@ -75,7 +71,7 @@ class SessionDAL(Protocol):
         self, sessionID: str, confidential: bool, created: float, mechanism: str
     ) -> None:
         """
-        Signature for deleting a session by session ID.
+        Create a new session, not associated with an account.
         """
 
     @query(
@@ -94,7 +90,7 @@ class SessionDAL(Protocol):
         mechanism: str,
     ) -> Optional[SessionRecord]:
         """
-        Signature for getting a session by session ID.
+        Get a session by session ID.
         """
 
     @statement(
@@ -105,7 +101,7 @@ class SessionDAL(Protocol):
         self, account_id: str, username: str, email: str, password_blob: str
     ) -> None:
         """
-        Signature for creating an account.
+        Create a new account.
         """
 
     @statement(
@@ -115,7 +111,7 @@ class SessionDAL(Protocol):
         self, account_id: str, session_id: str
     ) -> None:
         """
-        Signature for binding an account to a session.
+        Bind an existing account to an existing session.
         """
 
     @query(

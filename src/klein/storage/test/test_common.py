@@ -1,12 +1,17 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
 from typing import Awaitable, Callable, List, Optional, TypeVar
 
 import attr
-from dbxs.async_dbapi import transaction
+from dbxs.async_dbapi import AsyncConnection, transaction
 from dbxs.testing import MemoryPool, immediateTest
 from treq import content
+from zope.interface import Interface, implementer
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, succeed
 from twisted.python.compat import nativeString
+from twisted.python.components import Componentized
 from twisted.trial.unittest import TestCase
 from twisted.web.iweb import IRequest
 
@@ -14,10 +19,16 @@ from klein import Authorization, Field, Klein, Requirer, SessionProcurer
 from klein.interfaces import (
     ISession,
     ISessionProcurer,
+    ISessionStore,
     ISimpleAccountBinding,
     SessionMechanism,
 )
-from klein.storage.memory import MemoryAccountStore, MemorySessionStore
+from klein.storage.memory import (
+    MemoryAccountStore,
+    MemorySessionStore,
+    declareMemoryAuthorizer,
+)
+from klein.storage.sql import authorizerFor
 from klein.storage.sql._sql_glue import AccountSessionBinding, SessionStore
 
 from ...interfaces import ISimpleAccount
@@ -27,6 +38,41 @@ from ..sql import SQLSessionProcurer, applyBasicSchema
 
 
 T = TypeVar("T")
+
+
+class IJustBrowsing(Interface):
+    def browse() -> str: ...
+
+
+@implementer(IJustBrowsing)
+@dataclass
+class JustBrowsing:
+    style: str
+    id: str
+
+    def browse(self) -> str:
+        return f"just browsing {self.style}, from {self.id}"
+
+    @classmethod
+    def fromSession(cls, session: ISession) -> JustBrowsing:
+        return cls(
+            style="securely" if session.isConfidential else "insecurely",
+            id=session.identifier,
+        )
+
+
+@declareMemoryAuthorizer(IJustBrowsing)
+def authorizeBrowsingMemory(
+    what: type[object], session: ISession, componentized: Componentized
+) -> Deferred[IJustBrowsing | None]:
+    return succeed(JustBrowsing.fromSession(session))
+
+
+@authorizerFor(IJustBrowsing)
+async def authorizeBrowsingDatabase(
+    store: ISessionStore, conn: AsyncConnection, session: ISession
+) -> IJustBrowsing | None:
+    return JustBrowsing.fromSession(session)
 
 
 @attr.s(auto_attribs=True, hash=False)
@@ -41,6 +87,13 @@ class TestObject:
     @requirer.prerequisite([ISession])
     async def procureASession(self, request: IRequest) -> Optional[ISession]:
         return await self.procurer.procureSession(request)
+
+    @requirer.require(
+        router.route("/browse", methods=["get"]),
+        browsed=Authorization(IJustBrowsing),
+    )
+    async def justBrowsing(self, browsed: IJustBrowsing) -> str:
+        return browsed.browse()
 
     @requirer.require(
         router.route("/private", methods=["get"]),
@@ -115,6 +168,7 @@ class CommonStoreTests(TestCase):
         """
         session = await newSession(True, SessionMechanism.Cookie)
         otherSession = await newSession(True, SessionMechanism.Cookie)
+        insecureSession = await newSession(False, SessionMechanism.Cookie)
 
         cookies = {"Klein-Secure-Session": nativeString(session.identifier)}
         to = TestObject(procurer)
@@ -232,7 +286,8 @@ class CommonStoreTests(TestCase):
             {session.identifier},
         )
 
-        # sending insecure tokens should invalidate our session
+        # sending supposedly-secure tokens insecurely should invalidate our
+        # session
         response = await stub.get("http://localhost/private", cookies=cookies)
         self.assertEqual(response.code, 401)
         self.assertIn(b"DENIED", await content(response))
@@ -258,13 +313,29 @@ class CommonStoreTests(TestCase):
             session.identifier, {cookie.value for cookie in response.cookies()}
         )
 
+        # We should be able to maintain an insecure session over an insecure
+        # connection.  (A less and less relevant feature on the modern web, but
+        # as long as we have it, we should test it.)
+        cookies = {"Klein-INSECURE-Session": insecureSession.identifier}
+        response = await stub.get("http://localhost/browse", cookies=cookies)
+        self.assertEqual(response.code, 200)
+        body = await content(response)
+        self.assertIn(
+            (
+                f"just browsing insecurely, from {insecureSession.identifier}"
+            ).encode(),
+            body,
+        )
+
     def test_memoryStore(self) -> None:
         """
         Test that L{MemoryAccountStore} can store simple accounts and bindings.
         """
         users = MemoryAccountStore()
         users.addAccount("itsme", "secretstuff")
-        sessions = MemorySessionStore.fromAuthorizers(users.authorizers())
+        sessions = MemorySessionStore.fromAuthorizers(
+            list(users.authorizers()) + [authorizeBrowsingMemory]
+        )
         self.successResultOf(
             Deferred.fromCoroutine(
                 self.authWithStoreTest(
@@ -282,6 +353,11 @@ class CommonStoreTests(TestCase):
         await applyBasicSchema(pool.connectable)
 
         def asyncify(x: T) -> Callable[[], Awaitable[T]]:
+            """
+            Convert a thing that expects an Awaitable ( / Deferred) to instead
+            get a coroutine.
+            """
+
             async def get() -> T:
                 return x
 
@@ -292,11 +368,17 @@ class CommonStoreTests(TestCase):
         ) -> ISession:
             async with transaction(pool.connectable) as c:
                 return await SessionStore(
-                    asyncify(c), [], engineForTesting(self)
+                    asyncify(c),
+                    [authorizeBrowsingDatabase.authorizer],
+                    engineForTesting(self),
                 ).newSession(isSecure, mechanism)
 
         async with transaction(pool.connectable) as c:
-            sampleStore = SessionStore(asyncify(c), [], engineForTesting(self))
+            sampleStore = SessionStore(
+                asyncify(c),
+                [authorizeBrowsingDatabase.authorizer],
+                engineForTesting(self),
+            )
             sampleSession = await newSession(True, SessionMechanism.Cookie)
             b = AccountSessionBinding(sampleStore, sampleSession, c)
             self.assertIsNot(
@@ -313,7 +395,9 @@ class CommonStoreTests(TestCase):
 
         self.assertEqual(hashUpgradeCount(self), 0)
         proc = SQLSessionProcurer(
-            pool.connectable, [], engineForTesting(self, upgradeHashes=True)
+            pool.connectable,
+            [authorizeBrowsingDatabase.authorizer],
+            engineForTesting(self, upgradeHashes=True),
         )
         await self.authWithStoreTest(newSession, proc, pool)
         self.assertEqual(hashUpgradeCount(self), 1)

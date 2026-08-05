@@ -1,4 +1,4 @@
-cryptography==49.0.0
+cryptography==50.0.0
 dbxs==2026.5.20
 mypy==2.3.0
 mypy-zope==1.0.16

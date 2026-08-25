@@ -2,7 +2,8 @@
 Tests for L{klein._session}.
 """
 
-from typing import Any, Generator, List, Tuple, Type
+from collections.abc import Generator
+from typing import Any
 
 from zope.interface import Interface, implementer
 
@@ -19,8 +20,8 @@ from .util import StubWithTypes
 from .util import makeStub as StubTreq
 
 
-Sessions = List[ISession]
-Errors = List[NoSuchSession]
+Sessions = list[ISession]
+Errors = list[NoSuchSession]
 
 
 class ISimpleTest(Interface):
@@ -55,7 +56,7 @@ class SimpleTest:
 
 @declareMemoryAuthorizer(ISimpleTest)
 def memoryAuthorizer(
-    interface: Type[Interface], session: ISession, data: Componentized
+    interface: type[Interface], session: ISession, data: Componentized
 ) -> SimpleTest:
     """
     Authorize the ISimpleTest interface; it always works.
@@ -63,7 +64,7 @@ def memoryAuthorizer(
     return SimpleTest()
 
 
-def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubWithTypes]:
+def simpleSessionRouter() -> tuple[Sessions, Errors, str, str, StubWithTypes]:
     """
     Construct a simple router.
     """

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Coroutine, ParamSpec, TypeVar
+from collections.abc import Callable, Coroutine
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from twisted.internet.defer import Deferred
 

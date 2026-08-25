@@ -1,5 +1,6 @@
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
-from typing import AsyncIterable, Optional, Protocol
+from typing import Protocol
 
 from dbxs import accessor, many, query, statement
 from dbxs.adapters.dbapi_twisted import (
@@ -62,7 +63,7 @@ class FoodRater:
 @authorizerFor(FoodRater)
 async def authorizeFoodRater(
     store: ISessionStore, conn: AsyncConnection, session: ISession
-) -> Optional[FoodRater]:
+) -> FoodRater | None:
     return FoodRater(accessRatings(conn))
 
 

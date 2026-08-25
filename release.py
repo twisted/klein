@@ -1,6 +1,7 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
+from collections.abc import Sequence
 from enum import Enum
 from os import chdir
 from pathlib import Path
@@ -8,7 +9,7 @@ from shutil import rmtree
 from subprocess import CalledProcessError, run
 from sys import exit, stderr
 from tempfile import mkdtemp
-from typing import Dict, NoReturn, Optional, Sequence
+from typing import NoReturn
 
 from click import group as commandGroup
 from click import option as commandOption
@@ -56,7 +57,7 @@ def currentVersion() -> Version:
     """
     # Incremental doesn't have an API to do this, so we are duplicating some
     # code from its source tree. Boo.
-    versionInfo: Dict[str, Version] = {}
+    versionInfo: dict[str, Version] = {}
     versonFile = Path(__file__).parent / "src" / "klein" / "_version.py"
     exec(versonFile.read_text(), versionInfo)
     version: Version = versionInfo["__version__"]
@@ -94,7 +95,7 @@ def releaseBranchName(version: Version) -> str:
     return f"release-{version.major}.{version.minor}"
 
 
-def releaseBranch(repository: Repository, version: Version) -> Optional[Head]:
+def releaseBranch(repository: Repository, version: Version) -> Head | None:
     """
     Return the release branch corresponding to the given version.
     """

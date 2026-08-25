@@ -1,5 +1,4 @@
 import sqlite3
-from typing import Optional
 
 from dbxs.adapters.dbapi_twisted import adaptSynchronousDriver
 from dbxs.dbapi import DBAPIConnection
@@ -33,7 +32,7 @@ app = Klein()
 
 @requirer.prerequisite([ISession])
 def procurer(request: IRequest) -> Deferred[ISession]:
-    result: Optional[ISession] = ISession(request, None)
+    result: ISession | None = ISession(request, None)
     if result is not None:
         # TODO: onValidationFailureFor results in one require nested inside
         # another, which invokes this prerequisite twice. this mistake should

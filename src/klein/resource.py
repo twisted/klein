@@ -9,8 +9,9 @@ This module, L{klein.resource}, serves two purposes:
     - It's the module where L{KleinResource} is defined.
 """
 
+from collections.abc import Callable
 from sys import modules
-from typing import Any, Callable, Union
+from typing import Any
 
 from ._app import resource as _globalResourceMethod
 from ._resource import KleinResource as _KleinResource
@@ -38,7 +39,7 @@ class _SpecialModuleObject:
         self.__preserve__ = preserve
 
     @property
-    def ensure_utf8_bytes(self) -> Callable[[Union[str, bytes]], bytes]:
+    def ensure_utf8_bytes(self) -> Callable[[str | bytes], bytes]:
         return ensure_utf8_bytes
 
     def __call__(self) -> _KleinResource:

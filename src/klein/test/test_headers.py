@@ -7,14 +7,9 @@ Tests for L{klein._headers}.
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Callable, Iterable
 from typing import (
     AnyStr,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
     TypeVar,
     cast,
 )
@@ -54,11 +49,11 @@ T = TypeVar("T")
 DrawCallable = Callable[[Callable[..., T]], T]
 
 
-def encodeName(name: str) -> Optional[bytes]:
+def encodeName(name: str) -> bytes | None:
     return name.encode(HEADER_NAME_ENCODING)
 
 
-def encodeValue(name: str) -> Optional[bytes]:
+def encodeValue(name: str) -> bytes | None:
     return name.encode(HEADER_VALUE_ENCODING)
 
 
@@ -233,7 +228,7 @@ class GetValuesTestsMixIn(ABC):
         """
         rawHeaders = ((b"a", b"1"), (b"b", b"2"), (b"c", b"3"), (b"B", b"TWO"))
 
-        normalized: Dict[bytes, List[bytes]] = defaultdict(list)
+        normalized: dict[bytes, list[bytes]] = defaultdict(list)
         for name, value in rawHeaders:
             normalized[normalizeHeaderName(name)].append(value)
 
@@ -252,7 +247,7 @@ class GetValuesTestsMixIn(ABC):
         return value
 
     @given(textHeaderPairs())
-    def test_getTextName(self, textPairs: Iterable[Tuple[str, str]]) -> None:
+    def test_getTextName(self, textPairs: Iterable[tuple[str, str]]) -> None:
         """
         C{getValues} returns an iterable of L{str} values for
         the given L{str} header name.
@@ -264,7 +259,7 @@ class GetValuesTestsMixIn(ABC):
             (name, headerValueSanitize(value)) for name, value in textPairs
         )
 
-        textValues: Dict[str, List[str]] = defaultdict(list)
+        textValues: dict[str, list[str]] = defaultdict(list)
         for name, value in textHeaders:
             textValues[normalizeHeaderName(name)].append(value)
 
@@ -282,7 +277,7 @@ class GetValuesTestsMixIn(ABC):
 
     @given(bytesHeaderPairs())
     def test_getTextNameBinaryValues(
-        self, pairs: Iterable[Tuple[str, bytes]]
+        self, pairs: Iterable[tuple[str, bytes]]
     ) -> None:
         """
         C{getValues} returns an iterable of L{str} values for
@@ -299,7 +294,7 @@ class GetValuesTestsMixIn(ABC):
             for name, value in pairs
         )
 
-        binaryValues: Dict[str, List[bytes]] = defaultdict(list)
+        binaryValues: dict[str, list[bytes]] = defaultdict(list)
         for name, value in rawHeaders:
             binaryValues[headerNameAsText(normalizeHeaderName(name))].append(
                 value

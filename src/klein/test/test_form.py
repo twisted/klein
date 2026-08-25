@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, cast
+from typing import Any, cast
 from xml.etree import ElementTree
 
 import attr
@@ -46,7 +46,7 @@ class DanglingField(Field):
 @attr.s(auto_attribs=True, hash=False)
 class TestObject:
     sessionStore: ISessionStore
-    calls: List = attr.ib(factory=list)
+    calls: list = attr.ib(factory=list)
 
     router = Klein()
     requirer = Requirer()
@@ -209,7 +209,7 @@ class TestObject:
         return form
 
 
-def simpleFormRouter() -> Tuple[Klein, List[Tuple[str, int]]]:
+def simpleFormRouter() -> tuple[Klein, list[tuple[str, int]]]:
     """
     Create a simple router hooked up to a field handler.
     """

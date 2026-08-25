@@ -5,7 +5,8 @@
 HTTP headers API.
 """
 
-from typing import AnyStr, Iterable, Tuple, Union
+from collections.abc import Iterable
+from typing import AnyStr, Union
 
 from attr import Factory, attrib, attrs
 from zope.interface import implementer
@@ -132,7 +133,7 @@ def rawHeaderName(name: String) -> bytes:
         raise TypeError(f"name {name!r} must be str or bytes")
 
 
-def rawHeaderNameAndValue(name: String, value: String) -> Tuple[bytes, bytes]:
+def rawHeaderNameAndValue(name: String, value: String) -> tuple[bytes, bytes]:
     if isinstance(name, bytes):
         if not isinstance(value, bytes):
             raise TypeError(

@@ -2,8 +2,6 @@
 Simple example of a public website.
 """
 
-from typing import Optional, Union
-
 from foodwiki_config import app, requirer
 from foodwiki_db import FoodCritic, RatingsViewer
 from foodwiki_templates import food, linkedFood, page, refresh
@@ -64,7 +62,7 @@ rateFoodForm = Form.rendererFor(postHandler, action="/rate-food")
 )
 async def frontPage(
     ratingForm: RenderableForm,
-    critic: Optional[FoodCritic],
+    critic: FoodCritic | None,
     viewer: RatingsViewer,
 ) -> dict:
     allRatings = []
@@ -107,16 +105,14 @@ async def userPage(viewer: RatingsViewer, username: str) -> dict:
 @requirer.require(
     page.renderMethod, critic=Authorization(ISimpleAccount, required=False)
 )
-def whenLoggedIn(tag: Tag, critic: Optional[ISimpleAccount]) -> Union[Tag, str]:
+def whenLoggedIn(tag: Tag, critic: ISimpleAccount | None) -> Tag | str:
     return "" if critic is None else tag
 
 
 @requirer.require(
     page.renderMethod, critic=Authorization(FoodCritic, required=False)
 )
-def whenLoggedOut(
-    tag: Tag, critic: Optional[ISimpleAccount]
-) -> Union[Tag, str]:
+def whenLoggedOut(tag: Tag, critic: ISimpleAccount | None) -> Tag | str:
     return "" if critic is not None else tag
 
 

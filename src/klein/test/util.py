@@ -3,7 +3,7 @@ Shared tools for Klein's test suite.
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, TypeVar, cast
+from typing import TypeVar, cast
 
 from treq.client import HTTPClient
 from treq.testing import StubTreq as _StubTreq
@@ -137,7 +137,7 @@ class EqualityTestsMixin(ABC):
 _T = TypeVar("_T")
 
 
-def recover(d: "Deferred[_T]", exc_type: Type[Exception]) -> "Deferred[_T]":
+def recover(d: "Deferred[_T]", exc_type: type[Exception]) -> "Deferred[_T]":
     return d.addErrback(lambda f: f.trap(exc_type))
 
 

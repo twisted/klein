@@ -2,17 +2,12 @@
 from __future__ import annotations
 
 from binascii import hexlify
+from collections.abc import Callable, Iterable
 from os import urandom
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    Optional,
     Protocol,
-    Type,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -34,7 +29,7 @@ from ..._isession import AuthorizationMap
 from ..._util import eagerDeferredCoroutine
 
 
-_authCB = Callable[[Type[object], ISession, Componentized], Any]
+_authCB = Callable[[type[object], ISession, Componentized], Any]
 
 
 @implementer(ISession)
@@ -52,7 +47,7 @@ class MemorySession:
 
     @eagerDeferredCoroutine
     async def authorize(
-        self, interfaces: Iterable[Type[object]]
+        self, interfaces: Iterable[type[object]]
     ) -> AuthorizationMap:
         """
         Authorize each interface by calling back to the session store's
@@ -78,26 +73,26 @@ class _MemoryAuthorizerFunction(Protocol[T]):
     Type shadow for function with the given attribute.
     """
 
-    __memoryAuthInterface__: Type[T]
+    __memoryAuthInterface__: type[T]
 
     def __call__(
-        self, interface: Type[object], session: ISession, data: Componentized
-    ) -> Union[Deferred[Optional[T]], T, None]:
+        self, interface: type[object], session: ISession, data: Componentized
+    ) -> Deferred[T | None] | T | None:
         """
         Return a provider of the given interface.
         """
 
 
-_authFn = Callable[[Type[object], ISession, Componentized], Any]
+_authFn = Callable[[type[object], ISession, Componentized], Any]
 
 
 def declareMemoryAuthorizer(
-    forInterface: Type[Interface],
+    forInterface: type[Interface],
 ) -> Callable[
     [
         Callable[
-            [Type[T], ISession, Componentized],
-            Union[Deferred[Optional[T]], T, None],
+            [type[T], ISession, Componentized],
+            Deferred[T | None] | T | None,
         ]
     ],
     _MemoryAuthorizerFunction[T],
@@ -109,8 +104,8 @@ def declareMemoryAuthorizer(
 
     def decorate(
         decoratee: Callable[
-            [Type[T], ISession, Componentized],
-            Union[Deferred[Optional[T]], T, None],
+            [type[T], ISession, Componentized],
+            Deferred[T | None] | T | None,
         ],
     ) -> _MemoryAuthorizerFunction[T]:
         asAuthorizer = cast(_MemoryAuthorizerFunction, decoratee)
@@ -121,7 +116,7 @@ def declareMemoryAuthorizer(
 
 
 def _noAuthorization(
-    interface: Type[object], session: ISession, data: Componentized
+    interface: type[object], session: ISession, data: Componentized
 ) -> None:
     return None
 
@@ -130,8 +125,8 @@ def _noAuthorization(
 @attr.s(auto_attribs=True)
 class MemorySessionStore:
     authorizationCallback: _authFn = _noAuthorization
-    _secureStorage: Dict[str, Any] = attr.ib(factory=dict)
-    _insecureStorage: Dict[str, Any] = attr.ib(factory=dict)
+    _secureStorage: dict[str, Any] = attr.ib(factory=dict)
+    _insecureStorage: dict[str, Any] = attr.ib(factory=dict)
 
     @classmethod
     def fromAuthorizers(
@@ -148,7 +143,7 @@ class MemorySessionStore:
             interfaceToCallable[specifiedInterface] = authorizer
 
         def authorizationCallback(
-            interface: Type[object], session: ISession, data: Componentized
+            interface: type[object], session: ISession, data: Componentized
         ) -> Any:
             return interfaceToCallable.get(interface, _noAuthorization)(
                 interface, session, data
@@ -156,7 +151,7 @@ class MemorySessionStore:
 
         return cls(authorizationCallback)
 
-    def _storage(self, isConfidential: bool) -> Dict[str, Any]:
+    def _storage(self, isConfidential: bool) -> dict[str, Any]:
         """
         Return the storage appropriate to the isConfidential flag.
         """

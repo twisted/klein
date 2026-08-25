@@ -5,7 +5,8 @@
 Support for interoperability with L{twisted.web.http_headers.Headers}.
 """
 
-from typing import AnyStr, Iterable, Tuple, cast
+from collections.abc import Iterable
+from typing import AnyStr, cast
 
 from attr import attrib, attrs
 from attr.validators import instance_of
@@ -45,7 +46,7 @@ class HTTPHeadersWrappingHeaders:
 
     @property
     def rawHeaders(self) -> RawHeaders:
-        def pairs() -> Iterable[Tuple[bytes, bytes]]:
+        def pairs() -> Iterable[tuple[bytes, bytes]]:
             for name, values in self._headers.getAllRawHeaders():
                 name = normalizeHeaderName(name)
                 for value in values:

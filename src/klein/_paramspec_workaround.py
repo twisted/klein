@@ -24,12 +24,10 @@ This module is mostly type gymnastics to work around a few issues:
 
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Iterable,
-    Mapping,
     ParamSpec,
     Protocol,
     TypeVar,

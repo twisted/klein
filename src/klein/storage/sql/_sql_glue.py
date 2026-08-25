@@ -6,19 +6,14 @@ Glue that connects the SQL DAL to Klein's session interfaces.
 from __future__ import annotations
 
 from binascii import hexlify
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from os import urandom
 from time import time
 from typing import (
     Any,
-    Awaitable,
-    Callable,
     Generic,
-    Iterable,
-    Optional,
     Protocol,
-    Sequence,
-    Type,
     TypeVar,
 )
 from uuid import uuid4
@@ -61,7 +56,7 @@ class SQLSession:
 
     @eagerDeferredCoroutine
     async def authorize(
-        self, interfaces: Iterable[Type[object]]
+        self, interfaces: Iterable[type[object]]
     ) -> AuthorizationMap:
         """
         Authorize all the given interfaces and return a mapping that contains
@@ -238,7 +233,7 @@ class AccountSessionBinding:
     @eagerDeferredCoroutine
     async def createAccount(
         self, username: str, email: str, password: str
-    ) -> Optional[ISimpleAccount]:
+    ) -> ISimpleAccount | None:
         """
         Create a new account with the given username, email and password.
 
@@ -265,7 +260,7 @@ class AccountSessionBinding:
     @eagerDeferredCoroutine
     async def bindIfCredentialsMatch(
         self, username: str, password: str
-    ) -> Optional[ISimpleAccount]:
+    ) -> ISimpleAccount | None:
         """
         Associate this session with a given user account, if the password
         matches.
@@ -341,7 +336,7 @@ class SQLSessionProcurer:
         Procure a session from the underlying procurer, keeping track of the IP
         of the request object.
         """
-        alreadyProcured: Optional[ISession] = ISession(request, None)
+        alreadyProcured: ISession | None = ISession(request, None)
 
         assert (
             alreadyProcured is None
@@ -369,13 +364,13 @@ class SQLSessionProcurer:
 
 
 _authorizerFunction = Callable[
-    [SessionStore, AsyncConnection, ISession], "Awaitable[Optional[T]]"
+    [SessionStore, AsyncConnection, ISession], "Awaitable[T | None]"
 ]
 
 
 class _FunctionWithAuthorizer(Protocol[T]):
     authorizer: SQLAuthorizer[T]
-    authorizerType: Type[T]
+    authorizerType: type[T]
 
     def __call__(
         self,
@@ -393,19 +388,19 @@ T_co = TypeVar("T_co", covariant=True)
 
 class SQLAuthorizer(Protocol[T_co]):
     @property
-    def authorizationType(self) -> Type[T_co]: ...
+    def authorizationType(self) -> type[T_co]: ...
 
     def authorizationForSession(
         self,
         sessionStore: SessionStore,
         transaction: AsyncConnection,
         session: ISession,
-    ) -> Awaitable[Optional[T_co]]: ...
+    ) -> Awaitable[T_co | None]: ...
 
 
 @define(frozen=True)
 class ConcreteSQLAuthorizer(Generic[T]):
-    authorizationType: Type[T]
+    authorizationType: type[T]
     _decorated: _authorizerFunction[T]
 
     def authorizationForSession(
@@ -413,12 +408,12 @@ class ConcreteSQLAuthorizer(Generic[T]):
         sessionStore: SessionStore,
         transaction: AsyncConnection,
         session: ISession,
-    ) -> Awaitable[Optional[T]]:
+    ) -> Awaitable[T | None]:
         return self._decorated(sessionStore, transaction, session)
 
 
 def authorizerFor(
-    authorizationType: Type[T],
+    authorizationType: type[T],
 ) -> Callable[[_authorizerFunction[T]], _FunctionWithAuthorizer[T]]:
     """
     Declare an authorizer.
@@ -454,7 +449,7 @@ async def logMeIn(
     sessionStore: ISessionStore,
     transaction: AsyncConnection,
     session: ISession,
-) -> Optional[ISimpleAccount]:
+) -> ISimpleAccount | None:
     """
     Retrieve an L{ISimpleAccount} authorization.
     """

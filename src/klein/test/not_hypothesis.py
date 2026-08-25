@@ -7,10 +7,11 @@ Hypothesis-like stub, to keep the structure of our tests in a
 Hypothesis-friendly shape, in case we want to put it back.
 """
 
+from collections.abc import Callable, Iterable
 from functools import wraps
 from itertools import product
 from string import ascii_uppercase
-from typing import Callable, Iterable, Optional, Tuple, TypeVar
+from typing import TypeVar
 
 from hyperlink import DecodedURL
 
@@ -94,7 +95,7 @@ def latin1_text(min_size: int = 0) -> Callable[[], Iterable[str]]:
 
 
 def text(
-    min_size: int = 0, alphabet: Optional[str] = None
+    min_size: int = 0, alphabet: str | None = None
 ) -> Callable[[], Iterable[str]]:
     """
     Generate some text.
@@ -110,23 +111,23 @@ def text(
     return params
 
 
-def textHeaderPairs() -> Callable[[], Iterable[Iterable[Tuple[str, str]]]]:
+def textHeaderPairs() -> Callable[[], Iterable[Iterable[tuple[str, str]]]]:
     """
     Generate some pairs of headers with text values.
     """
 
-    def params() -> Iterable[Iterable[Tuple[str, str]]]:
+    def params() -> Iterable[Iterable[tuple[str, str]]]:
         return [[], [("text", "header")]]
 
     return params
 
 
-def bytesHeaderPairs() -> Callable[[], Iterable[Iterable[Tuple[str, bytes]]]]:
+def bytesHeaderPairs() -> Callable[[], Iterable[Iterable[tuple[str, bytes]]]]:
     """
     Generate some pairs of headers with bytes values.
     """
 
-    def params() -> Iterable[Iterable[Tuple[str, bytes]]]:
+    def params() -> Iterable[Iterable[tuple[str, bytes]]]:
         return [[], [("bytes", b"header")]]
 
     return params

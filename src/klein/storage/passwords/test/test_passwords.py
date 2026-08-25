@@ -1,4 +1,4 @@
-from typing import Awaitable, Callable, List, Tuple
+from collections.abc import Awaitable, Callable
 
 from twisted.trial.unittest import SynchronousTestCase, TestCase
 
@@ -8,7 +8,7 @@ from .._scrypt import KleinV1PasswordEngine
 from ..testing import engineForTesting, hashUpgradeCount
 
 
-def pwStorage() -> Tuple[List[str], Callable[[str], Awaitable[None]]]:
+def pwStorage() -> tuple[list[str], Callable[[str], Awaitable[None]]]:
     hashes = []
 
     async def storeSomething(something: str) -> None:

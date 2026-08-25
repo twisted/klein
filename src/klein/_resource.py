@@ -1,7 +1,8 @@
 # -*- test-case-name: klein.test.test_resource -*-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from werkzeug.exceptions import HTTPException
 
@@ -33,7 +34,7 @@ def route_metadata(handler: KleinRouteHandler) -> RouteMetadata:
     return handler  # type:ignore[return-value]
 
 
-def ensure_utf8_bytes(v: Union[str, bytes]) -> bytes:
+def ensure_utf8_bytes(v: str | bytes) -> bytes:
     """
     Coerces a value which is either a C{str} or C{bytes} to a C{bytes}.
     If ``v`` is a C{str} object it is encoded as utf-8.
@@ -62,7 +63,7 @@ class URLDecodeError(Exception):
 
     __slots__ = ["errors"]
 
-    def __init__(self, errors: Sequence[Tuple[str, Failure]]) -> None:
+    def __init__(self, errors: Sequence[tuple[str, Failure]]) -> None:
         """
         @param errors: Sequence of decoding errors, expressed as tuples
             of names and an associated failure.
@@ -74,7 +75,7 @@ class URLDecodeError(Exception):
         return f"<URLDecodeError(errors={self.errors!r})>"
 
 
-def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
+def extractURLparts(request: IRequest) -> tuple[str, str, int, str, str]:
     """
     Extracts and decodes URI parts from C{request}.
 
@@ -260,7 +261,7 @@ class KleinResource(Resource):
 
         def processing_failed(
             failure: Failure, error_handlers: ErrorMethods
-        ) -> Optional[Deferred]:
+        ) -> Deferred | None:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
             # processing.  We don't return failure here because there
@@ -317,7 +318,7 @@ class KleinResource(Resource):
         d.addErrback(processing_failed, self._app._error_handlers)
 
         def write_response(
-            r: Union[_StandInResource, str, bytes, int, None],
+            r: _StandInResource | str | bytes | int | None,
         ) -> None:
             if r is StandInResource:
                 return

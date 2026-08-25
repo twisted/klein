@@ -2,7 +2,8 @@
 Dependency-Injected HTTP metadata.
 """
 
-from typing import Any, Dict, Mapping, Sequence, Type, Union, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, cast
 
 import attr
 from hyperlink import DecodedURL
@@ -65,7 +66,7 @@ class RequestURL:
         cls,
         instance: Any,
         request: IRequest,
-        routeParams: Dict[str, Any],
+        routeParams: dict[str, Any],
     ) -> DecodedURL:
         return urlFromRequest(request)
 
@@ -83,7 +84,7 @@ class RequestComponent:
     @since: Klein 23.12.0
     """
 
-    interface: Type[Interface]
+    interface: type[Interface]
 
     def registerInjector(
         self,
@@ -94,7 +95,7 @@ class RequestComponent:
         return self
 
     def injectValue(
-        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+        self, instance: Any, request: IRequest, routeParams: dict[str, Any]
     ) -> DecodedURL:
         return cast(
             DecodedURL,
@@ -124,9 +125,9 @@ class Response:
     """
 
     code: int = 200
-    headers: Mapping[
-        Union[str, bytes], Union[str, bytes, Sequence[Union[str, bytes]]]
-    ] = attr.ib(factory=dict)
+    headers: Mapping[str | bytes, str | bytes | Sequence[str | bytes]] = (
+        attr.ib(factory=dict)
+    )
     body: Any = ""
 
     def _applyToRequest(self, request: IRequest) -> Any:

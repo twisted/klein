@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Awaitable, Callable
-
-from ..._typing_compat import Protocol
+from typing import Awaitable, Callable, Protocol
 
 
 class PasswordEngine(Protocol):

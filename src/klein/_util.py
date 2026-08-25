@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Coroutine, TypeVar
+from typing import TYPE_CHECKING, Callable, Coroutine, ParamSpec, TypeVar
 
 from twisted.internet.defer import Deferred
-
-from ._typing_compat import ParamSpec
 
 
 _T = TypeVar("_T")

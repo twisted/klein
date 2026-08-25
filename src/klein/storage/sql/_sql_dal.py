@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import AsyncIterable, Optional
+from typing import AsyncIterable, Optional, Protocol
 
 from attrs import define
 from dbxs import accessor, many, maybe, query, statement
 
-from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISession
 

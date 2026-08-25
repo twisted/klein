@@ -9,7 +9,7 @@ from functools import partial
 from inspect import signature
 from json import dumps
 from operator import setitem
-from typing import Any, Callable, Generator, List, Tuple, cast
+from typing import Any, Callable, Generator, List, ParamSpec, Tuple, cast
 
 import attr
 
@@ -20,7 +20,6 @@ from twisted.web.template import Element, Tag, TagLoader, slot
 
 from ._app import _call
 from ._decorators import bindable, modified, originalName
-from ._typing_compat import ParamSpec
 
 
 StackType = List[Tuple[Any, Callable[[Any], None]]]

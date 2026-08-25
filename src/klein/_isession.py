@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterable,
     Optional,
+    Protocol,
     Sequence,
     Type,
     TypeVar,
@@ -22,8 +23,6 @@ from zope.interface import Attribute, Interface
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from ._typing_compat import Protocol
 
 
 if TYPE_CHECKING:

@@ -16,6 +16,7 @@ from typing import (
     Generic,
     Iterable,
     Optional,
+    Protocol,
     Sequence,
     Type,
     TypeVar,
@@ -40,7 +41,6 @@ from klein.interfaces import (
 
 from ... import SessionProcurer
 from ..._isession import AuthorizationMap
-from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISessionStore, ISimpleAccount
 from ..passwords import PasswordEngine, defaultSecureEngine

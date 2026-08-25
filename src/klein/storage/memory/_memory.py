@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Iterable,
     Optional,
+    Protocol,
     Type,
     TypeVar,
     Union,
@@ -30,7 +31,6 @@ from klein.interfaces import (
 )
 
 from ..._isession import AuthorizationMap
-from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 
 

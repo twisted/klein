@@ -19,6 +19,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Protocol,
     Tuple,
     Type,
     TypeVar,
@@ -46,7 +47,6 @@ from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue
 from ._paramspec_workaround import _normalFunction, _werkzeugRuleArgs
 from ._resource import KleinResource, route_metadata
-from ._typing_compat import Protocol
 
 
 _KleinSynchronousRenderable = Union[

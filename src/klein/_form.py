@@ -11,6 +11,7 @@ from typing import (
     List,
     NoReturn,
     Optional,
+    Protocol,
     Sequence,
     TypeVar,
     cast,
@@ -30,7 +31,6 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from ._app import KleinRenderable, _call
 from ._decorators import bindable
-from ._typing_compat import Protocol
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,

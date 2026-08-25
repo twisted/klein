@@ -1,13 +1,13 @@
 # -*- test-case-name: klein.storage.sql.test,klein.storage.test.test_common -*-
 from __future__ import annotations
 
+from collections.abc import AsyncIterable
 from datetime import datetime
-from typing import AsyncIterable, Optional
+from typing import Protocol
 
 from attrs import define
 from dbxs import accessor, many, maybe, query, statement
 
-from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISession
 
@@ -38,7 +38,7 @@ class AccountRecord:
     accountID: str
     username: str
     email: str
-    password_blob: Optional[str] = None
+    password_blob: str | None = None
 
     @eagerDeferredCoroutine
     async def bindSession(self, session: ISession) -> None:
@@ -91,7 +91,7 @@ class SessionDAL(Protocol):
         session_id: str,
         is_confidential: bool,
         mechanism: str,
-    ) -> Optional[SessionRecord]:
+    ) -> SessionRecord | None:
         """
         Get a session by session ID.
         """
@@ -125,7 +125,7 @@ class SessionDAL(Protocol):
         ),
         load=maybe(AccountRecord),
     )
-    async def accountByUsername(self, username: str) -> Optional[AccountRecord]:
+    async def accountByUsername(self, username: str) -> AccountRecord | None:
         """
         Load an account by username.
         """

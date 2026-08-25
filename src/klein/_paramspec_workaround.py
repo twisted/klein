@@ -24,11 +24,16 @@ This module is mostly type gymnastics to work around a few issues:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Mapping, TypeVar
+from collections.abc import Callable, Iterable, Mapping
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+)
 
 from werkzeug.routing import Rule
-
-from ._typing_compat import ParamSpec, Protocol
 
 
 if TYPE_CHECKING:

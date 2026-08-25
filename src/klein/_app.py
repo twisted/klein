@@ -6,21 +6,14 @@ Applications are great.  Lets have more of them.
 from __future__ import annotations
 
 import sys
+from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from inspect import iscoroutine
 from typing import (
     IO,
     Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Tuple,
-    Type,
+    Protocol,
     TypeVar,
     Union,
     cast,
@@ -46,7 +39,6 @@ from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue
 from ._paramspec_workaround import _normalFunction, _werkzeugRuleArgs
 from ._resource import KleinResource, route_metadata
-from ._typing_compat import Protocol
 
 
 _KleinSynchronousRenderable = Union[
@@ -119,7 +111,7 @@ class RouteMetadata(Protocol):
 
 
 def _call(
-    __klein_instance__: Optional[Klein],
+    __klein_instance__: Klein | None,
     __klein_f__: Callable[..., KleinRenderable],
     *args: Any,
     **kwargs: Any,
@@ -148,8 +140,8 @@ def _call(
 def buildURL(
     mapper: MapAdapter,
     endpoint: str,
-    values: Optional[Mapping[str, KleinQueryValue]] = None,
-    method: Optional[str] = None,
+    values: Mapping[str, KleinQueryValue] | None = None,
+    method: str | None = None,
     force_external: bool = False,
     append_unknown: bool = True,
 ) -> str:
@@ -168,8 +160,8 @@ class KleinRequest:
     def url_for(
         self,
         endpoint: str,
-        values: Optional[Mapping[str, KleinQueryValue]] = None,
-        method: Optional[str] = None,
+        values: Mapping[str, KleinQueryValue] | None = None,
+        method: str | None = None,
         force_external: bool = False,
         append_unknown: bool = True,
     ) -> str:
@@ -186,7 +178,7 @@ class KleinRequest:
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-ErrorMethods = List[Tuple[List[Type[Exception]], KleinErrorMethod]]
+ErrorMethods = list[tuple[list[type[Exception]], KleinErrorMethod]]
 
 
 class Klein:
@@ -203,10 +195,10 @@ class Klein:
 
     def __init__(self) -> None:
         self._url_map = Map()
-        self._endpoints: Dict[str, KleinRouteHandler] = {}
+        self._endpoints: dict[str, KleinRouteHandler] = {}
         self._error_handlers: ErrorMethods = []
-        self._instance: Optional[Klein] = None
-        self._boundAs: Optional[str] = None
+        self._instance: Klein | None = None
+        self._boundAs: str | None = None
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Klein):
@@ -227,7 +219,7 @@ class Klein:
         return self._url_map
 
     @property
-    def endpoints(self) -> Dict[str, KleinRouteHandler]:
+    def endpoints(self) -> dict[str, KleinRouteHandler]:
         """
         Read only property exposing L{Klein._endpoints}.
         """
@@ -444,20 +436,20 @@ class Klein:
     def handle_errors(
         self,
         f_or_exception: KleinErrorHandler,
-        *additional_exceptions: Type[Exception],
+        *additional_exceptions: type[Exception],
     ) -> Callable[[KleinErrorHandler], Callable]: ...  # pragma: no cover
 
     @overload
     def handle_errors(
         self,
-        f_or_exception: Type[Exception],
-        *additional_exceptions: Type[Exception],
+        f_or_exception: type[Exception],
+        *additional_exceptions: type[Exception],
     ) -> Callable[[KleinErrorHandler], Callable]: ...  # pragma: no cover
 
     def handle_errors(
         self,
-        f_or_exception: Union[KleinErrorHandler, Type[Exception]],
-        *additional_exceptions: Type[Exception],
+        f_or_exception: KleinErrorHandler | type[Exception],
+        *additional_exceptions: type[Exception],
     ) -> Callable[[KleinErrorHandler], Callable]:
         """
         Register an error handler. This decorator supports two syntaxes. The
@@ -521,7 +513,7 @@ class Klein:
         def deco(f: KleinErrorHandler) -> Callable:
             @modified("error handling wrapper", f)
             def _f(
-                instance: Optional[Klein],
+                instance: Klein | None,
                 request: IRequest,
                 failure: Failure,
             ) -> KleinRenderable:
@@ -537,8 +529,8 @@ class Klein:
         self,
         request: IRequest,
         endpoint: str,
-        values: Optional[Mapping[str, KleinQueryValue]] = None,
-        method: Optional[str] = None,
+        values: Mapping[str, KleinQueryValue] | None = None,
+        method: str | None = None,
         force_external: bool = False,
         append_unknown: bool = True,
     ) -> str:
@@ -563,10 +555,10 @@ class Klein:
 
     def run(
         self,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        logFile: Optional[IO] = None,
-        endpoint_description: Optional[str] = None,
+        host: str | None = None,
+        port: int | None = None,
+        logFile: IO | None = None,
+        endpoint_description: str | None = None,
         displayTracebacks: bool = True,
     ) -> None:
         """

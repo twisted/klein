@@ -5,11 +5,12 @@ Templating wrapper support for Klein.
 """
 from __future__ import annotations
 
+from collections.abc import Callable, Generator
 from functools import partial
 from inspect import signature
 from json import dumps
 from operator import setitem
-from typing import Any, Callable, Generator, List, Tuple, cast
+from typing import Any, ParamSpec, cast
 
 import attr
 
@@ -20,16 +21,15 @@ from twisted.web.template import Element, Tag, TagLoader, slot
 
 from ._app import _call
 from ._decorators import bindable, modified, originalName
-from ._typing_compat import ParamSpec
 
 
-StackType = List[Tuple[Any, Callable[[Any], None]]]
+StackType = list[tuple[Any, Callable[[Any], None]]]
 
 # https://github.com/python/mypy/issues/224
 ATOM_TYPES = (
-    cast(Tuple[Any, ...], (int,))
-    + cast(Tuple[Any, ...], (str,))
-    + cast(Tuple[Any, ...], (float, None.__class__))
+    cast(tuple[Any, ...], (int,))
+    + cast(tuple[Any, ...], (str,))
+    + cast(tuple[Any, ...], (float, None.__class__))
 )
 
 

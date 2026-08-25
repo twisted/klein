@@ -1,11 +1,12 @@
 # -*- test-case-name: klein.storage.passwords.test.test_passwords -*-
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from hashlib import scrypt
 from os import urandom
 from re import compile as compileRE
-from typing import TYPE_CHECKING, Awaitable, Callable, Type
+from typing import TYPE_CHECKING
 from unicodedata import normalize
 
 from ..._util import threadedDeferredFunction
@@ -167,4 +168,4 @@ def defaultSecureEngine() -> PasswordEngine:
 
 
 if TYPE_CHECKING:
-    _1: Type[PasswordEngine] = KleinV1PasswordEngine
+    _1: type[PasswordEngine] = KleinV1PasswordEngine

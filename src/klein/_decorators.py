@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Optional, TypeVar
+from typing import TypeVar
 
 
 C = TypeVar("C", bound=Callable)
@@ -31,7 +32,7 @@ def bindable(bindable: C) -> C:
 def modified(
     modification: str,
     original: Callable,
-    modifier: Optional[Callable] = None,
+    modifier: Callable | None = None,
 ) -> Callable:
     """
     Annotate a callable as a modified wrapper of an original callable.
@@ -86,7 +87,7 @@ def originalName(function: Callable) -> str:
     Get the original, user-specified name of C{function}, chasing back any
     wrappers applied with C{modified}.
     """
-    fnext: Optional[Callable] = function
+    fnext: Callable | None = function
     while fnext is not None:
         function = fnext
         fnext = getattr(function, "__original__", None)

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, Sequence
 from io import BytesIO
 from types import MappingProxyType
-from typing import IO, Any, List, Mapping, Optional, Sequence, cast
+from typing import IO, Any, cast
 from unittest.mock import ANY, Mock, call
 from urllib.parse import parse_qs
 
@@ -79,7 +80,7 @@ class MockRequest(Request):
         self.selfHeaders = Headers(headers)
         self.setHost(host, port, isSecure)
         self.uri = path
-        self.prepath: List[bytes] = []
+        self.prepath: list[bytes] = []
         self.postpath = path.split(b"/")[1:]
         self.method = method
         self.clientproto = b"HTTP/1.1"
@@ -208,7 +209,7 @@ class ChildrenResource(Resource):
 
 
 class ProducingResource(Resource):
-    def __init__(self, path: bytes, strings: List[bytes]) -> None:
+    def __init__(self, path: bytes, strings: list[bytes]) -> None:
         self.path = path
         self.strings = strings
 
@@ -222,7 +223,7 @@ class ProducingResource(Resource):
 
 
 class MockProducer:
-    def __init__(self, request: IRequest, strings: List[bytes]) -> None:
+    def __init__(self, request: IRequest, strings: list[bytes]) -> None:
         self.request = request
         self.strings = strings
 
@@ -1054,7 +1055,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/")
 
-        cancelled: List[Failure] = []
+        cancelled: list[Failure] = []
 
         @app.route("/")
         def root(request: IRequest) -> KleinRenderable:
@@ -1082,7 +1083,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/foo/1")
 
-        relative_url: List[str] = ["** ROUTE NOT CALLED **"]
+        relative_url: list[str] = ["** ROUTE NOT CALLED **"]
 
         @app.route("/foo/<int:bar>")
         def foo(request: IRequest, bar: int) -> KleinRenderable:
@@ -1116,7 +1117,7 @@ class KleinResourceTests(SynchronousTestCase):
         app = self.app
         request = MockRequest(b"/foo/1")
 
-        relative_url: List[Optional[str]] = [None]
+        relative_url: list[str | None] = [None]
 
         @app.route("/foo/<int:bar>")
         def foo(request: IRequest, bar: int) -> KleinRenderable:

@@ -11,7 +11,8 @@ Do not import directly from here, except:
 This will ensure that type checking works.
 """
 
-from typing import AnyStr, Iterable, MutableSequence, Sequence, Tuple
+from collections.abc import Iterable, MutableSequence, Sequence
+from typing import AnyStr
 
 from hyperlink import DecodedURL
 from tubes.itube import IFount
@@ -21,7 +22,7 @@ from zope.interface import Attribute, Interface
 __all__ = ()
 
 
-RawHeader = Tuple[bytes, bytes]
+RawHeader = tuple[bytes, bytes]
 RawHeaders = Sequence[RawHeader]
 MutableRawHeaders = MutableSequence[RawHeader]
 

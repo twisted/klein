@@ -1,4 +1,5 @@
-from typing import AsyncIterable, TypeVar
+from collections.abc import AsyncIterable
+from typing import TypeVar
 from unittest import TestCase
 
 from dbxs.async_dbapi import transaction

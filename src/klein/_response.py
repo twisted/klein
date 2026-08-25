@@ -5,7 +5,6 @@
 HTTP response API.
 """
 
-from typing import Union
 
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
@@ -31,7 +30,7 @@ class FrozenHTTPResponse:
 
     headers: IHTTPHeaders = attrib(validator=provides(IHTTPHeaders))
 
-    _body: Union[bytes, IFount] = attrib(validator=validateBody)
+    _body: bytes | IFount = attrib(validator=validateBody)
 
     _state: MessageState = attrib(default=Factory(MessageState), init=False)
 

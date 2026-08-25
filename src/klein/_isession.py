@@ -1,17 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncContextManager,
-    Callable,
-    Dict,
-    Iterable,
-    Optional,
-    Sequence,
-    Type,
+    Protocol,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -22,8 +17,6 @@ from zope.interface import Attribute, Interface
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from ._typing_compat import Protocol
 
 
 if TYPE_CHECKING:
@@ -76,16 +69,16 @@ V = TypeVar("V")
 
 class AuthorizationMap(Protocol):
     @overload
-    def get(self, key: Type[V]) -> V: ...
+    def get(self, key: type[V]) -> V: ...
 
     @overload
-    def get(self, key: Type[V], default: T) -> Union[V, T]: ...
+    def get(self, key: type[V], default: T) -> V | T: ...
 
     def get(self, *args: Any, **kwargs: Any) -> Any: ...
 
-    def __getitem__(self, key: Type[V]) -> V: ...
+    def __getitem__(self, key: type[V]) -> V: ...
 
-    def __setitem__(self, key: Type[V], value: V) -> None: ...
+    def __setitem__(self, key: type[V], value: V) -> None: ...
 
 
 class ISession(Interface):
@@ -127,7 +120,7 @@ class ISession(Interface):
     )
 
     def authorize(
-        interfaces: Iterable[Type[object]],
+        interfaces: Iterable[type[object]],
     ) -> Deferred[AuthorizationMap]:
         """
         Retrieve other objects from this session.
@@ -212,7 +205,7 @@ class ISimpleAccountBinding(Interface):
 
     def bindIfCredentialsMatch(
         username: str, password: str
-    ) -> Deferred[Optional[ISimpleAccount]]:
+    ) -> Deferred[ISimpleAccount | None]:
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
@@ -235,7 +228,7 @@ class ISimpleAccountBinding(Interface):
 
     def createAccount(
         username: str, email: str, password: str
-    ) -> Deferred[Optional[ISimpleAccount]]:
+    ) -> Deferred[ISimpleAccount | None]:
         """
         Create a new account with the given username, email and password.
         """
@@ -319,7 +312,7 @@ class IDependencyInjector(Interface):
     """
 
     def injectValue(
-        instance: Any, request: IRequest, routeParams: Dict[str, Any]
+        instance: Any, request: IRequest, routeParams: dict[str, Any]
     ) -> Any:
         """
         Return a value to be injected into the parameter name specified by the
@@ -358,8 +351,8 @@ class IRequestLifecycle(Interface):
 
     def addPrepareHook(
         beforeHook: Callable,
-        requires: Sequence[Type[object]] = (),
-        provides: Sequence[Type[object]] = (),
+        requires: Sequence[type[object]] = (),
+        provides: Sequence[type[object]] = (),
     ) -> None:
         """
         Add a hook that promises to prepare the request by supplying the given

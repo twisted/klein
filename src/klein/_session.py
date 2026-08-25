@@ -2,15 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
     cast,
 )
 
@@ -45,7 +39,7 @@ async def cookieLoader(
     request: IRequest,
     token: str,
     sentSecurely: bool,
-    cookieName: Union[str, bytes],
+    cookieName: str | bytes,
 ) -> ISession:
     """
     Procuring a session from a cookie is complex.  First, just try to look it
@@ -107,7 +101,7 @@ async def headerLoader(
     request: IRequest,
     token: str,
     sentSecurely: bool,
-    cookieName: Union[str, bytes],
+    cookieName: str | bytes,
 ) -> ISession:
     """
     Procuring a session via a header API key is very simple.  Just look it up
@@ -155,7 +149,7 @@ class SessionProcurer:
     _maxAge: int = 3600
     _secureCookie: bytes = b"Klein-Secure-Session"
     _insecureCookie: bytes = b"Klein-INSECURE-Session"
-    _cookieDomain: Optional[bytes] = None
+    _cookieDomain: bytes | None = None
     _cookiePath: bytes = b"/"
 
     _secureTokenHeader: bytes = b"X-Auth-Token"
@@ -164,7 +158,7 @@ class SessionProcurer:
 
     def _tokenTransportAttributes(
         self, request: IRequest, forceInsecure: bool
-    ) -> Tuple[bytes, bytes, bool]:
+    ) -> tuple[bytes, bytes, bool]:
         """
         @return: 3-tuple of header, cookie, secure
         """
@@ -208,7 +202,7 @@ class SessionProcurer:
     async def procureSession(
         self, request: IRequest, forceInsecure: bool = False
     ) -> ISession:
-        alreadyProcured: Optional[ISession] = ISession(request, None)
+        alreadyProcured: ISession | None = ISession(request, None)
         if alreadyProcured is not None:
             if not forceInsecure or not request.isSecure():
                 return alreadyProcured
@@ -235,7 +229,7 @@ class SessionProcurer:
 
 
 class AuthorizationDenied(Resource):
-    def __init__(self, interface: Type[object], instance: Any) -> None:
+    def __init__(self, interface: type[object], instance: Any) -> None:
         self._interface = interface
         super().__init__()
 
@@ -299,9 +293,9 @@ class Authorization:
         C{required} is set to C{False}.
     """
 
-    _interface: Type[object]
+    _interface: type[object]
     _required: bool = True
-    _whenDenied: Callable[[Type[object], Any], Any] = AuthorizationDenied
+    _whenDenied: Callable[[type[object], Any], Any] = AuthorizationDenied
 
     def registerInjector(
         self,
@@ -316,7 +310,7 @@ class Authorization:
 
     @inlineCallbacks
     def injectValue(
-        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+        self, instance: Any, request: IRequest, routeParams: dict[str, Any]
     ) -> Any:
         """
         Inject a value by asking the request's session.

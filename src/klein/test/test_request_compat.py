@@ -6,15 +6,11 @@ Tests for L{klein._irequest}.
 """
 
 import functools
+from collections.abc import Awaitable, Callable, Coroutine, Mapping, Sequence
 from string import ascii_uppercase
 from types import MappingProxyType
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Mapping,
-    Sequence,
     TypeVar,
 )
 

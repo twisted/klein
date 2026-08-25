@@ -4,7 +4,6 @@
 Extensions to L{twisted.trial}.
 """
 
-from typing import Type
 
 from zope.interface import Interface
 from zope.interface.exceptions import Invalid
@@ -21,7 +20,7 @@ class TestCase(SynchronousTestCase):
     Extensions to L{SynchronousTestCase}.
     """
 
-    def assertProvides(self, interface: Type[Interface], obj: object) -> None:
+    def assertProvides(self, interface: type[Interface], obj: object) -> None:
         """
         Assert that a object provides an interface.
 

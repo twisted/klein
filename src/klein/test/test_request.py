@@ -13,7 +13,6 @@ from .._request import FrozenHTTPRequest, IHTTPRequest
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
 
-
 __all__ = ()
 
 

@@ -15,7 +15,6 @@ from typing import TypeVar
 
 from hyperlink import DecodedURL
 
-
 T = TypeVar("T")
 S = TypeVar("S")
 

@@ -37,7 +37,6 @@ from ...test.util import makeStub as StubTreq
 from ..passwords.testing import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer, applyBasicSchema
 
-
 T = TypeVar("T")
 
 

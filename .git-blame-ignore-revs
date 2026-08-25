@@ -1,1 +1,4 @@
+# pyupgrade --py310-plus
 f4376978cb326477589777965e5a8b123bedff0a
+# black 2026 stable style
+fe181f6eabba5aa1433c1f0245fc1ce7516d5875

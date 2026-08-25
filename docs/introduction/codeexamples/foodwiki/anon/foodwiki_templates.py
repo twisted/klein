@@ -2,7 +2,6 @@ from twisted.web.template import Tag, slot, tags
 
 from klein import Plating
 
-
 page = Plating(
     tags=tags.html(
         tags.head(

@@ -5,7 +5,6 @@
 HTTP request API.
 """
 
-
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from hyperlink import DecodedURL
@@ -15,7 +14,6 @@ from zope.interface import implementer
 from ._attrs_zope import provides
 from ._imessage import IHTTPHeaders, IHTTPRequest
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
-
 
 __all__ = ()
 

@@ -11,7 +11,6 @@ from .._response import FrozenHTTPResponse, IHTTPResponse
 from ._trial import TestCase
 from .test_message import FrozenHTTPMessageTestsMixIn
 
-
 __all__ = ()
 
 

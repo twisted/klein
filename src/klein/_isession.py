@@ -18,7 +18,6 @@ from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
 
-
 if TYPE_CHECKING:
     from ._app import KleinRenderable
 
@@ -87,8 +86,7 @@ class ISession(Interface):
     about how the session was negotiated with the client software, and
     """
 
-    identifier: str = Attribute(
-        """
+    identifier: str = Attribute("""
         L{str} identifying a session.
 
         This value should be:
@@ -99,25 +97,20 @@ class ISession(Interface):
                should be able to guess what it is
 
             3. I{opaque} - it should contain no interesting information
-        """
-    )
+        """)
 
-    isConfidential = Attribute(
-        """
+    isConfidential = Attribute("""
         A L{bool} indicating whether this session mechanism transmitted over an
         encrypted transport, i.e., HTTPS.  If C{True}, this means that this
         session can be used for sensitive information; otherwise, the
         information contained in it should be considered to be available to
         attackers.
-        """
-    )
+        """)
 
-    authenticatedBy = Attribute(
-        """
+    authenticatedBy = Attribute("""
         A L{SessionMechanism} indicating what mechanism was used to
         authenticate this session.
-        """
-    )
+        """)
 
     def authorize(
         interfaces: Iterable[type[object]],
@@ -239,17 +232,13 @@ class ISimpleAccount(Interface):
     Data-store agnostic account interface.
     """
 
-    username: str = Attribute(
-        """
+    username: str = Attribute("""
         Unicode username.
-        """
-    )
+        """)
 
-    accountID: str = Attribute(
-        """
+    accountID: str = Attribute("""
         Unicode account-ID.
-        """
-    )
+        """)
 
     def bindSession(session: ISession) -> Deferred[None]:
         """

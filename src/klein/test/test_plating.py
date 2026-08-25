@@ -18,7 +18,6 @@ from .._plating import ATOM_TYPES, PlatedElement, resolveDeferredObjects
 from .not_hypothesis import booleans, given, jsonObjects
 from .test_resource import MockRequest, _render
 
-
 page = Plating(
     defaults={
         "title": "default title unchanged",

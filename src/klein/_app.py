@@ -40,7 +40,6 @@ from ._interfaces import IKleinRequest, KleinQueryValue
 from ._paramspec_workaround import _normalFunction, _werkzeugRuleArgs
 from ._resource import KleinResource, route_metadata
 
-
 _KleinSynchronousRenderable = Union[
     str, bytes, IResource, IRenderable, Tag, None
 ]

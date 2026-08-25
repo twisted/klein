@@ -28,7 +28,6 @@ from klein.interfaces import (
 from ..._isession import AuthorizationMap
 from ..._util import eagerDeferredCoroutine
 
-
 _authCB = Callable[[type[object], ISession, Componentized], Any]
 
 
@@ -53,7 +52,7 @@ class MemorySession:
         Authorize each interface by calling back to the session store's
         authorization callback.
         """
-        result: AuthorizationMap = {}  # type:ignore[assignment]
+        result: AuthorizationMap = {}  # type: ignore[assignment]
         for interface in interfaces:
             provider = self._authorizationCallback(
                 interface, self, self._components

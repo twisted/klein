@@ -12,7 +12,6 @@ from typing import Union
 
 from zope.interface import Attribute, Interface
 
-
 KleinQueryValue = Union[str, int, float]
 
 

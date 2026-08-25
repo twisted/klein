@@ -36,7 +36,6 @@ from .interfaces import (
     ValueAbsent,
 )
 
-
 _Self = TypeVar("_Self")
 
 
@@ -299,7 +298,7 @@ class Field:
         cls,
         minimum: _N | None = None,
         maximum: _N | None = None,
-        kind: Callable[[str], _N] = float,  # type:ignore[assignment]
+        kind: Callable[[str], _N] = float,  # type: ignore[assignment]
         **kw: Any,
     ) -> "Field":
         """

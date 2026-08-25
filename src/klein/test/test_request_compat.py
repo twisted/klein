@@ -27,7 +27,6 @@ from ._trial import TestCase
 from .not_hypothesis import binary, decoded_urls, given, text
 from .test_resource import MockRequest
 
-
 __all__ = ()
 
 

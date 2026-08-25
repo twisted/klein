@@ -12,7 +12,6 @@ from dbxs.async_dbapi import transaction
 from klein.interfaces import ISession, ISessionStore
 from klein.storage.sql import applyBasicSchema, authorizerFor
 
-
 foodTable = """
 CREATE TABLE food (
     name VARCHAR NOT NULL,

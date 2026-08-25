@@ -150,4 +150,4 @@ def makeStub(resource: IResource) -> StubWithTypes:
     """
     Create a StubTreq but give it a more convincing type signature.
     """
-    return _StubTreq(resource)  # type:ignore[return-value]
+    return _StubTreq(resource)  # type: ignore[return-value]

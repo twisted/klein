@@ -18,7 +18,6 @@ from klein.interfaces import (
 )
 from klein.storage.sql import SQLAuthorizer, applyBasicSchema, authorizerFor
 
-
 foodTable = """
 CREATE TABLE food (
     name VARCHAR NOT NULL,
@@ -106,12 +105,10 @@ class RatingsDB(Protocol):
     )
     def ratingsByUserID(self, accountID: str) -> AsyncIterable[FoodRating]: ...
 
-    @statement(
-        sql="""
+    @statement(sql="""
         insert into food (rated_by, name, rating)
         values ({accountID}, {name}, {rating})
-        """
-    )
+        """)
     async def addRating(
         self, accountID: str, name: str, rating: int
     ) -> None: ...

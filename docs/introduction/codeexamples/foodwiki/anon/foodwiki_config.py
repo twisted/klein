@@ -11,7 +11,6 @@ from klein import Klein, Requirer
 from klein.interfaces import ISession
 from klein.storage.sql import SQLSessionProcurer
 
-
 DB_FILE = "food-wiki.sqlite"
 
 

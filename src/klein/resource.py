@@ -17,7 +17,6 @@ from ._app import resource as _globalResourceMethod
 from ._resource import KleinResource as _KleinResource
 from ._resource import ensure_utf8_bytes
 
-
 KleinResource = _KleinResource
 
 

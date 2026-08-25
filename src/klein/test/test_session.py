@@ -19,7 +19,6 @@ from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 from .util import StubWithTypes
 from .util import makeStub as StubTreq
 
-
 Sessions = list[ISession]
 Errors = list[NoSuchSession]
 

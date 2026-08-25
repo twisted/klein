@@ -11,7 +11,6 @@ from ._sql_glue import (
     authorizerFor,
 )
 
-
 __all__ = [
     "SQLAuthorizer",
     "SQLSessionProcurer",

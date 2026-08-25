@@ -62,14 +62,12 @@ class SessionDAL(Protocol):
         Delete all sessions with the given security level by session ID.
         """
 
-    @statement(
-        sql="""
+    @statement(sql="""
         insert into session
             ( session_id,  confidential,   created,   mechanism )
         values
             ({sessionID}, {confidential}, {created}, {mechanism})
-        """
-    )
+        """)
     async def insertSession(
         self, sessionID: str, confidential: bool, created: float, mechanism: str
     ) -> None:
@@ -130,13 +128,11 @@ class SessionDAL(Protocol):
         Load an account by username.
         """
 
-    @statement(
-        sql="""
+    @statement(sql="""
         update account
             set password_blob = {newBlob}
         where account_id = {accountID}
-        """
-    )
+        """)
     async def resetPassword(self, accountID: str, newBlob: str) -> None:
         """
         Reset the password for the given account ID.
@@ -160,11 +156,9 @@ class SessionDAL(Protocol):
         Load all account objects bound to the given session id.
         """
 
-    @statement(
-        sql="""
+    @statement(sql="""
         delete from session_account where session_id = {sessionID}
-        """
-    )
+        """)
     async def unbindSession(self, sessionID: str) -> None:
         """
         Un-bind the given session from the account it's currently bound to.

@@ -35,7 +35,6 @@ from typing import (
 
 from werkzeug.routing import Rule
 
-
 if TYPE_CHECKING:
     from ._app import Klein
 
@@ -125,7 +124,7 @@ def _routeArgsWith(
     ) -> _RuleCopy[P, R]:
         # branch kw-only arg is encoded in `P` via kwOnlyBranchArg so we cannot
         # check it here.
-        return decoratee  # type:ignore[return-value]
+        return decoratee  # type: ignore[return-value]
 
     return decorator
 

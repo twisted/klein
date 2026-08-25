@@ -41,7 +41,6 @@ from .not_hypothesis import (
     textHeaderPairs,
 )
 
-
 __all__ = ()
 
 

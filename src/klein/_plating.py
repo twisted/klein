@@ -3,6 +3,7 @@
 """
 Templating wrapper support for Klein.
 """
+
 from __future__ import annotations
 
 from collections.abc import Callable, Generator
@@ -21,7 +22,6 @@ from twisted.web.template import Element, Tag, TagLoader, slot
 
 from ._app import _call
 from ._decorators import bindable, modified, originalName
-
 
 StackType = list[tuple[Any, Callable[[Any], None]]]
 

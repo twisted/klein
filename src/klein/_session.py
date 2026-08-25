@@ -82,7 +82,7 @@ async def cookieLoader(
     )
 
     # https://github.com/twisted/twisted/issues/11865
-    wrongSignature: Request = request  # type:ignore[assignment]
+    wrongSignature: Request = request  # type: ignore[assignment]
     wrongSignature.addCookie(
         cookieName,
         session.identifier,

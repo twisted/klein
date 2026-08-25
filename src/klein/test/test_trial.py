@@ -8,7 +8,6 @@ from zope.interface import Interface, implementer
 
 from ._trial import TestCase
 
-
 __all__ = ()
 
 

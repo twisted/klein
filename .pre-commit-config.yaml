@@ -11,7 +11,7 @@ repos:
         args: ["--py310-plus", "--keep-runtime-typing"]
 
   - repo: https://github.com/psf/black
-    rev: "25.1.0"
+    rev: "26.5.1"
     hooks:
       - id: black
 

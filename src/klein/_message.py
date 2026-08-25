@@ -14,7 +14,6 @@ from tubes.itube import IFount
 from ._imessage import FountAlreadyAccessedError
 from ._tubes import bytesToFount, fountToBytes
 
-
 __all__ = ()
 
 

@@ -25,7 +25,6 @@ from klein.interfaces import (
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import IRequirementContext
 
-
 log = Logger()
 
 

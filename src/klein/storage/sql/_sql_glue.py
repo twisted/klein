@@ -42,7 +42,6 @@ from ..passwords import PasswordEngine, defaultSecureEngine
 from ._sql_dal import AccountRecord, SessionDAL, SessionDB, SessionRecord
 from ._transactions import requestBoundTransaction
 
-
 T = TypeVar("T")
 
 
@@ -338,9 +337,7 @@ class SQLSessionProcurer:
         """
         alreadyProcured: ISession | None = ISession(request, None)
 
-        assert (
-            alreadyProcured is None
-        ), """
+        assert alreadyProcured is None, """
         Sessions should only be procured once during the lifetime of the
         request, and it should not be possible to invoke procureSession
         multiple times when getting them from dependency injection.
@@ -422,7 +419,7 @@ def authorizerFor(
     def decorator(
         decorated: _authorizerFunction[T],
     ) -> _FunctionWithAuthorizer[T]:
-        result: _FunctionWithAuthorizer = decorated  # type:ignore[assignment]
+        result: _FunctionWithAuthorizer = decorated  # type: ignore[assignment]
         result.authorizer = ConcreteSQLAuthorizer[T](
             authorizationType, decorated
         )

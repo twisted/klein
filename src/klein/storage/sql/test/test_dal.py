@@ -8,7 +8,6 @@ from dbxs.testing import MemoryPool, immediateTest
 from .._sql_dal import SessionDB
 from .._sql_glue import applyBasicSchema
 
-
 T = TypeVar("T")
 
 

@@ -2,7 +2,6 @@ from collections.abc import Callable
 from functools import wraps
 from typing import TypeVar
 
-
 C = TypeVar("C", bound=Callable)
 
 

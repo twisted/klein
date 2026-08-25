@@ -12,7 +12,6 @@ for example::
 
 from types import MappingProxyType
 
-
 apilinks_base_url = "https://docs.twisted.org/en/stable/api/"
 
 emptyMapping = MappingProxyType({})

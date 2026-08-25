@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from twisted.internet.defer import Deferred
 
-
 _T = TypeVar("_T")
 _P = ParamSpec("_P")
 

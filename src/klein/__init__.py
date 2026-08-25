@@ -19,7 +19,6 @@ from ._requirer import Requirer
 from ._session import Authorization, SessionProcurer
 from ._version import __version__ as _incremental_version
 
-
 if TYPE_CHECKING:
     # Inform mypy of import shenanigans.
     from .resource import _SpecialModuleObject

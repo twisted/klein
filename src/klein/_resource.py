@@ -18,7 +18,6 @@ from twisted.web.template import renderElement
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
 
-
 if TYPE_CHECKING:
     # NB: circular import, must not be imported at runtime.
     from ._app import (
@@ -31,7 +30,7 @@ if TYPE_CHECKING:
 
 
 def route_metadata(handler: KleinRouteHandler) -> RouteMetadata:
-    return handler  # type:ignore[return-value]
+    return handler  # type: ignore[return-value]
 
 
 def ensure_utf8_bytes(v: str | bytes) -> bytes:
@@ -200,7 +199,7 @@ class KleinResource(Resource):
             # to percolate up. If that happens it will be handled below in
             # processing_failed, either by a user-registered error handler or
             # one of our defaults.
-            (rule, kwargs) = mapper.match(return_rule=True)
+            rule, kwargs = mapper.match(return_rule=True)
             endpoint = rule.endpoint
 
             # Try pretty hard to fix up prepath and postpath.

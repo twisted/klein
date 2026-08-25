@@ -5,7 +5,6 @@
 HTTP response API.
 """
 
-
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from tubes.itube import IFount
@@ -14,7 +13,6 @@ from zope.interface import implementer
 from ._attrs_zope import provides
 from ._imessage import IHTTPHeaders, IHTTPResponse
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
-
 
 __all__ = ()
 

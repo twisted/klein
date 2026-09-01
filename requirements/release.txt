@@ -1,4 +1,4 @@
 click==8.5.0
-GitPython==3.1.59
+GitPython==3.1.61
 incremental[scripts]==24.11.0
 twine==7.0.0

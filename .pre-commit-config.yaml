@@ -43,7 +43,7 @@ repos:
           #   flake8-mutable
           #   flake8-pep3101
           #   pep8-naming
-          - flake8-bugbear==25.11.29
+          - flake8-bugbear==26.9.9
           # via -r flake8-deps.in
           - flake8-docstrings==1.7.0
           # via -r flake8-deps.in
@@ -84,7 +84,7 @@ repos:
           #   flake8-mutable
           #   flake8-pep3101
           #   pep8-naming
-          - flake8-bugbear==25.11.29
+          - flake8-bugbear==26.9.9
           # via -r flake8-deps.in
           - flake8-docstrings==1.7.0
           # via -r flake8-deps.in

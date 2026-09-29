@@ -8,4 +8,4 @@ flake8-pep3101==3.0.0
 pep8-naming==0.15.1
 pycodestyle==2.15.0
 pydocstyle==6.3.0
-pyflakes==3.4.0
+pyflakes==4.0.0

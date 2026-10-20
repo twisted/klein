@@ -1,6 +1,7 @@
-from klein import Klein
 from twisted.application import internet, service
 from twisted.web.server import Site
+
+from klein import Klein
 
 app = Klein()
 

@@ -5,6 +5,11 @@ Example - Alternatives to app.run
 Sometimes you want to do special things, and the very simple ``Klein.run``
 does not quite fit.
 
+``Klein.run()`` creates a Twisted ``Site`` from ``app.resource()``, starts a listener, sets up logging, and runs the reactor.
+``app.resource()`` itself only returns a Twisted Web resource; it does not listen on a port or start the reactor.
+If a Twisted application already manages your services, use the :doc:`service example <twistd>` to attach Klein to that application.
+For a program that owns the reactor directly, see the manual example below.
+
 
 Example - IPv6, TLS, UNIX sockets, ... (endpoints)
 ==================================================

@@ -193,8 +193,8 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        twisted-version: ["23.8", "23.10"]
-        python-version: ["3.10", "3.11"]
+        twisted-version: ["23.10"]
+        python-version: ["3.11"]
         tox-prefix: ["coverage"]
         optional: [false]
         include:

@@ -25,6 +25,10 @@ Here is a list of shell commands that will install the dependencies of Klein, ru
 `Tox <https://tox.readthedocs.io/en/latest/>`_ makes a virtualenv, installs Klein's dependencies into the virtualenv, and then runs a set of commands based on the ``-e`` (environment) argument.
 This strategy allows one to make and test changes to Klein without needing to change system-level Python packages.
 
+AI Policy
+=========
+
+This repository follows the `Twisted AI Policy <https://docs.twisted.org/en/latest/development/ai-policy.html>`_.
 
 Next steps
 ==========

@@ -199,8 +199,8 @@ jobs:
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python-version: "pypy-3.11"
-            twisted-version: "23.10"
+            python-version: "pypy-3.12"
+            twisted-version: "26.4"
             tox-prefix: "test"
             optional: false
           - os: "ubuntu-latest"

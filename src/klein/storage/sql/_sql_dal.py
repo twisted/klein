@@ -1,13 +1,13 @@
 # -*- test-case-name: klein.storage.sql.test,klein.storage.test.test_common -*-
 from __future__ import annotations
 
+from collections.abc import AsyncIterable
 from datetime import datetime
-from typing import AsyncIterable, Optional
+from typing import Protocol
 
 from attrs import define
 from dbxs import accessor, many, maybe, query, statement
 
-from ..._typing_compat import Protocol
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import ISession
 
@@ -38,7 +38,7 @@ class AccountRecord:
     accountID: str
     username: str
     email: str
-    password_blob: Optional[str] = None
+    password_blob: str | None = None
 
     @eagerDeferredCoroutine
     async def bindSession(self, session: ISession) -> None:
@@ -62,14 +62,12 @@ class SessionDAL(Protocol):
         Delete all sessions with the given security level by session ID.
         """
 
-    @statement(
-        sql="""
+    @statement(sql="""
         insert into session
             ( session_id,  confidential,   created,   mechanism )
         values
             ({sessionID}, {confidential}, {created}, {mechanism})
-        """
-    )
+        """)
     async def insertSession(
         self, sessionID: str, confidential: bool, created: float, mechanism: str
     ) -> None:
@@ -91,7 +89,7 @@ class SessionDAL(Protocol):
         session_id: str,
         is_confidential: bool,
         mechanism: str,
-    ) -> Optional[SessionRecord]:
+    ) -> SessionRecord | None:
         """
         Get a session by session ID.
         """
@@ -125,18 +123,16 @@ class SessionDAL(Protocol):
         ),
         load=maybe(AccountRecord),
     )
-    async def accountByUsername(self, username: str) -> Optional[AccountRecord]:
+    async def accountByUsername(self, username: str) -> AccountRecord | None:
         """
         Load an account by username.
         """
 
-    @statement(
-        sql="""
+    @statement(sql="""
         update account
             set password_blob = {newBlob}
         where account_id = {accountID}
-        """
-    )
+        """)
     async def resetPassword(self, accountID: str, newBlob: str) -> None:
         """
         Reset the password for the given account ID.
@@ -160,11 +156,9 @@ class SessionDAL(Protocol):
         Load all account objects bound to the given session id.
         """
 
-    @statement(
-        sql="""
+    @statement(sql="""
         delete from session_account where session_id = {sessionID}
-        """
-    )
+        """)
     async def unbindSession(self, sessionID: str) -> None:
         """
         Un-bind the given session from the account it's currently bound to.

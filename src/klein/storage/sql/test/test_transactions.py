@@ -5,7 +5,7 @@ Tests for L{klein.storage.sql._transactions}
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from dbxs.async_dbapi import AsyncConnectable, AsyncConnection
 from dbxs.testing import MemoryPool
@@ -28,8 +28,8 @@ class TestObject:
 
     testCase: SynchronousTestCase
     connectable: AsyncConnectable
-    t1: Optional[AsyncConnection] = None
-    t2: Optional[AsyncConnection] = None
+    t1: AsyncConnection | None = None
+    t2: AsyncConnection | None = None
     incomplete: Deferred[None] = field(default_factory=Deferred)
 
     router: ClassVar[Klein] = Klein()

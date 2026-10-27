@@ -1,4 +1,5 @@
-from typing import Iterator, Sequence, Tuple, cast
+from collections.abc import Iterator, Sequence
+from typing import cast
 
 from hyperlink import DecodedURL
 from zope.interface import Interface
@@ -20,7 +21,7 @@ class BadlyBehavedHeaders(Headers):
     getAllRequestHeaders.
     """
 
-    def getAllRawHeaders(self) -> Iterator[Tuple[bytes, Sequence[bytes]]]:
+    def getAllRawHeaders(self) -> Iterator[tuple[bytes, Sequence[bytes]]]:
         """
         Don't return a host header.
         """

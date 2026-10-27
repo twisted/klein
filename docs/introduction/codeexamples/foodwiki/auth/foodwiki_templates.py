@@ -2,14 +2,12 @@ from twisted.web.template import Tag, slot, tags
 
 from klein import Plating
 
-
 page = Plating(
     tags=tags.html(
         tags.head(
             tags.title("Food Ratings Example: ", slot("pageTitle")),
             slot("headExtras"),
-            tags.style(
-                """
+            tags.style("""
             .nav a {
                 padding-left: 2em;
             }
@@ -22,8 +20,7 @@ page = Plating(
                 display: block;
                 padding: 0.2em;
             }
-            """
-            ),
+            """),
         ),
         tags.body(
             tags.div(class_="nav")(

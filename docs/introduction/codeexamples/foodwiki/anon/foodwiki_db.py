@@ -1,5 +1,6 @@
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
-from typing import AsyncIterable, Optional, Protocol
+from typing import Protocol
 
 from dbxs import accessor, many, query, statement
 from dbxs.adapters.dbapi_twisted import (
@@ -10,7 +11,6 @@ from dbxs.async_dbapi import transaction
 
 from klein.interfaces import ISession, ISessionStore
 from klein.storage.sql import applyBasicSchema, authorizerFor
-
 
 foodTable = """
 CREATE TABLE food (
@@ -62,7 +62,7 @@ class FoodRater:
 @authorizerFor(FoodRater)
 async def authorizeFoodRater(
     store: ISessionStore, conn: AsyncConnection, session: ISession
-) -> Optional[FoodRater]:
+) -> FoodRater | None:
     return FoodRater(accessRatings(conn))
 
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Sequence, Type
+from collections.abc import Iterable, Sequence
 
 from attrs import Factory, define, field
 from zope.interface import implementer
@@ -58,7 +58,7 @@ class MemoryAccountBinding:
     @eagerDeferredCoroutine
     async def createAccount(
         self, username: str, email: str, password: str
-    ) -> Optional[ISimpleAccount]:
+    ) -> ISimpleAccount | None:
         """
         Refuse to create new accounts; memory accounts should be pre-created,
         since they won't persist.
@@ -67,7 +67,7 @@ class MemoryAccountBinding:
     @eagerDeferredCoroutine
     async def bindIfCredentialsMatch(
         self, username: str, password: str
-    ) -> Optional[ISimpleAccount]:
+    ) -> ISimpleAccount | None:
         """
         Bind if the credentials match.
         """
@@ -93,8 +93,8 @@ class MemoryAccountStore:
     In-memory account store.
     """
 
-    _accounts: Dict[str, MemoryAccount] = field(default=Factory(dict))
-    _bindings: Dict[str, List[MemoryAccount]] = field(default=defaultdict(list))
+    _accounts: dict[str, MemoryAccount] = field(default=Factory(dict))
+    _bindings: dict[str, list[MemoryAccount]] = field(default=defaultdict(list))
 
     def authorizers(self) -> Iterable[_MemoryAuthorizerFunction]:
         """
@@ -105,10 +105,10 @@ class MemoryAccountStore:
         @declareMemoryAuthorizer(MemoryAccount)
         @eagerDeferredCoroutine
         async def memauth(
-            interface: Type[MemoryAccount],
+            interface: type[MemoryAccount],
             session: ISession,
             componentized: Componentized,
-        ) -> Optional[MemoryAccount]:
+        ) -> MemoryAccount | None:
             for account in self._bindings[session.identifier]:
                 return account
             return None
@@ -116,15 +116,15 @@ class MemoryAccountStore:
         @declareMemoryAuthorizer(ISimpleAccount)
         @eagerDeferredCoroutine
         async def alsoSimple(
-            interface: Type[ISimpleAccount],
+            interface: type[ISimpleAccount],
             session: ISession,
             componentized: Componentized,
-        ) -> Optional[ISimpleAccount]:
+        ) -> ISimpleAccount | None:
             return (await session.authorize([MemoryAccount])).get(MemoryAccount)
 
         @declareMemoryAuthorizer(ISimpleAccountBinding)
         def membind(
-            interface: Type[ISimpleAccountBinding],
+            interface: type[ISimpleAccountBinding],
             session: ISession,
             componentized: Componentized,
         ) -> ISimpleAccountBinding:

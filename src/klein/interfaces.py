@@ -17,7 +17,6 @@ from ._isession import (
     TransactionEnded,
 )
 
-
 __all__ = (
     "EarlyExit",
     "IDependencyInjector",

@@ -11,17 +11,17 @@ Do not import directly from here, except:
 This will ensure that type checking works.
 """
 
-from typing import AnyStr, Iterable, MutableSequence, Sequence, Tuple
+from collections.abc import Iterable, MutableSequence, Sequence
+from typing import AnyStr
 
 from hyperlink import DecodedURL
 from tubes.itube import IFount
 from zope.interface import Attribute, Interface
 
-
 __all__ = ()
 
 
-RawHeader = Tuple[bytes, bytes]
+RawHeader = tuple[bytes, bytes]
 RawHeaders = Sequence[RawHeader]
 MutableRawHeaders = MutableSequence[RawHeader]
 
@@ -62,15 +62,13 @@ class IHTTPHeaders(Interface):
     well-behaved implementations.
     """
 
-    rawHeaders: RawHeaders = Attribute(
-        """
+    rawHeaders: RawHeaders = Attribute("""
         Raw header data as a tuple in the from: C{((name, value), ...)}.
         C{name} and C{value} are bytes.
         Headers are provided in the order that they were received.
         Headers with multiple values are provided as separate name and value
         pairs.
-        """
-    )
+        """)
 
     def getValues(name: AnyStr) -> Iterable[AnyStr]:
         """

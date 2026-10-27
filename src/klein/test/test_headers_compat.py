@@ -16,7 +16,6 @@ from .._headers_compat import HTTPHeadersWrappingHeaders
 from ._trial import TestCase
 from .test_headers import MutableHTTPHeadersTestsMixIn
 
-
 try:
     from twisted.web.http_headers import _sanitizeLinearWhitespace
 except ImportError:  # pragma: no cover

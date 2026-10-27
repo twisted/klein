@@ -1,16 +1,9 @@
 # -*- test-case-name: klein.test.test_requirer -*-
+from collections.abc import Awaitable, Callable, Generator, Sequence
 from contextlib import AsyncExitStack
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Generator,
-    List,
-    Sequence,
-    Type,
     TypeVar,
-    Union,
 )
 
 import attr
@@ -40,13 +33,13 @@ class RequestLifecycle:
     Mechanism to run hooks at the start of a request managed by a L{Requirer}.
     """
 
-    _prepareHooks: List = attr.ib(factory=list)
+    _prepareHooks: list = attr.ib(factory=list)
 
     def addPrepareHook(
         self,
         beforeHook: Callable,
-        requires: Sequence[Type[object]] = (),
-        provides: Sequence[Type[object]] = (),
+        requires: Sequence[type[object]] = (),
+        provides: Sequence[type[object]] = (),
     ) -> None:
         # TODO: topological requirements sort
         self._prepareHooks.append(beforeHook)
@@ -83,7 +76,7 @@ _prerequisiteCallback = Callable[[IRequestLifecycle], None]
 T = TypeVar("T")
 
 
-async def _maybeAsync(v: Union[T, Awaitable[T]]) -> T:
+async def _maybeAsync(v: T | Awaitable[T]) -> T:
     if isinstance(v, Awaitable):
         return await v
     return v
@@ -95,12 +88,12 @@ class Requirer:
     Dependency injection for required parameters.
     """
 
-    _prerequisites: List[_prerequisiteCallback] = attr.ib(factory=list)
+    _prerequisites: list[_prerequisiteCallback] = attr.ib(factory=list)
 
     def prerequisite(
         self,
-        providesComponents: Sequence[Type[object]],
-        requiresComponents: Sequence[Type[object]] = (),
+        providesComponents: Sequence[type[object]],
+        requiresComponents: Sequence[type[object]] = (),
     ) -> Callable[[Callable], Callable]:
         """
         Specify a component that is a pre-requisite of every request routed
@@ -144,7 +137,7 @@ class Requirer:
             lifecycle = RequestLifecycle()
             injectionComponents.setComponent(IRequestLifecycle, lifecycle)
 
-            injectors: Dict[str, IDependencyInjector] = {}
+            injectors: dict[str, IDependencyInjector] = {}
 
             for parameterName, required in requiredParameters.items():
                 injectors[parameterName] = required.registerInjector(

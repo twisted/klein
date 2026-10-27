@@ -1,17 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     AsyncContextManager,
-    Callable,
-    Dict,
-    Iterable,
-    Optional,
-    Sequence,
-    Type,
+    Protocol,
     TypeVar,
-    Union,
     overload,
 )
 
@@ -22,9 +17,6 @@ from zope.interface import Attribute, Interface
 from twisted.internet.defer import Deferred
 from twisted.python.components import Componentized
 from twisted.web.iweb import IRequest
-
-from ._typing_compat import Protocol
-
 
 if TYPE_CHECKING:
     from ._app import KleinRenderable
@@ -76,16 +68,16 @@ V = TypeVar("V")
 
 class AuthorizationMap(Protocol):
     @overload
-    def get(self, key: Type[V]) -> V: ...
+    def get(self, key: type[V]) -> V: ...
 
     @overload
-    def get(self, key: Type[V], default: T) -> Union[V, T]: ...
+    def get(self, key: type[V], default: T) -> V | T: ...
 
     def get(self, *args: Any, **kwargs: Any) -> Any: ...
 
-    def __getitem__(self, key: Type[V]) -> V: ...
+    def __getitem__(self, key: type[V]) -> V: ...
 
-    def __setitem__(self, key: Type[V], value: V) -> None: ...
+    def __setitem__(self, key: type[V], value: V) -> None: ...
 
 
 class ISession(Interface):
@@ -94,8 +86,7 @@ class ISession(Interface):
     about how the session was negotiated with the client software, and
     """
 
-    identifier: str = Attribute(
-        """
+    identifier: str = Attribute("""
         L{str} identifying a session.
 
         This value should be:
@@ -106,28 +97,23 @@ class ISession(Interface):
                should be able to guess what it is
 
             3. I{opaque} - it should contain no interesting information
-        """
-    )
+        """)
 
-    isConfidential = Attribute(
-        """
+    isConfidential = Attribute("""
         A L{bool} indicating whether this session mechanism transmitted over an
         encrypted transport, i.e., HTTPS.  If C{True}, this means that this
         session can be used for sensitive information; otherwise, the
         information contained in it should be considered to be available to
         attackers.
-        """
-    )
+        """)
 
-    authenticatedBy = Attribute(
-        """
+    authenticatedBy = Attribute("""
         A L{SessionMechanism} indicating what mechanism was used to
         authenticate this session.
-        """
-    )
+        """)
 
     def authorize(
-        interfaces: Iterable[Type[object]],
+        interfaces: Iterable[type[object]],
     ) -> Deferred[AuthorizationMap]:
         """
         Retrieve other objects from this session.
@@ -212,7 +198,7 @@ class ISimpleAccountBinding(Interface):
 
     def bindIfCredentialsMatch(
         username: str, password: str
-    ) -> Deferred[Optional[ISimpleAccount]]:
+    ) -> Deferred[ISimpleAccount | None]:
         """
         Attach the session this is a component of to an account with the given
         username and password, if the given username and password correctly
@@ -235,7 +221,7 @@ class ISimpleAccountBinding(Interface):
 
     def createAccount(
         username: str, email: str, password: str
-    ) -> Deferred[Optional[ISimpleAccount]]:
+    ) -> Deferred[ISimpleAccount | None]:
         """
         Create a new account with the given username, email and password.
         """
@@ -246,17 +232,13 @@ class ISimpleAccount(Interface):
     Data-store agnostic account interface.
     """
 
-    username: str = Attribute(
-        """
+    username: str = Attribute("""
         Unicode username.
-        """
-    )
+        """)
 
-    accountID: str = Attribute(
-        """
+    accountID: str = Attribute("""
         Unicode account-ID.
-        """
-    )
+        """)
 
     def bindSession(session: ISession) -> Deferred[None]:
         """
@@ -319,7 +301,7 @@ class IDependencyInjector(Interface):
     """
 
     def injectValue(
-        instance: Any, request: IRequest, routeParams: Dict[str, Any]
+        instance: Any, request: IRequest, routeParams: dict[str, Any]
     ) -> Any:
         """
         Return a value to be injected into the parameter name specified by the
@@ -358,8 +340,8 @@ class IRequestLifecycle(Interface):
 
     def addPrepareHook(
         beforeHook: Callable,
-        requires: Sequence[Type[object]] = (),
-        provides: Sequence[Type[object]] = (),
+        requires: Sequence[type[object]] = (),
+        provides: Sequence[type[object]] = (),
     ) -> None:
         """
         Add a hook that promises to prepare the request by supplying the given

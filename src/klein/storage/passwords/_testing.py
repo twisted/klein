@@ -1,9 +1,9 @@
 # -*- test-case-name: klein.storage.passwords.test.test_passwords -*-
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from hashlib import sha256
 from os import urandom
-from typing import Awaitable, Callable, Optional
 from unicodedata import normalize
 from unittest import TestCase
 
@@ -65,7 +65,7 @@ def engineForTesting(
         C{storePasswordHash} argument?  Note that this mutates the existing
         engine if one has already been cached.
     """
-    result: Optional[InsecurePasswordEngineOnlyForTesting] = getattr(
+    result: InsecurePasswordEngineOnlyForTesting | None = getattr(
         testCase, cacheAttribute, None
     )
     if result is None:

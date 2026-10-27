@@ -1,9 +1,10 @@
 # -*- test-case-name: klein.storage.sql.test.test_transactions -*-
 from __future__ import annotations
 
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict
+from typing import Any
 
 from attrs import Factory, define, field
 from dbxs.async_dbapi import AsyncConnectable, AsyncConnection
@@ -23,7 +24,6 @@ from klein.interfaces import (
 
 from ..._util import eagerDeferredCoroutine
 from ...interfaces import IRequirementContext
-
 
 log = Logger()
 
@@ -52,8 +52,8 @@ class TransactionRequestAssociator:
     """
 
     request: Request
-    map: Dict[AsyncConnectable, AsyncConnection] = field(default=Factory(dict))
-    waitMap: Dict[AsyncConnectable, Awaitable[None]] = field(
+    map: dict[AsyncConnectable, AsyncConnection] = field(default=Factory(dict))
+    waitMap: dict[AsyncConnectable, Awaitable[None]] = field(
         default=Factory(dict)
     )
     attached: bool = False
@@ -138,7 +138,7 @@ class Transaction:
         self,
         instance: object,
         request: IRequest,
-        routeParams: Dict[str, object],
+        routeParams: dict[str, object],
     ) -> AsyncConnection:
         """
         Get a transaction from the associated connectable.

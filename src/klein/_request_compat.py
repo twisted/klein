@@ -23,7 +23,6 @@ from ._message import FountAlreadyAccessedError, MessageState
 from ._request import IHTTPRequest
 from ._tubes import IOFount, fountToBytes
 
-
 __all__ = ()
 
 

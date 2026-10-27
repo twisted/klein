@@ -1,5 +1,6 @@
+from collections.abc import AsyncIterable
 from dataclasses import dataclass
-from typing import AsyncIterable, Optional, Protocol
+from typing import Protocol
 
 from dbxs import accessor, many, query, statement
 from dbxs.async_dbapi import (
@@ -16,7 +17,6 @@ from klein.interfaces import (
     SessionMechanism,
 )
 from klein.storage.sql import SQLAuthorizer, applyBasicSchema, authorizerFor
-
 
 foodTable = """
 CREATE TABLE food (
@@ -105,12 +105,10 @@ class RatingsDB(Protocol):
     )
     def ratingsByUserID(self, accountID: str) -> AsyncIterable[FoodRating]: ...
 
-    @statement(
-        sql="""
+    @statement(sql="""
         insert into food (rated_by, name, rating)
         values ({accountID}, {name}, {rating})
-        """
-    )
+        """)
     async def addRating(
         self, accountID: str, name: str, rating: int
     ) -> None: ...
@@ -134,7 +132,7 @@ class FoodCritic:
 @authorizerFor(FoodCritic)
 async def authorizeFoodCritic(
     store: ISessionStore, conn: AsyncConnection, session: ISession
-) -> Optional[FoodCritic]:
+) -> FoodCritic | None:
     accts = await (await session.authorize([ISimpleAccountBinding]))[
         ISimpleAccountBinding
     ].boundAccounts()
@@ -163,7 +161,7 @@ class APIKeyProvisioner:
 @authorizerFor(APIKeyProvisioner)
 async def authorizeProvisioner(
     store: ISessionStore, conn: AsyncConnection, session: ISession
-) -> Optional[APIKeyProvisioner]:
+) -> APIKeyProvisioner | None:
     accts = await (await session.authorize([ISimpleAccountBinding]))[
         ISimpleAccountBinding
     ].boundAccounts()

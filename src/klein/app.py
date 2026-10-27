@@ -10,7 +10,6 @@ from ._app import (
     urlFor,
 )
 
-
 __all__ = (
     "Klein",
     "KleinRequest",

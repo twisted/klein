@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Callable, List, Optional, TypeVar
+from typing import TypeVar
 
 import attr
 from dbxs.async_dbapi import AsyncConnection, transaction
@@ -35,7 +36,6 @@ from ...interfaces import ISimpleAccount
 from ...test.util import makeStub as StubTreq
 from ..passwords.testing import engineForTesting, hashUpgradeCount
 from ..sql import SQLSessionProcurer, applyBasicSchema
-
 
 T = TypeVar("T")
 
@@ -78,14 +78,14 @@ async def authorizeBrowsingDatabase(
 @attr.s(auto_attribs=True, hash=False)
 class TestObject:
     procurer: ISessionProcurer
-    loggedInAs: Optional[ISimpleAccount] = None
-    boundAccounts: Optional[List[ISimpleAccount]] = None
+    loggedInAs: ISimpleAccount | None = None
+    boundAccounts: list[ISimpleAccount] | None = None
 
     router = Klein()
     requirer = Requirer()
 
     @requirer.prerequisite([ISession])
-    async def procureASession(self, request: IRequest) -> Optional[ISession]:
+    async def procureASession(self, request: IRequest) -> ISession | None:
         return await self.procurer.procureSession(request)
 
     @requirer.require(
@@ -161,7 +161,7 @@ class CommonStoreTests(TestCase):
         self,
         newSession: Callable[[bool, SessionMechanism], Awaitable[ISession]],
         procurer: ISessionProcurer,
-        pool: Optional[MemoryPool] = None,
+        pool: MemoryPool | None = None,
     ) -> None:
         """
         Test using a form to log in to an in-memory store.

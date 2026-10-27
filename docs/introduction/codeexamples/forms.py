@@ -4,7 +4,6 @@ from klein import Field, Form, Klein, Plating, Requirer, SessionProcurer
 from klein.interfaces import ISession
 from klein.storage.memory import MemorySessionStore
 
-
 app = Klein()
 
 sessions = MemorySessionStore()

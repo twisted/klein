@@ -199,7 +199,7 @@ jobs:
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python-version: "pypy-3.11"
+            python-version: "pypy3.11-v7.3.23"
             twisted-version: "26.4"
             tox-prefix: "test"
             optional: false

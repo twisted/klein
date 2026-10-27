@@ -1,5 +1,5 @@
 from sys import stdout
-from typing import Any, List, Tuple, cast
+from typing import Any, cast
 from unittest.mock import Mock, patch
 
 from zope.interface import implementer
@@ -57,10 +57,10 @@ class KleinEqualityTestCase(unittest.TestCase, EqualityTestsMixin):
             return True
 
         def __ne__(self, other: Any) -> bool:
-            return False
+            return False  # pragma: no cover
 
         def __hash__(self) -> int:
-            return id(self)
+            return id(self)  # pragma: no cover
 
     _another = Klein()
 
@@ -363,7 +363,7 @@ class KleinTestCase(unittest.TestCase):
             app = Klein()
 
             def __init__(self) -> None:
-                self.bar_calls: List[Tuple["Foo", IRequest]] = []
+                self.bar_calls: list[tuple["Foo", IRequest]] = []
 
             @app.route("/bar")
             def bar(self, request: IRequest) -> KleinRenderable:
@@ -395,7 +395,7 @@ class KleinTestCase(unittest.TestCase):
             app = Klein()
 
             def __init__(self) -> None:
-                self.bar_calls: List[Tuple["Foo", IRequest]] = []
+                self.bar_calls: list[tuple["Foo", IRequest]] = []
 
             @app.route("/bar/", branch=True)
             def bar(self, request: IRequest) -> KleinRenderable:
@@ -426,7 +426,7 @@ class KleinTestCase(unittest.TestCase):
 
         @app.route("/foo", branch=True)
         def foo(request: IRequest) -> KleinRenderable:
-            return "foo"
+            return "foo"  # pragma: no cover
 
         c = app.url_map.bind("foo")
         self.assertEqual(

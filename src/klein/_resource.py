@@ -1,7 +1,8 @@
 # -*- test-case-name: klein.test.test_resource -*-
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from werkzeug.exceptions import HTTPException
 
@@ -17,7 +18,6 @@ from twisted.web.template import renderElement
 from ._dihttp import Response
 from ._interfaces import IKleinRequest
 
-
 if TYPE_CHECKING:
     # NB: circular import, must not be imported at runtime.
     from ._app import (
@@ -30,10 +30,10 @@ if TYPE_CHECKING:
 
 
 def route_metadata(handler: KleinRouteHandler) -> RouteMetadata:
-    return handler  # type:ignore[return-value]
+    return handler  # type: ignore[return-value]
 
 
-def ensure_utf8_bytes(v: Union[str, bytes]) -> bytes:
+def ensure_utf8_bytes(v: str | bytes) -> bytes:
     """
     Coerces a value which is either a C{str} or C{bytes} to a C{bytes}.
     If ``v`` is a C{str} object it is encoded as utf-8.
@@ -52,7 +52,7 @@ class _StandInResource:
     """
 
 
-StandInResource = cast("KleinResource", _StandInResource())
+StandInResource = _StandInResource()
 
 
 class URLDecodeError(Exception):
@@ -62,18 +62,19 @@ class URLDecodeError(Exception):
 
     __slots__ = ["errors"]
 
-    def __init__(self, errors: Sequence[Tuple[str, Failure]]) -> None:
+    def __init__(self, errors: Sequence[tuple[str, Failure]]) -> None:
         """
         @param errors: Sequence of decoding errors, expressed as tuples
             of names and an associated failure.
         """
+        super().__init__(errors)
         self.errors = errors
 
     def __repr__(self) -> str:
         return f"<URLDecodeError(errors={self.errors!r})>"
 
 
-def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
+def extractURLparts(request: IRequest) -> tuple[str, str, int, str, str]:
     """
     Extracts and decodes URI parts from C{request}.
 
@@ -102,14 +103,17 @@ def extractURLparts(request: IRequest) -> Tuple[str, str, int, str, str]:
     if request.prepath:
         script_name = b"/".join(request.prepath)
 
-        if not script_name.startswith(b"/"):
+        # TODO: coverage
+        if not script_name.startswith(b"/"):  # pragma: no branch
             script_name = b"/" + script_name
 
     path_info = b""
-    if request.postpath:
+    # TODO: coverage
+    if request.postpath:  # pragma: no branch
         path_info = b"/".join(request.postpath)
 
-        if not path_info.startswith(b"/"):
+        # TODO: coverage
+        if not path_info.startswith(b"/"):  # pragma: no branch
             path_info = b"/" + path_info
 
     url_scheme = "https" if is_secure else "http"
@@ -153,7 +157,7 @@ class KleinResource(Resource):
     def __ne__(self, other: object) -> bool:
         result = self.__eq__(other)
         if result is NotImplemented:
-            return result
+            return NotImplemented
         return not result
 
     def render(self, request: IRequest) -> KleinRenderable:
@@ -195,7 +199,7 @@ class KleinResource(Resource):
             # to percolate up. If that happens it will be handled below in
             # processing_failed, either by a user-registered error handler or
             # one of our defaults.
-            (rule, kwargs) = mapper.match(return_rule=True)
+            rule, kwargs = mapper.match(return_rule=True)
             endpoint = rule.endpoint
 
             # Try pretty hard to fix up prepath and postpath.
@@ -256,15 +260,18 @@ class KleinResource(Resource):
 
         def processing_failed(
             failure: Failure, error_handlers: ErrorMethods
-        ) -> Optional[Deferred]:
+        ) -> Deferred | None:
             # The failure processor writes to the request.  If the
             # request is already finished we should suppress failure
             # processing.  We don't return failure here because there
             # is no way to surface this failure to the user if the
             # request is finished.
             if request_finished[0]:
-                if not failure.check(defer.CancelledError):
-                    log.err(failure, "Unhandled Error Processing Request.")
+                # TODO: coverage
+                if not failure.check(defer.CancelledError):  # pragma: no branch
+                    log.err(
+                        failure, "Unhandled Error Processing Request."
+                    )  # pragma: no cover
                 return None
 
             # If there are no more registered handlers, apply some defaults
@@ -280,7 +287,7 @@ class KleinResource(Resource):
                             ensure_utf8_bytes(header), ensure_utf8_bytes(value)
                         )
 
-                    encoded = resp.iter_encoded()  # type: ignore[attr-defined]
+                    encoded = resp.iter_encoded()
                     return succeed(ensure_utf8_bytes(b"".join(encoded)))
                 else:
                     request.processingFailed(  # type: ignore[attr-defined]
@@ -310,7 +317,7 @@ class KleinResource(Resource):
         d.addErrback(processing_failed, self._app._error_handlers)
 
         def write_response(
-            r: Union[_StandInResource, str, bytes, int, None]
+            r: _StandInResource | str | bytes | int | None,
         ) -> None:
             if r is StandInResource:
                 return

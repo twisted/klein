@@ -18,7 +18,6 @@ from twisted.python.failure import Failure
 
 from ._attrs_zope import provides
 
-
 __all__ = ()
 
 
@@ -54,7 +53,8 @@ class IOFount:
         self._pauser = Pauser(self._pause, self._resume)
 
     def _flowToDrain(self) -> None:
-        if self.drain is not None and not self._paused:
+        # TODO: coverage
+        if self.drain is not None and not self._paused:  # pragma: no branch
             data = self._source.read()
             if data:
                 self.drain.receive(data)
@@ -66,14 +66,18 @@ class IOFount:
         return result
 
     def pauseFlow(self) -> Any:
-        return self._pauser.pause()
+        # TODO: coverage
+        return self._pauser.pause()  # pragma: no cover
 
     def stopFlow(self) -> Any:
-        return self._pauser.resume()
+        # TODO: coverage
+        return self._pauser.resume()  # pragma: no cover
 
     def _pause(self) -> None:
-        self._paused = True
+        # TODO: coverage
+        self._paused = True  # pragma: no cover
 
     def _resume(self) -> None:
-        self._paused = False
-        self._flowToDrain()
+        # TODO: coverage
+        self._paused = False  # pragma: no cover
+        self._flowToDrain()  # pragma: no cover

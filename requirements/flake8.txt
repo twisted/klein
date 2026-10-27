@@ -1,0 +1,11 @@
+# If you change this file, make sure to update .pre-commit-config.yaml as well
+
+flake8==7.4.1
+flake8-bugbear==26.9.9
+flake8-docstrings==1.7.0
+flake8-mutable==1.2.0
+flake8-pep3101==3.0.0
+pep8-naming==0.15.1
+pycodestyle==2.15.0
+pydocstyle==6.3.0
+pyflakes==4.0.0

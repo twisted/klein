@@ -1,9 +1,8 @@
-from typing import Any, List, Tuple, cast
+from typing import Any, cast
 from xml.etree import ElementTree
 
 import attr
 from treq import content
-from treq.testing import StubTreq
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.python.compat import nativeString
@@ -31,6 +30,7 @@ from klein.interfaces import (
 from klein.storage.memory import MemorySessionStore
 
 from .._form import textConverter
+from .util import makeStub as StubTreq
 
 
 class DanglingField(Field):
@@ -46,7 +46,7 @@ class DanglingField(Field):
 @attr.s(auto_attribs=True, hash=False)
 class TestObject:
     sessionStore: ISessionStore
-    calls: List = attr.ib(factory=list)
+    calls: list = attr.ib(factory=list)
 
     router = Klein()
     requirer = Requirer()
@@ -165,7 +165,10 @@ class TestObject:
         class CustomElement(Element):
             @renderer
             def customize(self, request: IRequest, tag: Any) -> Any:
-                return tag("customized")
+                # The test here is validating that the custom renderer from the
+                # custom element will *not* be visible to the validation error
+                # renderer, so we don't get called.
+                return tag("customized")  # pragma: no cover
 
         form.validationErrors[form._form.fields[0]] = ValidationError(
             message=(tags.div(class_="checkme", render="customize"))
@@ -206,7 +209,7 @@ class TestObject:
         return form
 
 
-def simpleFormRouter() -> Tuple[Klein, List[Tuple[str, int]]]:
+def simpleFormRouter() -> tuple[Klein, list[tuple[str, int]]]:
     """
     Create a simple router hooked up to a field handler.
     """
@@ -259,7 +262,10 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/handle",
                 data=dict(name="hello", value="1234", ignoreme="extraneous"),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -283,7 +289,10 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/password-field",
                 data=dict(pw="asdfjkl;"),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -309,21 +318,30 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/constrained",
                 data=dict(goldilocks="1"),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         tooHigh = self.successResultOf(
             stub.post(
                 "https://localhost/constrained",
                 data=dict(goldilocks="20"),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         justRight = self.successResultOf(
             stub.post(
                 "https://localhost/constrained",
                 data=dict(goldilocks="7"),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
 
@@ -350,7 +368,10 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/handle",
                 data=dict(),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 400)
@@ -378,7 +399,10 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/dangling-param",
                 data=dict(),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 500)
@@ -392,7 +416,10 @@ class TestForms(SynchronousTestCase):
         self.successResultOf(
             stub.get(
                 "https://localhost/dangling-param",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             ),
         )
         self.assertEqual(response.code, 500)
@@ -498,7 +525,10 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/handle",
                 json=dict(name="hello", value="1234", ignoreme="extraneous"),
-                headers={"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    "X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -522,14 +552,20 @@ class TestForms(SynchronousTestCase):
             stub.post(
                 "https://localhost/notrequired",
                 json=dict(name="one"),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         response2 = self.successResultOf(
             stub.post(
                 "https://localhost/notrequired",
                 json=dict(name="two", value=2),
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -552,7 +588,10 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(
             stub.get(
                 "https://localhost/render",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -583,7 +622,10 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(
             stub.get(
                 "https://localhost/render-submit",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -612,7 +654,10 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(
             stub.get(
                 "https://localhost/render-custom",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -644,7 +689,10 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(
             stub.get(
                 "https://localhost/render-empty",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
@@ -679,11 +727,13 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(
             stub.get(
                 "https://localhost/render-cascade",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
             )
         )
         self.assertEqual(response.code, 200)
-        # print(self.successResultOf(response.content()).decode('utf-8'))
         failures = self.flushLoggedErrors()
         self.assertEqual(len(failures), 1)
         self.assertIn("MissingRenderMethod", str(failures[0]))
@@ -704,7 +754,10 @@ class TestForms(SynchronousTestCase):
         response = self.successResultOf(
             stub.post(
                 "https://localhost/handle-validation",
-                headers={b"X-Test-Session": session.identifier},
+                # https://github.com/twisted/treq/issues/436
+                headers={
+                    b"X-Test-Session": session.identifier
+                },  # type: ignore[arg-type]
                 json={"value": 300},
             )
         )
@@ -731,6 +784,8 @@ class TestForms(SynchronousTestCase):
         stub = StubTreq(TestObject(mem).router.resource())
         response = self.successResultOf(stub.get("https://localhost/render"))
         self.assertEqual(response.code, 200)
+        cookies = response.cookies()
+        self.assertEqual(len(cookies), 1)
         setCookie = response.cookies()["Klein-Secure-Session"]
         expected = f'value="{setCookie}"'
         actual = self.successResultOf(content(response)).decode("utf-8")

@@ -70,3 +70,5 @@ texinfo_documents = [
 # API links extension, stolen from Twisted's Sphinx setup
 extensions.append("apilinks")
 apilinks_base_url = "https://docs.twisted.org/en/stable/api/"
+
+user_agent = "Klein-Linkcheck/1.0.0"

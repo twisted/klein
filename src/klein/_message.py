@@ -5,7 +5,7 @@
 HTTP message API.
 """
 
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from attr import attrib, attrs
 from attr.validators import instance_of, optional
@@ -13,7 +13,6 @@ from tubes.itube import IFount
 
 from ._imessage import FountAlreadyAccessedError
 from ._tubes import bytesToFount, fountToBytes
-
 
 __all__ = ()
 
@@ -27,7 +26,7 @@ class MessageState:
     Internal mutable state for HTTP message implementations in L{klein}.
     """
 
-    cachedBody: Optional[bytes] = attrib(
+    cachedBody: bytes | None = attrib(
         validator=optional(instance_of(bytes)), default=None, init=False
     )
 

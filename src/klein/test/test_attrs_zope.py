@@ -8,17 +8,14 @@ from twisted.trial.unittest import SynchronousTestCase
 from .._attrs_zope import provides
 
 
-class IWhatever(Interface):
-    ...
+class IWhatever(Interface): ...
 
 
 @implementer(IWhatever)
-class YesWhatever:
-    ...
+class YesWhatever: ...
 
 
-class NoWhatever:
-    ...
+class NoWhatever: ...
 
 
 @attrs.define()

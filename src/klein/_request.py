@@ -5,8 +5,6 @@
 HTTP request API.
 """
 
-from typing import Union
-
 from attr import Factory, attrib, attrs
 from attr.validators import instance_of
 from hyperlink import DecodedURL
@@ -16,7 +14,6 @@ from zope.interface import implementer
 from ._attrs_zope import provides
 from ._imessage import IHTTPHeaders, IHTTPRequest
 from ._message import MessageState, bodyAsBytes, bodyAsFount, validateBody
-
 
 __all__ = ()
 
@@ -32,7 +29,7 @@ class FrozenHTTPRequest:
     uri: DecodedURL = attrib(validator=instance_of(DecodedURL))
     headers: IHTTPHeaders = attrib(validator=provides(IHTTPHeaders))
 
-    _body: Union[bytes, IFount] = attrib(validator=validateBody)
+    _body: bytes | IFount = attrib(validator=validateBody)
 
     _state: MessageState = attrib(default=Factory(MessageState), init=False)
 

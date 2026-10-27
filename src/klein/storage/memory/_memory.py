@@ -1,9 +1,18 @@
 # -*- test-case-name: klein.test.test_memory -*-
+from __future__ import annotations
+
 from binascii import hexlify
+from collections.abc import Callable, Iterable
 from os import urandom
-from typing import Any, Callable, Dict, Iterable, Type, cast
+from typing import (
+    Any,
+    Protocol,
+    TypeVar,
+    cast,
+)
 
 import attr
+from attrs import define, field
 from zope.interface import Interface, implementer
 
 from twisted.internet.defer import Deferred, fail, succeed
@@ -16,12 +25,14 @@ from klein.interfaces import (
     SessionMechanism,
 )
 
+from ..._isession import AuthorizationMap
+from ..._util import eagerDeferredCoroutine
 
-_authCB = Callable[[Type[Interface], ISession, Componentized], Any]
+_authCB = Callable[[type[object], ISession, Componentized], Any]
 
 
 @implementer(ISession)
-@attr.s(auto_attribs=True)
+@define
 class MemorySession:
     """
     An in-memory session.
@@ -31,59 +42,80 @@ class MemorySession:
     isConfidential: bool
     authenticatedBy: SessionMechanism
     _authorizationCallback: _authCB
-    _components: Componentized = attr.ib(factory=Componentized)
+    _components: Componentized = field(factory=Componentized)
 
-    def authorize(self, interfaces: Iterable[Type[Interface]]) -> Deferred:
+    @eagerDeferredCoroutine
+    async def authorize(
+        self, interfaces: Iterable[type[object]]
+    ) -> AuthorizationMap:
         """
         Authorize each interface by calling back to the session store's
         authorization callback.
         """
-        result = {}
+        result: AuthorizationMap = {}  # type: ignore[assignment]
         for interface in interfaces:
             provider = self._authorizationCallback(
                 interface, self, self._components
             )
+            if isinstance(provider, Deferred):
+                provider = await provider
             if provider is not None:
                 result[interface] = provider
-        return succeed(result)
+        return result
 
 
-class _MemoryAuthorizerFunction:
+T = TypeVar("T")
+
+
+class _MemoryAuthorizerFunction(Protocol[T]):
     """
     Type shadow for function with the given attribute.
     """
 
-    __memoryAuthInterface__: Type[Interface] = None  # type: ignore[assignment]
+    __memoryAuthInterface__: type[T]
 
     def __call__(
-        self, interface: Type[Interface], session: ISession, data: Componentized
-    ) -> Any:
+        self, interface: type[object], session: ISession, data: Componentized
+    ) -> Deferred[T | None] | T | None:
         """
         Return a provider of the given interface.
         """
 
 
-_authFn = Callable[[Type[Interface], ISession, Componentized], Any]
+_authFn = Callable[[type[object], ISession, Componentized], Any]
 
 
 def declareMemoryAuthorizer(
-    forInterface: Type[Interface],
-) -> Callable[[Callable], _MemoryAuthorizerFunction]:
+    forInterface: type[Interface],
+) -> Callable[
+    [
+        Callable[
+            [type[T], ISession, Componentized],
+            Deferred[T | None] | T | None,
+        ]
+    ],
+    _MemoryAuthorizerFunction[T],
+]:
     """
     Declare that the decorated function is an authorizer usable with a memory
     session store.
     """
 
-    def decorate(decoratee: _authFn) -> _MemoryAuthorizerFunction:
-        decoratee = cast(_MemoryAuthorizerFunction, decoratee)
-        decoratee.__memoryAuthInterface__ = forInterface
-        return decoratee
+    def decorate(
+        decoratee: Callable[
+            [type[T], ISession, Componentized],
+            Deferred[T | None] | T | None,
+        ],
+    ) -> _MemoryAuthorizerFunction[T]:
+        asAuthorizer = cast(_MemoryAuthorizerFunction, decoratee)
+        asAuthorizer.__memoryAuthInterface__ = forInterface
+        return asAuthorizer
 
     return decorate
 
 
 def _noAuthorization(
-    interface: Type[Interface], session: ISession, data: Componentized
+    interface: type[object], session: ISession, data: Componentized
 ) -> None:
     return None
 
@@ -92,13 +124,13 @@ def _noAuthorization(
 @attr.s(auto_attribs=True)
 class MemorySessionStore:
     authorizationCallback: _authFn = _noAuthorization
-    _secureStorage: Dict[str, Any] = attr.ib(factory=dict)
-    _insecureStorage: Dict[str, Any] = attr.ib(factory=dict)
+    _secureStorage: dict[str, Any] = attr.ib(factory=dict)
+    _insecureStorage: dict[str, Any] = attr.ib(factory=dict)
 
     @classmethod
     def fromAuthorizers(
         cls, authorizers: Iterable[_MemoryAuthorizerFunction]
-    ) -> "MemorySessionStore":
+    ) -> MemorySessionStore:
         """
         Create a L{MemorySessionStore} from a collection of callbacks which can
         do authorization.
@@ -110,7 +142,7 @@ class MemorySessionStore:
             interfaceToCallable[specifiedInterface] = authorizer
 
         def authorizationCallback(
-            interface: Type[Interface], session: ISession, data: Componentized
+            interface: type[object], session: ISession, data: Componentized
         ) -> Any:
             return interfaceToCallable.get(interface, _noAuthorization)(
                 interface, session, data
@@ -118,7 +150,7 @@ class MemorySessionStore:
 
         return cls(authorizationCallback)
 
-    def _storage(self, isConfidential: bool) -> Dict[str, Any]:
+    def _storage(self, isConfidential: bool) -> dict[str, Any]:
         """
         Return the storage appropriate to the isConfidential flag.
         """
@@ -129,7 +161,7 @@ class MemorySessionStore:
 
     def newSession(
         self, isConfidential: bool, authenticatedBy: SessionMechanism
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         storage = self._storage(isConfidential)
         identifier = hexlify(urandom(32)).decode("ascii")
         session = MemorySession(
@@ -146,7 +178,7 @@ class MemorySessionStore:
         identifier: str,
         isConfidential: bool,
         authenticatedBy: SessionMechanism,
-    ) -> Deferred:
+    ) -> Deferred[ISession]:
         storage = self._storage(isConfidential)
         if identifier in storage:
             return succeed(storage[identifier])
@@ -160,4 +192,5 @@ class MemorySessionStore:
             )
 
     def sentInsecurely(self, tokens: Iterable[str]) -> None:
-        return
+        for token in tokens:
+            self._storage(True).pop(token, None)

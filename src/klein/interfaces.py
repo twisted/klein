@@ -5,6 +5,7 @@ from ._isession import (
     IDependencyInjector,
     IRequestLifecycle,
     IRequiredParameter,
+    IRequirementContext,
     ISession,
     ISessionProcurer,
     ISessionStore,
@@ -16,13 +17,13 @@ from ._isession import (
     TransactionEnded,
 )
 
-
 __all__ = (
     "EarlyExit",
     "IDependencyInjector",
     "IKleinRequest",
     "IRequestLifecycle",
     "IRequiredParameter",
+    "IRequirementContext",
     "ISession",
     "ISessionProcurer",
     "ISessionStore",

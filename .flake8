@@ -100,3 +100,8 @@ extend-ignore =
     B907,
     D419,
     N818,
+
+    # flake8 incorrectly identifies black folding '...' onto one line as
+    # 'multiple statements'.  See
+    # https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html#e701-e704
+    E704, E701,

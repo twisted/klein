@@ -1,6 +1,7 @@
 include .codecov.yml
 include .coveragerc
 include .flake8
+include .git-blame-ignore-revs
 include .isort.cfg
 include .pre-commit-config.yaml
 include .readthedocs.yml
@@ -20,3 +21,4 @@ recursive-include docs *.rst
 recursive-include docs *.txt
 recursive-exclude docs/_build *
 recursive-exclude requirements *
+recursive-include src *.sql

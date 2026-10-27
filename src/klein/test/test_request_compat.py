@@ -6,15 +6,11 @@ Tests for L{klein._irequest}.
 """
 
 import functools
+from collections.abc import Awaitable, Callable, Coroutine, Mapping, Sequence
 from string import ascii_uppercase
 from types import MappingProxyType
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Mapping,
-    Sequence,
     TypeVar,
 )
 
@@ -31,7 +27,6 @@ from ._trial import TestCase
 from .not_hypothesis import binary, decoded_urls, given, text
 from .test_resource import MockRequest
 
-
 __all__ = ()
 
 
@@ -42,7 +37,7 @@ _R = TypeVar("_R")
 
 
 def ensuringDeferred(
-    fn: Callable[[_T], Coroutine[Any, Any, _R]]
+    fn: Callable[[_T], Coroutine[Any, Any, _R]],
 ) -> Callable[[_T], Awaitable[_R]]:
     @functools.wraps(fn)
     def wrapper(self: _T) -> Awaitable[_R]:

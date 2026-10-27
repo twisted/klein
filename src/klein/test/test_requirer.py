@@ -1,7 +1,7 @@
-from typing import Iterator, Sequence, Tuple, cast
+from collections.abc import Iterator, Sequence
+from typing import cast
 
 from hyperlink import DecodedURL
-from treq.testing import StubTreq
 from zope.interface import Interface
 
 from twisted.python.components import Componentized
@@ -12,6 +12,8 @@ from twisted.web.iweb import IRequest
 from klein import Klein, RequestComponent, RequestURL, Requirer, Response
 from klein.interfaces import IRequiredParameter
 
+from .util import makeStub as StubTreq
+
 
 class BadlyBehavedHeaders(Headers):
     """
@@ -19,7 +21,7 @@ class BadlyBehavedHeaders(Headers):
     getAllRequestHeaders.
     """
 
-    def getAllRawHeaders(self) -> Iterator[Tuple[bytes, Sequence[bytes]]]:
+    def getAllRawHeaders(self) -> Iterator[tuple[bytes, Sequence[bytes]]]:
         """
         Don't return a host header.
         """

@@ -2,9 +2,9 @@
 Tests for L{klein._session}.
 """
 
-from typing import Any, Generator, List, Tuple, Type
+from collections.abc import Generator
+from typing import Any
 
-from treq.testing import StubTreq
 from zope.interface import Interface, implementer
 
 from twisted.internet.defer import Deferred, inlineCallbacks
@@ -16,9 +16,11 @@ from klein import Authorization, Klein, Requirer, SessionProcurer
 from klein.interfaces import ISession, NoSuchSession, TooLateForCookies
 from klein.storage.memory import MemorySessionStore, declareMemoryAuthorizer
 
+from .util import StubWithTypes
+from .util import makeStub as StubTreq
 
-Sessions = List[ISession]
-Errors = List[NoSuchSession]
+Sessions = list[ISession]
+Errors = list[NoSuchSession]
 
 
 class ISimpleTest(Interface):
@@ -53,7 +55,7 @@ class SimpleTest:
 
 @declareMemoryAuthorizer(ISimpleTest)
 def memoryAuthorizer(
-    interface: Type[Interface], session: ISession, data: Componentized
+    interface: type[Interface], session: ISession, data: Componentized
 ) -> SimpleTest:
     """
     Authorize the ISimpleTest interface; it always works.
@@ -61,7 +63,7 @@ def memoryAuthorizer(
     return SimpleTest()
 
 
-def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
+def simpleSessionRouter() -> tuple[Sessions, Errors, str, str, StubWithTypes]:
     """
     Construct a simple router.
     """
@@ -100,7 +102,8 @@ def simpleSessionRouter() -> Tuple[Sessions, Errors, str, str, StubTreq]:
 
     @requirer.require(router.route("/denied"), nope=Authorization(IDenyMe))
     def testDenied(nope: IDenyMe) -> str:
-        return "bad"
+        # This should always be denied, so the code is uncovered.
+        return "bad"  # pragma: no cover
 
     treq = StubTreq(router.resource())
     return sessions, exceptions, token, cookie, treq
@@ -191,8 +194,10 @@ class ProcurementTests(SynchronousTestCase):
         """
         sessions, exceptions, token, cookie, treq = simpleSessionRouter()
 
+        bad: list[bytes | str] = ["bad"]
+        headers: dict[bytes | str, list[bytes | str]] = {token: bad}
         response = self.successResultOf(
-            treq.get("https://unittest.example.com/", headers={token: "bad"})
+            treq.get("https://unittest.example.com/", headers=headers)
         )
         self.assertEqual(response.code, 200)
         self.assertEqual(len(sessions), 0)

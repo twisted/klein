@@ -1,17 +1,12 @@
 # -*- test-case-name: klein.test.test_form -*-
 
 import json
+from collections.abc import Callable, Generator, Iterable, Sequence
 from typing import (
     Any,
     AnyStr,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
     NoReturn,
-    Optional,
-    Sequence,
+    Protocol,
     TypeVar,
     cast,
     overload,
@@ -30,7 +25,6 @@ from twisted.web.template import Element, Tag, TagLoader, tags
 
 from ._app import KleinRenderable, _call
 from ._decorators import bindable
-from ._typing_compat import Protocol
 from .interfaces import (
     EarlyExit,
     IDependencyInjector,
@@ -42,19 +36,15 @@ from .interfaces import (
     ValueAbsent,
 )
 
-
 _Self = TypeVar("_Self")
 
 
 class _Numeric(Protocol):
-    def __float__(self) -> float:
-        ...
+    def __float__(self) -> float: ...
 
-    def __lt__(self: _Self, other: _Self) -> bool:
-        ...
+    def __lt__(self: _Self, other: _Self) -> bool: ...
 
-    def __gt__(self: _Self, other: _Self) -> bool:
-        ...
+    def __gt__(self: _Self, other: _Self) -> bool: ...
 
 
 _N = TypeVar("_N", bound=_Numeric)
@@ -110,14 +100,14 @@ class Field:
 
     converter: Callable[[str], Any]
     formInputType: str
-    pythonArgumentName: Optional[str] = None
-    formFieldName: Optional[str] = None
-    formLabel: Optional[str] = None
-    default: Optional[Any] = attr.ib(default=None, cmp=False)
+    pythonArgumentName: str | None = None
+    formFieldName: str | None = None
+    formLabel: str | None = None
+    default: Any | None = attr.ib(default=None, cmp=False)
     required: bool = True
     noLabel: bool = False
     value: str = ""
-    error: Optional[ValidationError] = None
+    error: ValidationError | None = None
 
     # IRequiredParameter
     def registerInjector(
@@ -143,9 +133,7 @@ class Field:
         @param name: the name.
         """
 
-        def maybe(
-            it: Optional[str], that: Optional[str] = name
-        ) -> Optional[str]:
+        def maybe(it: str | None, that: str | None = name) -> str | None:
             return that if it is None else it
 
         return attr.evolve(
@@ -278,24 +266,22 @@ class Field:
     @classmethod
     def number(
         cls,
-        minimum: Optional[float] = None,
-        maximum: Optional[float] = None,
+        minimum: float | None = None,
+        maximum: float | None = None,
         kind: Callable[[str], float] = float,
         **kw: Any,
-    ) -> "Field":
-        ...
+    ) -> "Field": ...
 
     @overload
     @classmethod
     def number(
         cls,
-        minimum: Optional[_N] = None,
-        maximum: Optional[_N] = None,
+        minimum: _N | None = None,
+        maximum: _N | None = None,
         *,
         kind: Callable[[str], _N],
         **kw: Any,
-    ) -> "Field":
-        ...
+    ) -> "Field": ...
 
     @overload
     @classmethod
@@ -305,15 +291,14 @@ class Field:
         maximum: _N,
         kind: Callable[[str], _N],
         **kw: Any,
-    ) -> "Field":
-        ...
+    ) -> "Field": ...
 
     @classmethod
     def number(
         cls,
-        minimum: Optional[_N] = None,
-        maximum: Optional[_N] = None,
-        kind: Callable[[str], _N] = float,  # type:ignore[assignment]
+        minimum: _N | None = None,
+        maximum: _N | None = None,
+        kind: Callable[[str], _N] = float,  # type: ignore[assignment]
         **kw: Any,
     ) -> "Field":
         """
@@ -345,6 +330,7 @@ class Field:
             formInputType="submit",
             noLabel=True,
             default=value,
+            value=value,
         )
 
 
@@ -367,8 +353,8 @@ class RenderableForm:
     _method: str
     _enctype: str
     _encoding: str
-    prevalidationValues: Dict[Field, str] = attr.ib(factory=dict)
-    validationErrors: Dict[Field, ValidationError] = attr.ib(factory=dict)
+    prevalidationValues: dict[Field, str] = attr.ib(factory=dict)
+    validationErrors: dict[Field, ValidationError] = attr.ib(factory=dict)
 
     ENCTYPE_FORM_DATA = "multipart/form-data"
     ENCTYPE_URL_ENCODED = "application/x-www-form-urlencoded"
@@ -436,7 +422,7 @@ class RenderableForm:
             action=self._action, method=self._method, **formAttributes
         )(field.asTags() for field in self._fieldsToRender())
 
-    def glue(self) -> List[Tag]:
+    def glue(self) -> list[Tag]:
         """
         Provide any glue necessary to render this form; this must be dropped
         into the template within the C{<form>} tag.
@@ -453,7 +439,7 @@ class RenderableForm:
 
 @bindable
 def defaultValidationFailureHandler(
-    instance: Optional[object],
+    instance: object | None,
     request: IRequest,
     fieldValues: "FieldValues",
 ) -> Element:
@@ -542,7 +528,7 @@ class ProtoForm:
 
     _componentized: Componentized
     _lifecycle: IRequestLifecycle
-    fields: List[Field] = attr.ib(factory=list)
+    fields: list[Field] = attr.ib(factory=list)
 
     @classmethod
     def fromComponentized(cls, componentized: Componentized) -> "ProtoForm":
@@ -564,11 +550,11 @@ class IFieldValues(Interface):
     """
 
     form: IForm = Attribute("Form")
-    arguments: Dict[str, Any] = Attribute("Arguments")
-    prevalidationValues: Dict[Field, Optional[str]] = Attribute(
+    arguments: dict[str, Any] = Attribute("Arguments")
+    prevalidationValues: dict[Field, str | None] = Attribute(
         "Pre-validation values"
     )
-    validationErrors: Dict[Field, ValidationError] = Attribute(
+    validationErrors: dict[Field, ValidationError] = Attribute(
         "Validation errors"
     )
 
@@ -586,9 +572,9 @@ class FieldValues:
     """
 
     form: "Form"
-    arguments: Dict[str, Any]
-    prevalidationValues: Dict[Field, str]
-    validationErrors: Dict[Field, ValidationError]
+    arguments: dict[str, Any]
+    prevalidationValues: dict[Field, str]
+    validationErrors: dict[Field, ValidationError]
     _injectionComponents: Componentized
 
     @inlineCallbacks
@@ -625,7 +611,7 @@ class FieldInjector:
     _lifecycle: IRequestLifecycle
 
     def injectValue(
-        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+        self, instance: Any, request: IRequest, routeParams: dict[str, Any]
     ) -> Any:
         """
         Inject the given value into the form.
@@ -781,8 +767,11 @@ class Form:
             try:
                 value = field.validateValue(text)
                 argName = field.pythonArgumentName
-                if argName is None:
-                    raise ValidationError("Form fields must all have names.")
+                # TODO: coverage
+                if argName is None:  # pragma: no branch
+                    raise ValidationError(
+                        "Form fields must all have names."
+                    )  # pragma: no cover
             except ValidationError as ve:
                 validationErrors[field] = ve
             else:
@@ -833,9 +822,7 @@ class Form:
         As a L{RenderableForm} provides L{IRenderable}, you may return the
         parameter directly
         """
-        form: Optional[IForm] = IForm(
-            decoratedFunction.injectionComponents, None
-        )
+        form: IForm | None = IForm(decoratedFunction.injectionComponents, None)
         if form is None:
             form = Form([])
         return RenderableFormParam(form, action, method, enctype, encoding)
@@ -864,7 +851,7 @@ class RenderableFormParam:
         return self
 
     def injectValue(
-        self, instance: Any, request: IRequest, routeParams: Dict[str, Any]
+        self, instance: Any, request: IRequest, routeParams: dict[str, Any]
     ) -> RenderableForm:
         """
         Create the renderable form from the request.

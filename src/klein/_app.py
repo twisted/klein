@@ -6,21 +6,14 @@ Applications are great.  Lets have more of them.
 from __future__ import annotations
 
 import sys
+from collections.abc import Awaitable, Callable, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from inspect import iscoroutine
 from typing import (
     IO,
     Any,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Tuple,
-    Type,
+    Protocol,
     TypeVar,
     Union,
     cast,
@@ -44,9 +37,8 @@ from twisted.web.template import Tag
 
 from ._decorators import modified, named
 from ._interfaces import IKleinRequest, KleinQueryValue
+from ._paramspec_workaround import _normalFunction, _werkzeugRuleArgs
 from ._resource import KleinResource, route_metadata
-from ._typing_compat import Concatenate, ParamSpec, Protocol
-
 
 _KleinSynchronousRenderable = Union[
     str, bytes, IResource, IRenderable, Tag, None
@@ -118,7 +110,7 @@ class RouteMetadata(Protocol):
 
 
 def _call(
-    __klein_instance__: Optional[Klein],
+    __klein_instance__: Klein | None,
     __klein_f__: Callable[..., KleinRenderable],
     *args: Any,
     **kwargs: Any,
@@ -147,8 +139,8 @@ def _call(
 def buildURL(
     mapper: MapAdapter,
     endpoint: str,
-    values: Optional[Mapping[str, KleinQueryValue]] = None,
-    method: Optional[str] = None,
+    values: Mapping[str, KleinQueryValue] | None = None,
+    method: str | None = None,
     force_external: bool = False,
     append_unknown: bool = True,
 ) -> str:
@@ -167,8 +159,8 @@ class KleinRequest:
     def url_for(
         self,
         endpoint: str,
-        values: Optional[Mapping[str, KleinQueryValue]] = None,
-        method: Optional[str] = None,
+        values: Mapping[str, KleinQueryValue] | None = None,
+        method: str | None = None,
         force_external: bool = False,
         append_unknown: bool = True,
     ) -> str:
@@ -185,75 +177,7 @@ class KleinRequest:
 registerAdapter(KleinRequest, Request, IKleinRequest)
 
 
-ErrorMethods = List[Tuple[List[Type[Exception]], KleinErrorMethod]]
-
-
-# begin argument-processing hack to copy all args from current installed
-# version of Rule to @route's *args and **kwargs
-
-R = TypeVar("R", covariant=True)
-P = ParamSpec("P")
-
-
-class _PartialRouteSignature(Protocol[R]):
-    def __call__(
-        _self,
-        self: Klein,
-        url: str,
-        *args: Any,
-        branch: bool = False,
-        **kwargs: Any,
-    ) -> R:
-        """
-        This is the portion of the signature of C{route} which Klein owns.
-        """
-
-
-class _FullRouteSignature(Protocol[P, R]):
-    def __call__(
-        _self,
-        self: Klein,
-        url: str,
-        *args: P.args,
-        branch: bool = False,
-        **kwargs: P.kwargs,
-    ) -> R:
-        """
-        This integrates L{_PartialRouteSignature} with L{Rule}.
-        """
-
-
-def _removeStringArg(rule: Callable[Concatenate[str, P], R]) -> Callable[P, R]:
-    """
-    We call the 'string' argument to Rule 'url', so we need to remove it.
-    """
-    return None  # type:ignore[return-value]
-
-
-def _routeArgsFrom(
-    argProvider: Callable[P, object]
-) -> Callable[[_PartialRouteSignature[R]], _FullRouteSignature[P, R]]:
-    def decorator(
-        decoratee: _PartialRouteSignature[R],
-    ) -> _FullRouteSignature[P, R]:
-        return decoratee
-
-    return decorator
-
-
-def _normalFunction(arg: Callable[P, R]) -> Callable[P, R]:
-    """
-    Indicate to Mypy that the decorated callable is in fact a normal
-    user-defined function, so that it will be treated as a descriptor with a
-    C{self} that binds as a method.
-
-    @see: U{<mypy's confusing treatment of callables>
-        https://github.com/python/mypy/issues/15189}
-    """
-    return arg
-
-
-# end argument-processing hack
+ErrorMethods = list[tuple[list[type[Exception]], KleinErrorMethod]]
 
 
 class Klein:
@@ -270,10 +194,10 @@ class Klein:
 
     def __init__(self) -> None:
         self._url_map = Map()
-        self._endpoints: Dict[str, KleinRouteHandler] = {}
+        self._endpoints: dict[str, KleinRouteHandler] = {}
         self._error_handlers: ErrorMethods = []
-        self._instance: Optional[Klein] = None
-        self._boundAs: Optional[str] = None
+        self._instance: Klein | None = None
+        self._boundAs: str | None = None
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Klein):
@@ -283,7 +207,7 @@ class Klein:
     def __ne__(self, other: Any) -> bool:
         result = self.__eq__(other)
         if result is NotImplemented:
-            return result
+            return NotImplemented
         return not result
 
     @property
@@ -294,7 +218,7 @@ class Klein:
         return self._url_map
 
     @property
-    def endpoints(self) -> Dict[str, KleinRouteHandler]:
+    def endpoints(self) -> dict[str, KleinRouteHandler]:
         """
         Read only property exposing L{Klein._endpoints}.
         """
@@ -379,7 +303,7 @@ class Klein:
         return segment_count
 
     @_normalFunction
-    @_routeArgsFrom(_removeStringArg(Rule))
+    @_werkzeugRuleArgs
     def route(
         self,
         url: str,
@@ -511,22 +435,20 @@ class Klein:
     def handle_errors(
         self,
         f_or_exception: KleinErrorHandler,
-        *additional_exceptions: Type[Exception],
-    ) -> Callable[[KleinErrorHandler], Callable]:
-        ...  # pragma: no cover
+        *additional_exceptions: type[Exception],
+    ) -> Callable[[KleinErrorHandler], Callable]: ...  # pragma: no cover
 
     @overload
     def handle_errors(
         self,
-        f_or_exception: Type[Exception],
-        *additional_exceptions: Type[Exception],
-    ) -> Callable[[KleinErrorHandler], Callable]:
-        ...  # pragma: no cover
+        f_or_exception: type[Exception],
+        *additional_exceptions: type[Exception],
+    ) -> Callable[[KleinErrorHandler], Callable]: ...  # pragma: no cover
 
     def handle_errors(
         self,
-        f_or_exception: Union[KleinErrorHandler, Type[Exception]],
-        *additional_exceptions: Type[Exception],
+        f_or_exception: KleinErrorHandler | type[Exception],
+        *additional_exceptions: type[Exception],
     ) -> Callable[[KleinErrorHandler], Callable]:
         """
         Register an error handler. This decorator supports two syntaxes. The
@@ -582,9 +504,7 @@ class Klein:
         if not isinstance(f_or_exception, type) or not issubclass(
             f_or_exception, Exception
         ):
-            # f_or_exception is a KleinErrorHandler
-            f = cast(KleinErrorHandler, f_or_exception)
-            return self.handle_errors(Exception)(f)
+            return self.handle_errors(Exception)(f_or_exception)
 
         # f_or_exception is an Exception class
         exceptions = [f_or_exception] + list(additional_exceptions)
@@ -592,7 +512,7 @@ class Klein:
         def deco(f: KleinErrorHandler) -> Callable:
             @modified("error handling wrapper", f)
             def _f(
-                instance: Optional[Klein],
+                instance: Klein | None,
                 request: IRequest,
                 failure: Failure,
             ) -> KleinRenderable:
@@ -608,8 +528,8 @@ class Klein:
         self,
         request: IRequest,
         endpoint: str,
-        values: Optional[Mapping[str, KleinQueryValue]] = None,
-        method: Optional[str] = None,
+        values: Mapping[str, KleinQueryValue] | None = None,
+        method: str | None = None,
         force_external: bool = False,
         append_unknown: bool = True,
     ) -> str:
@@ -634,10 +554,10 @@ class Klein:
 
     def run(
         self,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        logFile: Optional[IO] = None,
-        endpoint_description: Optional[str] = None,
+        host: str | None = None,
+        port: int | None = None,
+        logFile: IO | None = None,
+        endpoint_description: str | None = None,
         displayTracebacks: bool = True,
     ) -> None:
         """
@@ -678,7 +598,7 @@ class Klein:
         site.displayTracebacks = displayTracebacks
 
         endpoint.listen(site)
-        reactor.run()  # type: ignore[attr-defined]
+        reactor.run()
 
 
 _globalKleinApp = Klein()

@@ -2,14 +2,13 @@
 branch = True
 parallel = True
 source = klein
-omit = src/klein/test/typing_*.py
+omit = */klein/test/typing_*.py
 
 [paths]
 source=
    src/klein
-   .tox/*/lib/python*/site-packages/klein
+   .tox/*/lib/py*/site-packages/klein
    .tox/*/Lib/site-packages/klein
-   .tox/pypy*/site-packages/klein
 
 [report]
 exclude_lines =

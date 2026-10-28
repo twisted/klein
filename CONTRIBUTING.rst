@@ -13,12 +13,12 @@ Klein is an open source project that welcomes contributions of all kinds coming 
 Getting started
 ===============
 
-Here is a list of shell commands that will install the dependencies of Klein, run the test suite with Python 3.8 and Twisted 23.8, compile the documentation, and check for coding style issues with flake8.
+Here is a list of shell commands that will install the dependencies of Klein, run the test suite with Python 3.14 and Twisted 26.4, compile the documentation, and check for coding style issues with flake8.
 
 .. code-block:: shell
 
    pip install --user tox
-   tox -e py312-tw238
+   tox -e py324-tw264
    tox -e docs
    tox -e flake8
 

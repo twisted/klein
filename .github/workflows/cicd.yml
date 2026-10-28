@@ -193,19 +193,19 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        twisted-version: ["23.8", "23.10"]
-        python-version: ["3.10", "3.11"]
+        twisted-version: ["23.10"]
+        python-version: ["3.11"]
         tox-prefix: ["coverage"]
         optional: [false]
         include:
           - os: "ubuntu-latest"
-            python-version: "pypy-3.11"
-            twisted-version: "23.8"
+            python-version: "pypy-3.11-v7.3.23"
+            twisted-version: "26.4"
             tox-prefix: "test"
             optional: false
           - os: "ubuntu-latest"
             python-version: "3.12.0"
-            twisted-version: "23.8"
+            twisted-version: "23.10"
             tox-prefix: "test"
             optional: false
           - os: "ubuntu-latest"
@@ -244,7 +244,8 @@ jobs:
 
           py = "${{ matrix.python-version }}"
           py = "".join(py.split(".")[:2])   # Combine major/minor, toss rest
-          py = py.replace("pypy-", "py")    # For Pypy: have a litte less py
+          py = py.replace("pypy-", "py")    # For Pypy: have a little less py
+          py = py.split("-")[0]             # For Pypy: get rid of pypy version
 
           tw = "${{ matrix.twisted-version }}"
           tw = tw.replace(".", "")

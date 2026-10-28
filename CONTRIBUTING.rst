@@ -28,7 +28,7 @@ This strategy allows one to make and test changes to Klein without needing to ch
 AI Policy
 =========
 
-This repository follows the `Twisted AI Policy <https://docs.twisted.org/en/latest/development/ai-policy.html>`_.
+This repository does not allow the inclusion of the outputs of generative AI tools, following the `Twisted AI Policy <https://docs.twisted.org/en/latest/development/ai-policy.html>`_.
 
 Next steps
 ==========

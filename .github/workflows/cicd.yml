@@ -244,7 +244,7 @@ jobs:
 
           py = "${{ matrix.python-version }}"
           py = "".join(py.split(".")[:2])   # Combine major/minor, toss rest
-          py = py.replace("pypy3", "py")    # For Pypy: have a litte less py
+          py = py.replace("pypy-", "py")    # For Pypy: have a litte less py
 
           tw = "${{ matrix.twisted-version }}"
           tw = tw.replace(".", "")
